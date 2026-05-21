@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v1'
+const CACHE_NAME = 'axon-v2'
 const STATIC_ASSETS = ['/', '/index.html', '/manifest.json']
 
 self.addEventListener('install', e => {
@@ -15,8 +15,29 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
+
+  const isHtml = e.request.mode === 'navigate' || e.request.headers.get('accept')?.includes('text/html')
+
+  if (isHtml) {
+    e.respondWith(
+      fetch(e.request)
+        .then(response => {
+          const clone = response.clone()
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone))
+          return response
+        })
+        .catch(() => caches.match(e.request) || caches.match('/index.html'))
+    )
+    return
+  }
+
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => caches.match('/index.html')))
+    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => {
+      if (e.request.url.includes('/assets/')) {
+        return new Response('Asset not found', { status: 404 })
+      }
+      return caches.match('/index.html')
+    }))
   )
 })
 
