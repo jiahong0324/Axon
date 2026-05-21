@@ -10,12 +10,31 @@ export default function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setLoading(false)
+    let active = true
+
+    async function checkAuth() {
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      if (active) {
+        setSession(currentSession)
+        setLoading(false)
+      }
+    }
+
+    checkAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      if (active) {
+        setSession(currentSession)
+        if (event === 'SIGNED_OUT') {
+          setLoading(false)
+        }
+      }
     })
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession))
-    return () => sub.subscription.unsubscribe()
+
+    return () => {
+      active = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   if (loading) return <div className="page-shell items-center justify-center"><LoadingSpinner size="lg" /></div>
