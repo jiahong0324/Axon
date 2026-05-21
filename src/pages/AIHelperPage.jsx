@@ -28,6 +28,7 @@ export default function AIHelperPage() {
   })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [focused, setFocused] = useState(false)
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -87,36 +88,51 @@ export default function AIHelperPage() {
           <div ref={bottomRef} />
         </div>
 
-        <div className="scrollbar-hide shrink-0 overflow-x-auto px-4 py-2 md:hidden">
-          <div className="flex w-max gap-2">
-            {quickActions.map(action => (
-              <button
-                key={action.mobile}
-                onClick={() => setInput(action.prompt)}
-                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-sm transition-colors"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--bg-card)', minHeight: '36px', minWidth: 'auto' }}
-              >
-                <span className="text-base">{action.icon}</span>
-                <span>{action.mobile}</span>
-              </button>
-            ))}
+        <div className="shrink-0 border-t bg-navy-950/80 backdrop-blur-xl md:bg-transparent md:border-0 md:backdrop-blur-none" style={{ borderColor: 'var(--border)' }}>
+          {/* Quick Actions Scrollbar */}
+          <div className="scrollbar-hide overflow-x-auto px-4 py-2 md:hidden">
+            <div className="flex w-max gap-2">
+              {quickActions.map(action => (
+                <button
+                  key={action.mobile}
+                  onClick={() => setInput(action.prompt)}
+                  className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition-colors"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--bg-card)', minHeight: '32px', minWidth: 'auto' }}
+                >
+                  <span className="text-sm">{action.icon}</span>
+                  <span>{action.mobile}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="shrink-0 border-t pt-3 px-3 pb-20 md:pb-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-primary)' }}>
-          <div className="flex items-end gap-2">
-            <textarea
-              className="scrollbar-hide flex-1 resize-none rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-              style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)', maxHeight: '120px', overflowY: 'auto' }}
-              placeholder=""
-              rows={1}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <button className="flex h-11 min-h-11 w-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white transition-opacity disabled:opacity-40" disabled={loading || !input.trim()} onClick={sendMessage}>
-              <ArrowUp className="h-5 w-5" />
-            </button>
+          {/* Chat Input Container */}
+          <div className="px-4 pt-1 pb-[calc(76px+env(safe-area-inset-bottom))] md:p-3">
+            <div 
+              className={`flex items-end gap-2 rounded-2xl border p-1.5 transition-all duration-200 ${
+                focused ? 'border-blue-500 ring-2 ring-blue-500/20' : ''
+              }`}
+              style={{ background: 'var(--bg-input)', borderColor: focused ? 'transparent' : 'var(--border)' }}
+            >
+              <textarea
+                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-3 py-2 text-sm focus:border-0 focus:ring-0 outline-none shadow-none focus:shadow-none"
+                style={{ color: 'var(--text-primary)', maxHeight: '120px', overflowY: 'auto' }}
+                placeholder=""
+                rows={1}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+              />
+              <button 
+                className="flex h-9 min-h-9 w-9 min-w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white transition-opacity disabled:opacity-40" 
+                disabled={loading || !input.trim()} 
+                onClick={sendMessage}
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </section>
