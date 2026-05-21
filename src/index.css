@@ -39,6 +39,18 @@ html, body, #root {
   padding: 0;
 }
 
+@media (display-mode: standalone) {
+  html, body, #root, .page-shell {
+    height: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+  }
+}
+
+body.keyboard-open .bottom-nav {
+  display: none !important;
+}
+
 body {
   margin: 0;
   background-color: var(--bg-primary);

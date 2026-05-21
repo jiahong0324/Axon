@@ -36,6 +36,15 @@ export default function AIHelperPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
+  useEffect(() => {
+    if (focused) {
+      document.body.classList.add('keyboard-open')
+    } else {
+      document.body.classList.remove('keyboard-open')
+    }
+    return () => document.body.classList.remove('keyboard-open')
+  }, [focused])
+
   async function sendMessage() {
     if (!input.trim() || loading) return
     const userText = input.trim()
@@ -90,24 +99,28 @@ export default function AIHelperPage() {
 
         <div className="shrink-0 border-t bg-navy-950/80 backdrop-blur-xl md:bg-transparent md:border-0 md:backdrop-blur-none" style={{ borderColor: 'var(--border)' }}>
           {/* Quick Actions Scrollbar */}
-          <div className="scrollbar-hide overflow-x-auto px-4 py-2 md:hidden">
-            <div className="flex w-max gap-2">
-              {quickActions.map(action => (
-                <button
-                  key={action.mobile}
-                  onClick={() => setInput(action.prompt)}
-                  className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition-colors"
-                  style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--bg-card)', minHeight: '32px', minWidth: 'auto' }}
-                >
-                  <span className="text-sm">{action.icon}</span>
-                  <span>{action.mobile}</span>
-                </button>
-              ))}
+          {!focused && (
+            <div className="scrollbar-hide overflow-x-auto px-4 py-2 md:hidden">
+              <div className="flex w-max gap-2">
+                {quickActions.map(action => (
+                  <button
+                    key={action.mobile}
+                    onClick={() => setInput(action.prompt)}
+                    className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition-colors"
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--bg-card)', minHeight: '32px', minWidth: 'auto' }}
+                  >
+                    <span className="text-sm">{action.icon}</span>
+                    <span>{action.mobile}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Chat Input Container */}
-          <div className="px-4 pt-1 pb-[calc(76px+env(safe-area-inset-bottom))] md:p-3">
+          <div className={`px-4 pt-1 transition-all duration-300 md:p-3 ${
+            focused ? 'pb-2' : 'pb-[calc(76px+env(safe-area-inset-bottom))]'
+          }`}>
             <div 
               className={`flex items-end gap-2 rounded-2xl border p-1.5 transition-all duration-200 ${
                 focused ? 'border-blue-500 ring-2 ring-blue-500/20' : ''
