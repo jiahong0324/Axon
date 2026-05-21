@@ -136,7 +136,11 @@ export default function AIHelperPage() {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
+                onBlur={() => {
+                  setTimeout(() => {
+                    setFocused(false)
+                  }, 150)
+                }}
               />
               <button 
                 className="flex h-9 min-h-9 w-9 min-w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white transition-opacity disabled:opacity-40" 
