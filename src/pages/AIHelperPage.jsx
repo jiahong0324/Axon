@@ -9,7 +9,7 @@ const quickActions = [
   { icon: '📄', mobile: 'Summarize', desktop: 'Summarize my notes', prompt: 'Summarize my notes' },
   { icon: '❓', mobile: 'Quiz me', desktop: 'Generate quiz questions', prompt: 'Generate quiz questions' },
   { icon: '📅', mobile: 'Study plan', desktop: 'Make a study plan', prompt: 'Make a study plan' },
-  { icon: '🇨🇳', mobile: 'Translate', desktop: 'Translate to Chinese', prompt: 'Translate to Chinese' },
+  { icon: '🌐', mobile: 'Translate', desktop: 'Translate to Chinese', prompt: 'Translate to Chinese' },
   { icon: '🎯', mobile: 'Prioritize', desktop: 'Help prioritize my tasks', prompt: 'Help prioritize my tasks' },
   { icon: '📝', mobile: 'Notes', desktop: 'Write study notes', prompt: 'Write study notes' },
   { icon: '🔍', mobile: 'Code help', desktop: 'Explain this code', prompt: 'Explain this code' }
@@ -103,12 +103,12 @@ export default function AIHelperPage() {
           </div>
         </div>
 
-        <div className="shrink-0 border-t pt-3 px-3 pb-28 md:pb-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-primary)' }}>
+        <div className="shrink-0 border-t pt-3 px-3 pb-20 md:pb-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-primary)' }}>
           <div className="flex items-end gap-2">
             <textarea
               className="scrollbar-hide flex-1 resize-none rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
               style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)', maxHeight: '120px', overflowY: 'auto' }}
-              placeholder="Ask me anything about your studies..."
+              placeholder=""
               rows={1}
               value={input}
               onChange={e => setInput(e.target.value)}
