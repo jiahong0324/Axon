@@ -126,7 +126,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
 
   return (
     <div className="flex flex-1 min-h-0 flex-col">
-      <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto pr-1 max-h-[65vh]">
+      <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto pr-1">
         {step === 'upload' && (
           <button
             type="button"
