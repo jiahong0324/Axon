@@ -125,7 +125,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
   const label = type === 'exam' ? 'EXAMS' : type === 'assignment' ? 'ASSIGNMENTS' : 'CLASS SESSIONS'
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex max-h-[82vh] min-h-0 flex-col">
       <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto pr-1">
         {step === 'upload' && (
           <button
