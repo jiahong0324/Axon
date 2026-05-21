@@ -181,10 +181,6 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
         {step === 'results' && (
           <div className="animate-[fadeIn_.25s_ease] space-y-4">
             <div className="rounded-2xl border border-white/10 bg-navy-950/30 p-4">
-              <p className="mb-3 text-sm font-semibold text-blue-300">Image analysed</p>
-              <img src={preview} alt="Uploaded preview" className="max-h-48 w-full rounded-xl border border-white/10 object-contain" />
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-navy-950/30 p-4">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h3 className="text-sm font-bold tracking-wide text-slate-400">DETECTED {selected.length} {label}</h3>
                 <button className="min-h-0 min-w-0 text-sm font-semibold text-blue-400" onClick={() => setAll(selected.length !== items.length)}>{selected.length === items.length ? 'Deselect All' : 'Select All'}</button>
