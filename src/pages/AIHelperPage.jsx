@@ -128,7 +128,7 @@ export default function AIHelperPage() {
               style={{ background: 'var(--bg-input)', borderColor: focused ? 'transparent' : 'var(--border)' }}
             >
               <textarea
-                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-3 py-2 text-sm focus:border-0 focus:ring-0 outline-none shadow-none focus:shadow-none"
+                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-3 py-2 text-base focus:border-0 focus:ring-0 outline-none shadow-none focus:shadow-none"
                 style={{ color: 'var(--text-primary)', maxHeight: '120px', overflowY: 'auto' }}
                 placeholder=""
                 rows={1}
