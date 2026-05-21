@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { initials } from '../lib/utils'
 
 const navItems = [
-  { label: 'Home', path: '/', icon: LayoutDashboard },
+  { label: 'Home', path: '/home', icon: LayoutDashboard },
   { label: 'Timetable', path: '/timetable', icon: CalendarDays },
   { label: 'Assignments', path: '/assignments', icon: CheckSquare },
   { label: 'Exams', path: '/exams', icon: BookOpen },
@@ -42,7 +42,7 @@ export default function Sidebar({ user }) {
         </div>
         <nav className="flex flex-1 flex-col gap-2">
           {navItems.map(item => (
-            <NavLink key={item.path} to={item.path} end={item.path === '/'} className={linkClass}>
+            <NavLink key={item.path} to={item.path} end={item.path === '/home'} className={linkClass}>
               <item.icon className="h-5 w-5" />
               {item.label}
             </NavLink>
@@ -66,7 +66,7 @@ export default function Sidebar({ user }) {
           <NavLink
             key={item.path}
             to={item.path}
-            end={item.path === '/'}
+            end={item.path === '/home'}
             className={({ isActive }) => `nav-item relative flex min-h-[56px] flex-col items-center justify-center rounded-xl text-[11px] font-medium ${isActive ? 'text-blue-400' : 'text-slate-400'}`}
           >
             {({ isActive }) => <>

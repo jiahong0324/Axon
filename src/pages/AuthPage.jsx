@@ -19,7 +19,7 @@ export default function AuthPage({ mode = 'login' }) {
         ? await supabase.auth.signUp({ email: form.email, password: form.password, options: { data: { full_name: form.name } } })
         : await supabase.auth.signInWithPassword({ email: form.email, password: form.password })
       if (result.error) throw result.error
-      navigate('/')
+      navigate('/home')
     } catch (err) {
       setError(err.message || 'Authentication failed.')
     } finally {
