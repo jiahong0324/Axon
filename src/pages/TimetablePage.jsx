@@ -14,13 +14,20 @@ const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time:
 export default function TimetablePage() {
   const [classes, setClasses] = useState([])
   const [form, setForm] = useState(initialForm)
-  const [showForm, setShowForm] = useState(true)
+  const [showForm, setShowForm] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [mobileDay, setMobileDay] = useState(0)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
 
   useEffect(() => { fetchClasses() }, [])
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setShowForm(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   async function fetchClasses() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -35,12 +42,13 @@ export default function TimetablePage() {
     if (error) return showToast('Class could not be added.', 'error')
     showToast('Class added.', 'success')
     setForm(initialForm)
+    setShowForm(false)
     fetchClasses()
   }
 
   async function saveAll(items) {
     const { data: { user } } = await supabase.auth.getUser()
-    const rows = items.map(item => ({ ...item, user_id: user.id, color: classColors[item.class_type] || 'blue' }))
+    const rows = items.map(item => ({ ...item, user_id: user.id, color: item.color || classColors[item.class_type] || 'blue' }))
     const { error } = await supabase.from('classes').insert(rows)
     if (error) return showToast('Could not save extracted classes.', 'error')
     showToast('Extracted classes saved.', 'success')
@@ -65,10 +73,10 @@ export default function TimetablePage() {
         <h1 className="page-title mb-0">Timetable</h1>
         <div className="flex flex-wrap gap-3">
           <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
-          <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(v => !v)}><Plus className="h-4 w-4" /><span>Add Class</span><span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
+          <button className={showForm ? 'btn-ghost w-full border-red-500/30 text-red-300 md:w-auto' : 'btn-add w-full md:w-auto'} onClick={() => setShowForm(v => !v)}>{showForm ? '✕ Cancel' : <><Plus className="h-4 w-4" /><span>Add Class</span><span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></>}</button>
         </div>
       </div>
-      {showForm && (
+      <div className={`overflow-hidden transition-all duration-300 ${showForm ? 'mb-6 max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
         <form onSubmit={addClass} className="card mb-6 grid gap-4 md:grid-cols-4">
           <Field label="Subject"><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
           <Field label="Day"><select className="input" value={form.day} onChange={e => setForm({ ...form, day: e.target.value })}>{days.map(d => <option key={d}>{d}</option>)}</select></Field>
@@ -81,7 +89,7 @@ export default function TimetablePage() {
           <Field label="Classroom"><input className="input" value={form.classroom} onChange={e => setForm({ ...form, classroom: e.target.value })} /></Field>
           <div className="flex items-end"><button className="btn-primary w-full"><Plus className="h-4 w-4" /> Save Class</button></div>
         </form>
-      )}
+      </div>
       <div className="mb-4 flex items-center gap-2 md:hidden">
         <button className="btn-ghost px-3" onClick={() => setMobileDay(v => Math.max(0, v - 1))}><ChevronLeft className="h-4 w-4" /></button>
         <div className="flex flex-1 gap-2 overflow-x-auto">
@@ -106,7 +114,7 @@ export default function TimetablePage() {
           })}
         </section>
       </div>
-      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Upload Timetable Screenshot" maxWidth="max-w-2xl">
+      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Timetable from Screenshot" maxWidth="max-w-6xl" bodyClassName="overflow-hidden">
         <ImageUploadAnalyzer type="timetable" onResult={saveAll} />
       </Modal>
       {ConfirmDialog}

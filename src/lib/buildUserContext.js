@@ -39,7 +39,7 @@ ${classes.length === 0 ? 'No classes scheduled.' : classes.map(c => `- ${c.subje
 ${assignments.length === 0 ? 'No pending assignments.' : assignments.map(a => `- "${a.title}" (${a.subject}) - Due: ${a.deadline}, Priority: ${a.priority}, Status: ${a.status}${a.notes ? ', Notes: ' + a.notes : ''}`).join('\n')}
 
 === UPCOMING EXAMS ===
-${exams.length === 0 ? 'No upcoming exams.' : exams.map(e => `- ${e.subject} ${e.exam_type} on ${e.exam_date} at ${e.venue || 'TBA'}${e.notes ? ', Notes: ' + e.notes : ''}`).join('\n')}
+${exams.length === 0 ? 'No upcoming exams.' : exams.map(e => `- ${e.subject} ${e.exam_type} on ${e.exam_date} at ${e.venue || 'TBA'}${e.start_time && e.end_time ? `, Time: ${e.start_time}\u2013${e.end_time}` : ''}${e.notes ? ', Notes: ' + e.notes : ''}`).join('\n')}
 
 === ACTIVE REMINDERS ===
 ${reminders.length === 0 ? 'No active reminders.' : reminders.map(r => `- "${r.title}" at ${r.reminder_time || 'no time set'} (${r.repeat_type})`).join('\n')}

@@ -67,7 +67,7 @@ export default function Sidebar({ user }) {
             key={item.path}
             to={item.path}
             end={item.path === '/'}
-            className={({ isActive }) => `relative flex min-h-[56px] flex-col items-center justify-center rounded-xl text-[11px] font-medium ${isActive ? 'text-blue-400' : 'text-slate-400'}`}
+            className={({ isActive }) => `nav-item relative flex min-h-[56px] flex-col items-center justify-center rounded-xl text-[11px] font-medium ${isActive ? 'text-blue-400' : 'text-slate-400'}`}
           >
             {({ isActive }) => <>
               {isActive && <span className="absolute top-1 h-1 w-1 rounded-full bg-blue-400" />}
@@ -76,7 +76,7 @@ export default function Sidebar({ user }) {
             </>}
           </NavLink>
         ))}
-        <button onClick={() => setMoreOpen(true)} className="flex min-h-[56px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-slate-400">
+        <button onClick={() => setMoreOpen(true)} className="nav-item flex min-h-[56px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-slate-400">
           <MoreHorizontal className="mb-1 h-6 w-6" />
           <span>More</span>
         </button>

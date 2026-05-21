@@ -1,4 +1,4 @@
-import { ChevronDown, MapPin, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { ChevronDown, Clock, MapPin, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -8,7 +8,7 @@ import { useToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
 import { dateLabel, daysFromToday } from '../lib/utils'
 
-const initialForm = { subject: '', exam_date: '', exam_type: 'Final', venue: '', notes: '' }
+const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
 
 export default function ExamPage() {
   const [exams, setExams] = useState([])
@@ -67,13 +67,17 @@ export default function ExamPage() {
         <form onSubmit={addExam} className="space-y-4">
           <Field label="Subject"><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
           <Field label="Exam Date"><input className="input" required type="date" value={form.exam_date} onChange={e => setForm({ ...form, exam_date: e.target.value })} /></Field>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Start Time"><input className="input" type="time" placeholder="e.g. 09:00" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
+            <Field label="End Time"><input className="input" type="time" placeholder="e.g. 11:00" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
+          </div>
           <Field label="Exam Type"><select className="input" value={form.exam_type} onChange={e => setForm({ ...form, exam_type: e.target.value })}>{['Quiz', 'Midterm', 'Final', 'Assignment'].map(t => <option key={t}>{t}</option>)}</select></Field>
           <Field label="Venue"><input className="input" value={form.venue} onChange={e => setForm({ ...form, venue: e.target.value })} /></Field>
           <Field label="Notes"><textarea className="input min-h-24" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></Field>
           <button className="btn-primary w-full">Save Exam</button>
         </form>
       </Modal>
-      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Upload Exam Screenshot" maxWidth="max-w-2xl">
+      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Exam Schedule from Screenshot" maxWidth="max-w-5xl" bodyClassName="overflow-hidden">
         <ImageUploadAnalyzer type="exam" onResult={saveAll} />
       </Modal>
       {ConfirmDialog}
@@ -105,6 +109,7 @@ function ExamCard({ exam, deleteExam }) {
       <div>
         <div className="mb-2 flex flex-wrap items-center gap-2"><h3 className="text-xl font-bold">{exam.subject}</h3><span className="rounded-full border border-purple-500/30 bg-purple-500/20 px-2 py-0.5 text-xs text-purple-300">{exam.exam_type}</span></div>
         <p className="muted">{dateLabel(exam.exam_date)}</p>
+        {exam.start_time && exam.end_time && <p className="muted mt-2 flex items-center gap-2"><Clock className="h-4 w-4" /> {exam.start_time} {'\u2013'} {exam.end_time}</p>}
         <p className="muted mt-3 flex items-center gap-2"><MapPin className="h-4 w-4" /> {exam.venue || 'TBA'}</p>
         {exam.notes && <p className="mt-3 text-sm text-slate-400">{exam.notes}</p>}
       </div>

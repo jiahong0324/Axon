@@ -21,6 +21,13 @@ export default function RemindersPage() {
   const { confirm, ConfirmDialog } = useConfirmDialog()
 
   useEffect(() => { fetchItems(); requestPermission() }, [])
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setShowForm(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   async function requestPermission() {
     if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission()
@@ -78,16 +85,16 @@ export default function RemindersPage() {
       <section className="card">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="section-header mb-0"><Bell className="h-5 w-5 text-blue-400" /> My Reminders</h2>
-          <button className="btn-add" onClick={() => setShowForm(v => !v)}><Plus className="h-4 w-4" /> Add Reminder <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
+          <button className={showForm ? 'btn-ghost border-red-500/30 text-red-300' : 'btn-add'} onClick={() => setShowForm(v => !v)}>{showForm ? '✕ Cancel' : <><Plus className="h-4 w-4" /> Add Reminder <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></>}</button>
         </div>
-        {showForm && (
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showForm ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <form onSubmit={addItem} className="mb-5 grid gap-3 md:grid-cols-4">
             <input className="input md:col-span-2" required placeholder="Reminder title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
             <input className="input" type="time" value={form.reminder_time} onChange={e => setForm({ ...form, reminder_time: e.target.value })} />
             <select className="input" value={form.repeat_type} onChange={e => setForm({ ...form, repeat_type: e.target.value })}>{['once', 'daily', 'weekly'].map(t => <option key={t}>{t}</option>)}</select>
             <button className="btn-primary md:col-span-4">Save Reminder</button>
           </form>
-        )}
+        </div>
         {items.length === 0 ? <EmptyState emoji="🔔" message="No reminders yet." /> : (
           <div className="grid gap-3 md:grid-cols-2">
             {items.map(item => (

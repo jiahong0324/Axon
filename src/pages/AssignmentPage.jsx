@@ -107,7 +107,7 @@ export default function AssignmentPage() {
       <Modal isOpen={aiModal} onClose={() => setAiModal(false)} title="AI Priority Plan">
         <div className="prose prose-invert max-w-none text-sm leading-6" dangerouslySetInnerHTML={{ __html: markdownToHtml(aiText) }} />
       </Modal>
-      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Assignment Screenshot" maxWidth="max-w-2xl">
+      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Assignment Screenshot" maxWidth="max-w-5xl" bodyClassName="overflow-hidden">
         <ImageUploadAnalyzer type="assignment" onResult={saveAll} />
       </Modal>
       {ConfirmDialog}
