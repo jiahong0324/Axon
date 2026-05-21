@@ -103,7 +103,7 @@ export default function AIHelperPage() {
           </div>
         </div>
 
-        <div className="shrink-0 border-t p-3 pb-24 md:pb-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-primary)' }}>
+        <div className="shrink-0 border-t pt-3 px-3 pb-28 md:pb-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-primary)' }}>
           <div className="flex items-end gap-2">
             <textarea
               className="scrollbar-hide flex-1 resize-none rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"

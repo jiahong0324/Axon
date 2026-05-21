@@ -72,7 +72,7 @@ export default function Sidebar({ user }) {
             {({ isActive }) => <>
               {isActive && <span className="absolute top-1 h-1 w-1 rounded-full bg-blue-400" />}
               <item.icon className="mb-1 h-6 w-6" />
-              <span className="max-w-full truncate">{item.label.split(' ')[0]}</span>
+              <span className="max-w-full truncate">{item.label}</span>
             </>}
           </NavLink>
         ))}
