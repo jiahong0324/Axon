@@ -1,7 +1,9 @@
-import { Bot, Check, Plus, Trash2 } from 'lucide-react'
+import { Bot, Check, ChevronDown, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import CountdownBadge from '../components/CountdownBadge'
+import { useConfirmDialog } from '../components/ConfirmModal'
 import EmptyState from '../components/EmptyState'
+import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
 import Modal from '../components/Modal'
 import PriorityBadge from '../components/PriorityBadge'
 import { useToast } from '../components/Toast'
@@ -16,10 +18,12 @@ const initialForm = { title: '', subject: '', deadline: '', priority: 'Medium', 
 export default function AssignmentPage() {
   const [items, setItems] = useState([])
   const [modal, setModal] = useState(false)
+  const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [aiModal, setAiModal] = useState(false)
   const [aiText, setAiText] = useState('')
   const [form, setForm] = useState(initialForm)
   const { showToast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   useEffect(() => { fetchItems() }, [])
 
@@ -40,13 +44,23 @@ export default function AssignmentPage() {
     fetchItems()
   }
 
+  async function saveAll(items) {
+    const { data: { user } } = await supabase.auth.getUser()
+    const rows = items.map(item => ({ priority: 'Medium', status: 'Pending', notes: '', ...item, user_id: user.id }))
+    const { error } = await supabase.from('assignments').insert(rows)
+    if (error) return showToast('Could not save extracted assignments.', 'error')
+    showToast('Extracted assignments saved.', 'success')
+    setAnalyzerOpen(false)
+    fetchItems()
+  }
+
   async function updateItem(id, updates) {
     await supabase.from('assignments').update(updates).eq('id', id)
     setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item))
   }
 
   async function deleteItem(id) {
-    if (!window.confirm('Delete this assignment?')) return
+    if (!await confirm({ title: 'Delete assignment?', message: 'This assignment card will be removed.', confirmText: 'Delete' })) return
     await supabase.from('assignments').delete().eq('id', id)
     setItems(prev => prev.filter(item => item.id !== id))
   }
@@ -67,9 +81,9 @@ export default function AssignmentPage() {
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <h1 className="page-title mb-0">Assignments</h1>
-        <div className="flex flex-wrap gap-3"><button className="btn-primary" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Assignment</button><button className="btn-ghost" onClick={prioritize}><Bot className="h-4 w-4" /> What should I do first?</button></div>
+        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap"><button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button><button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Assignment <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button><button className="btn-ghost" onClick={prioritize}><Bot className="h-4 w-4" /> What should I do first?</button></div>
       </div>
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="flex flex-col gap-4 md:grid md:grid-cols-3">
         {statuses.map(status => {
           const column = items.filter(i => i.status === status)
           return (
@@ -93,6 +107,10 @@ export default function AssignmentPage() {
       <Modal isOpen={aiModal} onClose={() => setAiModal(false)} title="AI Priority Plan">
         <div className="prose prose-invert max-w-none text-sm leading-6" dangerouslySetInnerHTML={{ __html: markdownToHtml(aiText) }} />
       </Modal>
+      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Assignment Screenshot" maxWidth="max-w-2xl">
+        <ImageUploadAnalyzer type="assignment" onResult={saveAll} />
+      </Modal>
+      {ConfirmDialog}
     </main>
   )
 }

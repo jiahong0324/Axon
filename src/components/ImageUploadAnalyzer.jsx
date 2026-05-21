@@ -29,6 +29,19 @@ Each object must have:
 }
 Return ONLY valid JSON array. No markdown, no explanation.`
 
+const ASSIGNMENT_PROMPT = `
+Analyze this university assignment or coursework screenshot. Extract ALL assignments and return as a JSON array only, no other text.
+Each object must have:
+{
+  "title": "string",
+  "subject": "string",
+  "deadline": "YYYY-MM-DD",
+  "priority": "High|Medium|Low",
+  "notes": "string or empty string",
+  "status": "Pending"
+}
+Return ONLY valid JSON array. No markdown, no explanation.`
+
 export default function ImageUploadAnalyzer({ type, onResult }) {
   const inputRef = useRef(null)
   const [preview, setPreview] = useState('')
@@ -43,7 +56,8 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
     setLoading(true)
     try {
       const base64 = await toBase64(file)
-      const raw = await analyzeImageWithGroq(base64, file.type, type === 'exam' ? EXAM_PROMPT : TIMETABLE_PROMPT)
+      const prompt = type === 'exam' ? EXAM_PROMPT : type === 'assignment' ? ASSIGNMENT_PROMPT : TIMETABLE_PROMPT
+      const raw = await analyzeImageWithGroq(base64, file.type, prompt)
       const cleaned = raw.replace(/```json|```/g, '').trim()
       const parsed = JSON.parse(cleaned)
       setItems(Array.isArray(parsed) ? parsed : [])
@@ -85,7 +99,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
             {items.map((item, index) => (
               <div key={`${item.subject}-${index}`} className="rounded-xl border border-white/10 p-3 text-sm">
                 <p className="font-semibold">{item.subject}</p>
-                <p className="muted">{type === 'exam' ? `${item.exam_type} on ${item.exam_date} at ${item.venue || 'TBA'}` : `${item.day} ${item.start_time}-${item.end_time} at ${item.classroom || 'TBA'}`}</p>
+                <p className="muted">{type === 'exam' ? `${item.exam_type} on ${item.exam_date} at ${item.venue || 'TBA'}` : type === 'assignment' ? `${item.subject} due ${item.deadline}` : `${item.day} ${item.start_time}-${item.end_time} at ${item.classroom || 'TBA'}`}</p>
               </div>
             ))}
           </div>

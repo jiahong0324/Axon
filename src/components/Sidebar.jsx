@@ -1,4 +1,5 @@
-import { Bell, BookOpen, Bot, CalendarDays, CheckSquare, LayoutDashboard, LogOut, Settings } from 'lucide-react'
+import { Bell, BookOpen, Bot, CalendarDays, CheckSquare, LayoutDashboard, LogOut, MoreHorizontal, Settings, X } from 'lucide-react'
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { initials } from '../lib/utils'
@@ -15,7 +16,10 @@ const navItems = [
 
 export default function Sidebar({ user }) {
   const navigate = useNavigate()
+  const [moreOpen, setMoreOpen] = useState(false)
   const name = user?.user_metadata?.full_name || user?.email || 'Student'
+  const mainMobile = navItems.filter(item => ['Home', 'Timetable', 'Assignments', 'AI Helper'].includes(item.label))
+  const moreItems = navItems.filter(item => ['Exams', 'Reminders', 'Settings'].includes(item.label))
 
   async function logout() {
     await supabase.auth.signOut()
@@ -28,9 +32,9 @@ export default function Sidebar({ user }) {
 
   return (
     <>
-      <aside className="hidden w-60 shrink-0 border-r border-white/10 bg-navy-950/70 p-4 md:flex md:flex-col">
+      <aside className="hidden w-60 shrink-0 border-r border-white/10 bg-[#1E293B] p-4 md:flex md:flex-col">
         <div className="mb-7 flex items-center gap-3 px-2">
-          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 font-bold">U</div>
+          <img src="/icons/logo.png" alt="UniMind logo" className="h-8 w-8 rounded-lg object-contain" />
           <div>
             <p className="font-heading text-lg font-bold gradient-text">UniMind</p>
             <p className="text-xs text-slate-500">Study command center</p>
@@ -57,19 +61,44 @@ export default function Sidebar({ user }) {
           </button>
         </div>
       </aside>
-      <nav className="glass fixed inset-x-0 bottom-0 z-40 grid grid-cols-7 gap-1 rounded-t-2xl px-2 pb-safe pt-2 md:hidden">
-        {navItems.map(item => (
+      <nav className="bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 gap-1 rounded-t-2xl border-t border-white/10 bg-navy-950/85 px-2 pt-2 backdrop-blur-xl md:hidden">
+        {mainMobile.map(item => (
           <NavLink
             key={item.path}
             to={item.path}
             end={item.path === '/'}
-            className={({ isActive }) => `flex min-h-[56px] flex-col items-center justify-center rounded-xl text-[11px] font-medium ${isActive ? 'bg-blue-500 text-white' : 'text-slate-400'}`}
+            className={({ isActive }) => `relative flex min-h-[56px] flex-col items-center justify-center rounded-xl text-[11px] font-medium ${isActive ? 'text-blue-400' : 'text-slate-400'}`}
           >
-            <item.icon className="mb-1 h-5 w-5" />
-            <span className="max-w-full truncate">{item.label.split(' ')[0]}</span>
+            {({ isActive }) => <>
+              {isActive && <span className="absolute top-1 h-1 w-1 rounded-full bg-blue-400" />}
+              <item.icon className="mb-1 h-6 w-6" />
+              <span className="max-w-full truncate">{item.label.split(' ')[0]}</span>
+            </>}
           </NavLink>
         ))}
+        <button onClick={() => setMoreOpen(true)} className="flex min-h-[56px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-slate-400">
+          <MoreHorizontal className="mb-1 h-6 w-6" />
+          <span>More</span>
+        </button>
       </nav>
+      {moreOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 md:hidden" onClick={() => setMoreOpen(false)}>
+          <div className="absolute inset-x-0 bottom-0 rounded-t-2xl bg-navy-900 p-4 pb-safe" onClick={e => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-semibold">More</p>
+              <button onClick={() => setMoreOpen(false)} className="rounded-lg p-2"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="grid gap-2">
+              {moreItems.map(item => (
+                <NavLink key={item.path} to={item.path} onClick={() => setMoreOpen(false)} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-slate-200 hover:bg-white/5">
+                  <item.icon className="h-5 w-5 text-blue-400" />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

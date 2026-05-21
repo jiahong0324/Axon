@@ -1,6 +1,7 @@
-import { Camera, ChevronDown, MapPin, Plus, Trash2, User } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import ClassTypeBadge from '../components/ClassTypeBadge'
+import { useConfirmDialog } from '../components/ConfirmModal'
 import EmptyState from '../components/EmptyState'
 import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
 import Modal from '../components/Modal'
@@ -15,7 +16,9 @@ export default function TimetablePage() {
   const [form, setForm] = useState(initialForm)
   const [showForm, setShowForm] = useState(true)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
+  const [mobileDay, setMobileDay] = useState(0)
   const { showToast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   useEffect(() => { fetchClasses() }, [])
 
@@ -46,7 +49,7 @@ export default function TimetablePage() {
   }
 
   async function deleteClass(id) {
-    if (!window.confirm('Delete this class?')) return
+    if (!await confirm({ title: 'Delete class?', message: 'This class will be removed from your timetable.', confirmText: 'Delete' })) return
     await supabase.from('classes').delete().eq('id', id)
     setClasses(prev => prev.filter(c => c.id !== id))
     showToast('Class deleted.', 'success')
@@ -61,8 +64,8 @@ export default function TimetablePage() {
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <h1 className="page-title mb-0">Timetable</h1>
         <div className="flex flex-wrap gap-3">
-          <button className="btn-ghost" onClick={() => setShowForm(v => !v)}><ChevronDown className="h-4 w-4" /> Add Class</button>
-          <button className="btn-primary" onClick={() => setAnalyzerOpen(true)}><Camera className="h-4 w-4" /> Upload Screenshot</button>
+          <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
+          <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(v => !v)}><Plus className="h-4 w-4" /><span>Add Class</span><span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
         </div>
       </div>
       {showForm && (
@@ -79,12 +82,19 @@ export default function TimetablePage() {
           <div className="flex items-end"><button className="btn-primary w-full"><Plus className="h-4 w-4" /> Save Class</button></div>
         </form>
       )}
-      <div className="overflow-x-auto pb-3">
-        <section className="grid min-w-[920px] gap-4 md:min-w-0 md:grid-cols-5">
+      <div className="mb-4 flex items-center gap-2 md:hidden">
+        <button className="btn-ghost px-3" onClick={() => setMobileDay(v => Math.max(0, v - 1))}><ChevronLeft className="h-4 w-4" /></button>
+        <div className="flex flex-1 gap-2 overflow-x-auto">
+          {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] shrink-0 rounded-full px-4 text-sm ${mobileDay === index ? 'bg-blue-500 text-white' : 'border border-white/10 text-slate-400'}`}>{day.slice(0, 3)}</button>)}
+        </div>
+        <button className="btn-ghost px-3" onClick={() => setMobileDay(v => Math.min(days.length - 1, v + 1))}><ChevronRight className="h-4 w-4" /></button>
+      </div>
+      <div className="pb-3">
+        <section className="grid gap-4 md:grid-cols-5">
           {days.map(day => {
             const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
             return (
-              <div key={day} className="card min-h-[360px]">
+              <div key={day} className={`card min-h-[360px] ${days[mobileDay] === day ? '' : 'hidden md:block'}`}>
                 <h2 className="mb-4 font-semibold">{day}</h2>
                 {dayClasses.length === 0 ? <EmptyState emoji="·" message="Free day" /> : (
                   <div className="space-y-3">
@@ -99,6 +109,7 @@ export default function TimetablePage() {
       <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Upload Timetable Screenshot" maxWidth="max-w-2xl">
         <ImageUploadAnalyzer type="timetable" onResult={saveAll} />
       </Modal>
+      {ConfirmDialog}
     </main>
   )
 }

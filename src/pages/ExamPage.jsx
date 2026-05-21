@@ -1,6 +1,7 @@
-import { Camera, MapPin, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, MapPin, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState'
+import { useConfirmDialog } from '../components/ConfirmModal'
 import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
 import Modal from '../components/Modal'
 import { useToast } from '../components/Toast'
@@ -15,6 +16,7 @@ export default function ExamPage() {
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
   const { showToast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   useEffect(() => { fetchExams() }, [])
 
@@ -45,7 +47,7 @@ export default function ExamPage() {
   }
 
   async function deleteExam(id) {
-    if (!window.confirm('Delete this exam?')) return
+    if (!await confirm({ title: 'Delete exam?', message: 'This exam will be removed from your planner.', confirmText: 'Delete' })) return
     await supabase.from('exams').delete().eq('id', id)
     setExams(prev => prev.filter(e => e.id !== id))
   }
@@ -57,7 +59,7 @@ export default function ExamPage() {
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <h1 className="page-title mb-0">Exam Planner</h1>
-        <div className="flex flex-wrap gap-3"><button className="btn-primary" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Exam</button><button className="btn-ghost" onClick={() => setAnalyzerOpen(true)}><Camera className="h-4 w-4" /> Upload Exam Schedule</button></div>
+        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap"><button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button><button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Exam <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button></div>
       </div>
       <ExamSection title="Upcoming" exams={upcoming} deleteExam={deleteExam} />
       <ExamSection title="Past" exams={past} deleteExam={deleteExam} />
@@ -74,6 +76,7 @@ export default function ExamPage() {
       <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Upload Exam Screenshot" maxWidth="max-w-2xl">
         <ImageUploadAnalyzer type="exam" onResult={saveAll} />
       </Modal>
+      {ConfirmDialog}
     </main>
   )
 }

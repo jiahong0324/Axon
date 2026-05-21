@@ -1,4 +1,4 @@
-import { GraduationCap, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -32,9 +32,7 @@ export default function AuthPage({ mode = 'login' }) {
       <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-md items-center">
         <div className="glass w-full rounded-2xl p-6 shadow-2xl">
           <div className="mb-6 text-center">
-            <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600">
-              <GraduationCap className="h-8 w-8" />
-            </div>
+            <img src="/icons/logo.png" alt="UniMind logo" className="mx-auto mb-3 h-12 w-12 rounded-xl object-contain" />
             <h1 className="font-heading text-3xl font-bold gradient-text">UniMind</h1>
             <p className="mt-2 text-sm text-slate-400">Your study life, neatly gathered.</p>
           </div>
