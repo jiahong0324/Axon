@@ -60,7 +60,7 @@ export default function AIHelperPage() {
   }
 
   return (
-    <main className="scrollbar-hide flex h-[100dvh] flex-1 flex-col overflow-hidden pt-safe md:h-auto md:flex-row md:gap-5 md:overflow-y-auto md:p-6" style={{ background: 'var(--bg-primary)' }}>
+    <main className="scrollbar-hide flex h-full flex-1 flex-col overflow-hidden pt-safe md:h-auto md:flex-row md:gap-5 md:overflow-y-auto md:p-6" style={{ background: 'var(--bg-primary)' }}>
       <aside className="card hidden w-64 shrink-0 md:block">
         <h2 className="mb-4 font-semibold">Quick Actions</h2>
         <div className="space-y-2">
