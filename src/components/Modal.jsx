@@ -11,7 +11,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className={`min-h-0 flex-1 ${bodyClassName}`}>
+        <div className={`flex min-h-0 flex-1 flex-col ${bodyClassName}`}>
           {children}
         </div>
       </div>
