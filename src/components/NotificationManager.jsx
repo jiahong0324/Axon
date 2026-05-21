@@ -34,7 +34,7 @@ export default function NotificationManager() {
       reminders?.forEach(r => {
         const key = `notified_reminder_${r.id}_${todayDate}_${currentTime}`
         if (sessionStorage.getItem(key)) return
-        new Notification('UniMind Reminder', {
+        new Notification('📚 Axon Reminder', {
           body: r.title,
           icon: '/icons/logo.png',
           badge: '/icons/logo.png',
@@ -43,9 +43,9 @@ export default function NotificationManager() {
         sessionStorage.setItem(key, '1')
       })
 
-      const notifyMinutes = parseInt(localStorage.getItem('unimind_notify_minutes') || '10', 10)
-      const classNotify = localStorage.getItem('unimind_class_notify') !== 'false'
-      const examNotify = localStorage.getItem('unimind_exam_notify') !== 'false'
+      const notifyMinutes = parseInt(localStorage.getItem('axon_notify_minutes') || '10', 10)
+      const classNotify = localStorage.getItem('axon_class_notify') !== 'false'
+      const examNotify = localStorage.getItem('axon_exam_notify') !== 'false'
       const targetTime = new Date(now.getTime() + notifyMinutes * 60000)
       const targetTimeStr = `${String(targetTime.getHours()).padStart(2, '0')}:${String(targetTime.getMinutes()).padStart(2, '0')}`
       const todayDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]

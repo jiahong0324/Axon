@@ -32,8 +32,8 @@ export default function AuthPage({ mode = 'login' }) {
       <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-md items-center">
         <div className="glass w-full rounded-2xl p-6 shadow-2xl">
           <div className="mb-6 text-center">
-            <img src="/icons/logo.png" alt="UniMind logo" className="mx-auto mb-3 h-12 w-12 rounded-xl object-contain" />
-            <h1 className="font-heading text-3xl font-bold gradient-text">UniMind</h1>
+            <img src="/icons/logo.png" alt="Axon logo" className="mx-auto mb-3 h-12 w-12 rounded-xl object-contain" />
+            <h1 className="font-heading text-3xl font-bold gradient-text">Axon</h1>
             <p className="mt-2 text-sm text-slate-400">Your study life, neatly gathered.</p>
           </div>
           <div className="mb-5 grid grid-cols-2 rounded-xl bg-navy-950/70 p-1">

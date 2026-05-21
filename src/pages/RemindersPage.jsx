@@ -80,7 +80,7 @@ export default function RemindersPage() {
           <h2 className="section-header mb-0"><Bot className="h-5 w-5 text-purple-400" /> AI Daily Study Plan</h2>
           <button className="btn-plan" onClick={generatePlan}>Generate Today's Plan</button>
         </div>
-        {planLoading ? <div className="skeleton h-36 rounded-xl" /> : plan ? <div className="max-h-96 overflow-y-auto text-sm leading-6" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }} /> : <p className="muted">Generate a practical study plan based on today’s classes, assignments, exams, and reminders.</p>}
+        {planLoading ? <div className="skeleton h-36 rounded-xl" /> : plan ? <div className="scrollbar-hide max-h-96 overflow-y-auto text-sm leading-6" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }} /> : <p className="muted">Generate a practical study plan based on today’s classes, assignments, exams, and reminders.</p>}
       </section>
       <section className="card">
         <div className="mb-4 flex items-center justify-between gap-3">

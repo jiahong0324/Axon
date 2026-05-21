@@ -69,7 +69,7 @@ export default function SettingsPage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'unimind-data.json'
+    a.download = 'axon-data.json'
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -82,7 +82,7 @@ export default function SettingsPage() {
   }
 
   async function deleteAccount() {
-    if (!await confirm({ title: 'Delete account?', message: 'This permanently deletes your UniMind account. Please confirm before continuing.', confirmText: 'Delete account' })) return
+    if (!await confirm({ title: 'Delete account?', message: 'This permanently deletes your Axon account. Please confirm before continuing.', confirmText: 'Delete account' })) return
     await supabase.rpc('delete_user')
     await supabase.auth.signOut()
     navigate('/login')
@@ -97,7 +97,7 @@ export default function SettingsPage() {
     if (!('Notification' in window)) return showToast('Notifications are not supported in this browser.', 'error')
     if (Notification.permission === 'default') await Notification.requestPermission()
     if (Notification.permission !== 'granted') return showToast('Notification permission is not enabled.', 'error')
-    new Notification('UniMind test', { body: 'Notifications are working.', icon: '/icons/logo.png' })
+    new Notification('Axon test', { body: 'Notifications are working.', icon: '/icons/logo.png' })
   }
 
   function pref(key, fallback) { return localStorage.getItem(key) ?? fallback }
@@ -106,7 +106,7 @@ export default function SettingsPage() {
   return (
     <main className="main-content">
       <h1 className="page-title">Settings</h1>
-      <nav className="sticky top-0 z-20 mb-4 flex gap-2 overflow-x-auto bg-[var(--bg-primary)] py-2 md:hidden">
+      <nav className="scrollbar-hide sticky top-0 z-20 mb-4 flex gap-2 overflow-x-auto bg-[var(--bg-primary)] py-2 md:hidden">
         {tabs.map(([id, label]) => <button key={id} className="min-h-[44px] shrink-0 rounded-full border border-white/10 px-4 text-sm" onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })}>{label}</button>)}
       </nav>
       <div className="grid gap-5 xl:grid-cols-2">
@@ -140,9 +140,9 @@ export default function SettingsPage() {
           <Field label="Reminder lead time"><select className="input" defaultValue={pref('reminderLeadTime', '3 days')} onChange={e => setPref('reminderLeadTime', e.target.value)}>{['1 day', '3 days', '1 week'].map(v => <option key={v}>{v}</option>)}</select></Field>
           <PreferenceToggle label="Exam countdown alerts" k="examAlerts" />
           <PreferenceToggle label="Daily AI tip" k="dailyTipEnabled" />
-          <PreferenceToggle label="Class start reminders" k="unimind_class_notify" />
-          <PreferenceToggle label="Exam start reminders" k="unimind_exam_notify" />
-          <MinuteSelector value={pref('unimind_notify_minutes', '10')} onChange={v => setPref('unimind_notify_minutes', v)} />
+          <PreferenceToggle label="Class start reminders" k="axon_class_notify" />
+          <PreferenceToggle label="Exam start reminders" k="axon_exam_notify" />
+          <MinuteSelector value={pref('axon_notify_minutes', '10')} onChange={v => setPref('axon_notify_minutes', v)} />
           <button className="btn-ghost w-full md:w-auto" onClick={testNotification}>Test Notification</button>
         </Section>
         <Section id="ai" title="AI Preferences">

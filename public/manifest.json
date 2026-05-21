@@ -1,6 +1,6 @@
 {
-  "name": "UniMind - Student Assistant",
-  "short_name": "UniMind",
+  "name": "Axon - Student Assistant",
+  "short_name": "Axon",
   "description": "AI-powered student productivity app",
   "start_url": "/",
   "display": "standalone",

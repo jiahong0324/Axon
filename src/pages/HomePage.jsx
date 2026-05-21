@@ -1,4 +1,4 @@
-import { AlertCircle, BookOpen, Calendar, Flame, MapPin, RefreshCw, X } from 'lucide-react'
+import { AlertCircle, BookOpen, Calendar, CheckCircle, Flame, MapPin, RefreshCw, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
@@ -19,7 +19,7 @@ export default function HomePage() {
   const [exams, setExams] = useState([])
   const [tip, setTip] = useState('')
   const [tipLoading, setTipLoading] = useState(false)
-  const [banner, setBanner] = useState(() => localStorage.getItem('installBannerDismissed') !== 'true')
+  const [banner, setBanner] = useState(() => localStorage.getItem('axon_pwa_dismissed') !== 'true')
   const { showToast } = useToast()
   const todayName = format(new Date(), 'EEEE')
 
@@ -59,21 +59,21 @@ export default function HomePage() {
   const todayClasses = useMemo(() => classes.filter(c => c.day === todayName).sort((a, b) => a.start_time.localeCompare(b.start_time)), [classes, todayName])
   const dueSoon = assignments.filter(a => daysFromToday(a.deadline) <= 3).slice(0, 3)
   const nextExamDays = exams[0] ? daysFromToday(exams[0].exam_date) : null
-  const nextExamValue = nextExamDays === null ? '—' : nextExamDays === 0 ? 'Today!' : nextExamDays
+  const nextExamValue = nextExamDays === null ? '-' : nextExamDays === 0 ? 'Today!' : nextExamDays
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <main className="main-content">
+    <main className="main-content scrollbar-hide">
       {banner && (
         <div className="card mb-5 flex items-center justify-between gap-3 border-blue-500/30">
-          <p className="text-sm">Add UniMind to your home screen for the best experience. On iOS, tap Share then Add to Home Screen.</p>
-          <button className="rounded-lg p-2 hover:bg-white/5" onClick={() => { localStorage.setItem('installBannerDismissed', 'true'); setBanner(false) }}><X className="h-5 w-5" /></button>
+          <p className="text-sm">📲 Add Axon to your home screen! On iOS, tap Share then Add to Home Screen.</p>
+          <button className="rounded-lg p-2 hover:bg-white/5" onClick={() => { localStorage.setItem('axon_pwa_dismissed', 'true'); setBanner(false) }}><X className="h-5 w-5" /></button>
         </div>
       )}
-      <header className="mb-6">
-        <h1 className="font-heading text-2xl font-bold">{greeting}, {user?.user_metadata?.full_name || 'student'}</h1>
-        <p className="muted mt-1">{format(new Date(), 'EEEE, dd MMMM yyyy')}</p>
+      <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-end">
+        <h1 className="font-heading text-2xl font-bold">{greeting}, {user?.user_metadata?.full_name || 'student'} 👋</h1>
+        <p className="muted">{format(new Date(), 'EEEE, dd MMMM yyyy')}</p>
       </header>
 
       <section className="mb-6 grid gap-4 md:grid-cols-3">
@@ -82,39 +82,54 @@ export default function HomePage() {
         <Summary icon={Calendar} label="Days to Next Exam" value={nextExamValue} valueClass={nextExamDays === 0 ? 'text-red-500' : ''} tone="text-purple-400" border="border-l-purple-500" />
       </section>
 
-      <section className="mb-6 flex flex-col gap-5 xl:flex-row">
-        <div className="card flex-1">
-          <h2 className="section-header">Today's Classes</h2>
-          {todayClasses.length === 0 ? <EmptyState emoji="📅" message="No classes today." /> : (
-            <div className="space-y-3">{todayClasses.map(c => <ClassCard key={c.id} item={c} />)}</div>
-          )}
+      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+        <div className="flex h-full flex-col">
+          <div className="card flex h-full flex-1 flex-col">
+            <h2 className="section-header">📚 Today's Classes</h2>
+            {todayClasses.length === 0 ? (
+              <div className="flex flex-1 items-center justify-center py-10"><EmptyState emoji="🎉" message="No classes today!" /></div>
+            ) : (
+              <div className="space-y-3">{todayClasses.map(c => <ClassCard key={c.id} item={c} />)}</div>
+            )}
+          </div>
         </div>
-        <div className="card xl:w-80">
-          <h2 className="section-header">Due Soon</h2>
-          {dueSoon.length === 0 ? <EmptyState emoji="✅" message="No urgent assignments." /> : (
-            <div className="space-y-3">
-              {dueSoon.map(a => (
-                <div key={a.id} className="rounded-xl border border-white/10 p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div><p className="font-semibold">{a.title}</p><p className="muted">{a.subject} · {dateLabel(a.deadline)}</p></div>
-                    <PriorityBadge priority={a.priority} />
-                  </div>
-                  <CountdownBadge deadline={a.deadline} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
 
-      <section className="card mb-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="section-header mb-0">📖 Upcoming Exams</h2>
-          <Link to="/exams" className="text-sm font-medium text-blue-400 hover:text-blue-300">View all exams →</Link>
+        <div className="flex flex-col gap-4 md:gap-6">
+          <section className="card">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="section-header mb-0">📝 Due Soon</h2>
+              <Link to="/assignments" className="text-sm font-medium text-blue-400 hover:text-blue-300">View all →</Link>
+            </div>
+            {dueSoon.length === 0 ? (
+              <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm font-medium text-slate-300">
+                <CheckCircle className="h-5 w-5 text-emerald-400" />
+                No urgent assignments.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dueSoon.map(a => (
+                  <div key={a.id} className="rounded-xl border border-white/10 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div><p className="font-semibold">{a.title}</p><p className="muted">{a.subject} · {dateLabel(a.deadline)}</p></div>
+                      <PriorityBadge priority={a.priority} />
+                    </div>
+                    <CountdownBadge deadline={a.deadline} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="card">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="section-header mb-0">📖 Upcoming Exams</h2>
+              <Link to="/exams" className="text-sm font-medium text-blue-400 hover:text-blue-300">View all exams →</Link>
+            </div>
+            {exams.length === 0 ? <p className="muted">🎉 No exams coming up!</p> : (
+              <div className="space-y-3">{exams.slice(0, 3).map(exam => <ExamMiniCard key={exam.id} exam={exam} />)}</div>
+            )}
+          </section>
         </div>
-        {exams.length === 0 ? <EmptyState emoji="🎉" message="No exams coming up!" /> : (
-          <div className="grid gap-3 md:grid-cols-3">{exams.slice(0, 3).map(exam => <ExamMiniCard key={exam.id} exam={exam} />)}</div>
-        )}
       </section>
 
       <section className="ai-tip-card card border-l-4 border-l-purple-500 bg-[#1a1f35]">
@@ -148,13 +163,17 @@ function ExamMiniCard({ exam }) {
   const badge = exam.exam_type === 'Quiz' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' : exam.exam_type === 'Midterm' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
   return (
     <article className="rounded-xl border border-white/10 p-3">
-      <div className="mb-1 flex flex-wrap items-center gap-2">
-        <p className="font-semibold">{exam.subject}</p>
-        <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${badge}`}>{exam.exam_type}</span>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <p className="font-semibold">{exam.subject}</p>
+            <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${badge}`}>{exam.exam_type}</span>
+          </div>
+          <p className="muted flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {exam.venue || 'TBA'}</p>
+          <p className="muted mt-1">📅 {dateLabel(exam.exam_date)}{exam.start_time && exam.end_time ? `  🕐 ${exam.start_time} \u2013 ${exam.end_time}` : ''}</p>
+        </div>
+        <div className="shrink-0 text-right"><span className={`text-xl font-bold ${tone}`}>{days === 0 ? 'Today!' : days}</span>{days !== 0 && <p className="text-xs text-slate-400">days</p>}</div>
       </div>
-      <p className="muted flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {exam.venue || 'TBA'}</p>
-      <p className="muted mt-1">📅 {dateLabel(exam.exam_date)} {exam.start_time && exam.end_time ? `  🕐 ${exam.start_time} \u2013 ${exam.end_time}` : ''}</p>
-      <div className="mt-2 text-right"><span className={`text-2xl font-bold ${tone}`}>{days === 0 ? 'Today' : days}</span>{days !== 0 && <span className="ml-1 text-xs text-slate-400">days left</span>}</div>
     </article>
   )
 }

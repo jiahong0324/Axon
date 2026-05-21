@@ -92,7 +92,7 @@ export default function TimetablePage() {
       </div>
       <div className="mb-4 flex items-center gap-2 md:hidden">
         <button className="btn-ghost px-3" onClick={() => setMobileDay(v => Math.max(0, v - 1))}><ChevronLeft className="h-4 w-4" /></button>
-        <div className="flex flex-1 gap-2 overflow-x-auto">
+        <div className="scrollbar-hide flex flex-1 gap-2 overflow-x-auto">
           {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] shrink-0 rounded-full px-4 text-sm ${mobileDay === index ? 'bg-blue-500 text-white' : 'border border-white/10 text-slate-400'}`}>{day.slice(0, 3)}</button>)}
         </div>
         <button className="btn-ghost px-3" onClick={() => setMobileDay(v => Math.min(days.length - 1, v + 1))}><ChevronRight className="h-4 w-4" /></button>

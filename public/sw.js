@@ -1,4 +1,4 @@
-const CACHE_NAME = 'unimind-v1'
+const CACHE_NAME = 'axon-v1'
 const STATIC_ASSETS = ['/', '/index.html', '/manifest.json']
 
 self.addEventListener('install', e => {

@@ -126,7 +126,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+      <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto pr-1">
         {step === 'upload' && (
           <button
             type="button"
@@ -189,7 +189,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
                 <h3 className="text-sm font-bold tracking-wide text-slate-400">DETECTED {selected.length} {label}</h3>
                 <button className="min-h-0 min-w-0 text-sm font-semibold text-blue-400" onClick={() => setAll(selected.length !== items.length)}>{selected.length === items.length ? 'Deselect All' : 'Select All'}</button>
               </div>
-              <div className="max-h-[48vh] space-y-4 overflow-y-auto pr-2">
+              <div className="scrollbar-hide max-h-[48vh] space-y-4 overflow-y-auto pr-2">
                 {items.map((item, index) => type === 'timetable'
                   ? <TimetableResult key={item.key} item={item} index={index} updateItem={updateItem} />
                   : <SimpleResult key={item.key} item={item} index={index} updateItem={updateItem} type={type} />)}

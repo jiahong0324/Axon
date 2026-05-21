@@ -34,9 +34,9 @@ export default function Sidebar({ user }) {
     <>
       <aside className="hidden w-60 shrink-0 border-r border-white/10 bg-[#1E293B] p-4 md:flex md:flex-col">
         <div className="mb-7 flex items-center gap-3 px-2">
-          <img src="/icons/logo.png" alt="UniMind logo" className="h-8 w-8 rounded-lg object-contain" />
+          <img src="/icons/logo.png" alt="Axon logo" className="h-8 w-8 rounded-lg object-contain" />
           <div>
-            <p className="font-heading text-lg font-bold gradient-text">UniMind</p>
+            <p className="font-heading text-lg font-bold gradient-text">Axon</p>
             <p className="text-xs text-slate-500">Study command center</p>
           </div>
         </div>

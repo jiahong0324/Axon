@@ -4,19 +4,19 @@ import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq } from '../lib/groq'
 import { markdownToHtml } from '../lib/utils'
 
-const prompts = [
-  '💡 Explain a concept simply',
-  '📄 Summarize my notes',
-  '❓ Generate quiz questions',
-  '📅 Make a study plan',
-  '🇨🇳 Translate to Chinese',
-  '🎯 Help prioritize my tasks',
-  '📝 Write study notes',
-  '🔍 Explain this code'
+const quickActions = [
+  { icon: '💡', mobile: 'Explain', desktop: 'Explain a concept simply', prompt: 'Explain a concept simply' },
+  { icon: '📄', mobile: 'Summarize', desktop: 'Summarize my notes', prompt: 'Summarize my notes' },
+  { icon: '❓', mobile: 'Quiz me', desktop: 'Generate quiz questions', prompt: 'Generate quiz questions' },
+  { icon: '📅', mobile: 'Study plan', desktop: 'Make a study plan', prompt: 'Make a study plan' },
+  { icon: '🇨🇳', mobile: 'Translate', desktop: 'Translate to Chinese', prompt: 'Translate to Chinese' },
+  { icon: '🎯', mobile: 'Prioritize', desktop: 'Help prioritize my tasks', prompt: 'Help prioritize my tasks' },
+  { icon: '📝', mobile: 'Notes', desktop: 'Write study notes', prompt: 'Write study notes' },
+  { icon: '🔍', mobile: 'Code help', desktop: 'Explain this code', prompt: 'Explain this code' }
 ]
 
 const welcomeMessage = {
-  role: 'ai',
+  role: 'assistant',
   content: `Selamat datang! 🎓 I am your dedicated AI Study Helper.\n\nHow can I support your software engineering studies today? You can ask me to explain algorithms, summarize notes, generate mock interview questions, or plan out your semester schedules!\n\n💡 Note: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, or active reminders!`,
   timestamp: new Date()
 }
@@ -33,9 +33,9 @@ export default function AIHelperPage() {
   useEffect(() => {
     localStorage.setItem('aiChat', JSON.stringify(messages))
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, loading])
 
-  async function send() {
+  async function sendMessage() {
     if (!input.trim() || loading) return
     const userText = input.trim()
     setInput('')
@@ -52,37 +52,71 @@ export default function AIHelperPage() {
     }
   }
 
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }
+
   return (
-    <main className="main-content flex gap-5">
+    <main className="scrollbar-hide flex h-screen flex-1 flex-col overflow-hidden pt-safe md:h-auto md:flex-row md:gap-5 md:overflow-y-auto md:p-6" style={{ background: 'var(--bg-primary)' }}>
       <aside className="card hidden w-64 shrink-0 md:block">
         <h2 className="mb-4 font-semibold">Quick Actions</h2>
         <div className="space-y-2">
-          {prompts.map(prompt => <button key={prompt} className="btn-ghost w-full justify-start text-left text-sm" onClick={() => setInput(prompt)}>{prompt}</button>)}
+          {quickActions.map(action => (
+            <button key={action.desktop} className="btn-ghost w-full justify-start text-left text-sm" onClick={() => setInput(action.prompt)}>
+              <span>{action.icon}</span>
+              <span>{action.desktop}</span>
+            </button>
+          ))}
         </div>
       </aside>
-      <section className="card flex min-h-[calc(100vh-7rem)] flex-1 flex-col p-0">
-        <header className="flex items-center justify-between border-b border-white/10 p-4">
-          <h1 className="flex items-center gap-2 font-heading text-xl font-bold"><Bot className="h-5 w-5 text-purple-400" /> AI Study Helper</h1>
-          <button className="btn-ghost px-3 py-2" onClick={() => setMessages([welcomeMessage])}><Trash2 className="h-4 w-4" /> Clear Chat</button>
+
+      <section className="flex min-h-0 flex-1 flex-col md:card md:p-0">
+        <header className="flex shrink-0 items-center justify-between border-b p-4" style={{ borderColor: 'var(--border)' }}>
+          <h1 className="flex min-w-0 items-center gap-2 font-heading text-base font-bold md:text-xl"><Bot className="h-5 w-5 shrink-0 text-purple-400" /> AI Study Helper</h1>
+          <button className="min-h-0 min-w-0 rounded-lg px-3 py-1.5 text-sm" style={{ color: 'var(--text-muted)' }} onClick={() => setMessages([welcomeMessage])}>
+            Clear Chat
+          </button>
         </header>
-        <div className="flex-1 space-y-4 overflow-y-auto p-4">
+
+        <div className="scrollbar-hide flex min-h-0 flex-1 flex-col justify-start gap-3 overflow-y-auto p-4">
           {messages.map((msg, i) => <Message key={i} msg={msg} />)}
-          {loading && <div className="flex w-fit gap-2 rounded-2xl bg-navy-900 p-4"><span className="typing-dot h-2 w-2 rounded-full bg-purple-400" /><span className="typing-dot h-2 w-2 rounded-full bg-purple-400" /><span className="typing-dot h-2 w-2 rounded-full bg-purple-400" /></div>}
+          {loading && <TypingIndicator />}
           <div ref={bottomRef} />
         </div>
-        <div className="border-t border-white/10 p-4 md:static">
-          <div className="mb-3 flex gap-2 overflow-x-auto md:hidden">
-            {prompts.map(prompt => <button key={prompt} className="shrink-0 whitespace-nowrap rounded-full border border-slate-600 px-3 py-1.5 text-sm text-slate-300" onClick={() => setInput(prompt)}>{prompt}</button>)}
+
+        <div className="scrollbar-hide shrink-0 overflow-x-auto px-4 py-2 md:hidden">
+          <div className="flex w-max gap-2">
+            {quickActions.map(action => (
+              <button
+                key={action.mobile}
+                onClick={() => setInput(action.prompt)}
+                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-sm transition-colors"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--bg-card)', minHeight: '36px', minWidth: 'auto' }}
+              >
+                <span className="text-base">{action.icon}</span>
+                <span>{action.mobile}</span>
+              </button>
+            ))}
           </div>
-          <div className="flex items-end gap-3">
+        </div>
+
+        <div className="shrink-0 border-t p-3 pb-24 md:pb-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-primary)' }}>
+          <div className="flex items-end gap-2">
             <textarea
-              className="input max-h-40 min-h-[52px] flex-1 resize-none"
+              className="scrollbar-hide flex-1 resize-none rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)', maxHeight: '120px', overflowY: 'auto' }}
               placeholder="Ask me anything about your studies..."
+              rows={1}
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+              onKeyDown={handleKeyDown}
             />
-            <button className="btn-primary rounded-full px-4" disabled={loading || !input.trim()} onClick={send}><ArrowUp className="h-5 w-5" /></button>
+            <button className="flex h-11 min-h-11 w-11 min-w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white transition-opacity disabled:opacity-40" disabled={loading || !input.trim()} onClick={sendMessage}>
+              <ArrowUp className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </section>
@@ -92,19 +126,46 @@ export default function AIHelperPage() {
 
 function Message({ msg }) {
   const isUser = msg.role === 'user'
-  const isWelcome = !isUser && msg.content?.includes('secure access to your database')
-  const parts = isWelcome ? msg.content.split('💡 Note:') : null
-  return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 ${isUser ? 'bg-blue-500 text-white' : 'ai-bubble bg-navy-900 text-slate-200'}`}>
-        {!isUser && <div className="mb-2 grid h-8 w-8 place-items-center rounded-full bg-purple-600"><Bot className="h-4 w-4 text-white" /></div>}
-        {isWelcome ? (
-          <div>
-            <div dangerouslySetInnerHTML={{ __html: markdownToHtml(parts[0]) }} />
-            <div className="mt-3 border-l-4 border-yellow-400/70 pl-3 text-yellow-100" dangerouslySetInnerHTML={{ __html: markdownToHtml(`💡 Note:${parts[1]}`) }} />
-          </div>
-        ) : <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />}
+  return isUser ? (
+    <div className="flex justify-end">
+      <div className="max-w-[85%] break-words rounded-2xl rounded-br-sm bg-blue-500 px-4 py-3 text-sm leading-relaxed text-white">
+        {msg.content}
+      </div>
+    </div>
+  ) : (
+    <div className="flex items-start gap-2">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20">
+        <Bot className="h-4 w-4 text-purple-400" />
+      </div>
+      <div className="max-w-[85%] break-words rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+        {isWelcomeMessage(msg.content) ? <WelcomeContent content={msg.content} /> : <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />}
       </div>
     </div>
   )
+}
+
+function WelcomeContent({ content }) {
+  return content.split('\n\n').map((part, i) => {
+    if (part.startsWith('💡')) {
+      return <div key={i} className="mt-3 border-l-2 border-yellow-500/60 pl-3 text-xs leading-relaxed text-yellow-300/80">{part}</div>
+    }
+    return <p key={i} className="mb-2 last:mb-0">{part}</p>
+  })
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-start gap-2">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20"><Bot className="h-4 w-4 text-purple-400" /></div>
+      <div className="flex w-fit gap-2 rounded-2xl rounded-bl-sm bg-navy-900 p-4">
+        <span className="typing-dot h-2 w-2 rounded-full bg-purple-400" />
+        <span className="typing-dot h-2 w-2 rounded-full bg-purple-400" />
+        <span className="typing-dot h-2 w-2 rounded-full bg-purple-400" />
+      </div>
+    </div>
+  )
+}
+
+function isWelcomeMessage(content = '') {
+  return content.includes('secure access to your database')
 }
