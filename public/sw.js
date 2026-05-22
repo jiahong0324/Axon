@@ -1,5 +1,5 @@
 const CACHE_NAME = 'axon-v2'
-const STATIC_ASSETS = ['/', '/index.html', '/manifest.json']
+const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)))
