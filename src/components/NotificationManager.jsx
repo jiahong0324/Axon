@@ -3,7 +3,17 @@ import { supabase } from '../lib/supabase'
 
 export default function NotificationManager() {
   useEffect(() => {
-    requestNotificationPermission()
+    async function initPush() {
+      await requestNotificationPermission()
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          await registerPushSubscription(user)
+        }
+      }
+    }
+    initPush()
+
     const interval = checkNotifications()
     return () => clearInterval(interval)
   }, [])
@@ -12,6 +22,62 @@ export default function NotificationManager() {
     if ('Notification' in window && Notification.permission === 'default') {
       await Notification.requestPermission()
     }
+  }
+
+  async function registerPushSubscription(user) {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    try {
+      const reg = await navigator.serviceWorker.ready
+      const existingSubscription = await reg.pushManager.getSubscription()
+      
+      if (existingSubscription) {
+        await saveSubscriptionToServer(existingSubscription, user.id)
+        return
+      }
+
+      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY
+      if (!vapidPublicKey) {
+        console.warn('VITE_VAPID_PUBLIC_KEY is not defined in frontend env.')
+        return
+      }
+
+      const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey)
+      const newSubscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: convertedVapidKey
+      })
+
+      await saveSubscriptionToServer(newSubscription, user.id)
+    } catch (error) {
+      console.error('Error registering web push subscription:', error)
+    }
+  }
+
+  async function saveSubscriptionToServer(subscription, userId) {
+    try {
+      await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription, userId })
+      })
+    } catch (error) {
+      console.error('Error saving subscription to API:', error)
+    }
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4)
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/')
+
+    const rawData = window.atob(base64)
+    const outputArray = new Uint8Array(rawData.length)
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i)
+    }
+    return outputArray
   }
 
   function checkNotifications() {

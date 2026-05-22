@@ -45,3 +45,24 @@ self.addEventListener('notificationclick', e => {
   e.notification.close()
   e.waitUntil(clients.openWindow('/reminders'))
 })
+
+self.addEventListener('push', e => {
+  let data = { title: '📚 Axon Notification', body: 'You have an update!' }
+  try {
+    data = e.data ? e.data.json() : data
+  } catch {
+    data = { title: '📚 Axon Notification', body: e.data ? e.data.text() : 'You have an update!' }
+  }
+
+  const options = {
+    body: data.body,
+    icon: '/icons/logo.png',
+    badge: '/icons/logo.png',
+    vibrate: data.vibrate || [200, 100, 200],
+    data: data.url || '/'
+  }
+
+  e.waitUntil(
+    self.registration.showNotification(data.title, options)
+  )
+})
