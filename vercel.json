@@ -1,5 +1,11 @@
 {
   "rewrites": [
     { "source": "/((?!assets/|api/|icons/|manifest\\.json|favicon\\.ico|.*\\..*$).*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/send-push",
+      "schedule": "* * * * *"
+    }
   ]
 }
