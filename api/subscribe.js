@@ -17,7 +17,24 @@ export default async function handler(req, res) {
 
   try {
     const endpoint = subscription.endpoint
-    // Store or update subscription. We use an upsert matching on user_id and endpoint.
+    const deviceId = subscription.deviceId
+
+    // 1. If a deviceId is provided, delete all other push subscription records for this user
+    // on the same device/browser context but with a different endpoint.
+    if (deviceId) {
+      const { error: deleteError } = await supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', userId)
+        .neq('endpoint', endpoint)
+        .eq('subscription->>deviceId', deviceId)
+
+      if (deleteError) {
+        console.error('Supabase error deleting old subscription records:', deleteError)
+      }
+    }
+
+    // 2. Store or update subscription. We use an upsert matching on user_id and endpoint.
     const { error } = await supabase
       .from('push_subscriptions')
       .upsert({

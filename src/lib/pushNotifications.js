@@ -35,8 +35,17 @@ export async function registerPushSubscription(user) {
     const reg = await navigator.serviceWorker.ready
     const existingSubscription = await reg.pushManager.getSubscription()
     
+    // Generate or retrieve a persistent client device ID
+    let deviceId = localStorage.getItem('axon_device_id')
+    if (!deviceId) {
+      deviceId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36)
+      localStorage.setItem('axon_device_id', deviceId)
+    }
+
     if (existingSubscription) {
-      const ok = await saveSubscriptionToServer(existingSubscription, user.id)
+      const subObj = existingSubscription.toJSON()
+      subObj.deviceId = deviceId
+      const ok = await saveSubscriptionToServer(subObj, user.id)
       if (ok) return existingSubscription
     }
 
@@ -52,7 +61,9 @@ export async function registerPushSubscription(user) {
       applicationServerKey: convertedVapidKey
     })
 
-    const ok = await saveSubscriptionToServer(newSubscription, user.id)
+    const subObj = newSubscription.toJSON()
+    subObj.deviceId = deviceId
+    const ok = await saveSubscriptionToServer(subObj, user.id)
     if (ok) return newSubscription
     return null
   } catch (error) {

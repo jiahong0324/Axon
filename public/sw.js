@@ -46,6 +46,8 @@ self.addEventListener('notificationclick', e => {
   e.waitUntil(clients.openWindow('/reminders'))
 })
 
+const seenPushes = new Set()
+
 self.addEventListener('push', e => {
   let data = { title: '📚 Axon Notification', body: 'You have an update!' }
   try {
@@ -53,6 +55,18 @@ self.addEventListener('push', e => {
   } catch {
     data = { title: '📚 Axon Notification', body: e.data ? e.data.text() : 'You have an update!' }
   }
+
+  const dupKey = `${data.title}|${data.body}`
+  
+  // 1. Synchronous In-Memory Deduplication Lock (instant thread-level mutual exclusion)
+  if (seenPushes.has(dupKey)) {
+    console.log('Skipping duplicate push (synchronous in-memory lock):', data.title, data.body)
+    return
+  }
+  seenPushes.add(dupKey)
+  setTimeout(() => {
+    seenPushes.delete(dupKey)
+  }, 60000) // retain for 60 seconds
 
   const options = {
     body: data.body,
@@ -62,25 +76,36 @@ self.addEventListener('push', e => {
     data: data.url || '/'
   }
 
-  const dupKey = encodeURIComponent(`${data.title}|${data.body}`)
-  const lockUrl = `https://axon-notification-lock.local/${dupKey}`
+  const dupKeyEncoded = encodeURIComponent(dupKey)
+  const lockUrl = `https://axon-notification-lock.local/${dupKeyEncoded}`
   const LOCK_CACHE_NAME = 'axon-notification-locks-v1'
 
   e.waitUntil(
     caches.open(LOCK_CACHE_NAME).then(async cache => {
-      // 1. Check if this notification has been displayed on this device recently
+      // 2. Persistent Cache-Based Lock check
       const lockMatch = await cache.match(lockUrl)
       if (lockMatch) {
         console.log('Skipping duplicate push (persistent cache lock):', data.title, data.body)
         return
       }
 
-      // 2. Put lock in cache with UTC date header for expiration checking
+      // Write the lock to cache immediately
       await cache.put(lockUrl, new Response('1', {
         headers: { 'Date': new Date().toUTCString() }
       }))
 
-      // 3. Clean up lock keys older than 5 minutes to prevent storage build-up
+      // 3. Double check active notifications on system tray
+      const notifications = await self.registration.getNotifications()
+      const isDuplicate = notifications.some(n => n.title === data.title && n.body === data.body)
+      if (isDuplicate) {
+        console.log('Skipping duplicate push notification (active tray):', data.title, data.body)
+        return
+      }
+
+      // 4. Display native system notification
+      await self.registration.showNotification(data.title, options)
+
+      // 5. Clean up old locks in the background (moved to end of flow to prevent blocking)
       try {
         const keys = await cache.keys()
         for (const req of keys) {
@@ -98,17 +123,6 @@ self.addEventListener('push', e => {
       } catch (cleanErr) {
         console.error('Error cleaning notification locks cache:', cleanErr)
       }
-
-      // 4. Double check visible notifications on system tray as a secondary safeguard
-      const notifications = await self.registration.getNotifications()
-      const isDuplicate = notifications.some(n => n.title === data.title && n.body === data.body)
-      if (isDuplicate) {
-        console.log('Skipping duplicate push notification (active tray):', data.title, data.body)
-        return
-      }
-
-      // 5. Display native system notification
-      return self.registration.showNotification(data.title, options)
     })
   )
 })
