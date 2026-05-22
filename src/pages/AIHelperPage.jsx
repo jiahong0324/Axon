@@ -35,23 +35,12 @@ export default function AIHelperPage() {
     localStorage.setItem('aiChat', JSON.stringify(messages))
   }, [messages])
 
-  const lastFocused = useRef(focused)
-
   useEffect(() => {
-    // Delay slightly to allow React to render and any layout shifts (like mobile keyboard closing) to settle
-    let timer;
-    if (focused !== lastFocused.current) {
-      // Keyboard state is changing, wait for the layout to settle
-      timer = setTimeout(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-      }, 250)
-      lastFocused.current = focused
-    } else {
-      // Normal message arrival, scroll immediately (just wait 10ms for DOM flush)
-      timer = setTimeout(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-      }, 10)
-    }
+    // A swift 50ms timeout gives the DOM time to paint the new message 
+    // without causing a noticeable 'lag' before the scroll starts.
+    const timer = setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 50)
     return () => clearTimeout(timer)
   }, [messages, loading, focused])
 
@@ -75,6 +64,7 @@ export default function AIHelperPage() {
       ta.style.height = '40px'
       ta.blur()
     }
+    setFocused(false) // Sync instantly to avoid layout delays
     
     setMessages(prev => [...prev, { role: 'user', content: userText, timestamp: new Date() }])
     setLoading(true)
