@@ -61,6 +61,7 @@ export default async function handler(req, res) {
 
     reminders?.forEach(r => {
       pushPayloads.push({
+        id: `reminder_${r.id}`, // Unique ID for deduplication
         userId: r.user_id,
         title: '📚 Axon Reminder',
         body: r.title,
@@ -69,7 +70,6 @@ export default async function handler(req, res) {
     })
 
     // 3. Fetch Classes starting soon (default lead time: 10 minutes)
-    // Note: To be fully precise, we can pull lead time preferences from users, but default to 10 min
     const notifyMinutes = 10
     const nowTime = new Date()
     const targetTime = new Date(nowTime.getTime() + notifyMinutes * 60000)
@@ -83,6 +83,7 @@ export default async function handler(req, res) {
 
     upcomingClasses?.forEach(cls => {
       pushPayloads.push({
+        id: `class_${cls.id}`, // Unique ID for deduplication
         userId: cls.user_id,
         title: `Class starting in ${notifyMinutes} min!`,
         body: `${cls.subject} [${cls.class_type}] at ${cls.classroom || 'TBA'}`,
@@ -99,6 +100,7 @@ export default async function handler(req, res) {
 
       upcomingExams?.forEach(exam => {
         pushPayloads.push({
+          id: `exam_${exam.id}`, // Unique ID for deduplication
           userId: exam.user_id,
           title: `Exam Today!`,
           body: `${exam.subject} ${exam.exam_type} at ${exam.venue || 'TBA'}`,
@@ -122,13 +124,50 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'No active push subscriptions found' })
     }
 
-    // 6. Dispatch Push Notifications
+    // 6. Dispatch Push Notifications with stateful JSONB last-sent checks
     const pushPromises = []
     
-    for (const payload of pushPayloads) {
-      const userSubs = subscriptions.filter(s => s.user_id === payload.userId)
-      for (const sub of userSubs) {
-        const subObject = sub.subscription
+    for (const sub of subscriptions) {
+      const userPayloads = pushPayloads.filter(p => p.userId === sub.user_id)
+      if (userPayloads.length === 0) continue
+
+      const subObject = sub.subscription
+      const lastSent = subObject._last_sent || { date: '', minute: '', ids: [] }
+
+      // Reset tracking if date/minute changed
+      if (lastSent.date !== todayDate || lastSent.minute !== currentTime) {
+        lastSent.date = todayDate
+        lastSent.minute = currentTime
+        lastSent.ids = []
+      }
+
+      // Filter out payloads already sent to this subscription
+      const unsentPayloads = userPayloads.filter(p => !lastSent.ids.includes(p.id))
+      if (unsentPayloads.length === 0) {
+        console.log(`All payloads already sent to subscription ${sub.id} at ${currentTime}`)
+        continue
+      }
+
+      // Record as sent in the database immediately BEFORE sending to prevent race conditions
+      unsentPayloads.forEach(p => lastSent.ids.push(p.id))
+      subObject._last_sent = lastSent
+
+      try {
+        const { error: updateErr } = await supabase
+          .from('push_subscriptions')
+          .update({ subscription: subObject, updated_at: new Date().toISOString() })
+          .eq('id', sub.id)
+        
+        if (updateErr) {
+          console.error(`Failed to update subscription tracking for ${sub.id}:`, updateErr)
+          continue
+        }
+      } catch (dbErr) {
+        console.error(`DB Update catch for ${sub.id}:`, dbErr)
+        continue
+      }
+
+      for (const payload of unsentPayloads) {
         const promise = webpush.sendNotification(
           subObject,
           JSON.stringify({
@@ -138,7 +177,6 @@ export default async function handler(req, res) {
           })
         ).catch(async (err) => {
           console.error(`Failed to send push to subscription ${sub.id}:`, err)
-          // Clean up expired / defunct subscriptions (410 Gone / 404 Not Found)
           if (err.statusCode === 410 || err.statusCode === 404) {
             await supabase.from('push_subscriptions').delete().eq('id', sub.id)
             console.log(`Cleaned up expired subscription: ${sub.id}`)

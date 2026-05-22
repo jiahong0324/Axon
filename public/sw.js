@@ -46,6 +46,9 @@ self.addEventListener('notificationclick', e => {
   e.waitUntil(clients.openWindow('/reminders'))
 })
 
+// In-flight/recent notifications deduplication cache (holds key -> timestamp)
+const seenNotifications = new Map()
+
 self.addEventListener('push', e => {
   let data = { title: '📚 Axon Notification', body: 'You have an update!' }
   try {
@@ -53,6 +56,22 @@ self.addEventListener('push', e => {
   } catch {
     data = { title: '📚 Axon Notification', body: e.data ? e.data.text() : 'You have an update!' }
   }
+
+  // Deduplicate inside the active service worker instance memory
+  const now = Date.now()
+  // Purge entries older than 10 seconds
+  for (const [key, time] of seenNotifications.entries()) {
+    if (now - time > 10000) {
+      seenNotifications.delete(key)
+    }
+  }
+
+  const dupKey = `${data.title}|${data.body}`
+  if (seenNotifications.has(dupKey)) {
+    console.log('Skipping duplicate push (in-memory cache):', data.title, data.body)
+    return
+  }
+  seenNotifications.set(dupKey, now)
 
   const options = {
     body: data.body,
@@ -63,6 +82,14 @@ self.addEventListener('push', e => {
   }
 
   e.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.getNotifications().then(notifications => {
+      // Additional fallback: check visible notifications on system tray
+      const isDuplicate = notifications.some(n => n.title === data.title && n.body === data.body)
+      if (isDuplicate) {
+        console.log('Skipping duplicate push notification (active tray):', data.title, data.body)
+        return
+      }
+      return self.registration.showNotification(data.title, options)
+    })
   )
 })

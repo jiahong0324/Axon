@@ -4,6 +4,24 @@ import { registerPushSubscription } from '../lib/pushNotifications'
 
 export default function NotificationManager() {
   useEffect(() => {
+    // Clean up historical notification tracking keys to prevent key bloat
+    try {
+      const todayDate = new Date().toISOString().split('T')[0]
+      const keysToRemove = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && (key.startsWith('notified_reminder_') || key.startsWith('notified_class_') || key.startsWith('notified_exam_'))) {
+          // If the key is from a previous day, queue it for removal
+          if (!key.includes(todayDate)) {
+            keysToRemove.push(key)
+          }
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k))
+    } catch (e) {
+      console.error('Error cleaning up historical notification keys:', e)
+    }
+
     async function initPush() {
       // On load, only register if permission is already granted.
       // This prevents iOS Safari from blocking programmatic alerts on load.
@@ -52,14 +70,14 @@ export default function NotificationManager() {
 
       reminders?.forEach(r => {
         const key = `notified_reminder_${r.id}_${todayDate}_${currentTime}`
-        if (sessionStorage.getItem(key)) return
+        if (localStorage.getItem(key)) return
         new Notification('📚 Axon Reminder', {
           body: r.title,
           icon: '/icons/logo.png',
           badge: '/icons/logo.png',
           vibrate: [200, 100, 200]
         })
-        sessionStorage.setItem(key, '1')
+        localStorage.setItem(key, '1')
       })
 
       const notifyMinutes = parseInt(localStorage.getItem('axon_notify_minutes') || '10', 10)
@@ -78,15 +96,15 @@ export default function NotificationManager() {
           .eq('start_time', targetTimeStr)
 
         upcomingClasses?.forEach(cls => {
-          const key = `notified_class_${cls.id}_${todayDate}`
-          if (sessionStorage.getItem(key)) return
+          const key = `notified_class_${cls.id}_${todayDate}_${targetTimeStr}`
+          if (localStorage.getItem(key)) return
           new Notification(`Class starting in ${notifyMinutes} min!`, {
             body: `${cls.subject} [${cls.class_type}] at ${cls.classroom || 'TBA'}`,
             icon: '/icons/logo.png',
             badge: '/icons/logo.png',
             vibrate: [200, 100, 200]
           })
-          sessionStorage.setItem(key, '1')
+          localStorage.setItem(key, '1')
         })
       }
 
@@ -104,14 +122,14 @@ export default function NotificationManager() {
 
           upcomingExams?.forEach(exam => {
             const key = `notified_exam_${exam.id}_${todayDate}`
-            if (sessionStorage.getItem(key)) return
+            if (localStorage.getItem(key)) return
             new Notification(`Exam today - ${notifyMinutes} min reminder!`, {
               body: `${exam.subject} ${exam.exam_type} at ${exam.venue || 'TBA'}`,
               icon: '/icons/logo.png',
               badge: '/icons/logo.png',
               vibrate: [300, 100, 300, 100, 300]
             })
-            sessionStorage.setItem(key, '1')
+            localStorage.setItem(key, '1')
           })
         }
       }
