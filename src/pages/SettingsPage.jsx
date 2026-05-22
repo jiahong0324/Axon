@@ -424,23 +424,35 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <div className="space-y-8 mt-6">
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--accent)] border-b border-white/10 pb-2">Academic Deadlines</h3>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-blue-400">Deadlines & Due Dates</h4>
               <PreferenceToggle label="Assignment due reminders" k="assignmentReminders" />
-              <Field label="Reminder lead time"><select className="input" defaultValue={pref('reminderLeadTime', '3 days')} onChange={e => setPref('reminderLeadTime', e.target.value)}>{['1 day', '3 days', '1 week'].map(v => <option key={v}>{v}</option>)}</select></Field>
               <PreferenceToggle label="Exam countdown alerts" k="examAlerts" />
+              <div className="pl-4 mt-2 border-l-2 border-white/10">
+                <Field label="Remind me before deadline:">
+                  <select className="input" defaultValue={pref('reminderLeadTime', '3 days')} onChange={e => setPref('reminderLeadTime', e.target.value)}>
+                    {['1 day', '3 days', '1 week'].map(v => <option key={v}>{v}</option>)}
+                  </select>
+                </Field>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--accent)] border-b border-white/10 pb-2">Timetable Alerts</h3>
+            <div className="h-px bg-white/10 w-full" />
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-purple-400">Event Start Reminders</h4>
               <PreferenceToggle label="Class start reminders" k="axon_class_notify" />
               <PreferenceToggle label="Exam start reminders" k="axon_exam_notify" />
-              <MinuteSelector value={pref('axon_notify_minutes', '10')} onChange={v => setPref('axon_notify_minutes', v)} />
+              <div className="pl-4 mt-2 border-l-2 border-white/10">
+                <MinuteSelector value={pref('axon_notify_minutes', '10')} onChange={v => setPref('axon_notify_minutes', v)} />
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--accent)] border-b border-white/10 pb-2">General</h3>
+            <div className="h-px bg-white/10 w-full" />
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-green-400">Other</h4>
               <PreferenceToggle label="Daily AI tip" k="dailyTipEnabled" />
             </div>
           </div>
