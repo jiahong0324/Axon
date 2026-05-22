@@ -362,19 +362,7 @@ export default function SettingsPage() {
           <Field label="Avatar color"><select className="input" value={profile.avatar_color} onChange={e => setProfile({ ...profile, avatar_color: e.target.value })}>{['blue', 'purple', 'green', 'cyan', 'orange', 'red'].map(c => <option key={c}>{c}</option>)}</select></Field>
           <button className="btn-primary w-full md:w-auto" onClick={saveProfile}><Save className="h-4 w-4" /> Save Profile</button>
         </Section>
-        <Section id="account" title="Account & Security">
-          <Field label="Change email"><input className="input" type="email" value={security.email} onChange={e => setSecurity({ ...security, email: e.target.value })} /></Field>
-          <button className="btn-ghost mb-4 w-full md:w-auto" onClick={updateEmail}>Update Email</button>
-          <Field label="New password"><input className="input" type="password" value={security.password} onChange={e => setSecurity({ ...security, password: e.target.value })} /></Field>
-          <button className="btn-ghost mb-4 w-full md:w-auto" onClick={updatePassword}>Update Password</button>
-          <button className="btn-danger w-full md:w-auto" onClick={deleteAccount}><ShieldAlert className="h-4 w-4" /> Delete Account</button>
-        </Section>
-        <Section id="appearance" title="Appearance">
-          <ThemeSegment value={themeCtx.theme} onChange={themeCtx.setTheme} />
-          <Segment label="Accent" value={themeCtx.accentColor} onChange={themeCtx.setAccentColor} options={['blue', 'purple', 'green', 'cyan', 'orange', 'red']} />
-          <Segment label="Font size" value={themeCtx.fontSize} onChange={themeCtx.setFontSize} options={['small', 'medium', 'large']} />
-          <ToggleRow label="Compact mode" checked={themeCtx.compactMode} onChange={themeCtx.setCompactMode} />
-        </Section>
+
         <Section id="notifications" title="Notification Preferences">
           <div className="rounded-2xl border border-white/10 p-4 bg-white/5 space-y-4 mb-4">
             <div className="flex items-center justify-between">
@@ -456,6 +444,19 @@ export default function SettingsPage() {
               <PreferenceToggle label="Daily AI tip" k="dailyTipEnabled" />
             </div>
           </div>
+        </Section>
+        <Section id="appearance" title="Appearance">
+          <ThemeSegment value={themeCtx.theme} onChange={themeCtx.setTheme} />
+          <Segment label="Accent" value={themeCtx.accentColor} onChange={themeCtx.setAccentColor} options={['blue', 'purple', 'green', 'cyan', 'orange', 'red']} />
+          <Segment label="Font size" value={themeCtx.fontSize} onChange={themeCtx.setFontSize} options={['small', 'medium', 'large']} />
+          <ToggleRow label="Compact mode" checked={themeCtx.compactMode} onChange={themeCtx.setCompactMode} />
+        </Section>
+        <Section id="account" title="Account & Security">
+          <Field label="Change email"><input className="input" type="email" value={security.email} onChange={e => setSecurity({ ...security, email: e.target.value })} /></Field>
+          <button className="btn-ghost mb-4 w-full md:w-auto" onClick={updateEmail}>Update Email</button>
+          <Field label="New password"><input className="input" type="password" value={security.password} onChange={e => setSecurity({ ...security, password: e.target.value })} /></Field>
+          <button className="btn-ghost mb-4 w-full md:w-auto" onClick={updatePassword}>Update Password</button>
+          <button className="btn-danger w-full md:w-auto" onClick={deleteAccount}><ShieldAlert className="h-4 w-4" /> Delete Account</button>
         </Section>
         <Section id="ai" title="AI Preferences">
           <Field label="Language"><select className="input" defaultValue={pref('aiLanguage', 'English')} onChange={e => setPref('aiLanguage', e.target.value)}>{['English', 'Bahasa Malaysia', '中文'].map(v => <option key={v}>{v}</option>)}</select></Field>
