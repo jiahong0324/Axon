@@ -437,12 +437,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="h-px bg-white/10 w-full" />
-
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-green-400">Other</h4>
-              <PreferenceToggle label="Daily AI tip" k="dailyTipEnabled" />
-            </div>
           </div>
         </Section>
         <Section id="appearance" title="Appearance">
