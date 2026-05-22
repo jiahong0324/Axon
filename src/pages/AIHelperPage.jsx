@@ -47,11 +47,10 @@ export default function AIHelperPage() {
   }
 
   useEffect(() => {
-    // Scroll smoothly to the bottom when messages list or loading state changes
-    scrollToBottom('smooth')
-    
-    // A quick secondary scroll to ensure DOM paint changes are fully captured
-    const timer = setTimeout(() => scrollToBottom('smooth'), 60)
+    // Delay the smooth scroll slightly so that any instant layout changes 
+    // (like the textarea snapping back to 1 line) and their associated ResizeObserver 
+    // 'auto' scrolls can finish first. This ensures the smooth scroll isn't interrupted.
+    const timer = setTimeout(() => scrollToBottom('smooth'), 50)
     return () => clearTimeout(timer)
   }, [messages, loading])
 
@@ -93,22 +92,18 @@ export default function AIHelperPage() {
     const userText = input.trim()
     setInput('')
     
-    // Auto-close the mobile keyboard when sending
+    // Reset textarea height instantly without blurring (keeps keyboard open)
     const ta = document.querySelector('textarea')
     if (ta) {
       ta.style.height = '40px'
-      ta.blur()
     }
-    // We do NOT call setFocused(false) instantly here anymore.
-    // Instead, we let the textarea's onBlur handler set it with the 150ms delay.
-    // This allows the keyboard closing transition to start smoothly before layout recalculations.
     
     setMessages(prev => [...prev, { role: 'user', content: userText, timestamp: new Date() }])
     setLoading(true)
     
-    // Yield the main thread to the browser for 350ms so it can instantly paint the sent message 
-    // and allow the heavy mobile keyboard closing animation to completely finish smoothly without CPU contention.
-    await new Promise(resolve => setTimeout(resolve, 350))
+    // Yield the main thread to the browser for a tiny tick (10ms) to ensure the DOM paints 
+    // the user's message and typing indicator before we start the heavy Supabase query construction.
+    await new Promise(resolve => setTimeout(resolve, 10))
     
     try {
       const context = await buildUserContext()
@@ -202,11 +197,7 @@ export default function AIHelperPage() {
                 }}
                 onKeyDown={handleKeyDown}
                 onFocus={() => setFocused(true)}
-                onBlur={() => {
-                  setTimeout(() => {
-                    setFocused(false)
-                  }, 300)
-                }}
+                onBlur={() => setFocused(false)}
               />
               <button 
                 type="button"
