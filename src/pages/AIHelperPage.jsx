@@ -104,6 +104,11 @@ export default function AIHelperPage() {
     
     setMessages(prev => [...prev, { role: 'user', content: userText, timestamp: new Date() }])
     setLoading(true)
+    
+    // Yield the main thread to the browser for 50ms so it can instantly paint the sent message 
+    // and begin the heavy mobile keyboard closing animation smoothly without CPU contention.
+    await new Promise(resolve => setTimeout(resolve, 50))
+    
     try {
       const context = await buildUserContext()
       const answer = await askGroq(userText, context)
