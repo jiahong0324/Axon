@@ -35,11 +35,23 @@ export default function AIHelperPage() {
     localStorage.setItem('aiChat', JSON.stringify(messages))
   }, [messages])
 
+  const lastFocused = useRef(focused)
+
   useEffect(() => {
     // Delay slightly to allow React to render and any layout shifts (like mobile keyboard closing) to settle
-    const timer = setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, 250) // Increased to 250ms to outlast the 150ms onBlur delay
+    let timer;
+    if (focused !== lastFocused.current) {
+      // Keyboard state is changing, wait for the layout to settle
+      timer = setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 250)
+      lastFocused.current = focused
+    } else {
+      // Normal message arrival, scroll immediately (just wait 10ms for DOM flush)
+      timer = setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 10)
+    }
     return () => clearTimeout(timer)
   }, [messages, loading, focused])
 
