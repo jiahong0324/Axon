@@ -128,53 +128,81 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
     <div className="flex flex-1 min-h-0 flex-col">
       <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto pr-1">
         {step === 'upload' && (
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            onDrop={e => { e.preventDefault(); pickFile(e.dataTransfer.files?.[0]) }}
-            onDragOver={e => e.preventDefault()}
-            className="flex min-h-[260px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-blue-500/40 bg-blue-500/5 p-6 text-center hover:bg-blue-500/10"
-          >
-            <Upload className="mb-4 h-12 w-12 text-emerald-400" />
-            <span className="text-lg font-semibold">Upload or drop a screenshot</span>
-            <span className="muted mt-1">PNG, JPG, or WEBP timetable image</span>
-            <span className="btn-import mt-5">Browse Files</span>
-          </button>
+          <div className="flex flex-col items-center justify-center w-full py-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              onDrop={e => { e.preventDefault(); pickFile(e.dataTransfer.files?.[0]) }}
+              onDragOver={e => e.preventDefault()}
+              className="group flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-blue-500/30 bg-blue-500/5 py-12 px-6 text-center transition-all duration-300 hover:border-blue-500/50 hover:bg-blue-500/10"
+            >
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
+                <Upload className="h-7 w-7" />
+              </div>
+              <span className="text-xl font-bold tracking-tight text-white mb-2">Upload screenshot</span>
+              <span className="text-sm text-slate-400 max-w-[280px] leading-relaxed mb-6">
+                Take a screenshot of your {type === 'exam' ? 'exam dates' : type === 'assignment' ? 'assignments list' : 'timetable'} and upload it here
+              </span>
+              <span className="btn-import pointer-events-none">Browse Files</span>
+            </button>
+          </div>
         )}
         <input ref={inputRef} className="hidden" type="file" accept="image/*" onChange={e => pickFile(e.target.files?.[0])} />
 
         {step === 'ready' && (
-          <div className="space-y-4 text-center">
-            <img src={preview} alt="Uploaded preview" className="mx-auto max-h-48 rounded-2xl border border-white/10 object-contain" />
-            <p className="muted">{file.name} · {Math.round(file.size / 1024)} KB</p>
-            <div className="flex flex-col justify-center gap-3 md:flex-row">
-              <button className="btn-ghost" onClick={() => inputRef.current?.click()}>Choose Different Image</button>
-              <button className="btn-import" onClick={analyze}><Sparkles className="h-4 w-4" /> Analyze with Vision AI</button>
+          <div className="flex flex-col items-center justify-center w-full py-6 text-center">
+            <div className="relative group max-w-xs mb-6 rounded-2xl overflow-hidden border border-white/10 shadow-2xl transition-transform duration-300 hover:scale-[1.02]">
+              <img src={preview} alt="Uploaded preview" className="mx-auto max-h-64 object-contain rounded-2xl" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-center p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-xs text-slate-300">{file.name}</span>
+              </div>
+            </div>
+            <p className="text-sm text-slate-400 font-medium mb-6">
+              Selected: <span className="text-white">{file.name}</span> <span className="text-slate-600">·</span> {Math.round(file.size / 1024)} KB
+            </p>
+            <div className="flex flex-col w-full max-w-xs gap-3 sm:flex-row sm:max-w-md justify-center">
+              <button className="btn-ghost flex-1" onClick={() => inputRef.current?.click()}>Change Image</button>
+              <button className="btn-import flex-1" onClick={analyze}>
+                <Sparkles className="h-4 w-4 animate-pulse" /> Analyze with AI
+              </button>
             </div>
           </div>
         )}
 
         {step === 'analyzing' && (
-          <div className="space-y-6 text-center">
-            <img src={preview} alt="Uploaded preview" className="mx-auto max-h-32 rounded-xl border border-white/10 object-contain" />
-            <p className="font-medium text-blue-300">Image selected. Analyzing this image...</p>
-            <div className="mx-auto grid h-28 w-28 place-items-center rounded-full bg-navy-950">
-              <Loader2 className="h-12 w-12 animate-spin text-emerald-400" />
+          <div className="flex flex-col items-center justify-center w-full py-12 text-center space-y-6">
+            <div className="relative">
+              <img src={preview} alt="Uploaded preview" className="mx-auto h-24 w-24 rounded-2xl border border-white/10 object-cover blur-[1px] opacity-60" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="h-10 w-10 animate-spin text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]" />
+              </div>
             </div>
-            <div>
-              <h3 className="text-xl font-bold">AI is Analyzing Your Screenshot</h3>
-              <p className="muted mt-2">{statusMessages[messageIndex]}</p>
-              <div className="mt-4 flex justify-center gap-2"><span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" /><span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" /><span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" /></div>
+            <div className="space-y-2 max-w-sm">
+              <h3 className="text-xl font-bold text-white tracking-tight">AI is Reading Your Image</h3>
+              <p className="text-emerald-400 font-semibold text-sm animate-pulse">{statusMessages[messageIndex]}</p>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                This takes a few seconds. We are extracting classes, dates, and times directly from your screenshot.
+              </p>
+            </div>
+            <div className="flex justify-center gap-1.5 pt-2">
+              <span className="typing-dot h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
+              <span className="typing-dot h-2.5 w-2.5 rounded-full bg-emerald-400/80" style={{ animationDelay: '0.2s' }} />
+              <span className="typing-dot h-2.5 w-2.5 rounded-full bg-emerald-400/80" style={{ animationDelay: '0.4s' }} />
             </div>
           </div>
         )}
 
         {step === 'error' && (
-          <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-6 text-center">
-            <XCircle className="mx-auto mb-3 h-10 w-10 text-yellow-400" />
-            <h3 className="text-lg font-bold">Warning: {error}</h3>
-            <p className="muted mt-2">Try a clearer screenshot and ensure the timetable is fully visible.</p>
-            <button className="btn-import mt-5" onClick={startOver}>Try Again</button>
+          <div className="flex flex-col items-center justify-center w-full py-10 text-center">
+            <div className="h-16 w-16 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center mb-4">
+              <XCircle className="h-8 w-8" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Analysis Failed</h3>
+            <p className="text-red-400 font-medium text-sm mb-2">{error}</p>
+            <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-6">
+              Make sure the image is clear, text is readable, and contains a valid timetable structure.
+            </p>
+            <button className="btn-import w-full max-w-xs" onClick={startOver}>Try Again</button>
           </div>
         )}
 
@@ -185,7 +213,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
                 <h3 className="text-sm font-bold tracking-wide text-slate-400">DETECTED {selected.length} {label}</h3>
                 <button className="min-h-0 min-w-0 text-sm font-semibold text-blue-400" onClick={() => setAll(selected.length !== items.length)}>{selected.length === items.length ? 'Deselect All' : 'Select All'}</button>
               </div>
-              <div className="scrollbar-hide max-h-[48vh] space-y-4 overflow-y-auto pr-2">
+              <div className="space-y-4 pr-1">
                 {items.map((item, index) => type === 'timetable'
                   ? <TimetableResult key={item.key} item={item} index={index} updateItem={updateItem} />
                   : <SimpleResult key={item.key} item={item} index={index} updateItem={updateItem} type={type} />)}
@@ -206,19 +234,134 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
 
 function TimetableResult({ item, index, updateItem }) {
   return (
-    <div className={`rounded-2xl border p-4 transition-opacity ${item.selected ? 'border-green-500/50' : 'border-slate-700 opacity-50'}`}>
-      <div className="grid gap-3 lg:grid-cols-[auto_1.5fr_1fr_1fr_1fr_1fr_1.4fr]">
-        <button className={`mt-6 h-8 min-h-8 w-8 min-w-8 rounded-lg ${item.selected ? 'bg-emerald-500' : 'bg-slate-700'}`} onClick={() => updateItem(index, { selected: !item.selected })}>{item.selected && <Check className="mx-auto h-5 w-5 text-white" />}</button>
-        <Field label="Subject Name"><input className="input" value={item.subject} onChange={e => updateItem(index, { subject: e.target.value })} /></Field>
-        <Field label="Day"><select className="input" value={item.day} onChange={e => updateItem(index, { day: e.target.value })}>{['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => <option key={day}>{day}</option>)}</select></Field>
-        <Field label="Start Time"><input className="input" type="time" value={item.start_time} onChange={e => updateItem(index, { start_time: e.target.value })} /></Field>
-        <Field label="End Time"><input className="input" type="time" value={item.end_time} onChange={e => updateItem(index, { end_time: e.target.value })} /></Field>
-        <Field label="Classroom"><input className="input" value={item.classroom} onChange={e => updateItem(index, { classroom: e.target.value })} /></Field>
-        <Field label="Lecturer"><input className="input" value={item.lecturer} onChange={e => updateItem(index, { lecturer: e.target.value })} /></Field>
+    <div className={`rounded-2xl border p-4 transition-all duration-300 ${
+      item.selected 
+        ? 'border-emerald-500/30 bg-emerald-500/[0.02] shadow-sm shadow-emerald-500/5' 
+        : 'border-slate-800 bg-slate-900/10 opacity-60'
+    }`}>
+      {/* Header Row: Checkbox + Subject Name */}
+      <div className="flex items-start gap-3">
+        <button 
+          className={`shrink-0 flex items-center justify-center rounded-lg transition-all duration-200 ${
+            item.selected 
+              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/20' 
+              : 'bg-slate-800 border border-slate-700 text-transparent hover:border-slate-600'
+          } h-9 w-9 mt-7`} 
+          onClick={() => updateItem(index, { selected: !item.selected })}
+        >
+          <Check className="h-5 w-5 stroke-[2.5]" />
+        </button>
+        
+        <div className="flex-1 min-w-0">
+          <Field label="Subject Name">
+            <input 
+              className="input transition-all duration-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" 
+              value={item.subject} 
+              onChange={e => updateItem(index, { subject: e.target.value })} 
+              placeholder="e.g. CSCI 101"
+            />
+          </Field>
+        </div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3 pl-0 lg:pl-11">
-        {['L', 'T', 'P'].map(type => <button key={type} className={`h-9 min-h-9 rounded-full border px-4 ${item.class_type === type ? 'border-blue-400 bg-blue-500/20' : 'border-white/10'}`} onClick={() => updateItem(index, { class_type: type, color: getColorFromType(type) })}>{type}</button>)}
-        <div className="flex gap-2">{colors.map(color => <button key={color} className={`h-6 min-h-6 w-6 min-w-6 rounded-full ${colorClasses[color]} ${item.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-navy-900' : ''}`} onClick={() => updateItem(index, { color })} />)}</div>
+
+      {/* Grid of other details */}
+      <div className="mt-4 grid grid-cols-2 gap-3 pl-0 lg:pl-12 lg:grid-cols-5">
+        <div className="col-span-2 lg:col-span-1">
+          <Field label="Day">
+            <select 
+              className="input" 
+              value={item.day} 
+              onChange={e => updateItem(index, { day: e.target.value })}
+            >
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => (
+                <option key={day}>{day}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        
+        <div>
+          <Field label="Start Time">
+            <input 
+              className="input" 
+              type="time" 
+              value={item.start_time} 
+              onChange={e => updateItem(index, { start_time: e.target.value })} 
+            />
+          </Field>
+        </div>
+        
+        <div>
+          <Field label="End Time">
+            <input 
+              className="input" 
+              type="time" 
+              value={item.end_time} 
+              onChange={e => updateItem(index, { end_time: e.target.value })} 
+            />
+          </Field>
+        </div>
+        
+        <div>
+          <Field label="Classroom">
+            <input 
+              className="input" 
+              value={item.classroom} 
+              onChange={e => updateItem(index, { classroom: e.target.value })} 
+              placeholder="Room"
+            />
+          </Field>
+        </div>
+        
+        <div className="col-span-2 lg:col-span-1">
+          <Field label="Lecturer">
+            <input 
+              className="input" 
+              value={item.lecturer} 
+              onChange={e => updateItem(index, { lecturer: e.target.value })} 
+              placeholder="Name"
+            />
+          </Field>
+        </div>
+      </div>
+
+      {/* Class Type and Color picker */}
+      <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-white/5 pt-4 pl-0 lg:pl-12">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 mr-1">Class Type</span>
+          <div className="flex gap-1.5">
+            {['L', 'T', 'P'].map(type => (
+              <button 
+                key={type} 
+                className={`h-8 min-h-8 min-w-8 px-3 rounded-lg border text-sm font-semibold transition-all duration-200 ${
+                  item.class_type === type 
+                    ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 font-bold' 
+                    : 'border-white/5 bg-white/5 text-slate-400 hover:bg-white/10'
+                }`} 
+                onClick={() => updateItem(index, { class_type: type, color: getColorFromType(type) })}
+              >
+                {type === 'L' ? 'Lec' : type === 'T' ? 'Tut' : 'Prac'}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 mr-1">Theme Color</span>
+          <div className="flex gap-1.5">
+            {colors.map(color => (
+              <button 
+                key={color} 
+                className={`h-6 min-h-6 w-6 min-w-6 rounded-full transition-transform duration-200 hover:scale-110 ${colorClasses[color]} ${
+                  item.color === color 
+                    ? 'ring-2 ring-white ring-offset-2 ring-offset-navy-950 scale-105' 
+                    : 'opacity-80 hover:opacity-100'
+                }`} 
+                onClick={() => updateItem(index, { color })} 
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -226,12 +369,39 @@ function TimetableResult({ item, index, updateItem }) {
 
 function SimpleResult({ item, index, updateItem, type }) {
   return (
-    <div className={`rounded-2xl border p-4 ${item.selected ? 'border-green-500/50' : 'border-slate-700 opacity-50'}`}>
-      <div className="flex gap-3">
-        <button className={`h-8 min-h-8 w-8 min-w-8 rounded-lg ${item.selected ? 'bg-emerald-500' : 'bg-slate-700'}`} onClick={() => updateItem(index, { selected: !item.selected })}>{item.selected && <Check className="mx-auto h-5 w-5 text-white" />}</button>
-        <div className="grid flex-1 gap-3 md:grid-cols-2">
-          <Field label={type === 'exam' ? 'Subject' : 'Title'}><input className="input" value={type === 'exam' ? item.subject : item.title} onChange={e => updateItem(index, type === 'exam' ? { subject: e.target.value } : { title: e.target.value })} /></Field>
-          <Field label={type === 'exam' ? 'Date' : 'Deadline'}><input className="input" type="date" value={type === 'exam' ? item.exam_date : item.deadline} onChange={e => updateItem(index, type === 'exam' ? { exam_date: e.target.value } : { deadline: e.target.value })} /></Field>
+    <div className={`rounded-2xl border p-4 transition-all duration-300 ${
+      item.selected 
+        ? 'border-emerald-500/30 bg-emerald-500/[0.02] shadow-sm shadow-emerald-500/5' 
+        : 'border-slate-800 bg-slate-900/10 opacity-60'
+    }`}>
+      <div className="flex items-start gap-3">
+        <button 
+          className={`shrink-0 flex items-center justify-center rounded-lg transition-all duration-200 ${
+            item.selected 
+              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/20' 
+              : 'bg-slate-800 border border-slate-700 text-transparent hover:border-slate-600'
+          } h-9 w-9 mt-7`} 
+          onClick={() => updateItem(index, { selected: !item.selected })}
+        >
+          <Check className="h-5 w-5 stroke-[2.5]" />
+        </button>
+        <div className="flex-1 min-w-0 grid gap-3 md:grid-cols-2">
+          <Field label={type === 'exam' ? 'Subject Name' : 'Assignment Title'}>
+            <input 
+              className="input transition-all duration-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" 
+              value={type === 'exam' ? item.subject : item.title} 
+              onChange={e => updateItem(index, type === 'exam' ? { subject: e.target.value } : { title: e.target.value })} 
+              placeholder={type === 'exam' ? 'e.g. MATH 201' : 'e.g. Lab Report 1'}
+            />
+          </Field>
+          <Field label={type === 'exam' ? 'Exam Date' : 'Due Date'}>
+            <input 
+              className="input" 
+              type="date" 
+              value={type === 'exam' ? item.exam_date : item.deadline} 
+              onChange={e => updateItem(index, type === 'exam' ? { exam_date: e.target.value } : { deadline: e.target.value })} 
+            />
+          </Field>
         </div>
       </div>
     </div>
