@@ -1,6 +1,8 @@
 import { Download, LogOut, Save, ShieldAlert, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { jsPDF } from 'jspdf'
+import 'jspdf-autotable'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { useConfirmDialog } from '../components/ConfirmModal'
 import { useTheme } from '../components/ThemeProvider'
@@ -61,27 +63,185 @@ export default function SettingsPage() {
   }
 
   async function exportData() {
-    const { data: { user } } = await supabase.auth.getUser()
-    const tables = ['classes', 'assignments', 'exams', 'reminders']
-    const result = {}
-    for (const table of tables) {
-      const { data } = await supabase.from(table).select('*').eq('user_id', user.id)
-      result[table] = data || []
+    showToast('Preparing academic PDF report...', 'info')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return showToast('User session not found.', 'error')
+
+      const tables = ['classes', 'assignments', 'exams', 'reminders']
+      const result = {}
+      for (const table of tables) {
+        const { data } = await supabase.from(table).select('*').eq('user_id', user.id)
+        result[table] = data || []
+      }
+
+      const doc = new jsPDF()
+
+      // --- Title & Header ---
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(22)
+      doc.setTextColor(15, 23, 42) // slate-900
+      doc.text('AXON ACADEMIC OVERVIEW', 15, 20)
+
+      // Accent Line
+      doc.setDrawColor(59, 130, 246) // blue-500
+      doc.setLineWidth(1)
+      doc.line(15, 24, 195, 24)
+
+      // Student Profile Info
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      doc.setTextColor(71, 85, 105) // slate-600
+
+      // Left Column Info
+      doc.text(`Student Name: ${profile.full_name || 'N/A'}`, 15, 32)
+      doc.text(`Email Address: ${user.email || 'N/A'}`, 15, 38)
+      doc.text(`University: ${profile.university || 'N/A'}`, 15, 44)
+
+      // Right Column Info
+      doc.text(`Course/Major: ${profile.course || 'N/A'}`, 110, 32)
+      doc.text(`Student ID: ${profile.student_id || 'N/A'}`, 110, 38)
+      doc.text(`Export Date: ${new Date().toLocaleDateString('en-US', { dateStyle: 'long' })}`, 110, 44)
+
+      let yPos = 52
+
+      // Function to add table if there is data
+      const addSectionTable = (title, headers, rows, emptyMsg) => {
+        // Add section header
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(14)
+        doc.setTextColor(15, 23, 42) // slate-900
+
+        // Check space remaining, page break if needed
+        if (yPos > 240) {
+          doc.addPage()
+          yPos = 20
+        }
+
+        doc.text(title, 15, yPos)
+        yPos += 4
+
+        if (rows.length === 0) {
+          doc.setFont('helvetica', 'italic')
+          doc.setFontSize(10)
+          doc.setTextColor(148, 163, 184) // slate-400
+          doc.text(emptyMsg, 15, yPos)
+          yPos += 12
+        } else {
+          doc.autoTable({
+            startY: yPos,
+            head: [headers],
+            body: rows,
+            margin: { left: 15, right: 15 },
+            theme: 'striped',
+            headStyles: {
+              fillColor: [30, 41, 59], // slate-800
+              textColor: 255,
+              fontStyle: 'bold'
+            },
+            alternateRowStyles: {
+              fillColor: [248, 250, 252] // slate-50
+            },
+            styles: {
+              fontSize: 9,
+              cellPadding: 3
+            }
+          })
+          yPos = doc.lastAutoTable.finalY + 12
+        }
+      }
+
+      // 1. Classes
+      const daysOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+      const classesData = (result.classes || []).sort((a, b) => {
+        const dayDiff = daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day)
+        if (dayDiff !== 0) return dayDiff
+        return a.start_time.localeCompare(b.start_time)
+      }).map(c => [
+        c.day,
+        c.subject,
+        `${c.start_time} - ${c.end_time}`,
+        c.class_type === 'L' ? 'Lecture' : c.class_type === 'T' ? 'Tutorial' : c.class_type === 'P' ? 'Practical' : c.class_type || '',
+        c.classroom || 'TBA',
+        c.lecturer || 'TBA'
+      ])
+      addSectionTable(
+        'Weekly Timetable',
+        ['Day', 'Subject', 'Time', 'Type', 'Classroom', 'Lecturer'],
+        classesData,
+        'No classes in timetable.'
+      )
+
+      // 2. Assignments
+      const assignmentsData = (result.assignments || []).sort((a, b) => a.deadline.localeCompare(b.deadline)).map(a => [
+        a.title,
+        a.subject,
+        a.deadline ? new Date(a.deadline).toLocaleDateString('en-US', { dateStyle: 'medium' }) : 'N/A',
+        a.priority,
+        a.status,
+        a.notes || ''
+      ])
+      addSectionTable(
+        'Assignments',
+        ['Title', 'Subject', 'Deadline', 'Priority', 'Status', 'Notes'],
+        assignmentsData,
+        'No assignments found.'
+      )
+
+      // 3. Exams
+      const examsData = (result.exams || []).sort((a, b) => a.exam_date.localeCompare(b.exam_date)).map(e => [
+        e.subject,
+        e.exam_type,
+        e.exam_date ? new Date(e.exam_date).toLocaleDateString('en-US', { dateStyle: 'medium' }) : 'N/A',
+        e.start_time && e.end_time ? `${e.start_time} - ${e.end_time}` : e.start_time || 'TBA',
+        e.venue || 'TBA',
+        e.notes || ''
+      ])
+      addSectionTable(
+        'Exams Schedule',
+        ['Subject', 'Type', 'Date', 'Time', 'Venue', 'Notes'],
+        examsData,
+        'No exams found.'
+      )
+
+      // 4. Reminders
+      const remindersData = (result.reminders || []).sort((a, b) => a.reminder_time.localeCompare(b.reminder_time)).map(r => [
+        r.title,
+        r.reminder_time || 'TBA',
+        r.repeat_type,
+        r.is_active ? 'Active' : 'Inactive'
+      ])
+      addSectionTable(
+        'Smart Reminders',
+        ['Title', 'Time', 'Repeat Type', 'Status'],
+        remindersData,
+        'No reminders found.'
+      )
+
+      // Add Page Numbers/Footer dynamically on each page
+      const pageCount = doc.internal.getNumberOfPages()
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFontSize(8)
+        doc.setTextColor(148, 163, 184)
+        doc.text(`Page ${i} of ${pageCount}`, 195, 287, { align: 'right' })
+        doc.text('Generated by Axon Academic Planner', 15, 287)
+      }
+
+      doc.save('axon-academic-report.pdf')
+      showToast('PDF report successfully exported!', 'success')
+    } catch (error) {
+      console.error(error)
+      showToast('Failed to export PDF report.', 'error')
     }
-    const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'axon-data.json'
-    a.click()
-    URL.revokeObjectURL(url)
   }
 
   async function clearTable(table) {
-    if (!await confirm({ title: `Clear ${table}?`, message: `All ${table} will be deleted. This cannot be undone.`, confirmText: 'Clear' })) return
+    const displayName = table === 'classes' ? 'timetable' : table
+    if (!await confirm({ title: `Clear ${displayName}?`, message: `All ${displayName} will be deleted. This cannot be undone.`, confirmText: 'Clear' })) return
     const { data: { user } } = await supabase.auth.getUser()
     await supabase.from(table).delete().eq('user_id', user.id)
-    showToast(`${table} cleared.`, 'success')
+    showToast(`${displayName.charAt(0).toUpperCase() + displayName.slice(1)} cleared.`, 'success')
   }
 
   async function deleteAccount() {
@@ -261,7 +421,7 @@ export default function SettingsPage() {
           <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
             <button className="btn-primary" onClick={exportData}><Download className="h-4 w-4" /> Export my data</button>
             <button className="btn-ghost" onClick={() => clearTable('push_subscriptions')}><Trash2 className="h-4 w-4" /> Reset Push Devices</button>
-            {['assignments', 'exams', 'reminders'].map(table => <button key={table} className="btn-danger" onClick={() => clearTable(table)}><Trash2 className="h-4 w-4" /> Clear {table}</button>)}
+            {['classes', 'assignments', 'exams', 'reminders'].map(table => <button key={table} className="btn-danger" onClick={() => clearTable(table)}><Trash2 className="h-4 w-4" /> Clear {table === 'classes' ? 'timetable' : table}</button>)}
             <button className="btn-ghost" onClick={globalSignOut}><LogOut className="h-4 w-4" /> Sign out all devices</button>
           </div>
         </Section>
@@ -294,7 +454,7 @@ function PreferenceToggle({ label, k }) {
 
 function MinuteSelector({ value, onChange }) {
   const [selected, setSelected] = useState(String(value))
-  return <div><p className="label">Remind me before class/exam starts</p><div className="flex flex-wrap gap-2">{['5', '10', '15', '20'].map(v => <button key={v} onClick={() => { setSelected(v); onChange(v) }} className={`rounded-full px-4 py-2 text-sm ${selected === v ? 'bg-blue-500 text-white' : 'border border-white/10'}`}>{v} minutes</button>)}</div></div>
+  return <div><p className="label">Remind me before class/exam starts</p><div className="flex flex-wrap gap-2">{['5', '10', '15', '20', '30'].map(v => <button key={v} onClick={() => { setSelected(v); onChange(v) }} className={`rounded-full px-4 py-2 text-sm ${selected === v ? 'bg-blue-500 text-white' : 'border border-white/10'}`}>{v} minutes</button>)}</div></div>
 }
 
 function accentHex(color) {
