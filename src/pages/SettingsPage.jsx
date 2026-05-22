@@ -444,7 +444,7 @@ export default function SettingsPage() {
         <Section id="data" title="Data & Privacy">
           <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
             <button className="btn-primary" onClick={exportData}><Download className="h-4 w-4" /> Export my data</button>
-            <button className="btn-ghost" onClick={() => clearTable('push_subscriptions')}><Trash2 className="h-4 w-4" /> Reset Push Devices</button>
+
             {['classes', 'assignments', 'exams', 'reminders'].map(table => <button key={table} className="btn-danger" onClick={() => clearTable(table)}><Trash2 className="h-4 w-4" /> Clear {table === 'classes' ? 'timetable' : table}</button>)}
             <button className="btn-ghost" onClick={globalSignOut}><LogOut className="h-4 w-4" /> Sign out all devices</button>
           </div>
