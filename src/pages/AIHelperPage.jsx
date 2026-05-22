@@ -61,14 +61,12 @@ export default function AIHelperPage() {
 
     let timer
     const observer = new ResizeObserver(() => {
-      // Use 'auto' scroll during active resizing (like keyboard sliding) to remain perfectly glued
-      scrollToBottom('auto')
-      
-      // Gentle smooth scroll once resizing settles
+      // We debounce the resize event so we DO NOT interrupt the smooth scroll animation
+      // that is triggered when a new message is added.
       clearTimeout(timer)
       timer = setTimeout(() => {
         scrollToBottom('smooth')
-      }, 100)
+      }, 150)
     })
 
     observer.observe(container)
