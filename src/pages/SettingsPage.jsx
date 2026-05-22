@@ -242,6 +242,16 @@ export default function SettingsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     await supabase.from(table).delete().eq('user_id', user.id)
     showToast(`${displayName.charAt(0).toUpperCase() + displayName.slice(1)} cleared.`, 'success')
+
+    if (table === 'push_subscriptions' && 'Notification' in window && Notification.permission === 'granted') {
+      showToast('Re-registering this device...', 'info')
+      const sub = await registerPushSubscription(user)
+      if (sub) {
+        showToast('This device successfully re-registered for notifications!', 'success')
+      } else {
+        showToast('Auto-registration failed. Please refresh the page.', 'error')
+      }
+    }
   }
 
   async function deleteAccount() {
