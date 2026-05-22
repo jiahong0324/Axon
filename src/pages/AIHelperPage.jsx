@@ -36,12 +36,15 @@ export default function AIHelperPage() {
   }, [messages])
 
   useEffect(() => {
-    // A swift 50ms timeout gives the DOM time to paint the new message 
-    // without causing a noticeable 'lag' before the scroll starts.
-    const timer = setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, 50)
-    return () => clearTimeout(timer)
+    // Schedule a series of scrolls at intervals to keep the message list firmly pinned
+    // to the bottom as the keyboard closes, layout resizes, and content renders.
+    const scrollIntervals = [20, 100, 200, 300, 450, 600]
+    const timers = scrollIntervals.map(delay =>
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, delay)
+    )
+    return () => timers.forEach(clearTimeout)
   }, [messages, loading, focused])
 
   useEffect(() => {
@@ -64,7 +67,9 @@ export default function AIHelperPage() {
       ta.style.height = '40px'
       ta.blur()
     }
-    setFocused(false) // Sync instantly to avoid layout delays
+    // We do NOT call setFocused(false) instantly here anymore.
+    // Instead, we let the textarea's onBlur handler set it with the 150ms delay.
+    // This allows the keyboard closing transition to start smoothly before layout recalculations.
     
     setMessages(prev => [...prev, { role: 'user', content: userText, timestamp: new Date() }])
     setLoading(true)
