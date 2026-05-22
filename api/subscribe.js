@@ -21,16 +21,29 @@ export default async function handler(req, res) {
 
     // 1. If a deviceId is provided, delete all other push subscription records for this user
     // on the same device/browser context but with a different endpoint.
+    // Also, delete legacy subscriptions for this user that have no deviceId.
     if (deviceId) {
-      const { error: deleteError } = await supabase
+      const deleteSameDevice = supabase
         .from('push_subscriptions')
         .delete()
         .eq('user_id', userId)
         .neq('endpoint', endpoint)
         .eq('subscription->>deviceId', deviceId)
 
-      if (deleteError) {
-        console.error('Supabase error deleting old subscription records:', deleteError)
+      const deleteLegacyDevices = supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', userId)
+        .neq('endpoint', endpoint)
+        .is('subscription->>deviceId', null)
+
+      const [resSame, resLegacy] = await Promise.all([deleteSameDevice, deleteLegacyDevices])
+
+      if (resSame.error) {
+        console.error('Supabase error deleting same-device subscriptions:', resSame.error)
+      }
+      if (resLegacy.error) {
+        console.error('Supabase error deleting legacy subscriptions:', resLegacy.error)
       }
     }
 
