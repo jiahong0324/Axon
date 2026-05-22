@@ -5,7 +5,9 @@ import './index.css'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(console.error)
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      reg.update()
+    }).catch(console.error)
   })
 }
 
