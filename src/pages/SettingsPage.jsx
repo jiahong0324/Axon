@@ -424,13 +424,26 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <PreferenceToggle label="Assignment due reminders" k="assignmentReminders" />
-          <Field label="Reminder lead time"><select className="input" defaultValue={pref('reminderLeadTime', '3 days')} onChange={e => setPref('reminderLeadTime', e.target.value)}>{['1 day', '3 days', '1 week'].map(v => <option key={v}>{v}</option>)}</select></Field>
-          <PreferenceToggle label="Exam countdown alerts" k="examAlerts" />
-          <PreferenceToggle label="Daily AI tip" k="dailyTipEnabled" />
-          <PreferenceToggle label="Class start reminders" k="axon_class_notify" />
-          <PreferenceToggle label="Exam start reminders" k="axon_exam_notify" />
-          <MinuteSelector value={pref('axon_notify_minutes', '10')} onChange={v => setPref('axon_notify_minutes', v)} />
+          <div className="space-y-8 mt-6">
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--accent)] border-b border-white/10 pb-2">Academic Deadlines</h3>
+              <PreferenceToggle label="Assignment due reminders" k="assignmentReminders" />
+              <Field label="Reminder lead time"><select className="input" defaultValue={pref('reminderLeadTime', '3 days')} onChange={e => setPref('reminderLeadTime', e.target.value)}>{['1 day', '3 days', '1 week'].map(v => <option key={v}>{v}</option>)}</select></Field>
+              <PreferenceToggle label="Exam countdown alerts" k="examAlerts" />
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--accent)] border-b border-white/10 pb-2">Timetable Alerts</h3>
+              <PreferenceToggle label="Class start reminders" k="axon_class_notify" />
+              <PreferenceToggle label="Exam start reminders" k="axon_exam_notify" />
+              <MinuteSelector value={pref('axon_notify_minutes', '10')} onChange={v => setPref('axon_notify_minutes', v)} />
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--accent)] border-b border-white/10 pb-2">General</h3>
+              <PreferenceToggle label="Daily AI tip" k="dailyTipEnabled" />
+            </div>
+          </div>
         </Section>
         <Section id="ai" title="AI Preferences">
           <Field label="Language"><select className="input" defaultValue={pref('aiLanguage', 'English')} onChange={e => setPref('aiLanguage', e.target.value)}>{['English', 'Bahasa Malaysia', '中文'].map(v => <option key={v}>{v}</option>)}</select></Field>
