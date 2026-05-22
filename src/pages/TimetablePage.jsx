@@ -73,23 +73,27 @@ export default function TimetablePage() {
         <h1 className="page-title mb-0">Timetable</h1>
         <div className="flex flex-wrap gap-3">
           <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
-          <button className={showForm ? 'btn-ghost w-full border-red-500/30 text-red-300 md:w-auto' : 'btn-add w-full md:w-auto'} onClick={() => setShowForm(v => !v)}>{showForm ? '✕ Cancel' : <><Plus className="h-4 w-4" /><span>Add Class</span><span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></>}</button>
+          <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Add Class <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
         </div>
       </div>
-      <div className={`overflow-hidden transition-all duration-300 ${showForm ? 'mb-6 max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-        <form onSubmit={addClass} className="card mb-6 grid gap-4 md:grid-cols-4">
+      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Add Class">
+        <form onSubmit={addClass} className="space-y-4">
           <Field label="Subject"><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
           <Field label="Day"><select className="input" value={form.day} onChange={e => setForm({ ...form, day: e.target.value })}>{days.map(d => <option key={d}>{d}</option>)}</select></Field>
-          <Field label="Start Time"><input className="input" type="time" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
-          <Field label="End Time"><input className="input" type="time" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Start Time"><input className="input" type="time" required value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
+            <Field label="End Time"><input className="input" type="time" required value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
+          </div>
           <Field label="Class Type">
-            <div className="grid grid-cols-3 gap-2">{['L', 'T', 'P'].map(type => <button type="button" key={type} onClick={() => updateType(type)} className={`rounded-xl border px-2 py-3 text-sm ${form.class_type === type ? 'border-blue-500 bg-blue-500/20' : 'border-white/10'}`}>{type}</button>)}</div>
+            <div className="grid grid-cols-3 gap-2">{['L', 'T', 'P'].map(type => <button type="button" key={type} onClick={() => updateType(type)} className={`font-medium rounded-xl border px-2 py-3 text-sm ${form.class_type === type ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 text-slate-400'}`}>{type === 'L' ? 'Lecture' : type === 'T' ? 'Tutorial' : 'Practical'}</button>)}</div>
           </Field>
-          <Field label="Lecturer"><input className="input" value={form.lecturer} onChange={e => setForm({ ...form, lecturer: e.target.value })} /></Field>
-          <Field label="Classroom"><input className="input" value={form.classroom} onChange={e => setForm({ ...form, classroom: e.target.value })} /></Field>
-          <div className="flex items-end"><button className="btn-primary w-full"><Plus className="h-4 w-4" /> Save Class</button></div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Classroom"><input className="input" placeholder="e.g. DK1" value={form.classroom} onChange={e => setForm({ ...form, classroom: e.target.value })} /></Field>
+            <Field label="Lecturer"><input className="input" placeholder="Name" value={form.lecturer} onChange={e => setForm({ ...form, lecturer: e.target.value })} /></Field>
+          </div>
+          <button className="btn-primary w-full mt-2">Save Class</button>
         </form>
-      </div>
+      </Modal>
       <div className="mb-4 flex items-center gap-2 md:hidden">
         <button className="btn-ghost px-3" onClick={() => setMobileDay(v => Math.max(0, v - 1))}><ChevronLeft className="h-4 w-4" /></button>
         <div className="scrollbar-hide flex flex-1 gap-2 overflow-x-auto">
