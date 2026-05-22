@@ -162,9 +162,11 @@ export default function AIHelperPage() {
                 }}
               />
               <button 
+                type="button"
                 className="flex h-9 min-h-9 w-9 min-w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white transition-opacity disabled:opacity-40" 
                 disabled={loading || !input.trim()} 
                 onClick={sendMessage}
+                onPointerDown={e => e.preventDefault()}
               >
                 <ArrowUp className="h-4 w-4" />
               </button>
