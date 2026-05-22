@@ -23,6 +23,19 @@ export default function NotificationManager() {
   function checkNotifications() {
     return setInterval(async () => {
       if (!('Notification' in window) || Notification.permission !== 'granted') return
+
+      // If this device has an active push subscription, let the backend push service handle notifications.
+      // This prevents duplicate notifications on devices running Web Push.
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        try {
+          const reg = await navigator.serviceWorker.ready
+          const sub = await reg.pushManager.getSubscription()
+          if (sub) return
+        } catch (e) {
+          console.error('Error checking active push subscription:', e)
+        }
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
