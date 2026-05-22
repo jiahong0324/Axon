@@ -39,7 +39,7 @@ export default function AIHelperPage() {
     // Delay slightly to allow React to render and any layout shifts (like mobile keyboard closing) to settle
     const timer = setTimeout(() => {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
+    }, 250) // Increased to 250ms to outlast the 150ms onBlur delay
     return () => clearTimeout(timer)
   }, [messages, loading, focused])
 
@@ -125,11 +125,11 @@ export default function AIHelperPage() {
           )}
 
           {/* Chat Input Container */}
-          <div className={`px-4 pt-1 transition-all duration-300 md:p-3 ${
+          <div className={`px-4 pt-1 md:p-3 ${
             focused ? 'pb-2' : 'pb-[calc(76px+env(safe-area-inset-bottom))]'
           }`}>
             <div 
-              className={`flex items-end gap-2 rounded-2xl border p-1.5 transition-all duration-200 ${
+              className={`flex items-end gap-2 rounded-2xl border p-1.5 transition-colors duration-200 ${
                 focused ? 'border-blue-500 ring-2 ring-blue-500/20' : ''
               }`}
               style={{ background: 'var(--bg-input)', borderColor: focused ? 'transparent' : 'var(--border)' }}
