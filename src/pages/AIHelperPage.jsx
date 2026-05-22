@@ -33,8 +33,15 @@ export default function AIHelperPage() {
 
   useEffect(() => {
     localStorage.setItem('aiChat', JSON.stringify(messages))
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, loading])
+  }, [messages])
+
+  useEffect(() => {
+    // Delay slightly to allow React to render and any layout shifts (like mobile keyboard closing) to settle
+    const timer = setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [messages, loading, focused])
 
   useEffect(() => {
     if (focused) {
