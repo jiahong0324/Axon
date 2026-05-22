@@ -30,22 +30,53 @@ export default function AIHelperPage() {
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState(false)
   const bottomRef = useRef(null)
+  const containerRef = useRef(null)
 
   useEffect(() => {
     localStorage.setItem('aiChat', JSON.stringify(messages))
   }, [messages])
 
+  const scrollToBottom = (behavior = 'smooth') => {
+    const container = containerRef.current
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior
+      })
+    }
+  }
+
   useEffect(() => {
-    // Schedule a series of scrolls at intervals to keep the message list firmly pinned
-    // to the bottom as the keyboard closes, layout resizes, and content renders.
-    const scrollIntervals = [20, 100, 200, 300, 450, 600]
-    const timers = scrollIntervals.map(delay =>
-      setTimeout(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-      }, delay)
-    )
-    return () => timers.forEach(clearTimeout)
-  }, [messages, loading, focused])
+    // Scroll smoothly to the bottom when messages list or loading state changes
+    scrollToBottom('smooth')
+    
+    // A quick secondary scroll to ensure DOM paint changes are fully captured
+    const timer = setTimeout(() => scrollToBottom('smooth'), 60)
+    return () => clearTimeout(timer)
+  }, [messages, loading])
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    let timer
+    const observer = new ResizeObserver(() => {
+      // Use 'auto' scroll during active resizing (like keyboard sliding) to remain perfectly glued
+      scrollToBottom('auto')
+      
+      // Gentle smooth scroll once resizing settles
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        scrollToBottom('smooth')
+      }, 100)
+    })
+
+    observer.observe(container)
+    return () => {
+      observer.disconnect()
+      clearTimeout(timer)
+    }
+  }, [])
 
   useEffect(() => {
     if (focused) {
@@ -113,7 +144,10 @@ export default function AIHelperPage() {
           </button>
         </header>
 
-        <div className="scrollbar-hide flex min-h-0 flex-1 flex-col justify-start gap-3 overflow-y-auto overscroll-contain p-4">
+        <div 
+          ref={containerRef}
+          className="scrollbar-hide flex min-h-0 flex-1 flex-col justify-start gap-3 overflow-y-auto overscroll-contain p-4"
+        >
           {messages.map((msg, i) => <Message key={i} msg={msg} />)}
           {loading && <TypingIndicator />}
           <div ref={bottomRef} />
@@ -188,7 +222,7 @@ export default function AIHelperPage() {
 function Message({ msg }) {
   const isUser = msg.role === 'user'
   return isUser ? (
-    <div className="flex justify-end" style={{ animation: 'fadeIn 0.3s ease-out forwards' }}>
+    <div className="flex justify-end" style={{ animation: 'fadeInQuick 0.15s ease-out forwards' }}>
       <div className="max-w-[85%] break-words rounded-2xl rounded-br-sm bg-blue-500 px-4 py-3 text-sm leading-relaxed text-white">
         {msg.content}
       </div>
@@ -216,7 +250,7 @@ function WelcomeContent({ content }) {
 
 function TypingIndicator() {
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex items-start gap-2" style={{ animation: 'fadeInQuick 0.15s ease-out forwards' }}>
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20"><Bot className="h-4 w-4 text-purple-400" /></div>
       <div className="flex w-fit items-center gap-1.5 rounded-2xl rounded-bl-sm px-4 py-4" style={{ background: 'var(--bg-card)' }}>
         <span className="typing-dot h-2 w-2 rounded-full bg-purple-400" />
