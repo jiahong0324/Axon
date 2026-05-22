@@ -78,16 +78,10 @@ export default function HomePage() {
           <button className="rounded-lg p-2 hover:bg-white/5" onClick={() => { localStorage.setItem('axon_pwa_dismissed', 'true'); setBanner(false) }}><X className="h-5 w-5" /></button>
         </div>
       )}
+
       <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-end">
         <h1 className="font-heading text-2xl font-bold">{greeting}, {user?.user_metadata?.full_name || 'student'} 👋</h1>
-        <p className="muted flex items-center gap-2 font-medium tracking-wide">
-          <span>{format(currentTime, 'EEEE, dd MMMM yyyy')}</span>
-          <span className="text-white/20">•</span>
-          <span className="text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 rounded-lg text-sm tabular-nums font-semibold flex items-center gap-1.5 shadow-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-            {format(currentTime, 'hh:mm:ss a')}
-          </span>
-        </p>
+        <p className="muted tabular-nums">{format(currentTime, 'EEEE, dd MMMM yyyy · hh:mm:ss a')}</p>
       </header>
 
       <section className="mb-6 grid gap-4 md:grid-cols-3">
