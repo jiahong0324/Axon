@@ -16,8 +16,8 @@ export async function askGroq(prompt, systemContext = '') {
       systemContext: `${STUDY_SYSTEM_PROMPT}\n\n${systemContext || ''}${getPreferenceContext()}`
     })
   })
-  if (!response.ok) throw new Error('Groq API error')
   const data = await response.json()
+  if (!response.ok) throw new Error(data.error || 'Groq API error')
   return data.content || 'AI is unavailable right now.'
 }
 

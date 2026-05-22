@@ -55,8 +55,8 @@ export default function AIHelperPage() {
       const context = await buildUserContext()
       const answer = await askGroq(userText, context)
       setMessages(prev => [...prev, { role: 'assistant', content: answer, timestamp: new Date() }])
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'I could not reach the AI service right now. Check your Groq API key and try again.', timestamp: new Date() }])
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', content: `Oops! Something went wrong: ${err.message}`, timestamp: new Date() }])
     } finally {
       setLoading(false)
     }
