@@ -105,9 +105,9 @@ export default function AIHelperPage() {
     setMessages(prev => [...prev, { role: 'user', content: userText, timestamp: new Date() }])
     setLoading(true)
     
-    // Yield the main thread to the browser for 50ms so it can instantly paint the sent message 
-    // and begin the heavy mobile keyboard closing animation smoothly without CPU contention.
-    await new Promise(resolve => setTimeout(resolve, 50))
+    // Yield the main thread to the browser for 350ms so it can instantly paint the sent message 
+    // and allow the heavy mobile keyboard closing animation to completely finish smoothly without CPU contention.
+    await new Promise(resolve => setTimeout(resolve, 350))
     
     try {
       const context = await buildUserContext()
@@ -204,7 +204,7 @@ export default function AIHelperPage() {
                 onBlur={() => {
                   setTimeout(() => {
                     setFocused(false)
-                  }, 150)
+                  }, 300)
                 }}
               />
               <button 
