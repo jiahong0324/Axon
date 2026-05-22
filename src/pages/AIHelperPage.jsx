@@ -49,18 +49,19 @@ export default function AIHelperPage() {
     const userText = input.trim()
     setInput('')
     
-    // Reset textarea height instantly without blurring (keeps keyboard open)
+    // Reset textarea height instantly and dismiss the keyboard automatically
     const ta = document.querySelector('textarea')
     if (ta) {
       ta.style.height = '40px'
+      ta.blur()
     }
     
     setMessages(prev => [...prev, { role: 'user', content: userText, timestamp: new Date() }])
     setLoading(true)
     
-    // Yield the main thread to the browser for a tiny tick (10ms) to ensure the DOM paints 
-    // the user's message and typing indicator before we start the heavy Supabase query construction.
-    await new Promise(resolve => setTimeout(resolve, 10))
+    // Yield the main thread for 350ms to allow the mobile keyboard closing animation 
+    // to finish perfectly smoothly before we begin the heavy Supabase query construction.
+    await new Promise(resolve => setTimeout(resolve, 350))
     
     try {
       const context = await buildUserContext()
@@ -130,7 +131,7 @@ export default function AIHelperPage() {
           )}
 
           {/* Chat Input Container */}
-          <div className={`px-4 pt-1 md:p-3 ${
+          <div className={`transition-all duration-300 ease-out px-4 pt-1 md:p-3 ${
             focused ? 'pb-2' : 'pb-[calc(76px+env(safe-area-inset-bottom))]'
           }`}>
             <div 
@@ -140,7 +141,7 @@ export default function AIHelperPage() {
               style={{ background: 'var(--bg-input)', borderColor: focused ? 'transparent' : 'var(--border)' }}
             >
               <textarea
-                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-3 py-2 text-base focus:border-0 focus:ring-0 outline-none shadow-none focus:shadow-none"
+                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-3 py-2 text-base focus:border-0 focus:ring-0 outline-none shadow-none focus:shadow-none transition-all duration-200"
                 style={{ color: 'var(--text-primary)', maxHeight: '120px', height: '40px' }}
                 placeholder=""
                 rows={1}
