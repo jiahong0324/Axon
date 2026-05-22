@@ -148,11 +148,15 @@ export default function AIHelperPage() {
             >
               <textarea
                 className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-3 py-2 text-base focus:border-0 focus:ring-0 outline-none shadow-none focus:shadow-none"
-                style={{ color: 'var(--text-primary)', maxHeight: '120px', overflowY: 'auto' }}
+                style={{ color: 'var(--text-primary)', maxHeight: '120px', height: '40px' }}
                 placeholder=""
                 rows={1}
                 value={input}
-                onChange={e => setInput(e.target.value)}
+                onChange={e => {
+                  setInput(e.target.value)
+                  e.target.style.height = '40px'
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`
+                }}
                 onKeyDown={handleKeyDown}
                 onFocus={() => setFocused(true)}
                 onBlur={() => {
@@ -165,7 +169,12 @@ export default function AIHelperPage() {
                 type="button"
                 className="flex h-9 min-h-9 w-9 min-w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white transition-opacity disabled:opacity-40" 
                 disabled={loading || !input.trim()} 
-                onClick={sendMessage}
+                onClick={() => {
+                  sendMessage()
+                  // Reset textarea height after sending
+                  const ta = document.querySelector('textarea')
+                  if (ta) ta.style.height = '40px'
+                }}
                 onPointerDown={e => e.preventDefault()}
               >
                 <ArrowUp className="h-4 w-4" />
@@ -181,13 +190,13 @@ export default function AIHelperPage() {
 function Message({ msg }) {
   const isUser = msg.role === 'user'
   return isUser ? (
-    <div className="flex justify-end">
+    <div className="flex justify-end" style={{ animation: 'fadeIn 0.3s ease-out forwards' }}>
       <div className="max-w-[85%] break-words rounded-2xl rounded-br-sm bg-blue-500 px-4 py-3 text-sm leading-relaxed text-white">
         {msg.content}
       </div>
     </div>
   ) : (
-    <div className="flex items-start gap-2">
+    <div className="flex items-start gap-2" style={{ animation: 'fadeIn 0.3s ease-out forwards' }}>
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20">
         <Bot className="h-4 w-4 text-purple-400" />
       </div>
