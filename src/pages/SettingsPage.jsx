@@ -2,7 +2,7 @@ import { Download, LogOut, Save, ShieldAlert, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { useConfirmDialog } from '../components/ConfirmModal'
 import { useTheme } from '../components/ThemeProvider'
@@ -128,7 +128,7 @@ export default function SettingsPage() {
           doc.text(emptyMsg, 15, yPos)
           yPos += 12
         } else {
-          doc.autoTable({
+          autoTable(doc, {
             startY: yPos,
             head: [headers],
             body: rows,
@@ -156,6 +156,8 @@ export default function SettingsPage() {
       const classesData = (result.classes || []).sort((a, b) => {
         const dayDiff = daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day)
         if (dayDiff !== 0) return dayDiff
+        if (!a.start_time) return 1
+        if (!b.start_time) return -1
         return a.start_time.localeCompare(b.start_time)
       }).map(c => [
         c.day,
@@ -173,7 +175,11 @@ export default function SettingsPage() {
       )
 
       // 2. Assignments
-      const assignmentsData = (result.assignments || []).sort((a, b) => a.deadline.localeCompare(b.deadline)).map(a => [
+      const assignmentsData = (result.assignments || []).sort((a, b) => {
+        if (!a.deadline) return 1
+        if (!b.deadline) return -1
+        return a.deadline.localeCompare(b.deadline)
+      }).map(a => [
         a.title,
         a.subject,
         a.deadline ? new Date(a.deadline).toLocaleDateString('en-US', { dateStyle: 'medium' }) : 'N/A',
@@ -189,7 +195,11 @@ export default function SettingsPage() {
       )
 
       // 3. Exams
-      const examsData = (result.exams || []).sort((a, b) => a.exam_date.localeCompare(b.exam_date)).map(e => [
+      const examsData = (result.exams || []).sort((a, b) => {
+        if (!a.exam_date) return 1
+        if (!b.exam_date) return -1
+        return a.exam_date.localeCompare(b.exam_date)
+      }).map(e => [
         e.subject,
         e.exam_type,
         e.exam_date ? new Date(e.exam_date).toLocaleDateString('en-US', { dateStyle: 'medium' }) : 'N/A',
@@ -205,7 +215,11 @@ export default function SettingsPage() {
       )
 
       // 4. Reminders
-      const remindersData = (result.reminders || []).sort((a, b) => a.reminder_time.localeCompare(b.reminder_time)).map(r => [
+      const remindersData = (result.reminders || []).sort((a, b) => {
+        if (!a.reminder_time) return 1
+        if (!b.reminder_time) return -1
+        return a.reminder_time.localeCompare(b.reminder_time)
+      }).map(r => [
         r.title,
         r.reminder_time || 'TBA',
         r.repeat_type,
