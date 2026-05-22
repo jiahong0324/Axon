@@ -417,7 +417,7 @@ export default function SettingsPage() {
               <h4 className="text-sm font-semibold text-blue-400">Deadlines & Due Dates</h4>
               <PreferenceToggle label="Assignment due reminders" k="assignmentReminders" />
               <PreferenceToggle label="Exam countdown alerts" k="examAlerts" />
-              <div className="pl-4 mt-2 border-l-2 border-white/10">
+              <div className="pl-4 mt-2">
                 <Field label="Remind me before deadline:">
                   <select className="input" defaultValue={pref('reminderLeadTime', '3 days')} onChange={e => setPref('reminderLeadTime', e.target.value)}>
                     {['1 day', '3 days', '1 week'].map(v => <option key={v}>{v}</option>)}
@@ -432,7 +432,7 @@ export default function SettingsPage() {
               <h4 className="text-sm font-semibold text-purple-400">Event Start Reminders</h4>
               <PreferenceToggle label="Class start reminders" k="axon_class_notify" />
               <PreferenceToggle label="Exam start reminders" k="axon_exam_notify" />
-              <div className="pl-4 mt-2 border-l-2 border-white/10">
+              <div className="pl-4 mt-2">
                 <MinuteSelector value={pref('axon_notify_minutes', '10')} onChange={v => setPref('axon_notify_minutes', v)} />
               </div>
             </div>
