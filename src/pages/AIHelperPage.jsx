@@ -29,54 +29,11 @@ export default function AIHelperPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState(false)
-  const bottomRef = useRef(null)
-  const containerRef = useRef(null)
 
   useEffect(() => {
     localStorage.setItem('aiChat', JSON.stringify(messages))
   }, [messages])
 
-  const scrollToBottom = (behavior = 'smooth') => {
-    const container = containerRef.current
-    if (container) {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior
-      })
-    }
-  }
-
-  useEffect(() => {
-    // Delay the smooth scroll slightly so that any instant layout changes 
-    // (like the textarea snapping back to 1 line) and their associated ResizeObserver 
-    // 'auto' scrolls can finish first. This ensures the smooth scroll isn't interrupted.
-    const timer = setTimeout(() => scrollToBottom('smooth'), 50)
-    return () => clearTimeout(timer)
-  }, [messages, loading])
-
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    let timer
-    const observer = new ResizeObserver(() => {
-      // Use 'auto' scroll during active resizing (like keyboard sliding) to remain perfectly glued
-      // to the bottom frame-by-frame, completely eliminating up/down layout bouncing.
-      scrollToBottom('auto')
-      
-      // Gentle smooth scroll once resizing settles
-      clearTimeout(timer)
-      timer = setTimeout(() => {
-        scrollToBottom('smooth')
-      }, 100)
-    })
-
-    observer.observe(container)
-    return () => {
-      observer.disconnect()
-      clearTimeout(timer)
-    }
-  }, [])
 
   useEffect(() => {
     if (focused) {
@@ -146,12 +103,10 @@ export default function AIHelperPage() {
         </header>
 
         <div 
-          ref={containerRef}
-          className="scrollbar-hide flex min-h-0 flex-1 flex-col justify-start gap-3 overflow-y-auto overscroll-contain p-4"
+          className="scrollbar-hide flex min-h-0 flex-1 flex-col-reverse gap-3 overflow-y-auto overscroll-contain p-4"
         >
-          {messages.map((msg, i) => <Message key={i} msg={msg} />)}
           {loading && <TypingIndicator />}
-          <div ref={bottomRef} />
+          {[...messages].reverse().map((msg, i) => <Message key={`msg-${messages.length - 1 - i}`} msg={msg} />)}
         </div>
 
         <div className="shrink-0 border-t bg-navy-950/80 backdrop-blur-xl md:bg-transparent md:border-0 md:backdrop-blur-none" style={{ borderColor: 'var(--border)' }}>
