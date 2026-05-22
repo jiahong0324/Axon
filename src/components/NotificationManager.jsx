@@ -60,15 +60,11 @@ export default function NotificationManager() {
       }
       localStorage.setItem(minuteLockKey, '1')
 
-      // If this device has an active push subscription, let the backend push service handle notifications.
-      // This prevents duplicate notifications on devices running Web Push.
+      // If the browser supports Web Push and permission is granted, rely 100% on the server-side push service.
+      // This completely avoids any timing races between service worker activation and the local interval thread.
       if ('serviceWorker' in navigator && 'PushManager' in window) {
-        try {
-          const reg = await navigator.serviceWorker.ready
-          const sub = await reg.pushManager.getSubscription()
-          if (sub) return
-        } catch (e) {
-          console.error('Error checking active push subscription:', e)
+        if (Notification.permission === 'granted') {
+          return
         }
       }
 
