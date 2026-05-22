@@ -21,10 +21,17 @@ export default function HomePage() {
   const [tipLoading, setTipLoading] = useState(false)
   const [banner, setBanner] = useState(() => localStorage.getItem('axon_pwa_dismissed') !== 'true')
   const { showToast } = useToast()
-  const todayName = format(new Date(), 'EEEE')
+  const [currentTime, setCurrentTime] = useState(new Date())
+  const todayName = format(currentTime, 'EEEE')
 
   useEffect(() => { fetchDashboard() }, [])
   useEffect(() => { if (localStorage.getItem('dailyTipEnabled') !== 'false') refreshTip() }, [])
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   async function fetchDashboard() {
     try {
@@ -60,7 +67,7 @@ export default function HomePage() {
   const dueSoon = assignments.filter(a => daysFromToday(a.deadline) <= 3).slice(0, 3)
   const nextExamDays = exams[0] ? daysFromToday(exams[0].exam_date) : null
   const nextExamValue = nextExamDays === null ? '-' : nextExamDays === 0 ? 'Today!' : nextExamDays
-  const hour = new Date().getHours()
+  const hour = currentTime.getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
   return (
@@ -73,7 +80,14 @@ export default function HomePage() {
       )}
       <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-end">
         <h1 className="font-heading text-2xl font-bold">{greeting}, {user?.user_metadata?.full_name || 'student'} 👋</h1>
-        <p className="muted">{format(new Date(), 'EEEE, dd MMMM yyyy')}</p>
+        <p className="muted flex items-center gap-2 font-medium tracking-wide">
+          <span>{format(currentTime, 'EEEE, dd MMMM yyyy')}</span>
+          <span className="text-white/20">•</span>
+          <span className="text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 rounded-lg text-sm tabular-nums font-semibold flex items-center gap-1.5 shadow-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+            {format(currentTime, 'hh:mm:ss a')}
+          </span>
+        </p>
       </header>
 
       <section className="mb-6 grid gap-4 md:grid-cols-3">
