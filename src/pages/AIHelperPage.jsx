@@ -68,6 +68,14 @@ export default function AIHelperPage() {
     if (!input.trim() || loading) return
     const userText = input.trim()
     setInput('')
+    
+    // Auto-close the mobile keyboard when sending
+    const ta = document.querySelector('textarea')
+    if (ta) {
+      ta.style.height = '40px'
+      ta.blur()
+    }
+    
     setMessages(prev => [...prev, { role: 'user', content: userText, timestamp: new Date() }])
     setLoading(true)
     try {
@@ -169,12 +177,7 @@ export default function AIHelperPage() {
                 type="button"
                 className="flex h-9 min-h-9 w-9 min-w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white transition-opacity disabled:opacity-40" 
                 disabled={loading || !input.trim()} 
-                onClick={() => {
-                  sendMessage()
-                  // Reset textarea height after sending
-                  const ta = document.querySelector('textarea')
-                  if (ta) ta.style.height = '40px'
-                }}
+                onClick={sendMessage}
                 onPointerDown={e => e.preventDefault()}
               >
                 <ArrowUp className="h-4 w-4" />
