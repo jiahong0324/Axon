@@ -197,7 +197,7 @@ function TypingIndicator() {
   return (
     <div className="flex items-start gap-2">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20"><Bot className="h-4 w-4 text-purple-400" /></div>
-      <div className="flex w-fit gap-2 rounded-2xl rounded-bl-sm bg-navy-900 p-4">
+      <div className="flex w-fit items-center gap-1.5 rounded-2xl rounded-bl-sm px-4 py-4" style={{ background: 'var(--bg-card)' }}>
         <span className="typing-dot h-2 w-2 rounded-full bg-purple-400" />
         <span className="typing-dot h-2 w-2 rounded-full bg-purple-400" />
         <span className="typing-dot h-2 w-2 rounded-full bg-purple-400" />

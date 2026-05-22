@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
+import { useEffect } from 'react'
 
-export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md', bodyClassName = 'overflow-y-auto scrollbar-hide' }) {
+export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md', bodyClassName = 'overflow-y-auto overflow-x-hidden scrollbar-hide' }) {
   if (!isOpen) return null
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-sm">

@@ -85,7 +85,7 @@ export default function TimetablePage() {
             <Field label="End Time"><input className="input" type="time" required value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
           </div>
           <Field label="Class Type">
-            <div className="grid grid-cols-3 gap-2">{['L', 'T', 'P'].map(type => <button type="button" key={type} onClick={() => updateType(type)} className={`font-medium rounded-xl border px-2 py-3 text-sm ${form.class_type === type ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 text-slate-400'}`}>{type === 'L' ? 'Lecture' : type === 'T' ? 'Tutorial' : 'Practical'}</button>)}</div>
+            <div className="grid grid-cols-3 gap-2">{['L', 'T', 'P'].map(type => <button type="button" key={type} onClick={() => updateType(type)} className={`font-medium rounded-xl border px-1 py-3 text-[13px] sm:text-sm tracking-tight truncate ${form.class_type === type ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 text-slate-400'}`}>{type === 'L' ? 'Lecture' : type === 'T' ? 'Tutorial' : 'Practical'}</button>)}</div>
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Classroom"><input className="input" placeholder="e.g. DK1" value={form.classroom} onChange={e => setForm({ ...form, classroom: e.target.value })} /></Field>
