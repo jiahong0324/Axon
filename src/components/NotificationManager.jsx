@@ -10,7 +10,12 @@ export default function NotificationManager() {
       const keysToRemove = []
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i)
-        if (key && (key.startsWith('notified_reminder_') || key.startsWith('notified_class_') || key.startsWith('notified_exam_'))) {
+        if (key && (
+          key.startsWith('notified_reminder_') || 
+          key.startsWith('notified_class_') || 
+          key.startsWith('notified_exam_') ||
+          key.startsWith('axon_last_checked_')
+        )) {
           // If the key is from a previous day, queue it for removal
           if (!key.includes(todayDate)) {
             keysToRemove.push(key)
@@ -42,6 +47,19 @@ export default function NotificationManager() {
     return setInterval(async () => {
       if (!('Notification' in window) || Notification.permission !== 'granted') return
 
+      const now = new Date()
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+      const todayDate = now.toISOString().split('T')[0]
+      const minuteLockKey = `axon_last_checked_${todayDate}_${currentTime}`
+
+      // Acquire Lock: Since localStorage reads and writes are synchronous, the very first tab
+      // to enter this interval will set the lock. All other tabs will read the lock, see '1',
+      // and immediately exit before performing any asynchronous operations or network calls.
+      if (localStorage.getItem(minuteLockKey)) {
+        return
+      }
+      localStorage.setItem(minuteLockKey, '1')
+
       // If this device has an active push subscription, let the backend push service handle notifications.
       // This prevents duplicate notifications on devices running Web Push.
       if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -56,10 +74,6 @@ export default function NotificationManager() {
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-
-      const now = new Date()
-      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-      const todayDate = now.toISOString().split('T')[0]
 
       const { data: reminders } = await supabase
         .from('reminders')
