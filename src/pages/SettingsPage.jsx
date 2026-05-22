@@ -7,6 +7,7 @@ import { useTheme } from '../components/ThemeProvider'
 import { useToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
 import { initials } from '../lib/utils'
+import { registerPushSubscription } from '../lib/pushNotifications'
 
 const tabs = [
   ['profile', 'Profile'],
@@ -25,6 +26,8 @@ export default function SettingsPage() {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState({ full_name: '', university: '', course: '', student_id: '', avatar_color: 'blue' })
   const [security, setSecurity] = useState({ email: '', password: '' })
+  const [notificationPermission, setNotificationPermission] = useState('Notification' in window ? Notification.permission : 'default')
+  const [sendingTest, setSendingTest] = useState(false)
 
   useEffect(() => { loadUser() }, [])
 
@@ -93,9 +96,62 @@ export default function SettingsPage() {
     navigate('/login')
   }
 
+  async function enablePush() {
+    if (!('Notification' in window)) return
+    try {
+      const permission = await Notification.requestPermission()
+      setNotificationPermission(permission)
+      
+      if (permission === 'granted') {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          showToast('Registering push notification service...', 'info')
+          const sub = await registerPushSubscription(user)
+          if (sub) {
+            showToast('Push notifications successfully registered!', 'success')
+          } else {
+            showToast('Push registration failed. Check console.', 'error')
+          }
+        }
+      } else if (permission === 'denied') {
+        showToast('Notification permission was denied.', 'warning')
+      }
+    } catch (err) {
+      console.error(err)
+      showToast('Error requesting notification permission.', 'error')
+    }
+  }
+
+  async function sendTestPushNotification() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    setSendingTest(true)
+    try {
+      const res = await fetch('/api/send-test-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        showToast('Background push sent! Check your device.', 'success')
+      } else {
+        showToast(data.error || 'Failed to send test push.', 'error')
+      }
+    } catch (err) {
+      console.error(err)
+      showToast('Connection error. Failed to trigger test push.', 'error')
+    } finally {
+      setSendingTest(false)
+    }
+  }
+
   async function testNotification() {
     if (!('Notification' in window)) return showToast('Notifications are not supported in this browser.', 'error')
-    if (Notification.permission === 'default') await Notification.requestPermission()
+    if (Notification.permission === 'default') {
+      const permission = await Notification.requestPermission()
+      setNotificationPermission(permission)
+    }
     if (Notification.permission !== 'granted') return showToast('Notification permission is not enabled.', 'error')
     new Notification('Axon test', { body: 'Notifications are working.', icon: '/icons/logo.png' })
   }
@@ -136,6 +192,54 @@ export default function SettingsPage() {
           <ToggleRow label="Compact mode" checked={themeCtx.compactMode} onChange={themeCtx.setCompactMode} />
         </Section>
         <Section id="notifications" title="Notification Preferences">
+          <div className="rounded-2xl border border-white/10 p-4 bg-white/5 space-y-4 mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-white">Push Notifications</h3>
+                <p className="text-xs text-[var(--text-muted)]">Receive background notifications on this device</p>
+              </div>
+              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                !('Notification' in window) ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                notificationPermission === 'granted' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                notificationPermission === 'denied' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                'bg-orange-500/10 text-orange-500 border border-orange-500/20'
+              }`}>
+                {!('Notification' in window) ? 'Not Supported' :
+                 notificationPermission === 'granted' ? 'Enabled' :
+                 notificationPermission === 'denied' ? 'Blocked' :
+                 'Disabled'}
+              </span>
+            </div>
+
+            {!('Notification' in window) ? (
+              <p className="text-xs leading-relaxed text-amber-500/90 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+                ⚠️ Web Push is not supported in this browser. To receive push notifications on iOS/iPhone, tap Safari's <strong>Share</strong> button, select <strong>"Add to Home Screen"</strong>, then open the Axon app from your home screen.
+              </p>
+            ) : notificationPermission === 'default' ? (
+              <button className="btn-primary w-full py-2.5 rounded-xl font-semibold" onClick={enablePush}>
+                🔔 Enable Push Notifications
+              </button>
+            ) : notificationPermission === 'denied' ? (
+              <p className="text-xs leading-relaxed text-red-400 bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+                ❌ Notifications are blocked on this browser/device. Please open your device's System Settings or Browser Site Settings to allow notifications for Axon.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs leading-relaxed text-green-400/90 bg-green-500/10 p-3 rounded-xl border border-green-500/20">
+                  ✅ This device is successfully registered to receive background notifications!
+                </p>
+                <div className="flex gap-2">
+                  <button className="btn-ghost flex-1 py-2 text-xs" onClick={sendTestPushNotification} disabled={sendingTest}>
+                    {sendingTest ? 'Sending...' : '🚀 Send Test Background Push'}
+                  </button>
+                  <button className="btn-ghost py-2 text-xs" onClick={testNotification}>
+                    Test Foreground Alert
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <PreferenceToggle label="Assignment due reminders" k="assignmentReminders" />
           <Field label="Reminder lead time"><select className="input" defaultValue={pref('reminderLeadTime', '3 days')} onChange={e => setPref('reminderLeadTime', e.target.value)}>{['1 day', '3 days', '1 week'].map(v => <option key={v}>{v}</option>)}</select></Field>
           <PreferenceToggle label="Exam countdown alerts" k="examAlerts" />
@@ -143,7 +247,6 @@ export default function SettingsPage() {
           <PreferenceToggle label="Class start reminders" k="axon_class_notify" />
           <PreferenceToggle label="Exam start reminders" k="axon_exam_notify" />
           <MinuteSelector value={pref('axon_notify_minutes', '10')} onChange={v => setPref('axon_notify_minutes', v)} />
-          <button className="btn-ghost w-full md:w-auto" onClick={testNotification}>Test Notification</button>
         </Section>
         <Section id="ai" title="AI Preferences">
           <Field label="Language"><select className="input" defaultValue={pref('aiLanguage', 'English')} onChange={e => setPref('aiLanguage', e.target.value)}>{['English', 'Bahasa Malaysia', '中文'].map(v => <option key={v}>{v}</option>)}</select></Field>
