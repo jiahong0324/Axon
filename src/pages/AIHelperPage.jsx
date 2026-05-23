@@ -221,9 +221,17 @@ function Message({ msg }) {
 }
 
 function WelcomeContent({ content }) {
-  return content.split('\n\n').map((part, i) => {
+  const parts = content.split('\n\n')
+  const noteIndex = parts.findIndex(p => p.startsWith('Note:'))
+  
+  if (noteIndex > 0) {
+    const notePart = parts.splice(noteIndex, 1)[0]
+    parts.unshift(notePart)
+  }
+
+  return parts.map((part, i) => {
     if (part.startsWith('Note:')) {
-      return <div key={i} className="mt-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-3 py-2 text-xs leading-relaxed text-yellow-200/90">{part}</div>
+      return <div key={i} className="mb-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-3 py-2 text-xs leading-relaxed text-yellow-200/90">{part}</div>
     }
     return <p key={i} className="mb-2 last:mb-0">{part}</p>
   })
