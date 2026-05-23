@@ -184,13 +184,13 @@ export default function AIHelperPage() {
               />
               <button
                 type="button"
-                className="ai-send-button flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-2xl text-white transition-all disabled:opacity-40"
+                className="ai-send-button flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-2xl text-white transition-all disabled:opacity-40"
                 disabled={loading || !input.trim()}
                 onClick={sendMessage}
                 onPointerDown={e => e.preventDefault()}
                 aria-label="Send message"
               >
-                <ArrowUp className="h-4 w-4" />
+                <ArrowUp className="h-5 w-5" />
               </button>
             </div>
           </div>
