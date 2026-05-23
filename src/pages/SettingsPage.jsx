@@ -364,55 +364,58 @@ export default function SettingsPage() {
         </Section>
 
         <Section id="notifications" title="Notification Preferences">
-          <div className="rounded-2xl border border-white/10 p-4 bg-white/5 space-y-4 mb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-white">Push Notifications</h3>
-                <p className="text-xs text-[var(--text-muted)]">Receive background notifications on this device</p>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-emerald-400">Push Notifications</h4>
+                  <p className="text-xs text-[var(--text-muted)] mt-1">Receive background notifications on this device</p>
+                </div>
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  !('Notification' in window) ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                  notificationPermission === 'granted' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
+                  notificationPermission === 'denied' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                  'bg-orange-500/10 text-orange-500 border border-orange-500/20'
+                }`}>
+                  {!('Notification' in window) ? 'Not Supported' :
+                   notificationPermission === 'granted' ? 'Enabled' :
+                   notificationPermission === 'denied' ? 'Blocked' :
+                   'Disabled'}
+                </span>
               </div>
-              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                !('Notification' in window) ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                notificationPermission === 'granted' ? 'bg-green-500/10 text-green-500 border border-green-500/20' :
-                notificationPermission === 'denied' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                'bg-orange-500/10 text-orange-500 border border-orange-500/20'
-              }`}>
-                {!('Notification' in window) ? 'Not Supported' :
-                 notificationPermission === 'granted' ? 'Enabled' :
-                 notificationPermission === 'denied' ? 'Blocked' :
-                 'Disabled'}
-              </span>
+
+              <div className="pt-2">
+                {!('Notification' in window) ? (
+                  <p className="text-xs leading-relaxed text-amber-500/90 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+                    ⚠️ Web Push is not supported in this browser. To receive push notifications on iOS/iPhone, tap Safari's <strong>Share</strong> button, select <strong>"Add to Home Screen"</strong>, then open the Axon app from your home screen.
+                  </p>
+                ) : notificationPermission === 'default' ? (
+                  <button className="btn-primary w-full py-2.5 rounded-xl font-semibold" onClick={enablePush}>
+                    🔔 Enable Push Notifications
+                  </button>
+                ) : notificationPermission === 'denied' ? (
+                  <p className="text-xs leading-relaxed text-red-400 bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+                    ❌ Notifications are blocked on this browser/device. Please open your device's System Settings or Browser Site Settings to allow notifications for Axon.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-xs leading-relaxed text-green-400/90 bg-green-500/10 p-3 rounded-xl border border-green-500/20">
+                      ✅ This device is successfully registered to receive background notifications!
+                    </p>
+                    <div className="flex gap-2">
+                      <button className="btn-ghost flex-1 py-2 text-xs" onClick={sendTestPushNotification} disabled={sendingTest}>
+                        {sendingTest ? 'Sending...' : '🚀 Send Test Background Push'}
+                      </button>
+                      <button className="btn-ghost flex-1 py-2 text-xs" onClick={testNotification}>
+                        Test Foreground Alert
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {!('Notification' in window) ? (
-              <p className="text-xs leading-relaxed text-amber-500/90 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                ⚠️ Web Push is not supported in this browser. To receive push notifications on iOS/iPhone, tap Safari's <strong>Share</strong> button, select <strong>"Add to Home Screen"</strong>, then open the Axon app from your home screen.
-              </p>
-            ) : notificationPermission === 'default' ? (
-              <button className="btn-primary w-full py-2.5 rounded-xl font-semibold" onClick={enablePush}>
-                🔔 Enable Push Notifications
-              </button>
-            ) : notificationPermission === 'denied' ? (
-              <p className="text-xs leading-relaxed text-red-400 bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-                ❌ Notifications are blocked on this browser/device. Please open your device's System Settings or Browser Site Settings to allow notifications for Axon.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-xs leading-relaxed text-green-400/90 bg-green-500/10 p-3 rounded-xl border border-green-500/20">
-                  ✅ This device is successfully registered to receive background notifications!
-                </p>
-                <div className="flex gap-2">
-                  <button className="btn-ghost flex-1 py-2 text-xs" onClick={sendTestPushNotification} disabled={sendingTest}>
-                    {sendingTest ? 'Sending...' : '🚀 Send Test Background Push'}
-                  </button>
-                  <button className="btn-ghost py-2 text-xs" onClick={testNotification}>
-                    Test Foreground Alert
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-6">
+            <div className="h-px bg-white/10 w-full" />
             <div className="space-y-2">
               <h4 className="text-sm font-semibold text-blue-400">Deadlines & Due Dates</h4>
               <PreferenceToggle label="Assignment due reminders" k="assignmentReminders" />
