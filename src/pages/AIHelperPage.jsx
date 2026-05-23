@@ -47,14 +47,18 @@ export default function AIHelperPage() {
   async function sendMessage() {
     if (!input.trim() || loading) return
     const userText = input.trim()
-    setInput('')
     
-    // Reset textarea height instantly and dismiss the keyboard automatically
+    // Dismiss keyboard immediately
     const ta = document.querySelector('textarea')
     if (ta) {
-      ta.style.height = '40px'
       ta.blur()
     }
+
+    // Clear input after a short delay for smooth visual transition
+    setTimeout(() => {
+      setInput('')
+      if (ta) ta.style.height = '40px'
+    }, 150)
     
     setMessages(prev => [...prev, { role: 'user', content: userText, timestamp: new Date() }])
     setLoading(true)
@@ -175,13 +179,13 @@ export default function AIHelperPage() {
 function Message({ msg }) {
   const isUser = msg.role === 'user'
   return isUser ? (
-    <div className="flex justify-end" style={{ animation: 'fadeInQuick 0.15s ease-out forwards' }}>
+    <div className="flex justify-end" style={{ animation: 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
       <div className="max-w-[85%] break-words rounded-2xl rounded-br-sm bg-blue-500 px-4 py-3 text-sm leading-relaxed text-white">
         {msg.content}
       </div>
     </div>
   ) : (
-    <div className="flex items-start gap-2" style={{ animation: 'fadeIn 0.3s ease-out forwards' }}>
+    <div className="flex items-start gap-2" style={{ animation: 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20">
         <Bot className="h-4 w-4 text-purple-400" />
       </div>
@@ -203,7 +207,7 @@ function WelcomeContent({ content }) {
 
 function TypingIndicator() {
   return (
-    <div className="flex items-start gap-2" style={{ animation: 'fadeInQuick 0.15s ease-out forwards' }}>
+    <div className="flex items-start gap-2" style={{ animation: 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20"><Bot className="h-4 w-4 text-purple-400" /></div>
       <div className="flex w-fit items-center gap-1.5 rounded-2xl rounded-bl-sm px-4 py-4" style={{ background: 'var(--bg-card)' }}>
         <span className="typing-dot h-2 w-2 rounded-full bg-purple-400" />
