@@ -137,6 +137,7 @@ export default function AIHelperPage() {
         </header>
 
         <div className="ai-message-list scrollbar-hide flex min-h-0 flex-1 flex-col-reverse gap-3 overflow-y-auto overscroll-contain px-4 py-4 md:px-5 md:py-5">
+          <div className="flex-1" />
           {loading && <TypingIndicator />}
           {[...messages].reverse().map((msg, i) => <Message key={`msg-${messages.length - 1 - i}`} msg={msg} />)}
         </div>
