@@ -1,23 +1,35 @@
-import { ArrowUp, Bot, Trash2 } from 'lucide-react'
+import {
+  ArrowUp,
+  Bot,
+  Brain,
+  CalendarClock,
+  Code2,
+  FileText,
+  HelpCircle,
+  Languages,
+  ListChecks,
+  Sparkles,
+  Trash2
+} from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq } from '../lib/groq'
 import { markdownToHtml } from '../lib/utils'
 
 const quickActions = [
-  { icon: '💡', mobile: 'Explain', desktop: 'Explain a concept simply', prompt: 'Explain a concept simply' },
-  { icon: '📄', mobile: 'Summarize', desktop: 'Summarize my notes', prompt: 'Summarize my notes' },
-  { icon: '❓', mobile: 'Quiz me', desktop: 'Generate quiz questions', prompt: 'Generate quiz questions' },
-  { icon: '📅', mobile: 'Study plan', desktop: 'Make a study plan', prompt: 'Make a study plan' },
-  { icon: '🌐', mobile: 'Translate', desktop: 'Translate to Chinese', prompt: 'Translate to Chinese' },
-  { icon: '🎯', mobile: 'Prioritize', desktop: 'Help prioritize my tasks', prompt: 'Help prioritize my tasks' },
-  { icon: '📝', mobile: 'Notes', desktop: 'Write study notes', prompt: 'Write study notes' },
-  { icon: '🔍', mobile: 'Code help', desktop: 'Explain this code', prompt: 'Explain this code' }
+  { icon: Brain, mobile: 'Explain', desktop: 'Explain a concept simply', prompt: 'Explain a concept simply' },
+  { icon: FileText, mobile: 'Summarize', desktop: 'Summarize my notes', prompt: 'Summarize my notes' },
+  { icon: HelpCircle, mobile: 'Quiz me', desktop: 'Generate quiz questions', prompt: 'Generate quiz questions' },
+  { icon: CalendarClock, mobile: 'Study plan', desktop: 'Make a study plan', prompt: 'Make a study plan' },
+  { icon: Languages, mobile: 'Translate', desktop: 'Translate to Chinese', prompt: 'Translate to Chinese' },
+  { icon: ListChecks, mobile: 'Prioritize', desktop: 'Help prioritize my tasks', prompt: 'Help prioritize my tasks' },
+  { icon: Sparkles, mobile: 'Notes', desktop: 'Write study notes', prompt: 'Write study notes' },
+  { icon: Code2, mobile: 'Code help', desktop: 'Explain this code', prompt: 'Explain this code' }
 ]
 
 const welcomeMessage = {
   role: 'assistant',
-  content: `Selamat datang! 🎓 I am your dedicated AI Study Helper.\n\nHow can I support your software engineering studies today? You can ask me to explain algorithms, summarize notes, generate mock interview questions, or plan out your semester schedules!\n\n💡 Note: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, or active reminders!`,
+  content: `Selamat datang! I am your dedicated AI Study Helper.\n\nHow can I support your software engineering studies today? You can ask me to explain algorithms, summarize notes, generate mock interview questions, or plan out your semester schedules!\n\nNote: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, or active reminders!`,
   timestamp: new Date()
 }
 
@@ -29,11 +41,11 @@ export default function AIHelperPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState(false)
+  const textareaRef = useRef(null)
 
   useEffect(() => {
     localStorage.setItem('aiChat', JSON.stringify(messages))
   }, [messages])
-
 
   useEffect(() => {
     if (focused) {
@@ -47,26 +59,22 @@ export default function AIHelperPage() {
   async function sendMessage() {
     if (!input.trim() || loading) return
     const userText = input.trim()
-    
-    // Dismiss keyboard immediately
-    const ta = document.querySelector('textarea')
+    const ta = textareaRef.current
+
     if (ta) {
       ta.blur()
     }
 
-    // Clear input after a short delay for smooth visual transition
     setTimeout(() => {
       setInput('')
-      if (ta) ta.style.height = '40px'
+      if (ta) ta.style.height = '42px'
     }, 150)
-    
+
     setMessages(prev => [...prev, { role: 'user', content: userText, timestamp: new Date() }])
     setLoading(true)
-    
-    // Yield the main thread for 350ms to allow the mobile keyboard closing animation 
-    // to finish perfectly smoothly before we begin the heavy Supabase query construction.
+
     await new Promise(resolve => setTimeout(resolve, 350))
-    
+
     try {
       const context = await buildUserContext()
       const answer = await askGroq(userText, context)
@@ -85,48 +93,66 @@ export default function AIHelperPage() {
     }
   }
 
+  function fillPrompt(prompt) {
+    setInput(prompt)
+    requestAnimationFrame(() => textareaRef.current?.focus())
+  }
+
   return (
-    <main className="scrollbar-hide flex h-full flex-1 flex-col overflow-hidden pt-safe md:h-auto md:flex-row md:gap-5 md:overflow-y-auto md:p-6" style={{ background: 'var(--bg-primary)' }}>
-      <aside className="card hidden w-64 shrink-0 md:block">
-        <h2 className="mb-4 font-semibold">Quick Actions</h2>
+    <main className="ai-helper-shell scrollbar-hide flex h-full flex-1 flex-col overflow-hidden pt-safe md:h-auto md:flex-row md:gap-5 md:overflow-y-auto md:p-6" style={{ background: 'var(--bg-primary)' }}>
+      <aside className="ai-helper-panel card hidden w-64 shrink-0 md:block">
+        <div className="mb-4 flex items-center gap-2">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-blue-500/15 text-blue-300">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="font-semibold">Quick Actions</h2>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Start with a study task</p>
+          </div>
+        </div>
         <div className="space-y-2">
           {quickActions.map(action => (
-            <button key={action.desktop} className="btn-ghost w-full justify-start text-left text-sm" onClick={() => setInput(action.prompt)}>
-              <span>{action.icon}</span>
+            <button key={action.desktop} className="ai-action-button btn-ghost w-full justify-start text-left text-sm" onClick={() => fillPrompt(action.prompt)}>
+              <action.icon className="h-4 w-4 text-blue-300" />
               <span>{action.desktop}</span>
             </button>
           ))}
         </div>
       </aside>
 
-      <section className="flex min-h-0 flex-1 flex-col md:card md:p-0">
-        <header className="flex shrink-0 items-center justify-between border-b p-4" style={{ borderColor: 'var(--border)' }}>
-          <h1 className="flex min-w-0 items-center gap-2 font-heading text-base font-bold md:text-xl"><Bot className="h-5 w-5 shrink-0 text-purple-400" /> AI Study Helper</h1>
-          <button className="min-h-0 min-w-0 rounded-lg px-3 py-1.5 text-sm" style={{ color: 'var(--text-muted)' }} onClick={() => setMessages([welcomeMessage])}>
-            Clear Chat
+      <section className="ai-chatbox flex min-h-0 flex-1 flex-col overflow-hidden md:card md:p-0">
+        <header className="ai-chat-header flex shrink-0 items-center justify-between border-b px-4 py-3 md:px-5 md:py-4" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/20">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="truncate font-heading text-base font-bold md:text-xl">AI Study Helper</h1>
+              <p className="truncate text-xs" style={{ color: 'var(--text-muted)' }}>Ready for explanations, plans, and study context</p>
+            </div>
+          </div>
+          <button className="ai-clear-button min-h-0 min-w-0 rounded-xl p-2 text-sm transition-colors hover:bg-white/5" style={{ color: 'var(--text-muted)' }} onClick={() => setMessages([welcomeMessage])} aria-label="Clear chat">
+            <Trash2 className="h-4 w-4" />
           </button>
         </header>
 
-        <div 
-          className="scrollbar-hide flex min-h-0 flex-1 flex-col-reverse gap-3 overflow-y-auto overscroll-contain p-4"
-        >
+        <div className="ai-message-list scrollbar-hide flex min-h-0 flex-1 flex-col-reverse gap-3 overflow-y-auto overscroll-contain px-4 py-4 md:px-5 md:py-5">
           {loading && <TypingIndicator />}
           {[...messages].reverse().map((msg, i) => <Message key={`msg-${messages.length - 1 - i}`} msg={msg} />)}
         </div>
 
-        <div className="shrink-0 border-t bg-navy-950/80 backdrop-blur-xl md:bg-transparent md:border-0 md:backdrop-blur-none" style={{ borderColor: 'var(--border)' }}>
-          {/* Quick Actions Scrollbar */}
+        <div className="ai-composer-wrap shrink-0 border-t backdrop-blur-xl md:border-0" style={{ borderColor: 'var(--border)' }}>
           {!focused && (
-            <div className="scrollbar-hide overflow-x-auto px-4 py-2 md:hidden">
+            <div className="ai-chip-rail scrollbar-hide overflow-x-auto px-4 pb-2 pt-3 md:hidden">
               <div className="flex w-max gap-2">
                 {quickActions.map(action => (
                   <button
                     key={action.mobile}
-                    onClick={() => setInput(action.prompt)}
-                    className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition-colors"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--bg-card)', minHeight: '32px', minWidth: 'auto' }}
+                    onClick={() => fillPrompt(action.prompt)}
+                    className="ai-action-chip flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
+                    style={{ minHeight: '34px', minWidth: 'auto' }}
                   >
-                    <span className="text-sm">{action.icon}</span>
+                    <action.icon className="h-3.5 w-3.5" />
                     <span>{action.mobile}</span>
                   </button>
                 ))}
@@ -134,37 +160,35 @@ export default function AIHelperPage() {
             </div>
           )}
 
-          {/* Chat Input Container */}
-          <div className={`transition-all duration-300 ease-out px-4 pt-1 md:p-3 ${
-            focused ? 'pb-2' : 'pb-[calc(76px+env(safe-area-inset-bottom))]'
+          <div className={`ai-composer transition-all duration-300 ease-out px-4 md:p-3 ${
+            focused ? 'pb-[calc(10px+env(safe-area-inset-bottom))] pt-1' : 'pb-[calc(82px+env(safe-area-inset-bottom))] pt-1 md:pb-3'
           }`}>
-            <div 
-              className={`flex items-end gap-2 rounded-2xl border p-1.5 transition-colors duration-200 ${
-                focused ? 'border-blue-500 ring-2 ring-blue-500/20' : ''
-              }`}
-              style={{ background: 'var(--bg-input)', borderColor: focused ? 'transparent' : 'var(--border)' }}
-            >
+            <div className={`ai-input-frame flex items-end gap-2 rounded-[1.35rem] border p-1.5 transition-all duration-300 ${
+              focused ? 'is-focused' : ''
+            }`}>
               <textarea
-                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-3 py-2 text-base focus:border-0 focus:ring-0 outline-none shadow-none focus:shadow-none transition-all duration-200"
-                style={{ color: 'var(--text-primary)', maxHeight: '120px', height: '40px' }}
-                placeholder=""
+                ref={textareaRef}
+                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-3 py-2.5 text-base outline-none shadow-none transition-all duration-200 focus:border-0 focus:ring-0 focus:shadow-none"
+                style={{ color: 'var(--text-primary)', maxHeight: '128px', height: '42px' }}
+                placeholder="Ask Axon anything..."
                 rows={1}
                 value={input}
                 onChange={e => {
                   setInput(e.target.value)
-                  e.target.style.height = '40px'
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`
+                  e.target.style.height = '42px'
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`
                 }}
                 onKeyDown={handleKeyDown}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
               />
-              <button 
+              <button
                 type="button"
-                className="flex h-9 min-h-9 w-9 min-w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white transition-opacity disabled:opacity-40" 
-                disabled={loading || !input.trim()} 
+                className="ai-send-button flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-2xl text-white transition-all disabled:opacity-40"
+                disabled={loading || !input.trim()}
                 onClick={sendMessage}
                 onPointerDown={e => e.preventDefault()}
+                aria-label="Send message"
               >
                 <ArrowUp className="h-4 w-4" />
               </button>
@@ -179,17 +203,17 @@ export default function AIHelperPage() {
 function Message({ msg }) {
   const isUser = msg.role === 'user'
   return isUser ? (
-    <div className="flex justify-end" style={{ animation: 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
-      <div className="max-w-[85%] break-words rounded-2xl rounded-br-sm bg-blue-500 px-4 py-3 text-sm leading-relaxed text-white">
+    <div className="ai-message flex justify-end">
+      <div className="ai-user-bubble max-w-[86%] break-words rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed text-white md:max-w-[72%]">
         {msg.content}
       </div>
     </div>
   ) : (
-    <div className="flex items-start gap-2" style={{ animation: 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20">
-        <Bot className="h-4 w-4 text-purple-400" />
+    <div className="ai-message flex items-start gap-2.5">
+      <div className="ai-avatar flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+        <Bot className="h-4 w-4" />
       </div>
-      <div className="max-w-[85%] break-words rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+      <div className="ai-assistant-bubble max-w-[86%] break-words rounded-2xl rounded-bl-md px-4 py-3 text-sm leading-relaxed md:max-w-[74%]">
         {isWelcomeMessage(msg.content) ? <WelcomeContent content={msg.content} /> : <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />}
       </div>
     </div>
@@ -198,8 +222,8 @@ function Message({ msg }) {
 
 function WelcomeContent({ content }) {
   return content.split('\n\n').map((part, i) => {
-    if (part.startsWith('💡')) {
-      return <div key={i} className="mt-3 border-l-2 border-yellow-500/60 pl-3 text-xs leading-relaxed text-yellow-300/80">{part}</div>
+    if (part.startsWith('Note:')) {
+      return <div key={i} className="mt-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-3 py-2 text-xs leading-relaxed text-yellow-200/90">{part}</div>
     }
     return <p key={i} className="mb-2 last:mb-0">{part}</p>
   })
@@ -207,9 +231,9 @@ function WelcomeContent({ content }) {
 
 function TypingIndicator() {
   return (
-    <div className="flex items-start gap-2" style={{ animation: 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20"><Bot className="h-4 w-4 text-purple-400" /></div>
-      <div className="flex w-fit items-center gap-1.5 rounded-2xl rounded-bl-sm px-4 py-4" style={{ background: 'var(--bg-card)' }}>
+    <div className="ai-message flex items-start gap-2.5">
+      <div className="ai-avatar flex h-8 w-8 shrink-0 items-center justify-center rounded-full"><Bot className="h-4 w-4" /></div>
+      <div className="ai-assistant-bubble flex w-fit items-center gap-1.5 rounded-2xl rounded-bl-md px-4 py-4">
         <span className="typing-dot h-2 w-2 rounded-full bg-purple-400" />
         <span className="typing-dot h-2 w-2 rounded-full bg-purple-400" />
         <span className="typing-dot h-2 w-2 rounded-full bg-purple-400" />
