@@ -194,6 +194,24 @@ input, select, textarea { font-size: 16px; }
   .btn-ghost { @apply border border-white/10 text-slate-300 px-4 py-3 min-h-[48px] rounded-xl hover:bg-white/5 transition-colors inline-flex items-center justify-center gap-2; }
   .btn-danger { @apply text-red-400 hover:text-red-300 hover:bg-red-500/10 p-3 min-h-[48px] min-w-[48px] rounded-lg transition-colors inline-flex items-center justify-center; }
   .input { @apply w-full rounded-xl px-3 py-3 min-h-[48px] text-base focus:outline-none focus:border-blue-500 transition-colors; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary); }
+  input[type="time"],
+  input[type="date"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+    height: 48px;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  input[type="time"]::-webkit-date-and-time-value,
+  input[type="date"]::-webkit-date-and-time-value {
+    min-height: 1.5em;
+    display: flex;
+    align-items: center;
+    background: transparent;
+    line-height: 1;
+    margin: 0;
+  }
   .label { @apply text-sm font-medium mb-1 block; color: var(--text-muted); }
   .section-header { @apply text-lg font-semibold mb-4 flex items-center gap-2; }
   .muted { @apply text-sm; color: var(--text-muted); }
