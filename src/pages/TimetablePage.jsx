@@ -7,7 +7,7 @@ import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
 import Modal from '../components/Modal'
 import { useToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
-import { classColors, days } from '../lib/utils'
+import { classColors, days, formatTime } from '../lib/utils'
 
 const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue' }
 
@@ -135,7 +135,7 @@ function ClassTile({ item, onDelete }) {
       <button className="btn-danger absolute right-1 top-1 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
       <div className="mb-2 pr-10"><ClassTypeBadge type={item.class_type} /></div>
       <h3 className="font-semibold">{item.subject}</h3>
-      <p className="muted">{item.start_time} - {item.end_time}</p>
+      <p className="muted">{formatTime(item.start_time)} - {formatTime(item.end_time)}</p>
       <p className="muted mt-2 flex items-center gap-2"><MapPin className="h-4 w-4" /> {item.classroom || 'TBA'}</p>
       <p className="muted mt-1 flex items-center gap-2"><User className="h-4 w-4" /> {item.lecturer || 'TBA'}</p>
     </article>

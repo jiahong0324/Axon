@@ -7,7 +7,7 @@ import { useToast } from '../components/Toast'
 import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq } from '../lib/groq'
 import { supabase } from '../lib/supabase'
-import { markdownToHtml } from '../lib/utils'
+import { markdownToHtml, formatTime } from '../lib/utils'
 
 const initialForm = { title: '', reminder_time: '09:00', repeat_type: 'once', is_active: true }
 
@@ -100,7 +100,7 @@ export default function RemindersPage() {
             {items.map(item => (
               <article key={item.id} className="flex items-center gap-3 rounded-xl border border-white/10 p-4">
                 <Bell className={`h-5 w-5 ${item.is_active ? 'text-blue-400' : 'text-slate-500'}`} />
-                <div className="flex-1"><p className="font-semibold">{item.title}</p><p className="muted">{item.reminder_time || 'No time'} · {item.repeat_type}</p></div>
+                <div className="flex-1"><p className="font-semibold">{item.title}</p><p className="muted">{formatTime(item.reminder_time) || 'No time'} · {item.repeat_type}</p></div>
                 <ToggleSwitch isOn={item.is_active} onToggle={() => updateItem(item.id, { is_active: !item.is_active })} />
                 <button className="btn-danger" onClick={() => deleteItem(item.id)}><Trash2 className="h-4 w-4" /></button>
               </article>

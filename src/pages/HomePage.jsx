@@ -10,7 +10,7 @@ import { useToast } from '../components/Toast'
 import { askGroq } from '../lib/groq'
 import { buildUserContext } from '../lib/buildUserContext'
 import { supabase } from '../lib/supabase'
-import { daysFromToday, dateLabel } from '../lib/utils'
+import { daysFromToday, dateLabel, formatTime } from '../lib/utils'
 
 export default function HomePage() {
   const [user, setUser] = useState(null)
@@ -160,7 +160,7 @@ function ClassCard({ item }) {
   return (
     <div className={`rounded-xl border border-l-4 border-white/10 ${border} p-4`}>
       <div className="mb-2 flex items-center justify-between gap-3"><p className="font-semibold">{item.subject}</p><ClassTypeBadge type={item.class_type} /></div>
-      <p className="muted">{item.start_time} - {item.end_time} · {item.classroom || 'TBA'} · {item.lecturer || 'TBA'}</p>
+      <p className="muted">{formatTime(item.start_time)} - {formatTime(item.end_time)} · {item.classroom || 'TBA'} · {item.lecturer || 'TBA'}</p>
     </div>
   )
 }
@@ -178,7 +178,7 @@ function ExamMiniCard({ exam }) {
             <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${badge}`}>{exam.exam_type}</span>
           </div>
           <p className="muted flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {exam.venue || 'TBA'}</p>
-          <p className="muted mt-1">📅 {dateLabel(exam.exam_date)}{exam.start_time && exam.end_time ? `  🕐 ${exam.start_time} \u2013 ${exam.end_time}` : ''}</p>
+          <p className="muted mt-1">📅 {dateLabel(exam.exam_date)}{exam.start_time && exam.end_time ? `  🕐 ${formatTime(exam.start_time)} \u2013 ${formatTime(exam.end_time)}` : ''}</p>
         </div>
         <div className="shrink-0 text-right"><span className={`text-xl font-bold ${tone}`}>{days === 0 ? 'Today!' : days}</span>{days !== 0 && <p className="text-xs text-slate-400">days</p>}</div>
       </div>

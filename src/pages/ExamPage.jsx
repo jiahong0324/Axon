@@ -6,7 +6,7 @@ import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
 import Modal from '../components/Modal'
 import { useToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
-import { dateLabel, daysFromToday } from '../lib/utils'
+import { dateLabel, daysFromToday, formatTime } from '../lib/utils'
 
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
 
@@ -109,7 +109,7 @@ function ExamCard({ exam, deleteExam }) {
       <div>
         <div className="mb-2 flex flex-wrap items-center gap-2"><h3 className="text-xl font-bold">{exam.subject}</h3><span className="rounded-full border border-purple-500/30 bg-purple-500/20 px-2 py-0.5 text-xs text-purple-300">{exam.exam_type}</span></div>
         <p className="muted">{dateLabel(exam.exam_date)}</p>
-        {exam.start_time && exam.end_time && <p className="muted mt-2 flex items-center gap-2"><Clock className="h-4 w-4" /> {exam.start_time} {'\u2013'} {exam.end_time}</p>}
+        {exam.start_time && exam.end_time && <p className="muted mt-2 flex items-center gap-2"><Clock className="h-4 w-4" /> {formatTime(exam.start_time)} {'\u2013'} {formatTime(exam.end_time)}</p>}
         <p className="muted mt-3 flex items-center gap-2"><MapPin className="h-4 w-4" /> {exam.venue || 'TBA'}</p>
         {exam.notes && <p className="mt-3 text-sm text-slate-400">{exam.notes}</p>}
       </div>

@@ -8,7 +8,7 @@ import { useConfirmDialog } from '../components/ConfirmModal'
 import { useTheme } from '../components/ThemeProvider'
 import { useToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
-import { initials } from '../lib/utils'
+import { initials, formatTime } from '../lib/utils'
 import { registerPushSubscription } from '../lib/pushNotifications'
 import { updatePreference } from '../lib/preferences'
 
@@ -163,7 +163,7 @@ export default function SettingsPage() {
       }).map(c => [
         c.day,
         c.subject,
-        `${c.start_time} - ${c.end_time}`,
+        `${formatTime(c.start_time)} - ${formatTime(c.end_time)}`,
         c.class_type === 'L' ? 'Lecture' : c.class_type === 'T' ? 'Tutorial' : c.class_type === 'P' ? 'Practical' : c.class_type || '',
         c.classroom || 'TBA',
         c.lecturer || 'TBA'
@@ -204,7 +204,7 @@ export default function SettingsPage() {
         e.subject,
         e.exam_type,
         e.exam_date ? new Date(e.exam_date).toLocaleDateString('en-US', { dateStyle: 'medium' }) : 'N/A',
-        e.start_time && e.end_time ? `${e.start_time} - ${e.end_time}` : e.start_time || 'TBA',
+        e.start_time && e.end_time ? `${formatTime(e.start_time)} - ${formatTime(e.end_time)}` : formatTime(e.start_time) || 'TBA',
         e.venue || 'TBA',
         e.notes || ''
       ])
@@ -222,7 +222,7 @@ export default function SettingsPage() {
         return a.reminder_time.localeCompare(b.reminder_time)
       }).map(r => [
         r.title,
-        r.reminder_time || 'TBA',
+        formatTime(r.reminder_time) || 'TBA',
         r.repeat_type,
         r.is_active ? 'Active' : 'Inactive'
       ])

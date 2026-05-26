@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
 import { supabase } from './supabase'
+import { formatTime } from './utils'
 
 export async function buildUserContext() {
   const { data: { user } } = await supabase.auth.getUser()
@@ -30,18 +31,18 @@ Email: ${user.email}
 Today: ${dayName}, ${format(today, 'dd MMMM yyyy')}
 
 === TODAY'S CLASSES (${dayName}) ===
-${todayClasses.length === 0 ? 'No classes today.' : todayClasses.map(c => `- ${c.subject} [${c.class_type}] from ${c.start_time} to ${c.end_time} at ${c.classroom || 'TBA'} with ${c.lecturer || 'TBA'}`).join('\n')}
+${todayClasses.length === 0 ? 'No classes today.' : todayClasses.map(c => `- ${c.subject} [${c.class_type}] from ${formatTime(c.start_time)} to ${formatTime(c.end_time)} at ${c.classroom || 'TBA'} with ${c.lecturer || 'TBA'}`).join('\n')}
 
 === ALL CLASSES (Weekly Timetable) ===
-${classes.length === 0 ? 'No classes scheduled.' : classes.map(c => `- ${c.subject} [${c.class_type}] on ${c.day} ${c.start_time}-${c.end_time}, Room: ${c.classroom || 'TBA'}, Lecturer: ${c.lecturer || 'TBA'}`).join('\n')}
+${classes.length === 0 ? 'No classes scheduled.' : classes.map(c => `- ${c.subject} [${c.class_type}] on ${c.day} ${formatTime(c.start_time)}-${formatTime(c.end_time)}, Room: ${c.classroom || 'TBA'}, Lecturer: ${c.lecturer || 'TBA'}`).join('\n')}
 
 === PENDING & IN-PROGRESS ASSIGNMENTS ===
 ${assignments.length === 0 ? 'No pending assignments.' : assignments.map(a => `- "${a.title}" (${a.subject}) - Due: ${a.deadline}, Priority: ${a.priority}, Status: ${a.status}${a.notes ? ', Notes: ' + a.notes : ''}`).join('\n')}
 
 === UPCOMING EXAMS ===
-${exams.length === 0 ? 'No upcoming exams.' : exams.map(e => `- ${e.subject} ${e.exam_type} on ${e.exam_date} at ${e.venue || 'TBA'}${e.start_time && e.end_time ? `, Time: ${e.start_time}\u2013${e.end_time}` : ''}${e.notes ? ', Notes: ' + e.notes : ''}`).join('\n')}
+${exams.length === 0 ? 'No upcoming exams.' : exams.map(e => `- ${e.subject} ${e.exam_type} on ${e.exam_date} at ${e.venue || 'TBA'}${e.start_time && e.end_time ? `, Time: ${formatTime(e.start_time)}\u2013${formatTime(e.end_time)}` : ''}${e.notes ? ', Notes: ' + e.notes : ''}`).join('\n')}
 
 === ACTIVE REMINDERS ===
-${reminders.length === 0 ? 'No active reminders.' : reminders.map(r => `- "${r.title}" at ${r.reminder_time || 'no time set'} (${r.repeat_type})`).join('\n')}
+${reminders.length === 0 ? 'No active reminders.' : reminders.map(r => `- "${r.title}" at ${formatTime(r.reminder_time) || 'no time set'} (${r.repeat_type})`).join('\n')}
 `.trim()
 }
