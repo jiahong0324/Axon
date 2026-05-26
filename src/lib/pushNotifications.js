@@ -45,6 +45,11 @@ export async function registerPushSubscription(user) {
     if (existingSubscription) {
       const subObj = existingSubscription.toJSON()
       subObj.deviceId = deviceId
+      subObj.preferences = {
+        axon_notify_minutes: localStorage.getItem('axon_notify_minutes') || '10',
+        axon_class_notify: localStorage.getItem('axon_class_notify') !== 'false',
+        axon_exam_notify: localStorage.getItem('axon_exam_notify') !== 'false'
+      }
       const ok = await saveSubscriptionToServer(subObj, user.id)
       if (ok) return existingSubscription
     }
@@ -63,6 +68,11 @@ export async function registerPushSubscription(user) {
 
     const subObj = newSubscription.toJSON()
     subObj.deviceId = deviceId
+    subObj.preferences = {
+      axon_notify_minutes: localStorage.getItem('axon_notify_minutes') || '10',
+      axon_class_notify: localStorage.getItem('axon_class_notify') !== 'false',
+      axon_exam_notify: localStorage.getItem('axon_exam_notify') !== 'false'
+    }
     const ok = await saveSubscriptionToServer(subObj, user.id)
     if (ok) return newSubscription
     return null

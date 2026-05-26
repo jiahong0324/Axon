@@ -10,6 +10,7 @@ import { useToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
 import { initials } from '../lib/utils'
 import { registerPushSubscription } from '../lib/pushNotifications'
+import { updatePreference } from '../lib/preferences'
 
 const tabs = [
   ['profile', 'Profile'],
@@ -340,8 +341,15 @@ export default function SettingsPage() {
     new Notification('Axon test', { body: 'Notifications are working.', icon: '/icons/logo.png' })
   }
 
+  const [prefTick, setPrefTick] = useState(0)
+  useEffect(() => {
+    const handleSync = () => setPrefTick(t => t + 1)
+    window.addEventListener('preferences-synced', handleSync)
+    return () => window.removeEventListener('preferences-synced', handleSync)
+  }, [])
+
   function pref(key, fallback) { return localStorage.getItem(key) ?? fallback }
-  function setPref(key, value) { localStorage.setItem(key, value); showToast('Preference saved.', 'success') }
+  function setPref(key, value) { updatePreference(user, key, value); showToast('Preference saved.', 'success') }
 
   return (
     <main className="main-content">
@@ -422,7 +430,7 @@ export default function SettingsPage() {
               <PreferenceToggle label="Exam countdown alerts" k="examAlerts" />
               <div className="mt-2">
                 <Field label="Remind me before deadline:">
-                  <select className="input" defaultValue={pref('reminderLeadTime', '3 days')} onChange={e => setPref('reminderLeadTime', e.target.value)}>
+                  <select key={`due-remind-${prefTick}`} className="input" defaultValue={pref('reminderLeadTime', '3 days')} onChange={e => setPref('reminderLeadTime', e.target.value)}>
                     {['1 day', '3 days', '1 week'].map(v => <option key={v}>{v}</option>)}
                   </select>
                 </Field>
@@ -436,7 +444,7 @@ export default function SettingsPage() {
               <PreferenceToggle label="Class start reminders" k="axon_class_notify" />
               <PreferenceToggle label="Exam start reminders" k="axon_exam_notify" />
               <div className="mt-2">
-                <MinuteSelector value={pref('axon_notify_minutes', '10')} onChange={v => setPref('axon_notify_minutes', v)} />
+                <MinuteSelector key={`min-sel-${prefTick}`} value={pref('axon_notify_minutes', '10')} onChange={v => setPref('axon_notify_minutes', v)} />
               </div>
             </div>
 
@@ -456,13 +464,13 @@ export default function SettingsPage() {
           <button className="btn-danger w-full md:w-auto" onClick={deleteAccount}><ShieldAlert className="h-4 w-4" /> Delete Account</button>
         </Section>
         <Section id="ai" title="AI Preferences">
-          <Field label="Language"><select className="input" defaultValue={pref('aiLanguage', 'English')} onChange={e => setPref('aiLanguage', e.target.value)}>{['English', 'Bahasa Malaysia', '中文'].map(v => <option key={v}>{v}</option>)}</select></Field>
-          <Field label="Style"><select className="input" defaultValue={pref('aiStyle', 'Casual')} onChange={e => setPref('aiStyle', e.target.value)}>{['Casual', 'Formal', 'Bullet points only'].map(v => <option key={v}>{v}</option>)}</select></Field>
+          <Field label="Language"><select key={`ai-lang-${prefTick}`} className="input" defaultValue={pref('aiLanguage', 'English')} onChange={e => setPref('aiLanguage', e.target.value)}>{['English', 'Bahasa Malaysia', '中文'].map(v => <option key={v}>{v}</option>)}</select></Field>
+          <Field label="Style"><select key={`ai-style-${prefTick}`} className="input" defaultValue={pref('aiStyle', 'Casual')} onChange={e => setPref('aiStyle', e.target.value)}>{['Casual', 'Formal', 'Bullet points only'].map(v => <option key={v}>{v}</option>)}</select></Field>
           <PreferenceToggle label="Auto-generate daily tip" k="dailyTipEnabled" />
         </Section>
         <Section title="Timetable Preferences">
-          <Field label="First day of week"><select className="input" defaultValue={pref('firstDay', 'Monday')} onChange={e => setPref('firstDay', e.target.value)}>{['Monday', 'Sunday'].map(v => <option key={v}>{v}</option>)}</select></Field>
-          <Field label="Time format"><select className="input" defaultValue={pref('timeFormat', '24hr')} onChange={e => setPref('timeFormat', e.target.value)}>{['12hr', '24hr'].map(v => <option key={v}>{v}</option>)}</select></Field>
+          <Field label="First day of week"><select key={`first-day-${prefTick}`} className="input" defaultValue={pref('firstDay', 'Monday')} onChange={e => setPref('firstDay', e.target.value)}>{['Monday', 'Sunday'].map(v => <option key={v}>{v}</option>)}</select></Field>
+          <Field label="Time format"><select key={`time-format-${prefTick}`} className="input" defaultValue={pref('timeFormat', '24hr')} onChange={e => setPref('timeFormat', e.target.value)}>{['12hr', '24hr'].map(v => <option key={v}>{v}</option>)}</select></Field>
         </Section>
         <Section id="data" title="Data & Privacy">
           <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
@@ -496,11 +504,25 @@ function ToggleRow({ label, checked, onChange }) {
 
 function PreferenceToggle({ label, k }) {
   const [checked, setChecked] = useState(() => localStorage.getItem(k) !== 'false')
-  return <ToggleRow label={label} checked={checked} onChange={next => { setChecked(next); localStorage.setItem(k, String(next)) }} />
+
+  useEffect(() => {
+    const handleSync = () => {
+      setChecked(localStorage.getItem(k) !== 'false')
+    }
+    window.addEventListener('preferences-synced', handleSync)
+    return () => window.removeEventListener('preferences-synced', handleSync)
+  }, [k])
+
+  return <ToggleRow label={label} checked={checked} onChange={next => { setChecked(next); updatePreference(null, k, next) }} />
 }
 
 function MinuteSelector({ value, onChange }) {
   const [selected, setSelected] = useState(String(value))
+
+  useEffect(() => {
+    setSelected(String(value))
+  }, [value])
+
   return <div><p className="label">Remind me before class/exam starts</p><div className="flex flex-wrap gap-2">{['5', '10', '15', '20', '30'].map(v => <button key={v} onClick={() => { setSelected(v); onChange(v) }} className={`rounded-full px-4 py-2 text-sm ${selected === v ? 'bg-blue-500 text-white' : 'border border-white/10'}`}>{v} minutes</button>)}</div></div>
 }
 

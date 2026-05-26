@@ -4,10 +4,17 @@ import { supabase } from '../lib/supabase'
 import LoadingSpinner from './LoadingSpinner'
 import NotificationManager from './NotificationManager'
 import Sidebar from './Sidebar'
+import { syncPreferences } from '../lib/preferences'
 
 export default function ProtectedRoute({ children }) {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (session?.user) {
+      syncPreferences(session.user)
+    }
+  }, [session])
 
   useEffect(() => {
     let active = true

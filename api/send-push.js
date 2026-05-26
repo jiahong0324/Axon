@@ -50,88 +50,106 @@ export default async function handler(req, res) {
     const currentTime = timeFormatter.format(new Date()) // HH:MM
     const todayDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()]
 
-    const pushPayloads = []
+    // 2. Fetch all active push subscriptions
+    const { data: subscriptions, error: subErr } = await supabase
+      .from('push_subscriptions')
+      .select('*')
 
-    // 2. Fetch Active Reminders due right now
+    if (subErr) {
+      console.error('Supabase error fetching subscriptions:', subErr)
+      return res.status(500).json({ error: subErr.message })
+    }
+
+    if (!subscriptions || subscriptions.length === 0) {
+      return res.status(200).json({ success: true, message: 'No active push subscriptions found' })
+    }
+
+    // 3. Fetch all active reminders, today's classes, and today's exams across all users
     const { data: reminders } = await supabase
       .from('reminders')
       .select('*')
       .eq('is_active', true)
       .eq('reminder_time', currentTime)
 
-    reminders?.forEach(r => {
-      pushPayloads.push({
-        id: `reminder_${r.id}`, // Unique ID for deduplication
-        userId: r.user_id,
-        title: '📚 Axon Reminder',
-        body: r.title,
-        url: '/reminders'
-      })
-    })
-
-    // 3. Fetch Classes starting soon (default lead time: 10 minutes)
-    const notifyMinutes = 10
-    const nowTime = new Date()
-    const targetTime = new Date(nowTime.getTime() + notifyMinutes * 60000)
-    const targetTimeStr = timeFormatter.format(targetTime)
-
-    const { data: upcomingClasses } = await supabase
+    const { data: todayClasses } = await supabase
       .from('classes')
       .select('*')
       .eq('day', todayDay)
-      .eq('start_time', targetTimeStr)
 
-    upcomingClasses?.forEach(cls => {
-      pushPayloads.push({
-        id: `class_${cls.id}`, // Unique ID for deduplication
-        userId: cls.user_id,
-        title: `Class starting in ${notifyMinutes} min!`,
-        body: `${cls.subject} [${cls.class_type}] at ${cls.classroom || 'TBA'}`,
-        url: '/'
-      })
-    })
+    const { data: todayExams } = await supabase
+      .from('exams')
+      .select('*')
+      .eq('exam_date', todayDate)
 
-    // 4. Fetch Exams today (notify at 8:00 AM)
-    if (currentTime === '08:00') {
-      const { data: upcomingExams } = await supabase
-        .from('exams')
-        .select('*')
-        .eq('exam_date', todayDate)
+    const pushPromises = []
 
-      upcomingExams?.forEach(exam => {
-        pushPayloads.push({
-          id: `exam_${exam.id}`, // Unique ID for deduplication
-          userId: exam.user_id,
-          title: `Exam Today!`,
-          body: `${exam.subject} ${exam.exam_type} at ${exam.venue || 'TBA'}`,
-          url: '/exams'
+    // 4. Evaluate and dispatch tailored notifications for each subscription
+    for (const sub of subscriptions) {
+      const subObject = sub.subscription || {}
+      const prefs = subObject.preferences || {
+        axon_notify_minutes: '10',
+        axon_class_notify: true,
+        axon_exam_notify: true
+      }
+
+      const notifyMinutes = parseInt(prefs.axon_notify_minutes || '10', 10)
+      const classNotify = prefs.axon_class_notify !== false && prefs.axon_class_notify !== 'false'
+      const examNotify = prefs.axon_exam_notify !== false && prefs.axon_exam_notify !== 'false'
+
+      const subPayloads = []
+
+      // A. Reminders (always exact time matching)
+      const userReminders = reminders?.filter(r => r.user_id === sub.user_id) || []
+      userReminders.forEach(r => {
+        subPayloads.push({
+          id: `reminder_${r.id}`,
+          title: '📚 Axon Reminder',
+          body: r.title,
+          url: '/reminders'
         })
       })
-    }
 
-    if (pushPayloads.length === 0) {
-      return res.status(200).json({ success: true, message: 'No push notifications to send' })
-    }
+      // B. Classes (custom lead time)
+      if (classNotify) {
+        const userClasses = todayClasses?.filter(cls => cls.user_id === sub.user_id) || []
+        const nowTime = new Date()
+        const targetTime = new Date(nowTime.getTime() + notifyMinutes * 60000)
+        const targetTimeStr = timeFormatter.format(targetTime)
 
-    // 5. Query all active push subscriptions for targeted users
-    const userIds = [...new Set(pushPayloads.map(p => p.userId))]
-    const { data: subscriptions } = await supabase
-      .from('push_subscriptions')
-      .select('*')
-      .in('user_id', userIds)
+        userClasses.forEach(cls => {
+          if (cls.start_time === targetTimeStr) {
+            subPayloads.push({
+              id: `class_${cls.id}`,
+              title: `Class starting in ${notifyMinutes} min!`,
+              body: `${cls.subject} [${cls.class_type}] at ${cls.classroom || 'TBA'}`,
+              url: '/'
+            })
+          }
+        })
+      }
 
-    if (!subscriptions || subscriptions.length === 0) {
-      return res.status(200).json({ success: true, message: 'No active push subscriptions found' })
-    }
+      // C. Exams (custom lead time from 8:00 AM)
+      if (examNotify) {
+        const examNotifyTime = new Date()
+        examNotifyTime.setHours(8, 0, 0, 0)
+        const examTargetTime = new Date(examNotifyTime.getTime() - notifyMinutes * 60000)
+        const isExamNotificationTime = new Date().getHours() === examTargetTime.getHours() && new Date().getMinutes() === examTargetTime.getMinutes()
 
-    // 6. Dispatch Push Notifications with stateful JSONB last-sent checks
-    const pushPromises = []
-    
-    for (const sub of subscriptions) {
-      const userPayloads = pushPayloads.filter(p => p.userId === sub.user_id)
-      if (userPayloads.length === 0) continue
+        if (isExamNotificationTime) {
+          const userExams = todayExams?.filter(exam => exam.user_id === sub.user_id) || []
+          userExams.forEach(exam => {
+            subPayloads.push({
+              id: `exam_${exam.id}`,
+              title: `Exam Today!`,
+              body: `${exam.subject} ${exam.exam_type} at ${exam.venue || 'TBA'}`,
+              url: '/exams'
+            })
+          })
+        }
+      }
 
-      const subObject = sub.subscription
+      if (subPayloads.length === 0) continue
+
       const lastSent = subObject._last_sent || { date: '', minute: '', ids: [] }
 
       // Reset tracking if date/minute changed
@@ -142,7 +160,7 @@ export default async function handler(req, res) {
       }
 
       // Filter out payloads already sent to this subscription
-      const unsentPayloads = userPayloads.filter(p => !lastSent.ids.includes(p.id))
+      const unsentPayloads = subPayloads.filter(p => !lastSent.ids.includes(p.id))
       if (unsentPayloads.length === 0) {
         console.log(`All payloads already sent to subscription ${sub.id} at ${currentTime}`)
         continue
