@@ -126,29 +126,33 @@ export default function NotificationManager() {
       }
 
       if (examNotify) {
-        const examNotifyTime = new Date(now)
-        examNotifyTime.setHours(8, 0, 0, 0)
-        const examTargetTime = new Date(examNotifyTime.getTime() - notifyMinutes * 60000)
-        const shouldNotifyExam = now.getHours() === examTargetTime.getHours() && now.getMinutes() === examTargetTime.getMinutes()
-        if (shouldNotifyExam) {
-          const { data: upcomingExams } = await supabase
-            .from('exams')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('exam_date', todayDate)
+        const { data: upcomingExams } = await supabase
+          .from('exams')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('exam_date', todayDate)
 
-          upcomingExams?.forEach(exam => {
-            const key = `notified_exam_${exam.id}_${todayDate}`
+        const fallbackExamTime = new Date(now)
+        fallbackExamTime.setHours(8, 0, 0, 0)
+        const fallbackTargetTime = new Date(fallbackExamTime.getTime() - notifyMinutes * 60000)
+        const fallbackTargetTimeStr = `${String(fallbackTargetTime.getHours()).padStart(2, '0')}:${String(fallbackTargetTime.getMinutes()).padStart(2, '0')}`
+
+        upcomingExams?.forEach(exam => {
+          const isFallbackMatch = !exam.start_time && currentTime === fallbackTargetTimeStr
+          const isStandardMatch = exam.start_time === targetTimeStr
+
+          if (isFallbackMatch || isStandardMatch) {
+            const key = `notified_exam_${exam.id}_${todayDate}_${currentTime}`
             if (localStorage.getItem(key)) return
-            new Notification(`Exam today - ${notifyMinutes} min reminder!`, {
+            new Notification(exam.start_time ? `Exam starting in ${notifyMinutes} min!` : `Exam Today!`, {
               body: `${exam.subject} ${exam.exam_type} at ${exam.venue || 'TBA'}`,
               icon: '/icons/logo.png',
               badge: '/icons/logo.png',
               vibrate: [300, 100, 300, 100, 300]
             })
             localStorage.setItem(key, '1')
-          })
-        }
+          }
+        })
       }
     }, 60000)
   }

@@ -128,24 +128,34 @@ export default async function handler(req, res) {
         })
       }
 
-      // C. Exams (custom lead time from 08:00 AM in Malaysia GMT+8 timezone)
+      // C. Exams (custom lead time from exam.start_time or 08:00 AM fallback)
       if (examNotify) {
         try {
-          const examTime = new Date(`${year}-${month}-${day}T08:00:00+08:00`)
-          const examTargetTime = new Date(examTime.getTime() - notifyMinutes * 60000)
-          const examTargetTimeStr = timeFormatter.format(examTargetTime)
+          const userExams = todayExams?.filter(exam => exam.user_id === sub.user_id) || []
+          
+          // Fallback time calculation
+          const fallbackExamTime = new Date(`${year}-${month}-${day}T08:00:00+08:00`)
+          const fallbackTargetTime = new Date(fallbackExamTime.getTime() - notifyMinutes * 60000)
+          const fallbackTargetTimeStr = timeFormatter.format(fallbackTargetTime)
 
-          if (currentTime === examTargetTimeStr) {
-            const userExams = todayExams?.filter(exam => exam.user_id === sub.user_id) || []
-            userExams.forEach(exam => {
+          // Standard time calculation
+          const nowTime = new Date()
+          const targetTime = new Date(nowTime.getTime() + notifyMinutes * 60000)
+          const targetTimeStr = timeFormatter.format(targetTime)
+
+          userExams.forEach(exam => {
+            const isFallbackMatch = !exam.start_time && currentTime === fallbackTargetTimeStr
+            const isStandardMatch = exam.start_time === targetTimeStr
+
+            if (isFallbackMatch || isStandardMatch) {
               subPayloads.push({
                 id: `exam_${exam.id}`,
-                title: `Exam Today!`,
+                title: exam.start_time ? `Exam starting in ${notifyMinutes} min!` : `Exam Today!`,
                 body: `${exam.subject} ${exam.exam_type} at ${exam.venue || 'TBA'}`,
                 url: '/exams'
               })
-            })
-          }
+            }
+          })
         } catch (err) {
           console.error(`Failed to evaluate exam time for sub ${sub.id}:`, err)
         }
