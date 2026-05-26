@@ -128,23 +128,26 @@ export default async function handler(req, res) {
         })
       }
 
-      // C. Exams (custom lead time from 8:00 AM)
+      // C. Exams (custom lead time from 08:00 AM in Malaysia GMT+8 timezone)
       if (examNotify) {
-        const examNotifyTime = new Date()
-        examNotifyTime.setHours(8, 0, 0, 0)
-        const examTargetTime = new Date(examNotifyTime.getTime() - notifyMinutes * 60000)
-        const isExamNotificationTime = new Date().getHours() === examTargetTime.getHours() && new Date().getMinutes() === examTargetTime.getMinutes()
+        try {
+          const examTime = new Date(`${year}-${month}-${day}T08:00:00+08:00`)
+          const examTargetTime = new Date(examTime.getTime() - notifyMinutes * 60000)
+          const examTargetTimeStr = timeFormatter.format(examTargetTime)
 
-        if (isExamNotificationTime) {
-          const userExams = todayExams?.filter(exam => exam.user_id === sub.user_id) || []
-          userExams.forEach(exam => {
-            subPayloads.push({
-              id: `exam_${exam.id}`,
-              title: `Exam Today!`,
-              body: `${exam.subject} ${exam.exam_type} at ${exam.venue || 'TBA'}`,
-              url: '/exams'
+          if (currentTime === examTargetTimeStr) {
+            const userExams = todayExams?.filter(exam => exam.user_id === sub.user_id) || []
+            userExams.forEach(exam => {
+              subPayloads.push({
+                id: `exam_${exam.id}`,
+                title: `Exam Today!`,
+                body: `${exam.subject} ${exam.exam_type} at ${exam.venue || 'TBA'}`,
+                url: '/exams'
+              })
             })
-          })
+          }
+        } catch (err) {
+          console.error(`Failed to evaluate exam time for sub ${sub.id}:`, err)
         }
       }
 
