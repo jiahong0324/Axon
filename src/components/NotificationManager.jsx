@@ -6,7 +6,11 @@ export default function NotificationManager() {
   useEffect(() => {
     // Clean up historical notification tracking keys to prevent key bloat
     try {
-      const todayDate = new Date().toISOString().split('T')[0]
+      const localNow = new Date()
+      const year = localNow.getFullYear()
+      const month = String(localNow.getMonth() + 1).padStart(2, '0')
+      const day = String(localNow.getDate()).padStart(2, '0')
+      const todayDate = `${year}-${month}-${day}`
       const keysToRemove = []
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i)
@@ -49,7 +53,10 @@ export default function NotificationManager() {
 
       const now = new Date()
       const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-      const todayDate = now.toISOString().split('T')[0]
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const todayDate = `${year}-${month}-${day}`
       const minuteLockKey = `axon_last_checked_${todayDate}_${currentTime}`
 
       // Acquire Lock: Since localStorage reads and writes are synchronous, the very first tab
@@ -60,10 +67,10 @@ export default function NotificationManager() {
       }
       localStorage.setItem(minuteLockKey, '1')
 
-      // If the browser supports Web Push and permission is granted, rely 100% on the server-side push service.
-      // This completely avoids any timing races between service worker activation and the local interval thread.
+      // If the browser supports Web Push, permission is granted, and it is successfully registered
+      // on the backend, rely 100% on the server-side push service. Otherwise, fall back to this local thread.
       if ('serviceWorker' in navigator && 'PushManager' in window) {
-        if (Notification.permission === 'granted') {
+        if (Notification.permission === 'granted' && localStorage.getItem('axon_push_registered') === 'true') {
           return
         }
       }

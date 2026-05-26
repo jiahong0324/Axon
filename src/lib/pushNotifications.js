@@ -30,7 +30,10 @@ export async function saveSubscriptionToServer(subscription, userId) {
 }
 
 export async function registerPushSubscription(user) {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    localStorage.setItem('axon_push_registered', 'false')
+    return null
+  }
   try {
     const reg = await navigator.serviceWorker.ready
     const existingSubscription = await reg.pushManager.getSubscription()
@@ -51,12 +54,18 @@ export async function registerPushSubscription(user) {
         axon_exam_notify: localStorage.getItem('axon_exam_notify') !== 'false'
       }
       const ok = await saveSubscriptionToServer(subObj, user.id)
-      if (ok) return existingSubscription
+      if (ok) {
+        localStorage.setItem('axon_push_registered', 'true')
+        return existingSubscription
+      } else {
+        localStorage.setItem('axon_push_registered', 'false')
+      }
     }
 
     const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY
     if (!vapidPublicKey) {
       console.warn('VITE_VAPID_PUBLIC_KEY is not defined in frontend env.')
+      localStorage.setItem('axon_push_registered', 'false')
       return null
     }
 
@@ -74,10 +83,15 @@ export async function registerPushSubscription(user) {
       axon_exam_notify: localStorage.getItem('axon_exam_notify') !== 'false'
     }
     const ok = await saveSubscriptionToServer(subObj, user.id)
-    if (ok) return newSubscription
+    if (ok) {
+      localStorage.setItem('axon_push_registered', 'true')
+      return newSubscription
+    }
+    localStorage.setItem('axon_push_registered', 'false')
     return null
   } catch (error) {
     console.error('Error registering web push subscription:', error)
+    localStorage.setItem('axon_push_registered', 'false')
     throw error
   }
 }
