@@ -81,6 +81,16 @@ export default async function handler(req, res) {
       .select('*')
       .eq('exam_date', todayDate)
 
+    let assignments = []
+    let upcomingExams = []
+    if (currentTime === '09:00') {
+      const { data: aData } = await supabase.from('assignments').select('*').neq('status', 'Done')
+      if (aData) assignments = aData
+      
+      const { data: eData } = await supabase.from('exams').select('*').gte('exam_date', todayDate)
+      if (eData) upcomingExams = eData
+    }
+
     const pushPromises = []
 
     // 4. Evaluate and dispatch tailored notifications for each subscription
@@ -158,6 +168,49 @@ export default async function handler(req, res) {
           })
         } catch (err) {
           console.error(`Failed to evaluate exam time for sub ${sub.id}:`, err)
+        }
+      }
+
+      // D. Daily Deadlines (09:00 AM)
+      if (currentTime === '09:00') {
+        const assignmentReminders = prefs.assignmentReminders !== false && prefs.assignmentReminders !== 'false'
+        const examAlerts = prefs.examAlerts !== false && prefs.examAlerts !== 'false'
+        const leadTimeStr = prefs.reminderLeadTime || '3 days'
+        const leadDays = leadTimeStr === '1 day' ? 1 : leadTimeStr === '1 week' ? 7 : 3
+        
+        // Calculate the target date string (YYYY-MM-DD)
+        const targetDateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day) + leadDays)
+        const ty = targetDateObj.getFullYear()
+        const tm = String(targetDateObj.getMonth() + 1).padStart(2, '0')
+        const td = String(targetDateObj.getDate()).padStart(2, '0')
+        const targetDateStr = `${ty}-${tm}-${td}`
+
+        if (assignmentReminders) {
+          const userAssignments = assignments.filter(a => a.user_id === sub.user_id)
+          userAssignments.forEach(a => {
+            if (a.deadline === targetDateStr) {
+              subPayloads.push({
+                id: `assignment_due_${a.id}_${todayDate}`,
+                title: `Assignment due in ${leadDays} ${leadDays === 1 ? 'day' : 'days'}!`,
+                body: `${a.title} (${a.subject})`,
+                url: '/assignments'
+              })
+            }
+          })
+        }
+
+        if (examAlerts) {
+          const userExams = upcomingExams.filter(e => e.user_id === sub.user_id)
+          userExams.forEach(e => {
+            if (e.exam_date === targetDateStr) {
+              subPayloads.push({
+                id: `exam_countdown_${e.id}_${todayDate}`,
+                title: `Exam in ${leadDays} ${leadDays === 1 ? 'day' : 'days'}!`,
+                body: `${e.subject} ${e.exam_type} is coming up.`,
+                url: '/exams'
+              })
+            }
+          })
         }
       }
 

@@ -18,6 +18,8 @@ export default function NotificationManager() {
           key.startsWith('notified_reminder_') || 
           key.startsWith('notified_class_') || 
           key.startsWith('notified_exam_') ||
+          key.startsWith('notified_assignment_due_') ||
+          key.startsWith('notified_exam_countdown_') ||
           key.startsWith('axon_last_checked_')
         )) {
           // If the key is from a previous day, queue it for removal
@@ -153,6 +155,60 @@ export default function NotificationManager() {
             localStorage.setItem(key, '1')
           }
         })
+      }
+
+      if (currentTime === '09:00') {
+        const assignmentReminders = localStorage.getItem('assignmentReminders') !== 'false'
+        const examAlertsLocal = localStorage.getItem('examAlerts') !== 'false'
+        const leadTimeStr = localStorage.getItem('reminderLeadTime') || '3 days'
+        const leadDays = leadTimeStr === '1 day' ? 1 : leadTimeStr === '1 week' ? 7 : 3
+        
+        const targetDateObj = new Date(year, parseInt(month) - 1, parseInt(day) + leadDays)
+        const ty = targetDateObj.getFullYear()
+        const tm = String(targetDateObj.getMonth() + 1).padStart(2, '0')
+        const td = String(targetDateObj.getDate()).padStart(2, '0')
+        const targetDateStr = `${ty}-${tm}-${td}`
+
+        if (assignmentReminders) {
+          const { data: assignments } = await supabase
+            .from('assignments')
+            .select('*')
+            .eq('user_id', user.id)
+            .neq('status', 'Done')
+            .eq('deadline', targetDateStr)
+
+          assignments?.forEach(a => {
+            const key = `notified_assignment_due_${a.id}_${todayDate}`
+            if (localStorage.getItem(key)) return
+            new Notification(`Assignment due in ${leadDays} ${leadDays === 1 ? 'day' : 'days'}!`, {
+              body: `${a.title} (${a.subject})`,
+              icon: '/icons/logo.png',
+              badge: '/icons/logo.png',
+              vibrate: [200, 100, 200]
+            })
+            localStorage.setItem(key, '1')
+          })
+        }
+
+        if (examAlertsLocal) {
+          const { data: exams } = await supabase
+            .from('exams')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('exam_date', targetDateStr)
+
+          exams?.forEach(e => {
+            const key = `notified_exam_countdown_${e.id}_${todayDate}`
+            if (localStorage.getItem(key)) return
+            new Notification(`Exam in ${leadDays} ${leadDays === 1 ? 'day' : 'days'}!`, {
+              body: `${e.subject} ${e.exam_type} is coming up.`,
+              icon: '/icons/logo.png',
+              badge: '/icons/logo.png',
+              vibrate: [300, 100, 300, 100, 300]
+            })
+            localStorage.setItem(key, '1')
+          })
+        }
       }
     }, 60000)
   }
