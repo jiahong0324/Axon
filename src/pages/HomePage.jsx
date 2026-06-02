@@ -9,6 +9,7 @@ import PriorityBadge from '../components/PriorityBadge'
 import { useToast } from '../components/Toast'
 import { askGroq } from '../lib/groq'
 import { buildUserContext } from '../lib/buildUserContext'
+import { SkeletonStats, SkeletonList } from '../components/SkeletonLoader'
 import { supabase } from '../lib/supabase'
 import { daysFromToday, dateLabel, formatTime } from '../lib/utils'
 
@@ -21,6 +22,7 @@ export default function HomePage() {
   const [tipLoading, setTipLoading] = useState(false)
   const [announcements, setAnnouncements] = useState([])
   const [banner, setBanner] = useState(() => localStorage.getItem('axon_pwa_dismissed') !== 'true')
+  const [loading, setLoading] = useState(true)
   const { showToast } = useToast()
   const [currentTime, setCurrentTime] = useState(new Date())
   const todayName = format(currentTime, 'EEEE')
@@ -55,6 +57,8 @@ export default function HomePage() {
       setAnnouncements((announcementRows || []).filter(a => !sessionStorage.getItem(`axon_ann_dismissed_${a.id}`)))
     } catch {
       showToast('Failed to load dashboard.', 'error')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -76,6 +80,26 @@ export default function HomePage() {
   const nextExamValue = nextExamDays === null ? '-' : nextExamDays === 0 ? 'Today!' : nextExamDays
   const hour = currentTime.getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
+  if (loading) return (
+    <main className="main-content scrollbar-hide">
+      <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-end">
+        <h1 className="font-heading text-2xl font-bold">{greeting}... 👋</h1>
+        <p className="muted tabular-nums">{format(currentTime, 'EEEE, dd MMMM yyyy · hh:mm:ss a')}</p>
+      </header>
+      <SkeletonStats />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+        <div className="card space-y-4">
+          <h2 className="section-header">📚 Today's Classes</h2>
+          <SkeletonList count={3} />
+        </div>
+        <div className="card space-y-4">
+          <h2 className="section-header mb-0">📝 Due Soon</h2>
+          <SkeletonList count={3} />
+        </div>
+      </div>
+    </main>
+  )
 
   return (
     <main className="main-content scrollbar-hide">

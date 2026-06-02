@@ -1,5 +1,6 @@
-import { Bell, BookOpen, Bot, CalendarDays, CheckSquare, LayoutDashboard, LogOut, MoreHorizontal, Settings, X } from 'lucide-react'
+import { Bell, BookOpen, Bot, CalendarDays, CheckSquare, LayoutDashboard, LogOut, MoreHorizontal, Settings, X, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
+import FeedbackModal from './FeedbackModal'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { initials } from '../lib/utils'
@@ -17,6 +18,7 @@ const navItems = [
 export default function Sidebar({ user }) {
   const navigate = useNavigate()
   const [moreOpen, setMoreOpen] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
   const name = user?.user_metadata?.full_name || user?.email || 'Student'
   const mainMobile = navItems.filter(item => ['Home', 'Timetable', 'Assignments', 'AI Helper'].includes(item.label))
   const moreItems = navItems.filter(item => ['Exams', 'Reminders', 'Settings'].includes(item.label))
@@ -48,7 +50,11 @@ export default function Sidebar({ user }) {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-4 rounded-2xl border border-white/10 p-3">
+        <button onClick={() => setFeedbackOpen(true)} className="mb-4 flex min-h-[48px] items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 text-sm font-medium text-blue-400 transition-colors hover:bg-blue-500/20">
+          <MessageSquare className="h-5 w-5" />
+          Send Feedback
+        </button>
+        <div className="rounded-2xl border border-white/10 p-3">
           <div className="mb-3 flex items-center gap-3">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-500 font-semibold text-white">{initials(name)}</div>
             <div className="min-w-0">
@@ -95,10 +101,15 @@ export default function Sidebar({ user }) {
                   {item.label}
                 </NavLink>
               ))}
+              <button onClick={() => { setMoreOpen(false); setFeedbackOpen(true) }} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-blue-400 hover:bg-white/5 font-medium">
+                <MessageSquare className="h-5 w-5" />
+                Send Feedback
+              </button>
             </div>
           </div>
         </div>
       )}
+      <FeedbackModal isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </>
   )
 }

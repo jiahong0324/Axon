@@ -9,11 +9,13 @@ import { useToast } from '../components/Toast'
 import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { classColors, days, formatTime } from '../lib/utils'
+import { SkeletonTimetable } from '../components/SkeletonLoader'
 
 const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue' }
 
 export default function TimetablePage() {
   const [classes, setClasses] = useState([])
+  const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(initialForm)
   const [showForm, setShowForm] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
@@ -31,9 +33,11 @@ export default function TimetablePage() {
   }, [])
 
   async function fetchClasses() {
+    setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     const { data } = await supabase.from('classes').select('*').eq('user_id', user.id)
     setClasses(data || [])
+    setLoading(false)
   }
 
   async function addClass(e) {
@@ -107,6 +111,7 @@ export default function TimetablePage() {
         <button className="btn-ghost px-3" onClick={() => setMobileDay(v => Math.min(days.length - 1, v + 1))}><ChevronRight className="h-4 w-4" /></button>
       </div>
       <div className="pb-3">
+        {loading ? <SkeletonTimetable /> : (
         <section className="grid gap-4 md:grid-cols-5">
           {days.map(day => {
             const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
@@ -122,6 +127,7 @@ export default function TimetablePage() {
             )
           })}
         </section>
+        )}
       </div>
       <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Timetable from Screenshot" maxWidth="max-w-6xl" bodyClassName="overflow-hidden">
         <ImageUploadAnalyzer type="timetable" onResult={saveAll} />

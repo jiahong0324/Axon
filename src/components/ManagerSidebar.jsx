@@ -1,4 +1,4 @@
-import { Activity, FileText, LayoutDashboard, LogOut, Megaphone, MoreHorizontal, Settings, Users, X } from 'lucide-react'
+import { Activity, FileText, LayoutDashboard, LogOut, Megaphone, MoreHorizontal, Settings, Users, X, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Announcements', path: '/manager/announcements', icon: Megaphone },
   { label: 'Reports', path: '/manager/reports', icon: FileText },
   { label: 'Activity', path: '/manager/activity', icon: Activity },
+  { label: 'Feedback', path: '/manager/feedback', icon: MessageSquare },
   { label: 'Settings', path: '/manager/settings', icon: Settings }
 ]
 
@@ -18,7 +19,7 @@ export default function ManagerSidebar({ user, profile }) {
   const [moreOpen, setMoreOpen] = useState(false)
   const name = profile?.full_name || user?.user_metadata?.full_name || user?.email || 'Manager'
   const mainMobile = navItems.filter(item => ['Dashboard', 'Students', 'Announcements', 'Reports'].includes(item.label))
-  const moreItems = navItems.filter(item => ['Activity', 'Settings'].includes(item.label))
+  const moreItems = navItems.filter(item => ['Activity', 'Feedback', 'Settings'].includes(item.label))
 
   async function logout() {
     await supabase.auth.signOut()

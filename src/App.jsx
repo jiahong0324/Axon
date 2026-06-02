@@ -18,12 +18,11 @@ import ManagerAnnouncementsPage from './pages/manager/ManagerAnnouncementsPage'
 import ManagerReportsPage from './pages/manager/ManagerReportsPage'
 import ManagerActivityPage from './pages/manager/ManagerActivityPage'
 import ManagerSettingsPage from './pages/manager/ManagerSettingsPage'
+import ManagerFeedbackPage from './pages/manager/ManagerFeedbackPage'
 import TermsPage from './pages/TermsPage'
 
-function RootRedirect() {
-  const { search, hash } = useLocation()
-  return <Navigate to={`/home${search}${hash}`} replace />
-}
+import LandingPage from './pages/LandingPage'
+import OnboardingPage from './pages/OnboardingPage'
 
 export default function App() {
   return (
@@ -33,8 +32,9 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/terms" element={<TermsPage />} />
-            <Route path="/" element={<RootRedirect />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
             <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />
             <Route path="/assignments" element={<ProtectedRoute requireRole="student"><AssignmentPage /></ProtectedRoute>} />
@@ -48,6 +48,7 @@ export default function App() {
             <Route path="/manager/announcements" element={<ProtectedRoute requireRole="manager"><ManagerAnnouncementsPage /></ProtectedRoute>} />
             <Route path="/manager/reports" element={<ProtectedRoute requireRole="manager"><ManagerReportsPage /></ProtectedRoute>} />
             <Route path="/manager/activity" element={<ProtectedRoute requireRole="manager"><ManagerActivityPage /></ProtectedRoute>} />
+            <Route path="/manager/feedback" element={<ProtectedRoute requireRole="manager"><ManagerFeedbackPage /></ProtectedRoute>} />
             <Route path="/manager/settings" element={<ProtectedRoute requireRole="manager"><ManagerSettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/home" />} />
           </Routes>

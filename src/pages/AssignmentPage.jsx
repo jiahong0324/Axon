@@ -12,12 +12,14 @@ import { askGroq } from '../lib/groq'
 import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { dateLabel, markdownToHtml } from '../lib/utils'
+import { SkeletonList } from '../components/SkeletonLoader'
 
 const statuses = ['Pending', 'In Progress', 'Done']
 const initialForm = { title: '', subject: '', deadline: '', priority: 'Medium', notes: '', status: 'Pending' }
 
 export default function AssignmentPage() {
   const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [aiModal, setAiModal] = useState(false)
@@ -29,9 +31,11 @@ export default function AssignmentPage() {
   useEffect(() => { fetchItems() }, [])
 
   async function fetchItems() {
+    setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     const { data } = await supabase.from('assignments').select('*').eq('user_id', user.id).order('deadline')
     setItems(data || [])
+    setLoading(false)
   }
 
   async function addItem(e) {
@@ -94,7 +98,7 @@ export default function AssignmentPage() {
           return (
             <div key={status} className="card min-h-[420px]">
               <h2 className="mb-4 font-semibold">{status === 'Pending' ? '📋' : status === 'In Progress' ? '⚡' : '✅'} {status}</h2>
-              {column.length === 0 ? <EmptyState message="No assignments here." /> : <div className="space-y-3">{column.map(item => <AssignmentCard key={item.id} item={item} updateItem={updateItem} deleteItem={deleteItem} />)}</div>}
+              {loading ? <SkeletonList count={3} /> : column.length === 0 ? <EmptyState message="No assignments here." /> : <div className="space-y-3">{column.map(item => <AssignmentCard key={item.id} item={item} updateItem={updateItem} deleteItem={deleteItem} />)}</div>}
             </div>
           )
         })}

@@ -28,7 +28,7 @@ export default function AuthPage({ mode = 'login' }) {
         await createProfile(user, 'student')
         profile = { role: 'student' }
       }
-      navigate(profile?.role === 'manager' ? '/manager' : '/home')
+      navigate(profile?.role === 'manager' ? '/manager' : '/onboarding')
     } catch (err) {
       setError(err.message || 'Authentication failed.')
     } finally {
