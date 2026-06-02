@@ -18,6 +18,7 @@ import ManagerAnnouncementsPage from './pages/manager/ManagerAnnouncementsPage'
 import ManagerReportsPage from './pages/manager/ManagerReportsPage'
 import ManagerActivityPage from './pages/manager/ManagerActivityPage'
 import ManagerSettingsPage from './pages/manager/ManagerSettingsPage'
+import TermsPage from './pages/TermsPage'
 
 function RootRedirect() {
   const { search, hash } = useLocation()
@@ -32,6 +33,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/terms" element={<TermsPage />} />
             <Route path="/" element={<RootRedirect />} />
             <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
             <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />
