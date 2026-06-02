@@ -24,7 +24,7 @@ export default function LandingPage() {
   }, [navigate])
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] text-white">
+    <div className="h-screen overflow-y-auto bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] text-white scrollbar-hide">
       {/* Navigation */}
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 md:px-12">
         <div className="flex items-center gap-3">

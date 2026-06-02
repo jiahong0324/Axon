@@ -60,7 +60,7 @@ export default function OnboardingPage() {
   if (loading) return <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] flex items-center justify-center text-white"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] p-4 text-white">
+    <div className="flex h-screen overflow-y-auto items-center justify-center bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] p-4 text-white scrollbar-hide">
       <div className="glass w-full max-w-lg animate-slideUpFade rounded-3xl p-8 shadow-2xl md:p-10">
         
         {/* Progress Bar */}
