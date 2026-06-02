@@ -6,6 +6,7 @@ import ToggleSwitch from '../components/ToggleSwitch'
 import { useToast } from '../components/Toast'
 import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq } from '../lib/groq'
+import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml, formatTime } from '../lib/utils'
 
@@ -44,6 +45,7 @@ export default function RemindersPage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('reminders').insert({ ...form, user_id: user.id })
     if (error) return showToast('Reminder could not be added.', 'error')
+    await logActivity('Added reminder', 'reminder', form.title)
     setForm(initialForm)
     setShowForm(false)
     fetchItems()

@@ -6,6 +6,7 @@ import EmptyState from '../components/EmptyState'
 import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
 import Modal from '../components/Modal'
 import { useToast } from '../components/Toast'
+import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { classColors, days, formatTime } from '../lib/utils'
 
@@ -40,6 +41,7 @@ export default function TimetablePage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('classes').insert({ ...form, user_id: user.id })
     if (error) return showToast('Class could not be added.', 'error')
+    await logActivity('Added class', 'class', form.subject)
     showToast('Class added.', 'success')
     setForm(initialForm)
     setShowForm(false)
@@ -51,6 +53,7 @@ export default function TimetablePage() {
     const rows = items.map(item => ({ ...item, user_id: user.id, color: item.color || classColors[item.class_type] || 'blue' }))
     const { error } = await supabase.from('classes').insert(rows)
     if (error) return showToast('Could not save extracted classes.', 'error')
+    await Promise.all(rows.map(item => logActivity('Added class', 'class', item.subject)))
     showToast('Extracted classes saved.', 'success')
     setAnalyzerOpen(false)
     fetchClasses()
@@ -58,7 +61,9 @@ export default function TimetablePage() {
 
   async function deleteClass(id) {
     if (!await confirm({ title: 'Delete class?', message: 'This class will be removed from your timetable.', confirmText: 'Delete' })) return
+    const deleted = classes.find(c => c.id === id)
     await supabase.from('classes').delete().eq('id', id)
+    if (deleted) await logActivity('Deleted class', 'class', deleted.subject)
     setClasses(prev => prev.filter(c => c.id !== id))
     showToast('Class deleted.', 'success')
   }

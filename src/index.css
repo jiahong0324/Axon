@@ -216,6 +216,19 @@ input, select, textarea { font-size: 16px; }
   .section-header { @apply text-lg font-semibold mb-4 flex items-center gap-2; }
   .muted { @apply text-sm; color: var(--text-muted); }
   .gradient-text { @apply bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent; }
+  .manager-gradient-text { @apply bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent; }
+  .manager-primary-btn { @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-5 py-2.5 font-medium text-white transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50; background: linear-gradient(135deg, #F59E0B, #EF4444); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+  .manager-primary-btn:hover { filter: brightness(1.08); }
+  .manager-primary-btn:active { transform: scale(0.99) !important; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .ai-helper-shell {

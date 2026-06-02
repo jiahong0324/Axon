@@ -36,6 +36,42 @@ npm run dev
 npm run build
 ```
 
+## Manager Account
+
+### First-time setup
+
+1. Run `supabase-manager-schema.sql` in the Supabase SQL Editor.
+2. Create an account through the app signup page.
+3. In Supabase Dashboard, open Table Editor -> `profiles`.
+4. Change that user's `role` from `student` to `manager`.
+5. Log out and log back in. Managers are redirected to `/manager`.
+
+### Edge Function setup
+
+Manager account actions are handled by `supabase/functions/manage-student/index.ts` so the service role key never reaches the browser.
+
+```bash
+npm install -g supabase
+supabase login
+supabase link --project-ref YOUR_PROJECT_REF
+supabase functions deploy manage-student --no-verify-jwt
+```
+
+Then add this Edge Function secret in Supabase Dashboard:
+
+```env
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+### Manager features
+
+- Separate amber-accented manager dashboard and navigation.
+- Student profile, email, password reset, deactivate/reactivate, delete, and create account actions through the Edge Function.
+- Read-only access to student timetables, assignments, exams, and activity.
+- Exam result entry, with results shown on the student's Exam page.
+- Announcements shown on the student Home page.
+- PDF academic reports using the existing PDF export stack.
+
 ## Deployment
 
 Set these environment variables on Vercel or Netlify:

@@ -9,6 +9,7 @@ import PriorityBadge from '../components/PriorityBadge'
 import { useToast } from '../components/Toast'
 import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq } from '../lib/groq'
+import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { dateLabel, markdownToHtml } from '../lib/utils'
 
@@ -38,6 +39,7 @@ export default function AssignmentPage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('assignments').insert({ ...form, user_id: user.id })
     if (error) return showToast('Assignment could not be added.', 'error')
+    await logActivity('Added assignment', 'assignment', form.title)
     showToast('Assignment added.', 'success')
     setModal(false)
     setForm(initialForm)
@@ -49,6 +51,7 @@ export default function AssignmentPage() {
     const rows = items.map(item => ({ priority: 'Medium', status: 'Pending', notes: '', ...item, user_id: user.id }))
     const { error } = await supabase.from('assignments').insert(rows)
     if (error) return showToast('Could not save extracted assignments.', 'error')
+    await Promise.all(rows.map(item => logActivity('Added assignment', 'assignment', item.title)))
     showToast('Extracted assignments saved.', 'success')
     setAnalyzerOpen(false)
     fetchItems()
@@ -56,6 +59,8 @@ export default function AssignmentPage() {
 
   async function updateItem(id, updates) {
     await supabase.from('assignments').update(updates).eq('id', id)
+    const item = items.find(item => item.id === id)
+    if (updates.status === 'Done' && item?.status !== 'Done') await logActivity('Completed assignment', 'assignment', item.title)
     setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item))
   }
 

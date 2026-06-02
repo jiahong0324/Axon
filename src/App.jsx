@@ -11,6 +11,13 @@ import ExamPage from './pages/ExamPage'
 import AIHelperPage from './pages/AIHelperPage'
 import RemindersPage from './pages/RemindersPage'
 import SettingsPage from './pages/SettingsPage'
+import ManagerDashboard from './pages/manager/ManagerDashboard'
+import ManagerStudentsPage from './pages/manager/ManagerStudentsPage'
+import ManagerStudentDetail from './pages/manager/ManagerStudentDetail'
+import ManagerAnnouncementsPage from './pages/manager/ManagerAnnouncementsPage'
+import ManagerReportsPage from './pages/manager/ManagerReportsPage'
+import ManagerActivityPage from './pages/manager/ManagerActivityPage'
+import ManagerSettingsPage from './pages/manager/ManagerSettingsPage'
 
 export default function App() {
   return (
@@ -21,13 +28,20 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-            <Route path="/timetable" element={<ProtectedRoute><TimetablePage /></ProtectedRoute>} />
-            <Route path="/assignments" element={<ProtectedRoute><AssignmentPage /></ProtectedRoute>} />
-            <Route path="/exams" element={<ProtectedRoute><ExamPage /></ProtectedRoute>} />
-            <Route path="/ai-helper" element={<ProtectedRoute><AIHelperPage /></ProtectedRoute>} />
-            <Route path="/reminders" element={<ProtectedRoute><RemindersPage /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
+            <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />
+            <Route path="/assignments" element={<ProtectedRoute requireRole="student"><AssignmentPage /></ProtectedRoute>} />
+            <Route path="/exams" element={<ProtectedRoute requireRole="student"><ExamPage /></ProtectedRoute>} />
+            <Route path="/ai-helper" element={<ProtectedRoute requireRole="student"><AIHelperPage /></ProtectedRoute>} />
+            <Route path="/reminders" element={<ProtectedRoute requireRole="student"><RemindersPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute requireRole="student"><SettingsPage /></ProtectedRoute>} />
+            <Route path="/manager" element={<ProtectedRoute requireRole="manager"><ManagerDashboard /></ProtectedRoute>} />
+            <Route path="/manager/students" element={<ProtectedRoute requireRole="manager"><ManagerStudentsPage /></ProtectedRoute>} />
+            <Route path="/manager/students/:studentId" element={<ProtectedRoute requireRole="manager"><ManagerStudentDetail /></ProtectedRoute>} />
+            <Route path="/manager/announcements" element={<ProtectedRoute requireRole="manager"><ManagerAnnouncementsPage /></ProtectedRoute>} />
+            <Route path="/manager/reports" element={<ProtectedRoute requireRole="manager"><ManagerReportsPage /></ProtectedRoute>} />
+            <Route path="/manager/activity" element={<ProtectedRoute requireRole="manager"><ManagerActivityPage /></ProtectedRoute>} />
+            <Route path="/manager/settings" element={<ProtectedRoute requireRole="manager"><ManagerSettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/home" />} />
           </Routes>
         </BrowserRouter>

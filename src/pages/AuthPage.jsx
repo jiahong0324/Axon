@@ -1,7 +1,7 @@
 import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { createProfile, supabase } from '../lib/supabase'
 
 export default function AuthPage({ mode = 'login' }) {
   const navigate = useNavigate()
@@ -19,7 +19,16 @@ export default function AuthPage({ mode = 'login' }) {
         ? await supabase.auth.signUp({ email: form.email, password: form.password, options: { data: { full_name: form.name } } })
         : await supabase.auth.signInWithPassword({ email: form.email, password: form.password })
       if (result.error) throw result.error
-      navigate('/home')
+      if (isRegister) await createProfile(result.data.user, 'student')
+      const user = result.data.user
+      let { data: profile } = user
+        ? await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+        : { data: null }
+      if (user && !profile) {
+        await createProfile(user, 'student')
+        profile = { role: 'student' }
+      }
+      navigate(profile?.role === 'manager' ? '/manager' : '/home')
     } catch (err) {
       setError(err.message || 'Authentication failed.')
     } finally {

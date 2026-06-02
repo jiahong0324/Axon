@@ -5,6 +5,7 @@ import { useConfirmDialog } from '../components/ConfirmModal'
 import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
 import Modal from '../components/Modal'
 import { useToast } from '../components/Toast'
+import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { dateLabel, daysFromToday, formatTime } from '../lib/utils'
 
@@ -12,6 +13,7 @@ const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', 
 
 export default function ExamPage() {
   const [exams, setExams] = useState([])
+  const [results, setResults] = useState([])
   const [modal, setModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
@@ -23,7 +25,9 @@ export default function ExamPage() {
   async function fetchExams() {
     const { data: { user } } = await supabase.auth.getUser()
     const { data } = await supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date')
+    const { data: resultRows } = await supabase.from('exam_results').select('*').eq('student_id', user.id)
     setExams(data || [])
+    setResults(resultRows || [])
   }
 
   async function addExam(e) {
@@ -31,6 +35,7 @@ export default function ExamPage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('exams').insert({ ...form, user_id: user.id })
     if (error) return showToast('Exam could not be added.', 'error')
+    await logActivity('Added exam', 'exam', form.subject)
     showToast('Exam added.', 'success')
     setModal(false)
     setForm(initialForm)
@@ -41,6 +46,7 @@ export default function ExamPage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('exams').insert(items.map(item => ({ ...item, user_id: user.id })))
     if (error) return showToast('Could not save extracted exams.', 'error')
+    await Promise.all(items.map(item => logActivity('Added exam', 'exam', item.subject)))
     showToast('Extracted exams saved.', 'success')
     setAnalyzerOpen(false)
     fetchExams()
@@ -61,8 +67,8 @@ export default function ExamPage() {
         <h1 className="page-title mb-0">Exam Planner</h1>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap"><button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button><button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Exam <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button></div>
       </div>
-      <ExamSection title="Upcoming" exams={upcoming} deleteExam={deleteExam} />
-      <ExamSection title="Past" exams={past} deleteExam={deleteExam} />
+      <ExamSection title="Upcoming" exams={upcoming} results={results} deleteExam={deleteExam} />
+      <ExamSection title="Past" exams={past} results={results} deleteExam={deleteExam} />
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Exam">
         <form onSubmit={addExam} className="space-y-4">
           <Field label="Subject"><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
@@ -87,20 +93,20 @@ export default function ExamPage() {
 
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 
-function ExamSection({ title, exams, deleteExam }) {
+function ExamSection({ title, exams, results, deleteExam }) {
   return (
     <section className="mb-6">
       <h2 className="section-header">{title}</h2>
       {exams.length === 0 ? <div className="card"><EmptyState emoji="📖" message={`No ${title.toLowerCase()} exams.`} /></div> : (
         <div className="grid gap-4 lg:grid-cols-2">
-          {exams.map(exam => <ExamCard key={exam.id} exam={exam} deleteExam={deleteExam} />)}
+          {exams.map(exam => <ExamCard key={exam.id} exam={exam} result={results.find(r => r.exam_id === exam.id)} deleteExam={deleteExam} />)}
         </div>
       )}
     </section>
   )
 }
 
-function ExamCard({ exam, deleteExam }) {
+function ExamCard({ exam, result, deleteExam }) {
   const days = daysFromToday(exam.exam_date)
   const color = days < 0 ? 'text-slate-400' : days <= 7 ? 'text-red-400' : days <= 14 ? 'text-yellow-400' : 'text-green-400'
   const label = days < 0 ? 'Completed' : days === 0 ? 'Today' : `${days} days`
@@ -112,6 +118,13 @@ function ExamCard({ exam, deleteExam }) {
         {exam.start_time && exam.end_time && <p className="muted mt-2 flex items-center gap-2"><Clock className="h-4 w-4" /> {formatTime(exam.start_time)} {'\u2013'} {formatTime(exam.end_time)}</p>}
         <p className="muted mt-3 flex items-center gap-2"><MapPin className="h-4 w-4" /> {exam.venue || 'TBA'}</p>
         {exam.notes && <p className="mt-3 text-sm text-slate-400">{exam.notes}</p>}
+        {result && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-white/10 pt-3">
+            <span className={`text-2xl font-bold ${Number(result.score) >= 60 ? 'text-emerald-400' : 'text-red-400'}`}>{result.score}</span>
+            <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-sm font-semibold text-blue-300">{result.grade}</span>
+            {result.remarks && <span className="text-xs italic text-slate-400">{result.remarks}</span>}
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-between gap-3 md:flex-col md:items-end">
         <p className={`text-lg font-bold ${color}`}>{label}</p>

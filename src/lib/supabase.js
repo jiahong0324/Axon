@@ -10,3 +10,14 @@ export const supabase = createClient(
 )
 
 export const isSupabaseConfigured = hasRealUrl && configuredKey && configuredKey !== 'your_supabase_anon_key'
+
+export async function createProfile(user, role = 'student') {
+  if (!user) return
+
+  await supabase.from('profiles').upsert({
+    id: user.id,
+    full_name: user.user_metadata?.full_name || '',
+    email: user.email,
+    role
+  }, { onConflict: 'id' })
+}

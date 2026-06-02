@@ -19,6 +19,7 @@ export default function HomePage() {
   const [exams, setExams] = useState([])
   const [tip, setTip] = useState('')
   const [tipLoading, setTipLoading] = useState(false)
+  const [announcements, setAnnouncements] = useState([])
   const [banner, setBanner] = useState(() => localStorage.getItem('axon_pwa_dismissed') !== 'true')
   const { showToast } = useToast()
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -43,9 +44,15 @@ export default function HomePage() {
         supabase.from('assignments').select('*').eq('user_id', user.id).neq('status', 'Done').order('deadline'),
         supabase.from('exams').select('*').eq('user_id', user.id).gte('exam_date', today).order('exam_date')
       ])
+      const { data: announcementRows } = await supabase
+        .from('announcements')
+        .select('*')
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+        .order('created_at', { ascending: false })
       setClasses(classesRes.data || [])
       setAssignments(assignmentsRes.data || [])
       setExams(examsRes.data || [])
+      setAnnouncements((announcementRows || []).filter(a => !sessionStorage.getItem(`axon_ann_dismissed_${a.id}`)))
     } catch {
       showToast('Failed to load dashboard.', 'error')
     }
@@ -78,6 +85,24 @@ export default function HomePage() {
           <button className="rounded-lg p-2 hover:bg-white/5" onClick={() => { localStorage.setItem('axon_pwa_dismissed', 'true'); setBanner(false) }}><X className="h-5 w-5" /></button>
         </div>
       )}
+
+      {announcements.map(a => (
+        <div key={a.id} className={`glass mb-3 flex items-start justify-between gap-3 rounded-xl border-l-4 p-4 ${
+          a.type === 'urgent' ? 'border-l-red-500' : a.type === 'warning' ? 'border-l-yellow-500' : 'border-l-blue-500'
+        }`}>
+          <div className="flex min-w-0 items-start gap-3">
+            {a.type === 'urgent' && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-500 animate-pulse" />}
+            <div className="min-w-0">
+              <p className="font-semibold text-sm">Announcement: {a.title}</p>
+              <p className="mt-0.5 text-sm" style={{ color: 'var(--text-muted)' }}>{a.message}</p>
+            </div>
+          </div>
+          <button onClick={() => {
+            sessionStorage.setItem(`axon_ann_dismissed_${a.id}`, '1')
+            setAnnouncements(prev => prev.filter(x => x.id !== a.id))
+          }} className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-white/5 hover:text-slate-300"><X className="h-4 w-4" /></button>
+        </div>
+      ))}
 
       <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-end">
         <h1 className="font-heading text-2xl font-bold">{greeting}, {user?.user_metadata?.full_name || 'student'} 👋</h1>

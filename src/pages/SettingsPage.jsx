@@ -36,24 +36,35 @@ export default function SettingsPage() {
 
   async function loadUser() {
     const { data: { user } } = await supabase.auth.getUser()
+    const { data: profileRow } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
     setUser(user)
     setProfile({
-      full_name: user?.user_metadata?.full_name || '',
-      university: user?.user_metadata?.university || '',
-      course: user?.user_metadata?.course || '',
-      student_id: user?.user_metadata?.student_id || '',
-      avatar_color: user?.user_metadata?.avatar_color || 'blue'
+      full_name: profileRow?.full_name || user?.user_metadata?.full_name || '',
+      university: profileRow?.university || user?.user_metadata?.university || '',
+      course: profileRow?.course || user?.user_metadata?.course || '',
+      student_id: profileRow?.student_id || user?.user_metadata?.student_id || '',
+      avatar_color: colorName(profileRow?.avatar_color || user?.user_metadata?.avatar_color || 'blue')
     })
-    setSecurity(s => ({ ...s, email: user?.email || '' }))
+    setSecurity(s => ({ ...s, email: profileRow?.email || user?.email || '' }))
   }
 
   async function saveProfile() {
     const { error } = await supabase.auth.updateUser({ data: profile })
+    if (!error && user) {
+      await supabase.from('profiles').update({
+        full_name: profile.full_name,
+        university: profile.university,
+        course: profile.course,
+        student_id: profile.student_id,
+        avatar_color: accentHex(profile.avatar_color)
+      }).eq('id', user.id)
+    }
     showToast(error ? 'Profile could not be saved.' : 'Profile saved.', error ? 'error' : 'success')
   }
 
   async function updateEmail() {
     const { error } = await supabase.auth.updateUser({ email: security.email })
+    if (!error && user) await supabase.from('profiles').update({ email: security.email }).eq('id', user.id)
     showToast(error ? 'Email update failed.' : 'Check your inbox to confirm the new email.', error ? 'error' : 'success')
   }
 
@@ -528,4 +539,11 @@ function MinuteSelector({ value, onChange }) {
 
 function accentHex(color) {
   return { blue: '#3B82F6', purple: '#8B5CF6', green: '#10B981', cyan: '#06B6D4', orange: '#F97316', red: '#EF4444' }[color] || '#3B82F6'
+}
+
+function colorName(value) {
+  if (!value?.startsWith?.('#')) return value || 'blue'
+  const normalized = value.toUpperCase()
+  const match = Object.entries({ blue: '#3B82F6', purple: '#8B5CF6', green: '#10B981', cyan: '#06B6D4', orange: '#F97316', red: '#EF4444' }).find(([, hex]) => hex === normalized)
+  return match?.[0] || 'blue'
 }
