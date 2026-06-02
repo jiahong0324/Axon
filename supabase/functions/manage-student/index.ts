@@ -86,7 +86,7 @@ Deno.serve(async req => {
       case 'send_reset_email': {
         const { data: studentProfile } = await adminClient.from('profiles').select('email').eq('id', studentId).single()
         if (!studentProfile?.email) return json({ error: 'Student email not found' }, 404)
-        result = await adminClient.auth.admin.generateLink({ type: 'recovery', email: studentProfile.email })
+        result = await adminClient.auth.resetPasswordForEmail(studentProfile.email)
         break
       }
 
