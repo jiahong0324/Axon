@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom'
 
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] px-4 py-10 text-white">
-      <div className="mx-auto max-w-3xl glass rounded-2xl p-8 shadow-2xl">
+    <main className="h-screen overflow-y-auto bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] px-4 py-10 text-white">
+      <div className="mx-auto max-w-3xl glass rounded-2xl p-8 shadow-2xl mb-10">
         <div className="mb-8 flex items-center justify-between border-b border-white/10 pb-4">
           <h1 className="text-2xl font-bold">Terms and Conditions</h1>
           <Link to="/login" className="btn-ghost text-sm">Back</Link>
