@@ -87,11 +87,9 @@ export default function AuthPage({ mode = 'login' }) {
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {isRegister ? 'Create account' : 'Sign in'}
             </button>
-            {isRegister && (
-              <p className="mt-4 text-center text-xs text-slate-400">
-                By creating an account, you agree to our <Link to="/terms" className="font-semibold text-blue-400 hover:underline">Terms and Conditions</Link>.
-              </p>
-            )}
+            <p className="mt-4 text-center text-xs text-slate-400">
+              By continuing, you agree to our <Link to="/terms" className="font-semibold text-blue-400 hover:underline">Terms and Conditions</Link>.
+            </p>
           </form>
           <div className="my-6 flex items-center before:mt-0.5 before:flex-1 before:border-t before:border-white/10 after:mt-0.5 after:flex-1 after:border-t after:border-white/10">
             <p className="mx-4 mb-0 text-center text-sm text-slate-400">Or continue with</p>
