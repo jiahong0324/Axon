@@ -39,9 +39,14 @@ export default function AuthPage({ mode = 'login' }) {
   async function handleOAuth(provider) {
     setError('')
     try {
+      const options = { redirectTo: window.location.origin }
+      if (provider === 'google') {
+        options.queryParams = { prompt: 'select_account' }
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: window.location.origin }
+        options
       })
       if (error) throw error
     } catch (err) {
