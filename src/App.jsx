@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import { ThemeProvider } from './components/ThemeProvider'
 import { ToastProvider } from './components/Toast'
@@ -19,6 +19,11 @@ import ManagerReportsPage from './pages/manager/ManagerReportsPage'
 import ManagerActivityPage from './pages/manager/ManagerActivityPage'
 import ManagerSettingsPage from './pages/manager/ManagerSettingsPage'
 
+function RootRedirect() {
+  const { search, hash } = useLocation()
+  return <Navigate to={`/home${search}${hash}`} replace />
+}
+
 export default function App() {
   return (
     <ThemeProvider>
@@ -27,7 +32,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/" element={<RootRedirect />} />
             <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
             <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />
             <Route path="/assignments" element={<ProtectedRoute requireRole="student"><AssignmentPage /></ProtectedRoute>} />
