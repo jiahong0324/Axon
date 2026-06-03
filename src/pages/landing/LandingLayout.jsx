@@ -75,7 +75,7 @@ export default function LandingLayout() {
 
   return (
     <div className="h-screen overflow-y-auto bg-slate-50 text-slate-950 scrollbar-hide dark:bg-slate-950 dark:text-white">
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90">
+      <header className="pt-safe sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90">
         <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
           <Link to="/" className="flex items-center gap-3" aria-label="Axon home">
             <img src="/icons/logo.png" alt="Axon Logo" className="h-10 w-10 rounded-xl shadow-sm" />
