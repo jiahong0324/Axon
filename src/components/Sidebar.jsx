@@ -104,6 +104,15 @@ export default function Sidebar({ user }) {
                   {item.label}
                 </NavLink>
               ))}
+              <div className="my-2 h-px bg-white/10" />
+              <NavLink to="/?view=true" onClick={() => setMoreOpen(false)} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-slate-300 hover:bg-white/5">
+                <Globe className="h-5 w-5 text-slate-400" />
+                Official Website
+              </NavLink>
+              <button onClick={logout} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-red-400 hover:bg-red-500/10">
+                <LogOut className="h-5 w-5 text-red-400" />
+                Log out
+              </button>
               <button onClick={() => { setMoreOpen(false); setFeedbackOpen(true) }} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-blue-400 hover:bg-white/5 font-medium">
                 <MessageSquare className="h-5 w-5" />
                 Send Feedback
