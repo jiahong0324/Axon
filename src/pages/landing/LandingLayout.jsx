@@ -76,13 +76,13 @@ export default function LandingLayout() {
   return (
     <div className="h-screen overflow-y-auto bg-slate-50 text-slate-950 scrollbar-hide dark:bg-slate-950 dark:text-white">
       <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
+        <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
           <Link to="/" className="flex items-center gap-3" aria-label="Axon home">
             <img src="/icons/logo.png" alt="Axon Logo" className="h-10 w-10 rounded-xl shadow-sm" />
             <span className="font-heading text-2xl font-bold tracking-tight text-slate-950 dark:text-white">Axon</span>
           </Link>
 
-          <div className="hidden items-center gap-7 lg:flex">
+          <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-7 lg:flex">
             {navLinks.map(([label, href]) => (
               <Link key={href} to={`${href}${searchStr}`} className={`text-sm font-semibold transition-colors hover:text-blue-600 dark:hover:text-white ${location.pathname === href ? 'text-blue-600 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
                 {label}
