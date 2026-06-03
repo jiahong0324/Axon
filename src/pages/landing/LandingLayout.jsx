@@ -38,6 +38,7 @@ export default function LandingLayout() {
   const location = useLocation()
   const themeCtx = useTheme()
   const [hasSession, setHasSession] = useState(false)
+  const [sessionLoading, setSessionLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
 
   const isViewing = new URLSearchParams(location.search).get('view') === 'true'
@@ -47,19 +48,23 @@ export default function LandingLayout() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setHasSession(!!session)
       if (session && !isViewing) {
-        navigate('/onboarding', { replace: true })
+        navigate('/home', { replace: true })
+      } else {
+        setSessionLoading(false)
       }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setHasSession(!!session)
       if (session && !isViewing) {
-        navigate('/onboarding', { replace: true })
+        navigate('/home', { replace: true })
       }
     })
 
     return () => subscription.unsubscribe()
   }, [navigate, isViewing])
+
+  if (sessionLoading && !isViewing) return null
 
   useEffect(() => {
     // Close menu when route changes

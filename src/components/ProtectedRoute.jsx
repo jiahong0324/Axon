@@ -53,7 +53,13 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
 
   if (loading) return null
   if (!session) return <Navigate to="/login" replace />
+  
   const role = profile?.role || 'student'
+  
+  if (role === 'student' && (!profile?.university || !profile?.student_id)) {
+    return <Navigate to="/onboarding" replace />
+  }
+
   if (requireRole && role !== requireRole) return <Navigate to={role === 'manager' ? '/manager' : '/home'} replace />
 
   return (
