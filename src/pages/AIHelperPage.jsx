@@ -202,9 +202,12 @@ export default function AIHelperPage() {
             focused ? 'pb-[calc(10px+env(safe-area-inset-bottom))] pt-1' : 'pb-[calc(82px+env(safe-area-inset-bottom))] pt-1 md:pb-3'
           }`}>
             {selectedImage && (
-              <div className="mb-2 relative w-20 h-20 rounded-xl overflow-hidden border border-white/20 ml-2">
-                <img src={selectedImage.url} alt="Upload preview" className="w-full h-full object-cover" />
-                <button onClick={removeImage} className="absolute top-1 right-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors">
+              <div className="mb-2 relative ml-12 h-16 w-16 overflow-hidden rounded-lg border border-white/20 shadow-md">
+                <img src={selectedImage.url} alt="Upload preview" className="h-full w-full object-cover" />
+                <button 
+                  onClick={removeImage} 
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-md transition-colors hover:bg-black"
+                >
                   <X className="h-3 w-3" />
                 </button>
               </div>
@@ -214,7 +217,7 @@ export default function AIHelperPage() {
             }`}>
               <button
                 type="button"
-                className="ai-send-button !bg-transparent !text-slate-400 hover:!text-white flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-2xl transition-all"
+                className="mb-0.5 ml-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
                 onClick={() => fileInputRef.current?.click()}
                 title="Upload Image"
               >
