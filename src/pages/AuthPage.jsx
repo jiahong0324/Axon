@@ -2,9 +2,11 @@ import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createProfile, supabase } from '../lib/supabase'
+import { useToast } from '../components/Toast'
 
 export default function AuthPage({ mode = 'login' }) {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const isRegister = mode === 'register'
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [error, setError] = useState('')
@@ -19,7 +21,18 @@ export default function AuthPage({ mode = 'login' }) {
         ? await supabase.auth.signUp({ email: form.email, password: form.password, options: { data: { full_name: form.name } } })
         : await supabase.auth.signInWithPassword({ email: form.email, password: form.password })
       if (result.error) throw result.error
-      if (isRegister) await createProfile(result.data.user, 'student')
+      
+      if (isRegister) {
+        await createProfile(result.data.user, 'student')
+        // If email confirmation is enabled, session will be null
+        if (!result.data.session) {
+          showToast('Registration successful! Please check your email to confirm your account.', 'success')
+          setForm({ name: '', email: '', password: '' })
+          navigate('/login')
+          return
+        }
+      }
+
       const user = result.data.user
       let { data: profile } = user
         ? await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
