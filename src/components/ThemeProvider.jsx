@@ -13,7 +13,7 @@ const accents = {
 }
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light')
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'system')
   const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || 'blue')
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium')
   const [compactMode, setCompactMode] = useState(() => localStorage.getItem('compactMode') === 'true')

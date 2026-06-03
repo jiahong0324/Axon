@@ -172,7 +172,7 @@ export default function LandingHome() {
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-4">
               <HeroStat value="6" label="Study tools" />
               <HeroStat value="24/7" label="AI support" />
-              <HeroStat value="Light" label="Default theme" />
+              <HeroStat value="System" label="Default theme" />
             </div>
           </div>
           <DashboardPreview />
@@ -206,11 +206,11 @@ export default function LandingHome() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 pt-16 md:px-8">
-        <div className="rounded-3xl bg-slate-950 px-6 py-12 text-center text-white shadow-2xl shadow-slate-300/40 dark:bg-white dark:text-slate-950 dark:shadow-black/20 md:px-10">
-          <h2 className="font-heading text-3xl font-extrabold tracking-tight md:text-5xl">
+        <div className="rounded-3xl bg-slate-950 px-6 py-12 text-center text-white shadow-2xl shadow-slate-300/40 dark:bg-slate-900 dark:border dark:border-white/10 dark:shadow-black/20 md:px-10">
+          <h2 className="font-heading text-3xl font-extrabold tracking-tight md:text-5xl text-white">
             Start organizing your academic life today.
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-300 dark:text-slate-600">
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-300 dark:text-slate-400">
             Build better study habits with a dashboard that keeps your classes, deadlines, exams, reminders, and learning support in one place.
           </p>
           <div className="mt-8">
