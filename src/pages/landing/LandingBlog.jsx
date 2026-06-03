@@ -16,7 +16,7 @@ function getCategoryColor(category) {
 
 function BlogCard({ post, searchStr }) {
   return (
-    <article className="flex min-h-[380px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/80 dark:border-white/10 dark:bg-slate-900 dark:hover:shadow-black/20">
+    <Link to={`/blog/${post.slug}${searchStr}`} className="group flex min-h-[380px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/80 dark:border-white/10 dark:bg-slate-900 dark:hover:shadow-black/20">
       {post.image_url && (
         <div className="h-48 w-full overflow-hidden border-b border-slate-100 dark:border-white/5">
           <img src={post.image_url} alt={post.title} className="h-full w-full object-cover transition-transform duration-500 hover:scale-105" />
@@ -32,9 +32,9 @@ function BlogCard({ post, searchStr }) {
         <h3 className="text-xl font-extrabold leading-snug text-slate-950 dark:text-white">{post.title}</h3>
         <p className="mt-3 flex-1 text-sm leading-6 text-slate-600 line-clamp-3 dark:text-slate-400">{post.description}</p>
         <div className="mt-6 flex items-center justify-between">
-          <Link to={`/blog/${post.slug}${searchStr}`} className="inline-flex items-center gap-2 text-sm font-extrabold text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200">
-            Read Article <ArrowRight className="h-4 w-4" />
-          </Link>
+          <span className="inline-flex items-center gap-2 text-sm font-extrabold text-blue-600 transition group-hover:text-blue-700 dark:text-blue-300 dark:group-hover:text-blue-200">
+            Read Article <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+          </span>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500">
               <Eye className="h-4 w-4" />
@@ -47,7 +47,7 @@ function BlogCard({ post, searchStr }) {
           </div>
         </div>
       </div>
-    </article>
+    </Link>
   )
 }
 
