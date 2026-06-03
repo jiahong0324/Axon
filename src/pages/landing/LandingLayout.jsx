@@ -8,7 +8,7 @@ function ThemeToggle({ theme, setTheme }) {
   const isDark = theme === 'dark'
   return (
     <button
-      className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 transition hover:text-blue-600 dark:text-slate-300 dark:hover:text-white"
+      className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 transition hover:text-theme-600 dark:text-slate-300 dark:hover:text-white"
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       aria-label="Switch color theme"
     >
@@ -24,7 +24,7 @@ function FooterGroup({ title, links, searchStr = '' }) {
       <h3 className="text-sm font-extrabold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{title}</h3>
       <div className="mt-4 grid gap-3">
         {links.map(([label, href]) => (
-          <Link key={`${title}-${label}`} to={`${href}${searchStr}`} className="text-sm font-semibold text-slate-700 transition hover:text-blue-600 dark:text-slate-300 dark:hover:text-white">
+          <Link key={`${title}-${label}`} to={`${href}${searchStr}`} className="text-sm font-semibold text-slate-700 transition hover:text-theme-600 dark:text-slate-300 dark:hover:text-white">
             {label}
           </Link>
         ))}
@@ -94,7 +94,7 @@ export default function LandingLayout() {
 
           <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-7 lg:flex">
             {navLinks.map(([label, href]) => (
-              <Link key={href} to={`${href}${searchStr}`} className={`text-sm font-semibold transition-colors hover:text-blue-600 dark:hover:text-white ${location.pathname === href ? 'text-blue-600 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+              <Link key={href} to={`${href}${searchStr}`} className={`text-sm font-semibold transition-colors hover:text-theme-600 dark:hover:text-white ${location.pathname === href ? 'text-theme-600 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
                 {label}
               </Link>
             ))}
@@ -103,7 +103,7 @@ export default function LandingLayout() {
           <div className="hidden items-center gap-3 lg:flex">
             <ThemeToggle theme={themeCtx.theme} setTheme={themeCtx.setTheme} />
             {hasSession ? (
-              <Link to="/onboarding" className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
+              <Link to="/onboarding" className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-theme-600 px-5 text-sm font-semibold text-white shadow-lg shadow-theme-600/20 transition hover:bg-theme-700">
                 Go to Dashboard
               </Link>
             ) : (
@@ -111,7 +111,7 @@ export default function LandingLayout() {
                 <Link to="/login" className="inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10">
                   Sign In
                 </Link>
-                <Link to="/register" className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
+                <Link to="/register" className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-theme-600 px-5 text-sm font-semibold text-white shadow-lg shadow-theme-600/20 transition hover:bg-theme-700">
                   Get Started
                 </Link>
               </>
@@ -139,7 +139,7 @@ export default function LandingLayout() {
             <div className="flex items-center gap-3">
               <ThemeToggle theme={themeCtx.theme} setTheme={themeCtx.setTheme} />
               {hasSession ? (
-                <Link to="/onboarding" className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/30 transition hover:bg-blue-700">
+                <Link to="/onboarding" className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-theme-600 px-5 text-sm font-bold text-white shadow-lg shadow-theme-600/30 transition hover:bg-theme-700">
                   Go to Dashboard
                 </Link>
               ) : (
@@ -147,7 +147,7 @@ export default function LandingLayout() {
                   <Link to="/login" className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5">
                     Sign In
                   </Link>
-                  <Link to="/register" className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/30 transition hover:bg-blue-700">
+                  <Link to="/register" className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-theme-600 px-5 text-sm font-bold text-white shadow-lg shadow-theme-600/30 transition hover:bg-theme-700">
                     Get Started
                   </Link>
                 </>

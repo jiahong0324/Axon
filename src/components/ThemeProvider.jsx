@@ -35,6 +35,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.style.setProperty('--accent', accents[accentColor] || accents.blue)
+    document.documentElement.setAttribute('data-accent', accentColor)
     localStorage.setItem('accentColor', accentColor)
     if (isMounted.current.accentColor) {
       import('../lib/preferences').then(m => m.updatePreference(null, 'accentColor', accentColor))

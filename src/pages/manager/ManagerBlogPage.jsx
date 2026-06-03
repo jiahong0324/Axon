@@ -82,7 +82,7 @@ export default function ManagerBlogPage() {
       </header>
 
       {loading ? (
-        <div className="flex justify-center p-8"><div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" /></div>
+        <div className="flex justify-center p-8"><div className="h-8 w-8 animate-spin rounded-full border-4 border-theme-500 border-t-transparent" /></div>
       ) : posts.length === 0 ? (
         <div className="card p-12 text-center text-slate-400">No blog posts found.</div>
       ) : (
@@ -92,13 +92,13 @@ export default function ManagerBlogPage() {
               <div>
                 <h3 className="font-bold text-white">{post.title}</h3>
                 <div className="mt-1 flex items-center gap-3 text-sm text-slate-400">
-                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-blue-300">{post.category}</span>
+                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-theme-300">{post.category}</span>
                   <span>{post.read_time}</span>
                   <span className="hidden md:inline">• /{post.slug}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => setEditingPost(post)} className="btn-ghost p-2 text-slate-300 hover:text-blue-400">
+                <button onClick={() => setEditingPost(post)} className="btn-ghost p-2 text-slate-300 hover:text-theme-400">
                   <Edit2 className="h-4 w-4" />
                 </button>
                 <button onClick={() => handleDelete(post.id)} className="btn-ghost p-2 text-slate-300 hover:text-red-400">

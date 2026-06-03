@@ -32,7 +32,7 @@ function BlogCard({ post, searchStr }) {
         <h3 className="text-xl font-extrabold leading-snug text-slate-950 dark:text-white">{post.title}</h3>
         <p className="mt-3 flex-1 text-sm leading-6 text-slate-600 line-clamp-3 dark:text-slate-400">{post.description}</p>
         <div className="mt-6 flex items-center justify-between">
-          <span className="inline-flex items-center gap-2 text-sm font-extrabold text-blue-600 transition group-hover:text-blue-700 dark:text-blue-300 dark:group-hover:text-blue-200">
+          <span className="inline-flex items-center gap-2 text-sm font-extrabold text-theme-600 transition group-hover:text-theme-700 dark:text-theme-300 dark:group-hover:text-theme-200">
             Read Article <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
           </span>
           <div className="flex items-center gap-3">
@@ -83,7 +83,7 @@ export default function LandingBlog() {
       </div>
       
       {loading ? (
-        <div className="mt-10 flex justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" /></div>
+        <div className="mt-10 flex justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-theme-500 border-t-transparent" /></div>
       ) : (
         <>
           {posts.length > 0 && (

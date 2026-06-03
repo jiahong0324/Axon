@@ -77,8 +77,8 @@ export default function AuthPage({ mode = 'login' }) {
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your study life, neatly gathered.</p>
           </div>
           <div className="mb-5 grid grid-cols-2 rounded-xl bg-slate-200/60 dark:bg-navy-950/70 p-1">
-            <Link to="/login" className={`rounded-lg py-3 text-center text-sm font-semibold transition-all ${!isRegister ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Sign In</Link>
-            <Link to="/register" className={`rounded-lg py-3 text-center text-sm font-semibold transition-all ${isRegister ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Sign Up</Link>
+            <Link to="/login" className={`rounded-lg py-3 text-center text-sm font-semibold transition-all ${!isRegister ? 'bg-theme-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Sign In</Link>
+            <Link to="/register" className={`rounded-lg py-3 text-center text-sm font-semibold transition-all ${isRegister ? 'bg-theme-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Sign Up</Link>
           </div>
           <form onSubmit={submit} className="space-y-4">
             {isRegister && (
@@ -101,7 +101,7 @@ export default function AuthPage({ mode = 'login' }) {
               {isRegister ? 'Create account' : 'Sign in'}
             </button>
             <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
-              By continuing, you agree to our <Link to="/terms" className="font-semibold text-blue-500 dark:text-blue-400 hover:underline">Terms and Conditions</Link>.
+              By continuing, you agree to our <Link to="/terms" className="font-semibold text-theme-500 dark:text-theme-400 hover:underline">Terms and Conditions</Link>.
             </p>
           </form>
           <div className="my-6 flex items-center before:mt-0.5 before:flex-1 before:border-t before:border-slate-200 dark:before:border-white/10 after:mt-0.5 after:flex-1 after:border-t after:border-slate-200 dark:after:border-white/10">

@@ -7,7 +7,7 @@ const features = [
     icon: Calendar,
     title: 'Smart Timetable',
     desc: 'Build a clear weekly schedule for lectures, tutorials, practicals, study sessions, and campus commitments.',
-    tone: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
+    tone: 'bg-theme-100 text-theme-700 dark:bg-theme-500/15 dark:text-theme-300'
   },
   {
     icon: CheckCircle,
@@ -58,7 +58,7 @@ function FeatureCard({ feature }) {
 function Step({ number, title, desc }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 dark:border-white/10 dark:bg-slate-950">
-      <p className="font-heading text-4xl font-extrabold text-blue-600 dark:text-blue-300">{number}</p>
+      <p className="font-heading text-4xl font-extrabold text-theme-600 dark:text-theme-300">{number}</p>
       <h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">{title}</h3>
       <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{desc}</p>
     </article>
@@ -77,7 +77,7 @@ function DashboardPreview() {
           <div className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">On track</div>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
-          <MiniMetric label="Classes" value="4" tone="text-blue-600 dark:text-blue-300" />
+          <MiniMetric label="Classes" value="4" tone="text-theme-600 dark:text-theme-300" />
           <MiniMetric label="Assignments" value="3" tone="text-emerald-600 dark:text-emerald-300" />
           <MiniMetric label="Exams" value="2" tone="text-violet-600 dark:text-violet-300" />
         </div>
@@ -92,7 +92,7 @@ function DashboardPreview() {
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400">AI study prompt</p>
-            <p className="mt-4 rounded-xl bg-blue-50 p-4 text-sm leading-6 text-blue-900 dark:bg-blue-500/10 dark:text-blue-100">
+            <p className="mt-4 rounded-xl bg-theme-50 p-4 text-sm leading-6 text-theme-900 dark:bg-theme-500/10 dark:text-theme-100">
               Summarize my networking notes and create a 20-minute revision plan.
             </p>
             <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200">
@@ -144,7 +144,7 @@ export default function LandingHome() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_34rem),radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.1),transparent_24rem)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.2),transparent_34rem),radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.14),transparent_24rem)]" />
         <div className="relative mx-auto grid max-w-7xl gap-12 px-5 py-16 md:px-8 md:py-20 lg:grid-cols-[1fr_0.9fr] lg:items-center">
           <div>
-            <p className="mb-5 inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-300">
+            <p className="mb-5 inline-flex rounded-full border border-theme-200 bg-theme-50 px-4 py-2 text-sm font-semibold text-theme-700 dark:border-theme-400/20 dark:bg-theme-500/10 dark:text-theme-300">
               Student productivity platform
             </p>
             <h1 className="font-heading text-4xl font-extrabold leading-tight tracking-tight text-slate-950 md:text-6xl dark:text-white">
@@ -155,12 +155,12 @@ export default function LandingHome() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               {hasSession ? (
-                <Link to="/onboarding" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-blue-600 px-7 text-base font-bold text-white shadow-xl shadow-blue-600/20 transition hover:bg-blue-700">
+                <Link to="/onboarding" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700">
                   Go to Dashboard <ArrowRight className="h-5 w-5" />
                 </Link>
               ) : (
                 <>
-                  <Link to="/register" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-blue-600 px-7 text-base font-bold text-white shadow-xl shadow-blue-600/20 transition hover:bg-blue-700">
+                  <Link to="/register" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700">
                     Get Started <ArrowRight className="h-5 w-5" />
                   </Link>
                   <Link to="/login" className="inline-flex min-h-[56px] items-center justify-center rounded-xl border border-slate-200 bg-white px-7 text-base font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
@@ -214,7 +214,7 @@ export default function LandingHome() {
             Build better study habits with a dashboard that keeps your classes, deadlines, exams, reminders, and learning support in one place.
           </p>
           <div className="mt-8">
-            <Link to={hasSession ? '/onboarding' : '/register'} className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 text-base font-bold text-white transition hover:bg-blue-700">
+            <Link to={hasSession ? '/onboarding' : '/register'} className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-8 text-base font-bold text-white transition hover:bg-theme-700">
               {hasSession ? 'Go to Dashboard' : 'Get Started'} <ArrowRight className="h-5 w-5" />
             </Link>
           </div>

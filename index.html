@@ -31,6 +31,8 @@
             document.documentElement.setAttribute('data-theme', theme);
             if (theme === 'dark') document.documentElement.classList.add('dark');
           }
+          var accent = localStorage.getItem('accentColor') || 'blue';
+          document.documentElement.setAttribute('data-accent', accent);
         } catch (e) {}
       })();
     </script>

@@ -4,7 +4,7 @@ export default function ToggleSwitch({ isOn, onToggle }) {
       type="button"
       onClick={onToggle}
       className={`relative inline-flex items-center rounded-full transition-colors duration-200 focus:outline-none ${
-        isOn ? 'bg-blue-500' : 'bg-slate-600'
+        isOn ? 'bg-theme-500' : 'bg-slate-600'
       }`}
       style={{ minWidth: '48px', width: '48px', minHeight: '28px', height: '28px' }}
     >

@@ -47,7 +47,7 @@ export default function ManagerFeedbackPage() {
       </header>
 
       {loading ? (
-        <div className="flex justify-center p-8"><div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" /></div>
+        <div className="flex justify-center p-8"><div className="h-8 w-8 animate-spin rounded-full border-4 border-theme-500 border-t-transparent" /></div>
       ) : feedback.length === 0 ? (
         <div className="card p-12 text-center text-slate-400">No feedback submitted yet!</div>
       ) : (
@@ -60,7 +60,7 @@ export default function ManagerFeedbackPage() {
             return (
               <div key={item.id} className="card flex flex-col md:flex-row md:items-start justify-between gap-6 p-6">
                 <div className="flex items-start gap-4">
-                  <div className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${item.status === 'resolved' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                  <div className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${item.status === 'resolved' ? 'bg-green-500/20 text-green-400' : 'bg-theme-500/20 text-theme-400'}`}>
                     {item.status === 'resolved' ? <CheckCircle className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
                   </div>
                   <div>

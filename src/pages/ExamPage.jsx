@@ -121,7 +121,7 @@ function ExamCard({ exam, result, deleteExam }) {
         {result && (
           <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-white/10 pt-3">
             <span className={`text-2xl font-bold ${Number(result.score) >= 60 ? 'text-emerald-400' : 'text-red-400'}`}>{result.score}</span>
-            <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-sm font-semibold text-blue-300">{result.grade}</span>
+            <span className="rounded-full bg-theme-500/20 px-2 py-0.5 text-sm font-semibold text-theme-300">{result.grade}</span>
             {result.remarks && <span className="text-xs italic text-slate-400">{result.remarks}</span>}
           </div>
         )}

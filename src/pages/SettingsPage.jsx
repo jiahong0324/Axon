@@ -96,7 +96,7 @@ export default function SettingsPage() {
       doc.text('AXON ACADEMIC OVERVIEW', 15, 20)
 
       // Accent Line
-      doc.setDrawColor(59, 130, 246) // blue-500
+      doc.setDrawColor(59, 130, 246) // theme-500
       doc.setLineWidth(1)
       doc.line(15, 24, 195, 24)
 
@@ -443,7 +443,7 @@ export default function SettingsPage() {
 
             <div className="h-px bg-white/10 w-full" />
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-blue-400">Deadlines & Due Dates</h4>
+              <h4 className="text-sm font-semibold text-theme-400">Deadlines & Due Dates</h4>
               <PreferenceToggle label="Assignment due reminders" k="assignmentReminders" />
               <PreferenceToggle label="Exam countdown alerts" k="examAlerts" />
               <div className="mt-2">
@@ -509,11 +509,11 @@ function Field({ label, children }) { return <label className="block space-y-1">
 
 function ThemeSegment({ value, onChange }) {
   const options = [['dark', '🌙 Dark'], ['light', '☀️ Light'], ['system', '💻 System']]
-  return <div><p className="label">Theme</p><div className="grid grid-cols-3 gap-2">{options.map(([key, label]) => <button key={key} className={`rounded-xl px-3 py-2 text-sm ${value === key ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'border border-white/10'}`} onClick={() => onChange(key)}>{label}</button>)}</div></div>
+  return <div><p className="label">Theme</p><div className="grid grid-cols-3 gap-2">{options.map(([key, label]) => <button key={key} className={`rounded-xl px-3 py-2 text-sm ${value === key ? 'bg-gradient-to-r from-theme-500 to-purple-600 text-white' : 'border border-white/10'}`} onClick={() => onChange(key)}>{label}</button>)}</div></div>
 }
 
 function Segment({ label, value, onChange, options }) {
-  return <div><p className="label">{label}</p><div className="flex flex-wrap gap-2">{options.map(opt => <button key={opt} className={`rounded-xl border px-3 py-2 capitalize ${value === opt ? 'border-blue-500 bg-blue-500/20' : 'border-white/10'}`} onClick={() => onChange(opt)}>{opt}</button>)}</div></div>
+  return <div><p className="label">{label}</p><div className="flex flex-wrap gap-2">{options.map(opt => <button key={opt} className={`rounded-xl border px-3 py-2 capitalize ${value === opt ? 'border-theme-500 bg-theme-500/20' : 'border-white/10'}`} onClick={() => onChange(opt)}>{opt}</button>)}</div></div>
 }
 
 function ToggleRow({ label, checked, onChange }) {
@@ -541,7 +541,7 @@ function MinuteSelector({ value, onChange }) {
     setSelected(String(value))
   }, [value])
 
-  return <div><p className="label">Remind me before class/exam starts</p><div className="flex flex-wrap gap-2">{['5', '10', '15', '20', '30'].map(v => <button key={v} onClick={() => { setSelected(v); onChange(v) }} className={`rounded-full px-4 py-2 text-sm ${selected === v ? 'bg-blue-500 text-white' : 'border border-white/10'}`}>{v} minutes</button>)}</div></div>
+  return <div><p className="label">Remind me before class/exam starts</p><div className="flex flex-wrap gap-2">{['5', '10', '15', '20', '30'].map(v => <button key={v} onClick={() => { setSelected(v); onChange(v) }} className={`rounded-full px-4 py-2 text-sm ${selected === v ? 'bg-theme-500 text-white' : 'border border-white/10'}`}>{v} minutes</button>)}</div></div>
 }
 
 function accentHex(color) {

@@ -7,7 +7,7 @@ export const useToast = () => useContext(ToastContext)
 const styles = {
   success: 'border-green-500/30 text-green-300',
   error: 'border-red-500/30 text-red-300',
-  info: 'border-blue-500/30 text-blue-300'
+  info: 'border-theme-500/30 text-theme-300'
 }
 
 const icons = {

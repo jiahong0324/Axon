@@ -56,7 +56,7 @@ const statusMessages = [
 ]
 const colors = ['blue', 'green', 'purple', 'cyan', 'red', 'yellow']
 const colorClasses = {
-  blue: 'bg-blue-500',
+  blue: 'bg-theme-500',
   green: 'bg-green-500',
   purple: 'bg-purple-500',
   cyan: 'bg-cyan-500',
@@ -134,7 +134,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
               onClick={() => inputRef.current?.click()}
               onDrop={e => { e.preventDefault(); pickFile(e.dataTransfer.files?.[0]) }}
               onDragOver={e => e.preventDefault()}
-              className="group flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-blue-500/30 bg-blue-500/5 py-12 px-6 text-center transition-all duration-300 hover:border-blue-500/50 hover:bg-blue-500/10"
+              className="group flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-theme-500/30 bg-theme-500/5 py-12 px-6 text-center transition-all duration-300 hover:border-theme-500/50 hover:bg-theme-500/10"
             >
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
                 <Upload className="h-7 w-7" />
@@ -211,7 +211,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
             <div className="rounded-2xl border border-white/10 bg-navy-950/30 p-4">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h3 className="text-sm font-bold tracking-wide text-slate-400">DETECTED {selected.length} {label}</h3>
-                <button className="min-h-0 min-w-0 text-sm font-semibold text-blue-400" onClick={() => setAll(selected.length !== items.length)}>{selected.length === items.length ? 'Deselect All' : 'Select All'}</button>
+                <button className="min-h-0 min-w-0 text-sm font-semibold text-theme-400" onClick={() => setAll(selected.length !== items.length)}>{selected.length === items.length ? 'Deselect All' : 'Select All'}</button>
               </div>
               <div className="space-y-4 pr-1">
                 {items.map((item, index) => type === 'timetable'
@@ -255,7 +255,7 @@ function TimetableResult({ item, index, updateItem }) {
         <div className="flex-1 min-w-0">
           <Field label="Subject Name">
             <input 
-              className="input transition-all duration-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" 
+              className="input transition-all duration-200 focus:ring-2 focus:ring-theme-500/20 focus:border-theme-500" 
               value={item.subject} 
               onChange={e => updateItem(index, { subject: e.target.value })} 
               placeholder="e.g. CSCI 101"
@@ -335,7 +335,7 @@ function TimetableResult({ item, index, updateItem }) {
                 key={type} 
                 className={`h-8 min-h-8 min-w-8 px-3 rounded-lg border text-sm font-semibold transition-all duration-200 ${
                   item.class_type === type 
-                    ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 font-bold' 
+                    ? 'border-theme-500/30 bg-theme-500/10 text-theme-400 font-bold' 
                     : 'border-white/5 bg-white/5 text-slate-400 hover:bg-white/10'
                 }`} 
                 onClick={() => updateItem(index, { class_type: type, color: getColorFromType(type) })}
@@ -388,7 +388,7 @@ function SimpleResult({ item, index, updateItem, type }) {
         <div className="flex-1 min-w-0 grid gap-3 md:grid-cols-2">
           <Field label={type === 'exam' ? 'Subject Name' : 'Assignment Title'}>
             <input 
-              className="input transition-all duration-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" 
+              className="input transition-all duration-200 focus:ring-2 focus:ring-theme-500/20 focus:border-theme-500" 
               value={type === 'exam' ? item.subject : item.title} 
               onChange={e => updateItem(index, type === 'exam' ? { subject: e.target.value } : { title: e.target.value })} 
               placeholder={type === 'exam' ? 'e.g. MATH 201' : 'e.g. Lab Report 1'}

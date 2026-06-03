@@ -57,7 +57,7 @@ export default function OnboardingPage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] flex items-center justify-center text-white"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>
+  if (loading) return <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] flex items-center justify-center text-white"><Loader2 className="h-8 w-8 animate-spin text-theme-500" /></div>
 
   return (
     <div className="flex h-screen overflow-y-auto items-center justify-center bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] p-4 text-white scrollbar-hide">
@@ -65,14 +65,14 @@ export default function OnboardingPage() {
         
         {/* Progress Bar */}
         <div className="mb-8 flex gap-2">
-          <div className={`h-1.5 flex-1 rounded-full transition-colors ${step >= 1 ? 'bg-blue-500' : 'bg-white/10'}`} />
-          <div className={`h-1.5 flex-1 rounded-full transition-colors ${step >= 2 ? 'bg-blue-500' : 'bg-white/10'}`} />
-          <div className={`h-1.5 flex-1 rounded-full transition-colors ${step >= 3 ? 'bg-blue-500' : 'bg-white/10'}`} />
+          <div className={`h-1.5 flex-1 rounded-full transition-colors ${step >= 1 ? 'bg-theme-500' : 'bg-white/10'}`} />
+          <div className={`h-1.5 flex-1 rounded-full transition-colors ${step >= 2 ? 'bg-theme-500' : 'bg-white/10'}`} />
+          <div className={`h-1.5 flex-1 rounded-full transition-colors ${step >= 3 ? 'bg-theme-500' : 'bg-white/10'}`} />
         </div>
 
         {step === 1 && (
           <div className="animate-fadeIn text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/30">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-theme-500 to-purple-600 shadow-lg shadow-theme-500/30">
               <Sparkles className="h-10 w-10 text-white" />
             </div>
             <h1 className="mb-4 font-heading text-3xl font-bold">Welcome to Axon!</h1>
@@ -86,7 +86,7 @@ export default function OnboardingPage() {
         {step === 2 && (
           <div className="animate-fadeIn">
             <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-              <GraduationCap className="h-8 w-8 text-blue-400" />
+              <GraduationCap className="h-8 w-8 text-theme-400" />
             </div>
             <h2 className="mb-2 font-heading text-2xl font-bold">Where do you study?</h2>
             <p className="mb-8 text-sm text-slate-400">This helps us customize your experience.</p>

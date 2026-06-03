@@ -86,7 +86,7 @@ export default function RemindersPage() {
       </section>
       <section className="card">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="section-header mb-0"><Bell className="h-5 w-5 text-blue-400" /> My Reminders</h2>
+          <h2 className="section-header mb-0"><Bell className="h-5 w-5 text-theme-400" /> My Reminders</h2>
           <button className={showForm ? 'btn-ghost border-red-500/30 text-red-300' : 'btn-add'} onClick={() => setShowForm(v => !v)}>{showForm ? '✕ Cancel' : <><Plus className="h-4 w-4" /> Add Reminder <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></>}</button>
         </div>
         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showForm ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
@@ -101,7 +101,7 @@ export default function RemindersPage() {
           <div className="grid gap-3 md:grid-cols-2">
             {items.map(item => (
               <article key={item.id} className="flex items-center gap-3 rounded-xl border border-white/10 p-4">
-                <Bell className={`h-5 w-5 ${item.is_active ? 'text-blue-400' : 'text-slate-500'}`} />
+                <Bell className={`h-5 w-5 ${item.is_active ? 'text-theme-400' : 'text-slate-500'}`} />
                 <div className="flex-1"><p className="font-semibold">{item.title}</p><p className="muted">{formatTime(item.reminder_time) || 'No time'} · {item.repeat_type}</p></div>
                 <ToggleSwitch isOn={item.is_active} onToggle={() => updateItem(item.id, { is_active: !item.is_active })} />
                 <button className="btn-danger" onClick={() => deleteItem(item.id)}><Trash2 className="h-4 w-4" /></button>

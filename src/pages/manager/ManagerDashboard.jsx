@@ -75,7 +75,7 @@ export default function ManagerDashboard() {
 
       <section className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
         <Summary icon={Users} label="Total Students" value={stats.students} tone="text-amber-400" border="border-l-amber-500" />
-        <Summary icon={CheckSquare} label="Active Assignments" value={stats.assignments} tone="text-blue-400" border="border-l-blue-500" />
+        <Summary icon={CheckSquare} label="Active Assignments" value={stats.assignments} tone="text-theme-400" border="border-l-theme-500" />
         <Summary icon={BookOpen} label="Upcoming Exams" value={stats.exams} tone="text-purple-400" border="border-l-purple-500" />
         <Summary icon={Megaphone} label="Announcements Sent" value={stats.announcements} tone="text-emerald-400" border="border-l-emerald-500" />
       </section>
@@ -118,7 +118,7 @@ function QuickLink({ to, icon: Icon, label }) {
 
 function ActivityItem({ item }) {
   const profile = item.profile || {}
-  const color = item.entity_type === 'class' ? 'bg-blue-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : 'bg-emerald-400'
+  const color = item.entity_type === 'class' ? 'bg-theme-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : 'bg-emerald-400'
   return (
     <article className="flex items-start gap-3 rounded-xl border border-white/10 p-3">
       <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${color}`} />

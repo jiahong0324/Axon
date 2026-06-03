@@ -74,7 +74,7 @@ export default function ManagerActivityPage() {
 }
 
 function ActivityRow({ item, profile }) {
-  const dot = item.entity_type === 'class' ? 'bg-blue-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : 'bg-emerald-400'
+  const dot = item.entity_type === 'class' ? 'bg-theme-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : 'bg-emerald-400'
   return (
     <article className="grid grid-cols-[auto_auto_1fr] items-start gap-3 rounded-xl border border-white/10 p-3">
       <span className={`mt-4 h-2.5 w-2.5 rounded-full ${dot}`} />

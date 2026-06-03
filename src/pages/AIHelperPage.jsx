@@ -155,7 +155,7 @@ export default function AIHelperPage({ role = 'student' }) {
     <main className="ai-helper-shell scrollbar-hide flex h-full flex-1 flex-col overflow-hidden pt-safe md:h-auto md:flex-row md:gap-5 md:overflow-y-auto md:p-6" style={{ background: 'var(--bg-primary)' }}>
       <aside className="ai-helper-panel card hidden w-64 shrink-0 md:block">
         <div className="mb-4 flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-blue-500/15 text-blue-300">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-theme-500/15 text-theme-300">
             <Sparkles className="h-4 w-4" />
           </div>
           <div>
@@ -166,7 +166,7 @@ export default function AIHelperPage({ role = 'student' }) {
         <div className="space-y-2">
           {quickActions.map(action => (
             <button key={action.desktop} className="ai-action-button btn-ghost w-full justify-start text-left text-sm" onClick={() => fillPrompt(action.prompt)}>
-              <action.icon className="h-4 w-4 text-blue-300" />
+              <action.icon className="h-4 w-4 text-theme-300" />
               <span>{action.desktop}</span>
             </button>
           ))}
@@ -176,7 +176,7 @@ export default function AIHelperPage({ role = 'student' }) {
       <section className="ai-chatbox flex min-h-0 flex-1 flex-col overflow-hidden md:card md:p-0">
         <header className="ai-chat-header flex shrink-0 items-center justify-between border-b px-4 py-3 md:px-5 md:py-4" style={{ borderColor: 'var(--border)' }}>
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/20">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-theme-500 to-purple-600 text-white shadow-lg shadow-theme-500/20">
               <Bot className="h-5 w-5" />
             </div>
             <div className="min-w-0">

@@ -104,7 +104,7 @@ export default function HomePage() {
   return (
     <main className="home-dashboard main-content scrollbar-hide">
       {banner && (
-        <div className="card mb-5 flex items-center justify-between gap-3 border-blue-500/30">
+        <div className="card mb-5 flex items-center justify-between gap-3 border-theme-500/30">
           <p className="text-sm">📲 Add Axon to your home screen! On iOS, tap Share then Add to Home Screen.</p>
           <button className="rounded-lg p-2 hover:bg-white/5" onClick={() => { localStorage.setItem('axon_pwa_dismissed', 'true'); setBanner(false) }}><X className="h-5 w-5" /></button>
         </div>
@@ -112,7 +112,7 @@ export default function HomePage() {
 
       {announcements.map(a => (
         <div key={a.id} className={`glass mb-3 flex items-start justify-between gap-3 rounded-xl border-l-4 p-4 ${
-          a.type === 'urgent' ? 'border-l-red-500' : a.type === 'warning' ? 'border-l-yellow-500' : 'border-l-blue-500'
+          a.type === 'urgent' ? 'border-l-red-500' : a.type === 'warning' ? 'border-l-yellow-500' : 'border-l-theme-500'
         }`}>
           <div className="flex min-w-0 items-start gap-3">
             {a.type === 'urgent' && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-500 animate-pulse" />}
@@ -134,7 +134,7 @@ export default function HomePage() {
       </header>
 
       <section className="mb-6 grid gap-4 md:grid-cols-3">
-        <Summary icon={BookOpen} label="Today's Classes" value={todayClasses.length} tone="text-blue-600 dark:text-blue-400" border="border-l-blue-500" />
+        <Summary icon={BookOpen} label="Today's Classes" value={todayClasses.length} tone="text-theme-600 dark:text-theme-400" border="border-l-theme-500" />
         <Summary icon={AlertCircle} label="Due Soon" value={dueSoon.length} tone="text-amber-600 dark:text-yellow-400" border="border-l-yellow-500" />
         <Summary icon={Calendar} label="Days to Next Exam" value={nextExamValue} valueClass={nextExamDays === 0 ? 'text-red-500' : ''} tone="text-violet-600 dark:text-purple-400" border="border-l-purple-500" />
       </section>
@@ -155,7 +155,7 @@ export default function HomePage() {
           <section className="home-panel card">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="section-header mb-0">📝 Due Soon</h2>
-              <Link to="/assignments" className="text-sm font-medium text-blue-400 hover:text-blue-300">View all →</Link>
+              <Link to="/assignments" className="text-sm font-medium text-theme-400 hover:text-theme-300">View all →</Link>
             </div>
             {dueSoon.length === 0 ? (
               <div className="success-row flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm font-medium text-slate-300">
@@ -180,7 +180,7 @@ export default function HomePage() {
           <section className="home-panel card">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="section-header mb-0">📖 Upcoming Exams</h2>
-              <Link to="/exams" className="text-sm font-medium text-blue-400 hover:text-blue-300">View all exams →</Link>
+              <Link to="/exams" className="text-sm font-medium text-theme-400 hover:text-theme-300">View all exams →</Link>
             </div>
             {exams.length === 0 ? <p className="muted">🎉 No exams coming up!</p> : (
               <div className="space-y-3">{exams.slice(0, 3).map(exam => <ExamMiniCard key={exam.id} exam={exam} />)}</div>
@@ -205,7 +205,7 @@ function Summary({ icon: Icon, label, value, tone, border, valueClass = '' }) {
 }
 
 function ClassCard({ item }) {
-  const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-blue-500'
+  const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-theme-500'
   return (
     <div className={`class-card rounded-xl border border-l-4 border-white/10 ${border} p-4`}>
       <div className="mb-2 flex items-center justify-between gap-3"><p className="font-semibold">{item.subject}</p><ClassTypeBadge type={item.class_type} /></div>

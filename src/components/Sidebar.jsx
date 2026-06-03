@@ -29,7 +29,7 @@ export default function Sidebar({ user }) {
   }
 
   const linkClass = ({ isActive }) => `student-nav-link flex min-h-[48px] items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
-    isActive ? 'is-active bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
+    isActive ? 'is-active bg-theme-500 text-white shadow-lg shadow-theme-500/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
   }`
 
   return (
@@ -50,13 +50,13 @@ export default function Sidebar({ user }) {
             </NavLink>
           ))}
         </nav>
-        <button onClick={() => setFeedbackOpen(true)} className="feedback-button mb-4 flex min-h-[48px] items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 text-sm font-medium text-blue-400 transition-colors hover:bg-blue-500/20">
+        <button onClick={() => setFeedbackOpen(true)} className="feedback-button mb-4 flex min-h-[48px] items-center gap-3 rounded-xl border border-theme-500/20 bg-theme-500/10 px-3 text-sm font-medium text-theme-400 transition-colors hover:bg-theme-500/20">
           <MessageSquare className="h-5 w-5" />
           Send Feedback
         </button>
         <div className="student-profile-card rounded-2xl border border-slate-200 dark:border-white/10 p-3">
           <div className="mb-3 flex items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-500 font-semibold text-white">{initials(name)}</div>
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-theme-500 font-semibold text-white">{initials(name)}</div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{name}</p>
               <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
@@ -76,10 +76,10 @@ export default function Sidebar({ user }) {
             key={item.path}
             to={item.path}
             end={item.path === '/home'}
-            className={({ isActive }) => `nav-item relative flex min-h-[56px] flex-col items-center justify-center rounded-xl text-[11px] font-medium ${isActive ? 'text-blue-500 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`}
+            className={({ isActive }) => `nav-item relative flex min-h-[56px] flex-col items-center justify-center rounded-xl text-[11px] font-medium ${isActive ? 'text-theme-500 dark:text-theme-400' : 'text-slate-500 dark:text-slate-400'}`}
           >
             {({ isActive }) => <>
-              {isActive && <span className="absolute top-1 h-1 w-1 rounded-full bg-blue-400" />}
+              {isActive && <span className="absolute top-1 h-1 w-1 rounded-full bg-theme-400" />}
               <item.icon className="mb-1 h-6 w-6" />
               <span className="max-w-full truncate">{item.label}</span>
             </>}
@@ -100,7 +100,7 @@ export default function Sidebar({ user }) {
             <div className="grid gap-2">
               {moreItems.map(item => (
                 <NavLink key={item.path} to={item.path} onClick={() => setMoreOpen(false)} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5">
-                  <item.icon className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+                  <item.icon className="h-5 w-5 text-theme-500 dark:text-theme-400" />
                   {item.label}
                 </NavLink>
               ))}
@@ -113,7 +113,7 @@ export default function Sidebar({ user }) {
                 <LogOut className="h-5 w-5 text-red-400" />
                 Log out
               </button>
-              <button onClick={() => { setMoreOpen(false); setFeedbackOpen(true) }} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-blue-500 dark:text-blue-400 hover:bg-slate-100 dark:hover:bg-white/5 font-medium">
+              <button onClick={() => { setMoreOpen(false); setFeedbackOpen(true) }} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-theme-500 dark:text-theme-400 hover:bg-slate-100 dark:hover:bg-white/5 font-medium">
                 <MessageSquare className="h-5 w-5" />
                 Send Feedback
               </button>

@@ -77,7 +77,7 @@ export default function ManagerAnnouncementsPage() {
 
 function AnnouncementCard({ item, onEdit, onDelete }) {
   const expired = item.expires_at && new Date(item.expires_at) < new Date()
-  const tone = item.type === 'urgent' ? 'bg-red-500/15 text-red-300 border-red-500/30' : item.type === 'warning' ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30' : 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+  const tone = item.type === 'urgent' ? 'bg-red-500/15 text-red-300 border-red-500/30' : item.type === 'warning' ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30' : 'bg-theme-500/15 text-theme-300 border-theme-500/30'
   return (
     <article className="card">
       <div className="mb-3 flex items-start justify-between gap-3">

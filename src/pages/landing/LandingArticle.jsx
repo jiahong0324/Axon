@@ -121,7 +121,7 @@ export default function LandingArticle() {
   if (loading) {
     return (
       <article className="mx-auto max-w-3xl px-5 py-16 md:px-8 md:py-20 flex justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-theme-500 border-t-transparent" />
       </article>
     )
   }
@@ -132,13 +132,13 @@ export default function LandingArticle() {
 
   return (
     <article className="mx-auto max-w-3xl px-5 py-16 md:px-8 md:py-20">
-      <Link to={`/blog${searchStr}`} className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400">
+      <Link to={`/blog${searchStr}`} className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-theme-600 dark:text-slate-400 dark:hover:text-theme-400">
         <ArrowLeft className="h-4 w-4" /> Back to Blog
       </Link>
       
       <header className="mb-10 text-center">
         <div className="mb-6 flex items-center justify-center gap-3">
-          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
+          <span className="rounded-full bg-theme-100 px-3 py-1 text-xs font-bold text-theme-700 dark:bg-theme-500/20 dark:text-theme-300">
             {post.category}
           </span>
           <span className="flex items-center gap-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
@@ -162,7 +162,7 @@ export default function LandingArticle() {
         </div>
       )}
 
-      <div className="prose prose-slate prose-lg max-w-none dark:prose-invert prose-headings:font-heading prose-headings:font-extrabold prose-a:text-blue-600 dark:prose-a:text-blue-400">
+      <div className="prose prose-slate prose-lg max-w-none dark:prose-invert prose-headings:font-heading prose-headings:font-extrabold prose-a:text-theme-600 dark:prose-a:text-theme-400">
         <div dangerouslySetInnerHTML={{ __html: post.content }} />
       </div>
       
@@ -204,7 +204,7 @@ export default function LandingArticle() {
               required
               value={commentName}
               onChange={e => setCommentName(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-theme-500 focus:outline-none focus:ring-4 focus:ring-theme-500/10 dark:border-white/10 dark:bg-slate-900 dark:text-white"
             />
           </div>
           <div className="mb-4">
@@ -214,13 +214,13 @@ export default function LandingArticle() {
               rows={4}
               value={commentText}
               onChange={e => setCommentText(e.target.value)}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-theme-500 focus:outline-none focus:ring-4 focus:ring-theme-500/10 dark:border-white/10 dark:bg-slate-900 dark:text-white"
             />
           </div>
           <button
             type="submit"
             disabled={submittingComment || !commentName.trim() || !commentText.trim()}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-bold text-white transition hover:bg-blue-700 disabled:opacity-50 sm:w-auto sm:px-8"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-theme-600 py-3 font-bold text-white transition hover:bg-theme-700 disabled:opacity-50 sm:w-auto sm:px-8"
           >
             {submittingComment ? 'Posting...' : 'Post Comment'} <Send className="h-4 w-4" />
           </button>
@@ -233,7 +233,7 @@ export default function LandingArticle() {
             <div key={comment.id} className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm dark:border-white/10 dark:bg-slate-900/50">
               {/* Top-Level Comment */}
               <div className="flex gap-4 md:gap-5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-lg font-bold text-blue-700 dark:from-blue-500/20 dark:to-blue-600/20 dark:text-blue-300">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-theme-100 to-theme-200 text-lg font-bold text-theme-700 dark:from-theme-500/20 dark:to-theme-600/20 dark:text-theme-300">
                   {comment.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
@@ -248,7 +248,7 @@ export default function LandingArticle() {
                   </p>
                   <button 
                     onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                    className="mt-4 flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition"
+                    className="mt-4 flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-theme-600 dark:text-slate-400 dark:hover:text-theme-400 transition"
                   >
                     <Reply className="h-4 w-4" /> {replyingTo === comment.id ? 'Cancel reply' : 'Reply'}
                   </button>
@@ -281,10 +281,10 @@ export default function LandingArticle() {
 
               {/* Reply Form */}
               {replyingTo === comment.id && (
-                <form onSubmit={(e) => submitReply(e, comment.id)} className={`mt-6 flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-5 dark:border-blue-500/20 dark:bg-blue-900/10 ${replies.length > 0 ? 'ml-6 md:ml-8' : 'ml-0'}`}>
+                <form onSubmit={(e) => submitReply(e, comment.id)} className={`mt-6 flex flex-col gap-3 rounded-2xl border border-theme-100 bg-theme-50 p-5 dark:border-theme-500/20 dark:bg-theme-900/10 ${replies.length > 0 ? 'ml-6 md:ml-8' : 'ml-0'}`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Reply className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">Replying to {comment.name}</span>
+                    <Reply className="h-4 w-4 text-theme-600 dark:text-theme-400" />
+                    <span className="text-sm font-bold text-theme-600 dark:text-theme-400">Replying to {comment.name}</span>
                   </div>
                   <input
                     type="text"
@@ -292,7 +292,7 @@ export default function LandingArticle() {
                     required
                     value={replyName}
                     onChange={e => setReplyName(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:border-blue-500"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-theme-500 focus:outline-none focus:ring-4 focus:ring-theme-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:border-theme-500"
                   />
                   <textarea
                     placeholder="Write a reply..."
@@ -300,13 +300,13 @@ export default function LandingArticle() {
                     rows={2}
                     value={replyText}
                     onChange={e => setReplyText(e.target.value)}
-                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:border-blue-500"
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-theme-500 focus:outline-none focus:ring-4 focus:ring-theme-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:border-theme-500"
                   />
                   <div className="flex justify-end mt-2">
                     <button
                       type="submit"
                       disabled={submittingReply || !replyName.trim() || !replyText.trim()}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-theme-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-theme-700 disabled:opacity-50"
                     >
                       {submittingReply ? 'Posting...' : 'Post Reply'} <Send className="h-4 w-4" />
                     </button>
