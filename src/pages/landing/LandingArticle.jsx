@@ -46,6 +46,17 @@ export default function LandingArticle() {
     }
     fetchPost()
   }, [slug])
+
+  // Force scroll to top after article content has fully loaded
+  // This prevents mobile browsers from using scroll anchoring to shift the user down the page
+  useEffect(() => {
+    if (!loading && post) {
+      setTimeout(() => {
+        const container = document.getElementById('main-scroll-container')
+        if (container) container.scrollTo(0, 0)
+      }, 50)
+    }
+  }, [loading, post])
   
   async function handleLike() {
     if (liked || !post) return
