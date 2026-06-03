@@ -24,6 +24,7 @@ import TermsPage from './pages/TermsPage'
 import LandingLayout from './pages/landing/LandingLayout'
 import LandingHome from './pages/landing/LandingHome'
 import LandingBlog from './pages/landing/LandingBlog'
+import LandingArticle from './pages/landing/LandingArticle'
 import LandingFAQ from './pages/landing/LandingFAQ'
 import LandingContact from './pages/landing/LandingContact'
 import OnboardingPage from './pages/OnboardingPage'
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="/" element={<LandingLayout />}>
               <Route index element={<LandingHome />} />
               <Route path="blog" element={<LandingBlog />} />
+              <Route path="blog/:slug" element={<LandingArticle />} />
               <Route path="faq" element={<LandingFAQ />} />
               <Route path="contact" element={<LandingContact />} />
             </Route>

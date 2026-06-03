@@ -1,27 +1,7 @@
 import { Link, useOutletContext } from 'react-router-dom'
 import { ArrowRight, MessageCircle } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
-
-const blogPosts = [
-  {
-    category: 'Study Planning',
-    title: 'How to Plan a Productive Study Week',
-    desc: 'A simple weekly planning method for balancing class time, assignments, revision, and rest.',
-    readTime: '5 min read'
-  },
-  {
-    category: 'Deadlines',
-    title: '5 Ways to Avoid Missing Assignment Deadlines',
-    desc: 'Turn big coursework into smaller checkpoints and keep your progress visible before the due date.',
-    readTime: '4 min read'
-  },
-  {
-    category: 'Exam Prep',
-    title: 'How to Prepare for Exams Without Last-Minute Stress',
-    desc: 'Use countdowns, topic lists, and focused revision blocks to make exam season more manageable.',
-    readTime: '6 min read'
-  }
-]
+import { blogPosts } from '../../data/blogPosts'
 
 function BlogCard({ post, searchStr }) {
   return (
@@ -32,7 +12,7 @@ function BlogCard({ post, searchStr }) {
       </div>
       <h3 className="text-xl font-extrabold leading-snug text-slate-950 dark:text-white">{post.title}</h3>
       <p className="mt-3 flex-1 text-sm leading-6 text-slate-600 dark:text-slate-400">{post.desc}</p>
-      <Link to={`/contact${searchStr}`} className="mt-6 inline-flex items-center gap-2 text-sm font-extrabold text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200">
+      <Link to={`/blog/${post.slug}${searchStr}`} className="mt-6 inline-flex items-center gap-2 text-sm font-extrabold text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200">
         Read Article <ArrowRight className="h-4 w-4" />
       </Link>
     </article>
