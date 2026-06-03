@@ -172,7 +172,7 @@ export default function LandingHome() {
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-4">
               <HeroStat value="6" label="Study tools" />
               <HeroStat value="24/7" label="AI support" />
-              <HeroStat value="System" label="Default theme" />
+              <HeroStat value="Cloud Sync" label="Multi-device" />
             </div>
           </div>
           <DashboardPreview />
