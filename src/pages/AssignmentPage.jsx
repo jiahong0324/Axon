@@ -131,7 +131,7 @@ function AssignmentCard({ item, updateItem, deleteItem }) {
     <article className="rounded-xl border border-white/10 p-4">
       <div className="mb-2 flex items-start justify-between gap-2"><h3 className="font-semibold">{item.title}</h3><PriorityBadge priority={item.priority} /></div>
       <p className="muted mb-2">{item.subject} · {dateLabel(item.deadline)}</p>
-      <CountdownBadge deadline={item.deadline} />
+      <CountdownBadge deadline={item.deadline} status={item.status} />
       {item.notes && <p className="mt-3 line-clamp-3 text-sm text-slate-400">{item.notes}</p>}
       <div className="mt-4 flex flex-wrap gap-2">
         {statuses.filter(s => s !== item.status).map(s => <button key={s} className="btn-ghost px-3 py-2 text-xs" onClick={() => updateItem(item.id, { status: s })}>{s === 'Done' && <Check className="h-3 w-3" />}{s}</button>)}
