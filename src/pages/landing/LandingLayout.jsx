@@ -18,13 +18,13 @@ function ThemeToggle({ theme, setTheme }) {
   )
 }
 
-function FooterGroup({ title, links }) {
+function FooterGroup({ title, links, searchStr = '' }) {
   return (
     <div>
       <h3 className="text-sm font-extrabold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{title}</h3>
       <div className="mt-4 grid gap-3">
         {links.map(([label, href]) => (
-          <Link key={`${title}-${label}`} to={href} className="text-sm font-semibold text-slate-700 transition hover:text-blue-600 dark:text-slate-300 dark:hover:text-white">
+          <Link key={`${title}-${label}`} to={`${href}${searchStr}`} className="text-sm font-semibold text-slate-700 transition hover:text-blue-600 dark:text-slate-300 dark:hover:text-white">
             {label}
           </Link>
         ))}
@@ -40,9 +40,10 @@ export default function LandingLayout() {
   const [hasSession, setHasSession] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
-  useEffect(() => {
-    const isViewing = new URLSearchParams(window.location.search).get('view') === 'true'
+  const isViewing = new URLSearchParams(location.search).get('view') === 'true'
+  const searchStr = isViewing ? '?view=true' : ''
 
+  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setHasSession(!!session)
       if (session && !isViewing) {
@@ -58,7 +59,7 @@ export default function LandingLayout() {
     })
 
     return () => subscription.unsubscribe()
-  }, [navigate])
+  }, [navigate, isViewing])
 
   useEffect(() => {
     // Close menu when route changes
@@ -83,7 +84,7 @@ export default function LandingLayout() {
 
           <div className="hidden items-center gap-7 lg:flex">
             {navLinks.map(([label, href]) => (
-              <Link key={href} to={href} className={`text-sm font-semibold transition-colors hover:text-blue-600 dark:hover:text-white ${location.pathname === href ? 'text-blue-600 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+              <Link key={href} to={`${href}${searchStr}`} className={`text-sm font-semibold transition-colors hover:text-blue-600 dark:hover:text-white ${location.pathname === href ? 'text-blue-600 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
                 {label}
               </Link>
             ))}
@@ -120,7 +121,7 @@ export default function LandingLayout() {
           <div className="border-t border-slate-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-slate-950 lg:hidden">
             <div className="mx-auto grid max-w-7xl gap-2">
               {navLinks.map(([label, href]) => (
-                <Link key={href} to={href} className="rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10">
+                <Link key={href} to={`${href}${searchStr}`} className="rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10">
                   {label}
                 </Link>
               ))}
@@ -147,7 +148,7 @@ export default function LandingLayout() {
       </header>
 
       <main>
-        <Outlet context={{ hasSession }} />
+        <Outlet context={{ hasSession, searchStr }} />
       </main>
 
       <footer className="border-t border-slate-200 bg-white dark:border-white/10 dark:bg-slate-950 mt-16">
@@ -161,8 +162,8 @@ export default function LandingLayout() {
               A student productivity platform for timetables, assignments, exams, reminders, study blogs, and AI learning support.
             </p>
           </div>
-          <FooterGroup title="Product" links={[['Home', '/'], ['Blog', '/blog'], ['FAQ', '/faq'], ['Contact Us', '/contact']]} />
-          <FooterGroup title="Account" links={hasSession ? [['Dashboard', '/onboarding'], ['Terms and Conditions', '/terms']] : [['Sign In', '/login'], ['Get Started', '/register'], ['Terms and Conditions', '/terms']]} />
+          <FooterGroup title="Product" links={navLinks} searchStr={searchStr} />
+          <FooterGroup title="Account" links={hasSession ? [['Dashboard', '/onboarding'], ['Terms and Conditions', '/terms']] : [['Sign In', '/login'], ['Get Started', '/register'], ['Terms and Conditions', '/terms']]} searchStr="" />
         </div>
         <div className="border-t border-slate-200 px-5 py-5 text-center text-sm text-slate-500 dark:border-white/10 dark:text-slate-500">
           &copy; {new Date().getFullYear()} Axon App. All rights reserved.
