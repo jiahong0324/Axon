@@ -5,15 +5,9 @@ import { SectionIntro } from './LandingShared'
 import { supabase } from '../../lib/supabase'
 
 const categoryColors = {
-  'Study Planning': 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300',
-  'Deadlines': 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
-  'Exam Prep': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
-  'Productivity': 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300',
-  'Study Skills': 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
-  'Mental Health': 'bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300',
-  'Health & Habits': 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300',
-  'Teamwork': 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300',
-  'Time Management': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300'
+  'Time Management': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300',
+  'Academic Skills': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
+  'Health & Wellness': 'bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300'
 }
 
 function getCategoryColor(category) {

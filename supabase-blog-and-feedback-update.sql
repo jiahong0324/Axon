@@ -96,12 +96,12 @@ create policy "Anyone can insert feedback."
   on public.feedback for insert
   with check (true);
 
--- 5. Insert or Update 9 blog posts (with images and full professional content)
+-- 5. Insert or Update 10 blog posts (with images, full professional content, and consolidated categories)
 insert into public.blog_posts (slug, title, category, description, read_time, image_url, content) values
 (
   'plan-productive-study-week',
   'How to Plan a Productive Study Week',
-  'Study Planning',
+  'Time Management',
   'A simple weekly planning method for balancing class time, assignments, revision, and rest.',
   '5 min read',
   '/blog/plan-productive-study-week.png',
@@ -110,7 +110,7 @@ insert into public.blog_posts (slug, title, category, description, read_time, im
 (
   'avoid-missing-assignment-deadlines',
   '5 Ways to Avoid Missing Assignment Deadlines',
-  'Deadlines',
+  'Time Management',
   'Turn big coursework into smaller checkpoints and keep your progress visible before the due date.',
   '4 min read',
   '/blog/avoid-missing-assignment-deadlines.png',
@@ -119,7 +119,7 @@ insert into public.blog_posts (slug, title, category, description, read_time, im
 (
   'prepare-exams-without-stress',
   'How to Prepare for Exams Without Last-Minute Stress',
-  'Exam Prep',
+  'Academic Skills',
   'Use countdowns, topic lists, and focused revision blocks to make exam season more manageable.',
   '6 min read',
   '/blog/prepare-exams-without-stress.png',
@@ -128,7 +128,7 @@ insert into public.blog_posts (slug, title, category, description, read_time, im
 (
   'mastering-pomodoro-technique',
   'Mastering the Pomodoro Technique',
-  'Productivity',
+  'Time Management',
   'Learn how to use short, focused bursts of work to maximize your focus and prevent mental fatigue.',
   '4 min read',
   '/blog/mastering-pomodoro-technique.png',
@@ -137,7 +137,7 @@ insert into public.blog_posts (slug, title, category, description, read_time, im
 (
   'how-to-take-effective-notes',
   'How to Take Effective Notes in Lectures',
-  'Study Skills',
+  'Academic Skills',
   'Stop transcribing everything the lecturer says. Learn methods to capture the core ideas.',
   '5 min read',
   '/blog/how-to-take-effective-notes.png',
@@ -146,7 +146,7 @@ insert into public.blog_posts (slug, title, category, description, read_time, im
 (
   'overcoming-academic-imposter-syndrome',
   'Overcoming Academic Imposter Syndrome',
-  'Mental Health',
+  'Health & Wellness',
   'Feel like you don''t belong in your degree? You are not alone. Here is how to handle it.',
   '6 min read',
   '/blog/overcoming-academic-imposter-syndrome.png',
@@ -155,7 +155,7 @@ insert into public.blog_posts (slug, title, category, description, read_time, im
 (
   'optimizing-your-sleep-schedule',
   'Optimizing Your Sleep Schedule for Better Grades',
-  'Health & Habits',
+  'Health & Wellness',
   'All-nighters do more harm than good. Discover why sleep is your greatest academic weapon.',
   '5 min read',
   '/blog/optimizing-your-sleep-schedule.png',
@@ -164,7 +164,7 @@ insert into public.blog_posts (slug, title, category, description, read_time, im
 (
   'managing-group-projects',
   'How to Manage Group Projects Without Losing Your Mind',
-  'Teamwork',
+  'Academic Skills',
   'Group assignments are notoriously frustrating. Learn how to lead effectively and deal with slackers.',
   '7 min read',
   '/blog/managing-group-projects.png',
@@ -178,6 +178,15 @@ insert into public.blog_posts (slug, title, category, description, read_time, im
   '5 min read',
   '/blog/balancing-part-time-work.png',
   '<h2>Communicate Your Availability</h2><p>If you are juggling a job and a degree, clear communication with your employer is your first line of defense. At the start of every semester, provide your manager with your exact class schedule and highlight any days you absolutely cannot work. More importantly, look at your syllabus and request time off for midterms and final exam weeks well in advance. Most employers are accommodating if you give them plenty of notice.</p><h2>Maximize Pockets of Time</h2><p>When you have limited free time, you cannot afford to wait for massive, four-hour blocks to get your studying done. You must learn to maximize the small pockets of time hidden throughout your day. Got 30 minutes on the bus commute? Read a chapter. Have an hour between a lecture and your shift? Do a practice quiz in the library. These small, scattered study sessions add up remarkably fast.</p><h2>Protect Your Days Off</h2><p>When you work and study, it is very easy to fall into a cycle where you are doing one or the other seven days a week. This is a fast track to severe burnout. You must ruthlessly protect your days off. Aim to schedule at least one full day a week where you neither work nor study. Use this day purely to recover, socialize, and rest. Guard this recovery time as fiercely as you would a final exam.</p>'
+),
+(
+  'sustainable-study-diet',
+  'How to Build a Sustainable Study Diet',
+  'Health & Wellness',
+  'What you eat directly impacts how you study. Discover foods that boost cognitive performance.',
+  '5 min read',
+  '/blog/sustainable-study-diet.png',
+  '<h2>Brain Food is Real</h2><p>When you are buried in assignments, it is incredibly tempting to survive on instant ramen, energy drinks, and highly processed snacks. However, your brain requires an immense amount of energy to focus, process complex information, and retain memories. Feeding it low-quality fuel directly impacts your cognitive performance, leading to brain fog, fatigue, and difficulty concentrating.</p><h2>Hydration is Non-Negotiable</h2><p>The simplest and most effective change you can make to your diet is drinking more water. Mild dehydration—so mild you might not even feel thirsty—is enough to impair your attention, short-term memory, and psychomotor skills. Keep a large reusable water bottle on your desk at all times. If you struggle to drink plain water, try infusing it with lemon or cucumber.</p><h2>The Sugar Crash Trap</h2><p>When you feel your energy dipping at 3:00 PM, a sugary snack or an energy drink feels like a quick fix. Unfortunately, this creates a massive spike in blood sugar followed by a sharp crash. This crash leaves you feeling more exhausted than you were before you ate. Instead of relying on sugar, try snacking on complex carbohydrates and healthy fats, such as a handful of almonds or an apple with peanut butter, which provide a slow, steady release of energy.</p><h2>Meal Prep for the Week</h2><p>The biggest barrier to healthy eating as a student is time. When you are starving after a long day of lectures, you are going to choose whatever is fastest. This is why meal prepping is essential. Dedicate a couple of hours on the weekend to cook large batches of grains (like quinoa or brown rice), roast vegetables, and prepare proteins. Having ready-to-eat, healthy meals in the fridge completely removes the friction of eating well during a stressful week.</p>'
 )
 ON CONFLICT (slug) DO UPDATE SET 
   title = EXCLUDED.title,
