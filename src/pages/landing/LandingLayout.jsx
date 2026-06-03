@@ -64,6 +64,9 @@ export default function LandingLayout() {
   useEffect(() => {
     // Close menu when route changes
     setMenuOpen(false)
+    // Reset scroll position for the main container
+    const container = document.getElementById('main-scroll-container')
+    if (container) container.scrollTo(0, 0)
   }, [location.pathname])
 
   const navLinks = [
@@ -74,7 +77,7 @@ export default function LandingLayout() {
   ]
 
   return (
-    <div className="h-screen overflow-y-auto bg-slate-50 text-slate-950 scrollbar-hide dark:bg-slate-950 dark:text-white">
+    <div id="main-scroll-container" className="h-screen overflow-y-auto bg-slate-50 text-slate-950 scrollbar-hide dark:bg-slate-950 dark:text-white">
       <header className="pt-safe sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90">
         <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
           <Link to="/" className="flex items-center gap-3" aria-label="Axon home">
