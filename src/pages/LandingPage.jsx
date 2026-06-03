@@ -1,24 +1,27 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Calendar, CheckCircle, Sparkles, Bell } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 export default function LandingPage() {
   const navigate = useNavigate()
+  const [hasSession, setHasSession] = useState(false)
 
   useEffect(() => {
     const isViewing = new URLSearchParams(window.location.search).get('view') === 'true'
-    if (isViewing) return // Allow logged-in users to admire the landing page!
 
-    // If user is already logged in, send them straight to the app
+    // Check if logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+      setHasSession(!!session)
+      // Only auto-redirect if they didn't explicitly request to view the page
+      if (session && !isViewing) {
         navigate('/onboarding', { replace: true })
       }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+      setHasSession(!!session)
+      if (session && !isViewing) {
         navigate('/onboarding', { replace: true })
       }
     })
@@ -35,8 +38,14 @@ export default function LandingPage() {
           <span className="font-heading text-2xl font-bold tracking-tight text-white">Axon</span>
         </div>
         <div className="flex items-center gap-4">
-          <Link to="/login" className="hidden text-sm font-medium text-slate-300 transition-colors hover:text-white md:block">Sign In</Link>
-          <Link to="/register" className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-2.5 text-sm font-semibold shadow-lg shadow-blue-500/20 transition-all hover:brightness-110">Get Started</Link>
+          {hasSession ? (
+            <Link to="/onboarding" className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-2.5 text-sm font-semibold shadow-lg shadow-blue-500/20 transition-all hover:brightness-110">Go to Dashboard</Link>
+          ) : (
+            <>
+              <Link to="/login" className="hidden text-sm font-medium text-slate-300 transition-colors hover:text-white md:block">Sign In</Link>
+              <Link to="/register" className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-2.5 text-sm font-semibold shadow-lg shadow-blue-500/20 transition-all hover:brightness-110">Get Started</Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -51,8 +60,14 @@ export default function LandingPage() {
         </p>
         
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link to="/register" className="inline-flex min-h-[56px] items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-8 text-lg font-semibold shadow-lg shadow-blue-500/25 transition-all hover:scale-105 hover:brightness-110">Get Started for Free</Link>
-          <Link to="/login" className="inline-flex min-h-[56px] items-center justify-center rounded-xl border border-white/10 bg-white/5 px-8 text-lg font-medium text-slate-300 transition-all hover:bg-white/10 hover:text-white">Sign In</Link>
+          {hasSession ? (
+            <Link to="/onboarding" className="inline-flex min-h-[56px] items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-8 text-lg font-semibold shadow-lg shadow-blue-500/25 transition-all hover:scale-105 hover:brightness-110">Go to Dashboard</Link>
+          ) : (
+            <>
+              <Link to="/register" className="inline-flex min-h-[56px] items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-8 text-lg font-semibold shadow-lg shadow-blue-500/25 transition-all hover:scale-105 hover:brightness-110">Get Started for Free</Link>
+              <Link to="/login" className="inline-flex min-h-[56px] items-center justify-center rounded-xl border border-white/10 bg-white/5 px-8 text-lg font-medium text-slate-300 transition-all hover:bg-white/10 hover:text-white">Sign In</Link>
+            </>
+          )}
         </div>
 
         {/* Feature Grid */}
