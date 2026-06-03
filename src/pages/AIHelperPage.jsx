@@ -9,11 +9,13 @@ import {
   Languages,
   ListChecks,
   Sparkles,
-  Trash2
+  Trash2,
+  ImagePlus,
+  X
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { buildUserContext } from '../lib/buildUserContext'
-import { askGroq } from '../lib/groq'
+import { askGroq, analyzeImageWithGroq } from '../lib/groq'
 import { markdownToHtml } from '../lib/utils'
 
 const quickActions = [
@@ -41,7 +43,31 @@ export default function AIHelperPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState(false)
+  const [selectedImage, setSelectedImage] = useState(null)
   const textareaRef = useRef(null)
+  const fileInputRef = useRef(null)
+
+  function handleImageSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setSelectedImage({
+        url: URL.createObjectURL(file),
+        base64: reader.result.split(',')[1],
+        mimeType: file.type
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function removeImage() {
+    if (selectedImage) {
+      URL.revokeObjectURL(selectedImage.url)
+      setSelectedImage(null)
+    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   useEffect(() => {
     localStorage.setItem('aiChat', JSON.stringify(messages))
@@ -57,8 +83,9 @@ export default function AIHelperPage() {
   }, [focused])
 
   async function sendMessage() {
-    if (!input.trim() || loading) return
+    if ((!input.trim() && !selectedImage) || loading) return
     const userText = input.trim()
+    const imgData = selectedImage
     const ta = textareaRef.current
 
     if (ta) {
@@ -67,17 +94,27 @@ export default function AIHelperPage() {
 
     setTimeout(() => {
       setInput('')
+      setSelectedImage(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
       if (ta) ta.style.height = '42px'
     }, 150)
 
-    setMessages(prev => [...prev, { role: 'user', content: userText, timestamp: new Date() }])
+    const newMsg = { role: 'user', content: userText, timestamp: new Date() }
+    if (imgData) newMsg.image = `data:${imgData.mimeType};base64,${imgData.base64}`
+
+    setMessages(prev => [...prev, newMsg])
     setLoading(true)
 
     await new Promise(resolve => setTimeout(resolve, 350))
 
     try {
-      const context = await buildUserContext()
-      const answer = await askGroq(userText, context)
+      let answer = ''
+      if (imgData) {
+        answer = await analyzeImageWithGroq(imgData.base64, imgData.mimeType, userText || 'Describe this image')
+      } else {
+        const context = await buildUserContext()
+        answer = await askGroq(userText, context)
+      }
       setMessages(prev => [...prev, { role: 'assistant', content: answer, timestamp: new Date() }])
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', content: `Oops! Something went wrong: ${err.message}`, timestamp: new Date() }])
@@ -164,12 +201,30 @@ export default function AIHelperPage() {
           <div className={`ai-composer transition-all duration-300 ease-out px-4 md:p-3 ${
             focused ? 'pb-[calc(10px+env(safe-area-inset-bottom))] pt-1' : 'pb-[calc(82px+env(safe-area-inset-bottom))] pt-1 md:pb-3'
           }`}>
+            {selectedImage && (
+              <div className="mb-2 relative w-20 h-20 rounded-xl overflow-hidden border border-white/20 ml-2">
+                <img src={selectedImage.url} alt="Upload preview" className="w-full h-full object-cover" />
+                <button onClick={removeImage} className="absolute top-1 right-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            )}
             <div className={`ai-input-frame flex items-end gap-2 rounded-[1.35rem] border p-1.5 transition-all duration-300 ${
               focused ? 'is-focused' : ''
             }`}>
+              <button
+                type="button"
+                className="ai-send-button !bg-transparent !text-slate-400 hover:!text-white flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-2xl transition-all"
+                onClick={() => fileInputRef.current?.click()}
+                title="Upload Image"
+              >
+                <ImagePlus className="h-5 w-5" />
+              </button>
+              <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageSelect} />
+              
               <textarea
                 ref={textareaRef}
-                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-3 py-2.5 text-base outline-none shadow-none transition-all duration-200 focus:border-0 focus:ring-0 focus:shadow-none"
+                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-1 py-2.5 text-base outline-none shadow-none transition-all duration-200 focus:border-0 focus:ring-0 focus:shadow-none"
                 style={{ color: 'var(--text-primary)', maxHeight: '128px', height: '42px' }}
                 placeholder="Ask Axon anything..."
                 rows={1}
@@ -186,7 +241,7 @@ export default function AIHelperPage() {
               <button
                 type="button"
                 className="ai-send-button flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-2xl text-white transition-all disabled:opacity-40"
-                disabled={loading || !input.trim()}
+                disabled={loading || (!input.trim() && !selectedImage)}
                 onClick={sendMessage}
                 onPointerDown={e => e.preventDefault()}
                 aria-label="Send message"
@@ -205,8 +260,9 @@ function Message({ msg }) {
   const isUser = msg.role === 'user'
   return isUser ? (
     <div className="ai-message flex justify-end">
-      <div className="ai-user-bubble max-w-[86%] break-words rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed text-white md:max-w-[72%]">
-        {msg.content}
+      <div className="ai-user-bubble flex flex-col items-end max-w-[86%] break-words rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed text-white md:max-w-[72%]">
+        {msg.image && <img src={msg.image} alt="User upload" className="mb-2 max-h-64 rounded-xl object-contain" />}
+        {msg.content && <span>{msg.content}</span>}
       </div>
     </div>
   ) : (
