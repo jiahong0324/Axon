@@ -30,6 +30,7 @@ export default function ManagerBlogPage() {
       category: formData.get('category'),
       description: formData.get('description'),
       read_time: formData.get('read_time'),
+      image_url: formData.get('image_url'),
       content: formData.get('content')
     }
 
@@ -73,7 +74,7 @@ export default function ManagerBlogPage() {
           <p className="text-slate-400">Manage the articles displayed on the public landing page.</p>
         </div>
         <button 
-          onClick={() => setEditingPost({ title: '', slug: '', category: '', description: '', read_time: '', content: '' })}
+          onClick={() => setEditingPost({ title: '', slug: '', category: '', description: '', read_time: '', image_url: '', content: '' })}
           className="btn-primary"
         >
           <Plus className="h-5 w-5" /> New Post
@@ -140,6 +141,10 @@ export default function ManagerBlogPage() {
               <label className="space-y-1 text-sm font-medium text-slate-300">
                 Description (shown on cards)
                 <textarea required name="description" defaultValue={editingPost.description} rows="2" className="input mt-1 w-full" />
+              </label>
+              <label className="space-y-1 text-sm font-medium text-slate-300">
+                Cover Image URL (Optional)
+                <input name="image_url" defaultValue={editingPost.image_url} className="input mt-1 w-full" placeholder="e.g. /blog/my-image.png or https://..." />
               </label>
               <label className="space-y-1 text-sm font-medium text-slate-300">
                 Content (HTML)
