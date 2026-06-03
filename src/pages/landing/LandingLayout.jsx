@@ -33,6 +33,8 @@ function FooterGroup({ title, links, searchStr = '' }) {
   )
 }
 
+import SplashLoading from '../../components/SplashLoading'
+
 export default function LandingLayout() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -64,7 +66,7 @@ export default function LandingLayout() {
     return () => subscription.unsubscribe()
   }, [navigate, isViewing])
 
-  if (sessionLoading && !isViewing) return null
+  if (sessionLoading && !isViewing) return <SplashLoading />
 
   useEffect(() => {
     // Close menu when route changes

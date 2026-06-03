@@ -7,6 +7,8 @@ import Sidebar from './Sidebar'
 import ManagerSidebar from './ManagerSidebar'
 import { syncPreferences } from '../lib/preferences'
 
+import SplashLoading from './SplashLoading'
+
 export default function ProtectedRoute({ children, requireRole = 'student' }) {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
@@ -51,7 +53,7 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
     }
   }, [])
 
-  if (loading) return null
+  if (loading) return <SplashLoading />
   if (!session) return <Navigate to="/login" replace />
   
   const role = profile?.role || 'student'

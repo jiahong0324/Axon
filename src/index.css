@@ -195,7 +195,10 @@ input, select, textarea { font-size: 16px; }
 
 @layer components {
   .page-shell { @apply flex overflow-hidden overscroll-none; height: 100%; height: 100dvh; max-height: 100dvh; color: var(--text-primary); background: transparent; }
-  .main-content { @apply page-content scrollbar-hide flex-1 overflow-y-auto p-4 pb-28 md:p-6 md:pb-6; }
+  .main-content { 
+    @apply scrollbar-hide flex-1 overflow-y-auto px-4 pb-28 md:px-6 md:pb-6; 
+    padding-top: calc(env(safe-area-inset-top) + 1.25rem);
+  }
   .page-title { @apply text-xl md:text-2xl font-bold font-heading mb-6; }
   .card { @apply glass rounded-xl md:rounded-2xl p-4 md:p-5 transition-all duration-200; }
   .btn-primary { @apply bg-gradient-to-r from-blue-500 to-purple-600 text-white px-5 py-2.5 min-h-[48px] rounded-xl font-medium transition-all duration-200 inline-flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed; }
