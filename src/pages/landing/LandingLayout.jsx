@@ -117,7 +117,7 @@ export default function LandingLayout() {
           </button>
         </nav>
 
-        <div className={`absolute inset-x-4 top-[calc(100%+0.5rem)] overflow-hidden rounded-3xl border border-white/40 bg-white/80 p-5 shadow-2xl backdrop-blur-3xl transition-all duration-300 dark:border-white/10 dark:bg-slate-900/80 lg:hidden ${menuOpen ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-8 opacity-0'}`}>
+        <div className={`absolute inset-x-4 top-[calc(100%+0.5rem)] overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl transition-all duration-300 dark:border-white/10 dark:bg-slate-950 lg:hidden ${menuOpen ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-8 opacity-0'}`}>
           <div className="flex flex-col gap-1">
             {navLinks.map(([label, href]) => (
               <Link key={href} to={`${href}${searchStr}`} onClick={() => setMenuOpen(false)} className="group flex items-center justify-between rounded-2xl px-4 py-4 text-base font-bold text-slate-900 transition-all hover:bg-slate-100/50 hover:pl-6 dark:text-white dark:hover:bg-white/10">
