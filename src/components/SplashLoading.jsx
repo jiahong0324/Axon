@@ -6,8 +6,8 @@ export default function SplashLoading() {
       <img 
         src="/icons/logo.png" 
         alt="Axon Logo" 
-        className="relative z-10 h-28 w-28 animate-pulse object-contain transition-all duration-1000"
-        style={{ filter: 'drop-shadow(0 0 35px rgb(var(--color-theme-500) / 0.5))' }}
+        className="relative z-10 h-28 w-28 animate-pulse rounded-3xl object-cover transition-all duration-1000"
+        style={{ boxShadow: '0 0 45px 5px rgb(var(--color-theme-500) / 0.45)' }}
       />
     </div>
   )
