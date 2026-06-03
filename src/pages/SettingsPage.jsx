@@ -282,9 +282,16 @@ export default function SettingsPage() {
 
   async function deleteAccount() {
     if (!await confirm({ title: 'Delete account?', message: 'This permanently deletes your Axon account. Please confirm before continuing.', confirmText: 'Delete account' })) return
-    await supabase.rpc('delete_user')
-    await supabase.auth.signOut()
-    navigate('/login')
+    
+    try {
+      const { error } = await supabase.rpc('delete_user')
+      if (error) throw error
+
+      await supabase.auth.signOut()
+      navigate('/login')
+    } catch (err) {
+      showToast('Could not delete account. Server configuration missing.', 'error')
+    }
   }
 
   async function globalSignOut() {
