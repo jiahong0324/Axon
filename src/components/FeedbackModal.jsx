@@ -33,8 +33,8 @@ export default function FeedbackModal({ isOpen, onClose }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Send Feedback">
       <div className="mb-4 flex items-start gap-3 rounded-xl border border-theme-500/20 bg-theme-500/10 p-4">
-        <MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-theme-400" />
-        <p className="text-sm text-slate-300">
+        <MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-theme-600 dark:text-theme-400" />
+        <p className="text-sm text-theme-800 dark:text-theme-200">
           Have a suggestion, found a bug, or want a new feature? Let us know below! Your managers will review this.
         </p>
       </div>
