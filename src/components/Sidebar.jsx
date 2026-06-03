@@ -1,4 +1,4 @@
-import { Bell, BookOpen, Bot, CalendarDays, CheckSquare, LayoutDashboard, LogOut, MoreHorizontal, Settings, X, MessageSquare } from 'lucide-react'
+import { Bell, BookOpen, Bot, CalendarDays, CheckSquare, LayoutDashboard, LogOut, MoreHorizontal, Settings, X, MessageSquare, Globe } from 'lucide-react'
 import { useState } from 'react'
 import FeedbackModal from './FeedbackModal'
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -62,7 +62,10 @@ export default function Sidebar({ user }) {
               <p className="truncate text-xs text-slate-500">{user?.email}</p>
             </div>
           </div>
-          <button onClick={logout} className="btn-ghost w-full justify-start">
+          <NavLink to="/?view=true" className="btn-ghost mb-1 w-full justify-start text-slate-300">
+            <Globe className="h-4 w-4" /> View Landing Page
+          </NavLink>
+          <button onClick={logout} className="btn-ghost w-full justify-start text-red-400 hover:bg-red-500/10 hover:text-red-300">
             <LogOut className="h-4 w-4" /> Log out
           </button>
         </div>

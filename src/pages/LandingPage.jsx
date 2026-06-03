@@ -7,6 +7,9 @@ export default function LandingPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    const isViewing = new URLSearchParams(window.location.search).get('view') === 'true'
+    if (isViewing) return // Allow logged-in users to admire the landing page!
+
     // If user is already logged in, send them straight to the app
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
