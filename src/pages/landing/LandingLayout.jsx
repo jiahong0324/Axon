@@ -66,7 +66,7 @@ export default function LandingLayout() {
   }, [location.pathname])
 
   const navLinks = [
-    ['Features', '/features'],
+    ['Home', '/'],
     ['Blog', '/blog'],
     ['FAQ', '/faq'],
     ['Contact', '/contact']
@@ -161,7 +161,7 @@ export default function LandingLayout() {
               A student productivity platform for timetables, assignments, exams, reminders, study blogs, and AI learning support.
             </p>
           </div>
-          <FooterGroup title="Product" links={[['Features', '/features'], ['Blog', '/blog'], ['FAQ', '/faq'], ['Contact Us', '/contact']]} />
+          <FooterGroup title="Product" links={[['Home', '/'], ['Blog', '/blog'], ['FAQ', '/faq'], ['Contact Us', '/contact']]} />
           <FooterGroup title="Account" links={hasSession ? [['Dashboard', '/onboarding'], ['Terms and Conditions', '/terms']] : [['Sign In', '/login'], ['Get Started', '/register'], ['Terms and Conditions', '/terms']]} />
         </div>
         <div className="border-t border-slate-200 px-5 py-5 text-center text-sm text-slate-500 dark:border-white/10 dark:text-slate-500">
