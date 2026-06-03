@@ -534,9 +534,17 @@ input, select, textarea { font-size: 16px; }
 }
 
 [data-theme='light'] .ai-input-frame {
-  background: rgba(255, 255, 255, 0.96);
-  border-color: rgba(203, 213, 225, 0.95);
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+[data-theme='light'] .ai-input-frame.is-focused {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12), 0 12px 36px rgba(15, 23, 42, 0.08);
 }
 
 [data-theme='light'] .ai-action-button,
