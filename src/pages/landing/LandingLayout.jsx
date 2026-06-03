@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, Moon, Sun, X } from 'lucide-react'
+import { ChevronRight, Menu, Moon, Sun, X } from 'lucide-react'
 import { useTheme } from '../../components/ThemeProvider'
 import { supabase } from '../../lib/supabase'
 
@@ -117,34 +117,34 @@ export default function LandingLayout() {
           </button>
         </nav>
 
-        {menuOpen && (
-          <div className="border-t border-slate-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-slate-950 lg:hidden">
-            <div className="mx-auto grid max-w-7xl gap-2">
-              {navLinks.map(([label, href]) => (
-                <Link key={href} to={`${href}${searchStr}`} className="rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10">
-                  {label}
+        <div className={`absolute inset-x-4 top-[calc(100%+0.5rem)] overflow-hidden rounded-3xl border border-white/40 bg-white/80 p-5 shadow-2xl backdrop-blur-3xl transition-all duration-300 dark:border-white/10 dark:bg-slate-900/80 lg:hidden ${menuOpen ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-8 opacity-0'}`}>
+          <div className="flex flex-col gap-1">
+            {navLinks.map(([label, href]) => (
+              <Link key={href} to={`${href}${searchStr}`} onClick={() => setMenuOpen(false)} className="group flex items-center justify-between rounded-2xl px-4 py-4 text-base font-bold text-slate-900 transition-all hover:bg-slate-100/50 hover:pl-6 dark:text-white dark:hover:bg-white/10">
+                {label}
+                <ChevronRight className="h-5 w-5 opacity-40 transition-transform group-hover:translate-x-1 group-hover:opacity-100" />
+              </Link>
+            ))}
+            <div className="my-3 h-px bg-slate-200/50 dark:bg-white/10" />
+            <div className="flex items-center gap-3">
+              <ThemeToggle theme={themeCtx.theme} setTheme={themeCtx.setTheme} />
+              {hasSession ? (
+                <Link to="/onboarding" className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/30 transition hover:bg-blue-700">
+                  Go to Dashboard
                 </Link>
-              ))}
-              <div className="mt-2 flex flex-wrap items-center gap-3">
-                <ThemeToggle theme={themeCtx.theme} setTheme={themeCtx.setTheme} />
-                {hasSession ? (
-                  <Link to="/onboarding" className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white">
-                    Go to Dashboard
+              ) : (
+                <>
+                  <Link to="/login" className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5">
+                    Sign In
                   </Link>
-                ) : (
-                  <>
-                    <Link to="/login" className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-slate-200 px-5 text-sm font-semibold text-slate-700 dark:border-white/10 dark:text-slate-200">
-                      Sign In
-                    </Link>
-                    <Link to="/register" className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white">
-                      Get Started
-                    </Link>
-                  </>
-                )}
-              </div>
+                  <Link to="/register" className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/30 transition hover:bg-blue-700">
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </header>
 
       <main>
