@@ -18,7 +18,7 @@ import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq, analyzeImageWithGroq } from '../lib/groq'
 import { markdownToHtml } from '../lib/utils'
 
-const quickActions = [
+const studentActions = [
   { icon: Brain, mobile: 'Explain', desktop: 'Explain a concept simply', prompt: 'Explain a concept simply' },
   { icon: FileText, mobile: 'Summarize', desktop: 'Summarize my notes', prompt: 'Summarize my notes' },
   { icon: HelpCircle, mobile: 'Quiz me', desktop: 'Generate quiz questions', prompt: 'Generate quiz questions' },
@@ -29,15 +29,31 @@ const quickActions = [
   { icon: Code2, mobile: 'Code help', desktop: 'Explain this code', prompt: 'Explain this code' }
 ]
 
-const welcomeMessage = {
+const managerActions = [
+  { icon: FileText, mobile: 'Summarize', desktop: 'Summarize feedback', prompt: 'Summarize the recent student feedback' },
+  { icon: Sparkles, mobile: 'Draft', desktop: 'Draft announcement', prompt: 'Draft a new announcement' },
+  { icon: ListChecks, mobile: 'Review', desktop: 'Review activity', prompt: 'Review recent system activity' }
+]
+
+const studentWelcome = {
   role: 'assistant',
   content: `Selamat datang! I am your dedicated AI Study Helper.\n\nHow can I support your software engineering studies today? You can ask me to explain algorithms, summarize notes, generate mock interview questions, or plan out your semester schedules!\n\nNote: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, or active reminders!`,
   timestamp: new Date()
 }
 
-export default function AIHelperPage() {
+const managerWelcome = {
+  role: 'assistant',
+  content: `Welcome to the Manager AI Control Center!\n\nI have full secure access to your university database. You can ask me to summarize student feedback, draft new announcements, or analyze system overviews!`,
+  timestamp: new Date()
+}
+
+export default function AIHelperPage({ role = 'student' }) {
+  const isManager = role === 'manager'
+  const welcomeMessage = isManager ? managerWelcome : studentWelcome
+  const quickActions = isManager ? managerActions : studentActions
+
   const [messages, setMessages] = useState(() => {
-    const saved = JSON.parse(localStorage.getItem('aiChat') || '[]')
+    const saved = JSON.parse(localStorage.getItem(isManager ? 'aiManagerChat' : 'aiChat') || '[]')
     return saved.length ? saved : [welcomeMessage]
   })
   const [input, setInput] = useState('')
@@ -70,8 +86,8 @@ export default function AIHelperPage() {
   }
 
   useEffect(() => {
-    localStorage.setItem('aiChat', JSON.stringify(messages))
-  }, [messages])
+    localStorage.setItem(isManager ? 'aiManagerChat' : 'aiChat', JSON.stringify(messages))
+  }, [messages, isManager])
 
   useEffect(() => {
     if (focused) {

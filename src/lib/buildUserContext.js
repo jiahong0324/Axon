@@ -6,10 +6,42 @@ export async function buildUserContext() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return ''
 
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+  const isManager = profile?.role === 'manager'
+
   const today = new Date()
   const todayStr = format(today, 'yyyy-MM-dd')
   const dayName = format(today, 'EEEE')
   const displayName = user.user_metadata?.full_name || user.email
+
+  if (isManager) {
+    const [studentsRes, feedbackRes, announcementsRes] = await Promise.all([
+      supabase.from('profiles').select('id, full_name').eq('role', 'student'),
+      supabase.from('feedback').select('message').eq('status', 'pending'),
+      supabase.from('announcements').select('title, message')
+    ])
+    const students = studentsRes.data || []
+    const feedback = feedbackRes.data || []
+    const announcements = announcementsRes.data || []
+
+    return `
+=== MANAGER PROFILE ===
+Name: ${displayName}
+Email: ${user.email}
+Today: ${dayName}, ${format(today, 'dd MMMM yyyy')}
+
+=== SYSTEM OVERVIEW ===
+Total Students: ${students.length}
+Pending Feedback Tickets: ${feedback.length}
+Active Announcements: ${announcements.length}
+
+=== PENDING FEEDBACK ===
+${feedback.length === 0 ? 'No pending feedback.' : feedback.slice(0, 15).map(f => `- ${f.message}`).join('\n')}
+
+=== RECENT ANNOUNCEMENTS ===
+${announcements.length === 0 ? 'No announcements.' : announcements.slice(0, 5).map(a => `- ${a.title}: ${a.message}`).join('\n')}
+`.trim()
+  }
 
   const [classesRes, assignmentsRes, examsRes, remindersRes] = await Promise.all([
     supabase.from('classes').select('*').eq('user_id', user.id),
