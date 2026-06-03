@@ -82,7 +82,7 @@ export default function HomePage() {
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
   if (loading) return (
-    <main className="main-content scrollbar-hide">
+    <main className="home-dashboard main-content scrollbar-hide">
       <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-end">
         <h1 className="font-heading text-2xl font-bold">{greeting}... 👋</h1>
         <p className="muted tabular-nums">{format(currentTime, 'EEEE, dd MMMM yyyy · hh:mm:ss a')}</p>
@@ -102,7 +102,7 @@ export default function HomePage() {
   )
 
   return (
-    <main className="main-content scrollbar-hide">
+    <main className="home-dashboard main-content scrollbar-hide">
       {banner && (
         <div className="card mb-5 flex items-center justify-between gap-3 border-blue-500/30">
           <p className="text-sm">📲 Add Axon to your home screen! On iOS, tap Share then Add to Home Screen.</p>
@@ -134,14 +134,14 @@ export default function HomePage() {
       </header>
 
       <section className="mb-6 grid gap-4 md:grid-cols-3">
-        <Summary icon={BookOpen} label="Today's Classes" value={todayClasses.length} tone="text-blue-400" border="border-l-blue-500" />
-        <Summary icon={AlertCircle} label="Due Soon" value={dueSoon.length} tone="text-yellow-400" border="border-l-yellow-500" />
-        <Summary icon={Calendar} label="Days to Next Exam" value={nextExamValue} valueClass={nextExamDays === 0 ? 'text-red-500' : ''} tone="text-purple-400" border="border-l-purple-500" />
+        <Summary icon={BookOpen} label="Today's Classes" value={todayClasses.length} tone="text-blue-600 dark:text-blue-400" border="border-l-blue-500" />
+        <Summary icon={AlertCircle} label="Due Soon" value={dueSoon.length} tone="text-amber-600 dark:text-yellow-400" border="border-l-yellow-500" />
+        <Summary icon={Calendar} label="Days to Next Exam" value={nextExamValue} valueClass={nextExamDays === 0 ? 'text-red-500' : ''} tone="text-violet-600 dark:text-purple-400" border="border-l-purple-500" />
       </section>
 
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         <div className="flex h-full flex-col">
-          <div className="card flex h-full flex-1 flex-col">
+          <div className="home-panel card flex h-full flex-1 flex-col">
             <h2 className="section-header">📚 Today's Classes</h2>
             {todayClasses.length === 0 ? (
               <div className="flex flex-1 items-center justify-center py-10"><EmptyState emoji="🎉" message="No classes today!" /></div>
@@ -152,20 +152,20 @@ export default function HomePage() {
         </div>
 
         <div className="flex flex-col gap-4 md:gap-6">
-          <section className="card">
+          <section className="home-panel card">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="section-header mb-0">📝 Due Soon</h2>
               <Link to="/assignments" className="text-sm font-medium text-blue-400 hover:text-blue-300">View all →</Link>
             </div>
             {dueSoon.length === 0 ? (
-              <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm font-medium text-slate-300">
+              <div className="success-row flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm font-medium text-slate-300">
                 <CheckCircle className="h-5 w-5 text-emerald-400" />
                 No urgent assignments.
               </div>
             ) : (
               <div className="space-y-3">
                 {dueSoon.map(a => (
-                  <div key={a.id} className="rounded-xl border border-white/10 p-3">
+                  <div key={a.id} className="home-list-card rounded-xl border border-white/10 p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div><p className="font-semibold">{a.title}</p><p className="muted">{a.subject} · {dateLabel(a.deadline)}</p></div>
                       <PriorityBadge priority={a.priority} />
@@ -177,7 +177,7 @@ export default function HomePage() {
             )}
           </section>
 
-          <section className="card">
+          <section className="home-panel card">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="section-header mb-0">📖 Upcoming Exams</h2>
               <Link to="/exams" className="text-sm font-medium text-blue-400 hover:text-blue-300">View all exams →</Link>
@@ -201,13 +201,13 @@ export default function HomePage() {
 }
 
 function Summary({ icon: Icon, label, value, tone, border, valueClass = '' }) {
-  return <div className={`card flex items-center gap-4 border-l-4 ${border}`}><Icon className={`h-7 w-7 ${tone}`} /><div><p className="muted">{label}</p><p className={`text-2xl font-bold ${valueClass}`}>{value}</p></div></div>
+  return <div className={`summary-card card flex items-center gap-4 border-l-4 ${border}`}><span className="summary-icon-wrap"><Icon className={`h-7 w-7 ${tone}`} /></span><div><p className="muted">{label}</p><p className={`text-2xl font-bold ${valueClass}`}>{value}</p></div></div>
 }
 
 function ClassCard({ item }) {
   const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-blue-500'
   return (
-    <div className={`rounded-xl border border-l-4 border-white/10 ${border} p-4`}>
+    <div className={`class-card rounded-xl border border-l-4 border-white/10 ${border} p-4`}>
       <div className="mb-2 flex items-center justify-between gap-3"><p className="font-semibold">{item.subject}</p><ClassTypeBadge type={item.class_type} /></div>
       <p className="muted">{formatTime(item.start_time)} - {formatTime(item.end_time)} · {item.classroom || 'TBA'} · {item.lecturer || 'TBA'}</p>
     </div>
@@ -216,10 +216,10 @@ function ClassCard({ item }) {
 
 function ExamMiniCard({ exam }) {
   const days = daysFromToday(exam.exam_date)
-  const tone = days <= 7 ? 'text-red-400' : days <= 14 ? 'text-yellow-400' : 'text-green-400'
-  const badge = exam.exam_type === 'Quiz' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' : exam.exam_type === 'Midterm' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+  const tone = days <= 7 ? 'text-red-600 dark:text-red-400' : days <= 14 ? 'text-amber-600 dark:text-yellow-400' : 'text-emerald-600 dark:text-green-400'
+  const badge = exam.exam_type === 'Quiz' ? 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30' : exam.exam_type === 'Midterm' ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/30' : 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30'
   return (
-    <article className="rounded-xl border border-white/10 p-3">
+    <article className="exam-mini-card rounded-xl border border-white/10 p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-1 flex flex-wrap items-center gap-2">

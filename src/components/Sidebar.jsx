@@ -28,13 +28,13 @@ export default function Sidebar({ user }) {
     navigate('/login')
   }
 
-  const linkClass = ({ isActive }) => `flex min-h-[48px] items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
-    isActive ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
+  const linkClass = ({ isActive }) => `student-nav-link flex min-h-[48px] items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
+    isActive ? 'is-active bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
   }`
 
   return (
     <>
-      <aside className="hidden w-60 shrink-0 border-r border-slate-200 dark:border-white/10 bg-white dark:bg-[#1E293B] p-4 md:flex md:flex-col">
+      <aside className="student-sidebar hidden w-60 shrink-0 border-r border-slate-200 dark:border-white/10 bg-white dark:bg-[#1E293B] p-4 md:flex md:flex-col">
         <div className="mb-7 flex items-center gap-3 px-2">
           <img src="/icons/logo.png" alt="Axon logo" className="h-8 w-8 rounded-lg object-contain" />
           <div>
@@ -50,11 +50,11 @@ export default function Sidebar({ user }) {
             </NavLink>
           ))}
         </nav>
-        <button onClick={() => setFeedbackOpen(true)} className="mb-4 flex min-h-[48px] items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 text-sm font-medium text-blue-400 transition-colors hover:bg-blue-500/20">
+        <button onClick={() => setFeedbackOpen(true)} className="feedback-button mb-4 flex min-h-[48px] items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 text-sm font-medium text-blue-400 transition-colors hover:bg-blue-500/20">
           <MessageSquare className="h-5 w-5" />
           Send Feedback
         </button>
-        <div className="rounded-2xl border border-slate-200 dark:border-white/10 p-3">
+        <div className="student-profile-card rounded-2xl border border-slate-200 dark:border-white/10 p-3">
           <div className="mb-3 flex items-center gap-3">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-500 font-semibold text-white">{initials(name)}</div>
             <div className="min-w-0">
