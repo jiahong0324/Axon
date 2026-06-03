@@ -21,7 +21,12 @@ import ManagerSettingsPage from './pages/manager/ManagerSettingsPage'
 import ManagerFeedbackPage from './pages/manager/ManagerFeedbackPage'
 import TermsPage from './pages/TermsPage'
 
-import LandingPage from './pages/LandingPage'
+import LandingLayout from './pages/landing/LandingLayout'
+import LandingHome from './pages/landing/LandingHome'
+import LandingFeatures from './pages/landing/LandingFeatures'
+import LandingBlog from './pages/landing/LandingBlog'
+import LandingFAQ from './pages/landing/LandingFAQ'
+import LandingContact from './pages/landing/LandingContact'
 import OnboardingPage from './pages/OnboardingPage'
 
 export default function App() {
@@ -34,7 +39,13 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/terms" element={<TermsPage />} />
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<LandingLayout />}>
+              <Route index element={<LandingHome />} />
+              <Route path="features" element={<LandingFeatures />} />
+              <Route path="blog" element={<LandingBlog />} />
+              <Route path="faq" element={<LandingFAQ />} />
+              <Route path="contact" element={<LandingContact />} />
+            </Route>
             <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
             <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />
             <Route path="/assignments" element={<ProtectedRoute requireRole="student"><AssignmentPage /></ProtectedRoute>} />

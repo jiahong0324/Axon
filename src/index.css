@@ -14,11 +14,11 @@
 }
 
 [data-theme='light'] {
-  --bg-primary: #F0F4FF;
+  --bg-primary: #F8FAFC;
   --bg-card: #FFFFFF;
-  --bg-card-hover: #F8FAFF;
+  --bg-card-hover: #F1F5F9;
   --bg-input: #F1F5F9;
-  --bg-sidebar: #1E293B;
+  --bg-sidebar: #FFFFFF;
   --border: #E2E8F0;
   --border-focus: #3B82F6;
   --text-primary: #0F172A;
@@ -124,6 +124,10 @@ input, select, textarea { font-size: 16px; }
   background: linear-gradient(90deg, #1E293B 25%, #334155 50%, #1E293B 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+[data-theme='light'] .skeleton {
+  background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%);
 }
 
 @keyframes bounce {
@@ -343,7 +347,6 @@ input, select, textarea { font-size: 16px; }
 }
 [data-theme='light'] .btn-ghost {
   border: 1px solid #CBD5E1;
-  color: #334155;
 }
 [data-theme='light'] .btn-ghost:hover { background: #F1F5F9; }
 [data-theme='light'] .btn-danger {
@@ -446,4 +449,8 @@ input, select, textarea { font-size: 16px; }
   .ai-composer {
     animation: fadeInQuick 120ms ease-out both;
   }
+}
+
+[data-theme='light'] .border-white\/10 {
+  border-color: #E2E8F0 !important;
 }
