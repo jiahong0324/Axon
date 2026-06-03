@@ -49,10 +49,13 @@ create policy "Managers can delete blog posts."
 create table if not exists public.blog_comments (
   id uuid default gen_random_uuid() primary key,
   post_id uuid references public.blog_posts(id) on delete cascade not null,
+  parent_id uuid references public.blog_comments(id) on delete cascade,
   name text not null,
   content text not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+alter table public.blog_comments add column if not exists parent_id uuid references public.blog_comments(id) on delete cascade;
 
 alter table public.blog_comments enable row level security;
 
@@ -210,7 +213,6 @@ ON CONFLICT (slug) DO UPDATE SET
   image_url = EXCLUDED.image_url,
   content = EXCLUDED.content;
 
--- 6. Magic Seeding Block (Fake Engagement)
 -- Blast all posts with 1000+ views and 300+ likes
 update public.blog_posts 
 set views_count = floor(random() * 4000 + 1000), 
@@ -219,11 +221,161 @@ set views_count = floor(random() * 4000 + 1000),
 -- Clear existing comments so we don't duplicate on re-runs
 delete from public.blog_comments;
 
--- Insert 10 fake comments for every post using a cross join
-insert into public.blog_comments (post_id, name, content, created_at)
-select 
-  p.id, 
-  (array['Alex', 'Sam', 'Jordan', 'Taylor', 'Casey', 'Riley', 'Morgan', 'Avery', 'Quinn', 'Skyler', 'Jamie', 'Charlie'])[floor(random() * 12 + 1)],
-  (array['This article really helped me out! Thanks.', 'I needed this today.', 'Very helpful tips for my exams.', 'Will definitely try this out next week.', 'So true, I completely agree!', 'Thanks for sharing this.', 'This changed my perspective on studying.', 'Bookmarking this for later.', 'Couldn''t agree more.', 'Well written and very practical.', 'Just what I was looking for!', 'Great read, thanks for the advice.'])[floor(random() * 12 + 1)],
-  now() - (random() * interval '30 days')
-from public.blog_posts p cross join generate_series(1, 10);
+-- 6. Massive Highly-Specific Hand-Crafted Seeding Block
+DO $$
+DECLARE
+  pid uuid;
+  c1 uuid;
+  c2 uuid;
+  c3 uuid;
+BEGIN
+  -- POST: plan-productive-study-week
+  SELECT id INTO pid FROM public.blog_posts WHERE slug = 'plan-productive-study-week';
+  IF pid IS NOT NULL THEN
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Sarah M.', 'The Sunday review concept is brilliant! I always used to wake up on Monday completely stressed out because I had no idea what was due. Going to try taking 20 mins tonight to map it all out.', now() - interval '14 days') RETURNING id INTO c1;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'David L.', 'Same here! I started doing this last month and the mental clarity it gives you is honestly life-changing.', now() - interval '13 days');
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Axon Team', 'So glad to hear it Sarah! Let us know how your first Sunday review goes.', now() - interval '13 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Emily C.', 'How do you recommend handling time blocking when your professors frequently change the syllabus or add surprise assignments? I find my schedule just falls apart.', now() - interval '10 days') RETURNING c2;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Marcus T.', 'Leave "buffer blocks" in your schedule! I usually leave 2 hours completely blank on Wednesdays just in case something comes up. If nothing comes up, I just take a nap lol.', now() - interval '9 days');
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Emily C.', 'Buffer blocks... that is so smart. Thanks Marcus!', now() - interval '9 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Jordan K.', 'Great tips. Setting a hard stop at 8 PM is the hardest part for me, but I know I need to do it.', now() - interval '5 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Liam R.', 'Does anyone else struggle to accurately estimate how long a reading will take? I block 1 hour and it takes 3.', now() - interval '2 days') RETURNING c3;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c3, 'Chloe B.', 'Yes!! The rule of thumb I heard is to multiply whatever time you think it will take by 1.5.', now() - interval '1 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Aisha V.', 'Really solid advice, thanks for putting this together.', now() - interval '1 days');
+  END IF;
+
+  -- POST: avoid-missing-assignment-deadlines
+  SELECT id INTO pid FROM public.blog_posts WHERE slug = 'avoid-missing-assignment-deadlines';
+  IF pid IS NOT NULL THEN
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Jake P.', 'Perfectionism is definitely procrastination in disguise. That line hit me hard. I literally spent 3 hours yesterday just trying to write the perfect opening sentence for my history essay.', now() - interval '20 days') RETURNING c1;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Mia S.', 'I do the exact same thing. Just write garbage and fix it later is the only way I survive now.', now() - interval '19 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Omar F.', 'Setting artificial deadlines has saved my GPA. I always pretend things are due 2 days before they actually are. It gives you so much peace of mind.', now() - interval '15 days') RETURNING c2;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Sophie T.', 'Do you use a digital planner for this or paper?', now() - interval '14 days');
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Omar F.', 'Mostly digital! I put it right in my Google Calendar.', now() - interval '13 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Lucas H.', 'Breaking a 3000-word essay into 300-word chunks makes it feel so much less intimidating. Good article.', now() - interval '10 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Isabella M.', 'I still struggle with the "I''ll do it later" trap. Any advice for when you just have literally zero energy?', now() - interval '8 days') RETURNING c3;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c3, 'Axon Team', 'Hey Isabella! When energy is absolute zero, try the "5-Minute Rule". Tell yourself you only have to work for 5 minutes. If you still want to quit after 5 mins, you can. But usually, just starting gives you the momentum to keep going!', now() - interval '7 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Ethan D.', 'Visual reminders are huge. Post-it notes on my monitor are the only way I remember to submit my weekly quizzes.', now() - interval '3 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Ava L.', 'Very helpful, definitely sharing this with my study group.', now() - interval '1 days');
+  END IF;
+
+  -- POST: prepare-exams-without-stress
+  SELECT id INTO pid FROM public.blog_posts WHERE slug = 'prepare-exams-without-stress';
+  IF pid IS NOT NULL THEN
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Noah J.', 'Active recall completely changed how I study. I used to just re-read the textbook for 5 hours and then bomb the test. Using flashcards and testing myself feels harder, but it actually works.', now() - interval '25 days') RETURNING c1;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Emma W.', 'What app do you use for flashcards? Anki?', now() - interval '24 days');
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Noah J.', 'Yep, Anki is the best because of the spaced repetition algorithm.', now() - interval '23 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Oliver B.', 'The traffic light system for the master topic list is genius. I usually just start studying from chapter 1 and run out of time before I get to the hard stuff.', now() - interval '18 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Charlotte R.', 'Simulating exam conditions is so stressful though! I hate doing practice papers without my notes.', now() - interval '15 days') RETURNING c2;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'William K.', 'It is stressful, but it''s better to feel that stress in your bedroom than in the actual exam hall! It gets easier the more you do it.', now() - interval '14 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Harper G.', 'I really need to stop cramming. This was a wake-up call.', now() - interval '10 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'James P.', 'How do you recommend spacing out revision for a math-heavy subject?', now() - interval '8 days') RETURNING c3;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c3, 'Evelyn N.', 'For math, just do 3-5 practice problems from older chapters every single day instead of doing 50 problems right before the test.', now() - interval '7 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Benjamin Y.', 'Great advice. Spaced repetition is the truth.', now() - interval '2 days');
+  END IF;
+
+  -- POST: mastering-pomodoro-technique
+  SELECT id INTO pid FROM public.blog_posts WHERE slug = 'mastering-pomodoro-technique';
+  IF pid IS NOT NULL THEN
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Amelia F.', 'I tried Pomodoro but I always skip the 5 minute breaks because I feel like I am interrupting my flow. Then I wonder why I am exhausted by 2 PM...', now() - interval '22 days') RETURNING c1;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Elijah C.', 'You HAVE to take the break! Even if you just stand up and stretch. It resets your brain.', now() - interval '21 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Lucas M.', '25 minutes is perfect for me. Whenever I try to work for an hour straight, I end up checking my phone after 15 minutes anyway.', now() - interval '19 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Grace V.', 'Does anyone else use different time intervals? 25 mins feels too short for coding assignments.', now() - interval '14 days') RETURNING c2;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Henry L.', 'Yeah for programming I do a 50/10 split. 50 mins work, 10 mins break. The 25 min blocks break my concentration when I am deep in a bug.', now() - interval '13 days');
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Grace V.', '50/10 makes a lot of sense, I am going to try that today.', now() - interval '12 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Alexander H.', 'The hardest part is not touching my phone during the 25 minutes. I had to put my phone in another room.', now() - interval '9 days') RETURNING c3;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c3, 'Axon Team', 'Putting the phone in another room is a great strategy! Out of sight, out of mind.', now() - interval '8 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Chloe S.', 'Love this technique. Helps me get through boring readings.', now() - interval '4 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Daniel Z.', 'Short and sweet article. Good reminder to stick to the fundamentals.', now() - interval '1 days');
+  END IF;
+
+  -- POST: how-to-take-effective-notes
+  SELECT id INTO pid FROM public.blog_posts WHERE slug = 'how-to-take-effective-notes';
+  IF pid IS NOT NULL THEN
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Victoria R.', 'I am 100% guilty of acting like a human court reporter. By the end of a lecture, my hand is cramping and I have no idea what the professor actually taught.', now() - interval '26 days') RETURNING c1;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Jackson D.', 'Same! And then when I go back to read my notes, it''s just a wall of text that makes no sense.', now() - interval '25 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Sebastian A.', 'The Cornell Method is fantastic. Writing the summary at the bottom really forces you to process the information immediately.', now() - interval '20 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Penelope M.', 'Reviewing within 24 hours is the biggest cheat code for university. It takes 10 minutes but saves hours of studying later.', now() - interval '17 days') RETURNING c2;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Mateo P.', 'Do you review by just reading them, or do you rewrite them?', now() - interval '16 days');
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Penelope M.', 'I don''t rewrite. I just read through them and maybe highlight the key concepts or add a margin note if something clicked.', now() - interval '15 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Riley J.', 'What if the professor talks extremely fast? It feels impossible not to just transcribe.', now() - interval '12 days') RETURNING c3;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c3, 'Aria L.', 'If they post the slides beforehand, print them out or download them to a tablet and just write your notes directly on the slides. That way you only write what isn''t already on the screen!', now() - interval '11 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Leo C.', 'This is super helpful. I am definitely going to try the Cornell method next semester.', now() - interval '6 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Zoe E.', 'Great tips!', now() - interval '2 days');
+  END IF;
+
+  -- POST: overcoming-academic-imposter-syndrome
+  SELECT id INTO pid FROM public.blog_posts WHERE slug = 'overcoming-academic-imposter-syndrome';
+  IF pid IS NOT NULL THEN
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Hannah B.', 'Thank you so much for writing this. I am in my second year of computer science and I constantly feel like everyone else has been coding since they were 5, and I am just faking it. It''s exhausting.', now() - interval '28 days') RETURNING c1;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Julian W.', 'I am a senior in CS and I STILL feel that way sometimes. Just remember that people only talk publicly about their successes, never the hours they spent stuck on a simple bug. You belong here.', now() - interval '27 days');
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Hannah B.', 'That makes me feel a lot better, thank you Julian.', now() - interval '26 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Levi O.', 'The shift from a "performance" mindset to a "learning" mindset is profound. I get so upset when I don''t get an A on the first try, but the whole point of being here is to learn what I don''t know.', now() - interval '22 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Eleanor G.', 'I always attribute my good grades to luck or an easy professor. It is so hard to accept that I actually earned it.', now() - interval '18 days') RETURNING c2;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Axon Team', 'It is very common Eleanor! Keep a small file on your computer with screenshots of your good grades or positive feedback from professors. Look at it when you doubt yourself!', now() - interval '17 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Wyatt S.', 'Talking about it is so important. I mentioned feeling lost to my lab partner and he literally sighed in relief and said he was completely lost too.', now() - interval '14 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Stella K.', 'This article was wonderfully written. Very validating.', now() - interval '9 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Christian N.', 'Needed to read this right before midterms. The pressure is insane right now.', now() - interval '4 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Maya Q.', 'Beautifully said. We are all just trying our best.', now() - interval '1 days');
+  END IF;
+
+  -- POST: optimizing-your-sleep-schedule
+  SELECT id INTO pid FROM public.blog_posts WHERE slug = 'optimizing-your-sleep-schedule';
+  IF pid IS NOT NULL THEN
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Landon V.', 'I pulled an all-nighter for my economics final last year and completely blanked on the essay question. Never again. Sleep is literally magic for memory.', now() - interval '29 days') RETURNING c1;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Hazel X.', 'Same. You feel so productive at 3 AM but then you take the test and your brain is just absolute mush.', now() - interval '28 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Nathan I.', 'Waking up at the same time on weekends is the hardest pill to swallow. I just want to sleep in until noon on Saturdays.', now() - interval '25 days') RETURNING c2;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Lucy Z.', 'You can sleep in a little bit! Just don''t shift it by more than an hour or two, otherwise Monday morning is brutal.', now() - interval '24 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Caleb M.', 'The wind-down routine is crucial. If I close my laptop after doing calculus and try to sleep immediately, my brain just keeps doing math in the dark.', now() - interval '20 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Violet R.', 'Any advice for falling asleep when you are super anxious about a test?', now() - interval '16 days') RETURNING c3;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c3, 'Isaac F.', 'I do a "brain dump". I write down everything I am worried about on a piece of paper. Getting it out of my head and onto paper usually stops the racing thoughts.', now() - interval '15 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Lillian H.', 'Great post. Sleep > Cramming every time.', now() - interval '10 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Owen D.', 'I started using blue-light blocking glasses at 8 PM and it actually made a huge difference in how fast I fall asleep.', now() - interval '5 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Aurora C.', 'Very informative, thanks!', now() - interval '1 days');
+  END IF;
+
+  -- POST: managing-group-projects
+  SELECT id INTO pid FROM public.blog_posts WHERE slug = 'managing-group-projects';
+  IF pid IS NOT NULL THEN
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Aaron G.', 'I despise group projects with a burning passion. There is ALWAYS one person who does literally nothing until the night before it is due.', now() - interval '30 days') RETURNING c1;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Nora B.', 'Group charter is the way to fix this. If you all agree on day 1 that slackers will be reported to the professor, they usually shape up really fast.', now() - interval '29 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Cameron Y.', 'Using a shared Google Drive instead of emailing word documents is 2024 basics. I can''t believe some people still email files.', now() - interval '24 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Sadie P.', 'How do you handle a group member who does the work, but the quality is just really, really bad?', now() - interval '20 days') RETURNING c2;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Eli K.', 'You have to frame it as a collaborative edit. "Hey, I was reading through this section and thought we could expand on this point, do you mind if I tweak it?"', now() - interval '19 days');
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Aaron G.', 'Or just rewrite it entirely the night before... (I am toxic I know).', now() - interval '18 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Addison T.', 'The clear, written record of assignments is the best advice here. Receipts are everything when you need to talk to the professor.', now() - interval '15 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Christian J.', 'I usually just end up doing the whole thing myself because I don''t trust anyone else. I know it''s bad but it protects my grade.', now() - interval '10 days') RETURNING c3;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c3, 'Axon Team', 'It''s a common trap, Christian! But learning how to delegate and hold others accountable is a massive soft skill for your future career. Give the charter a try next time.', now() - interval '9 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Piper S.', 'Great tips. Group work is the worst but this makes it manageable.', now() - interval '3 days');
+  END IF;
+
+  -- POST: balancing-part-time-work
+  SELECT id INTO pid FROM public.blog_posts WHERE slug = 'balancing-part-time-work';
+  IF pid IS NOT NULL THEN
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Julian D.', 'Working 20 hours a week while taking engineering classes is destroying me. The tip about maximizing small pockets of time is so real. I do flashcards on the subway now.', now() - interval '27 days') RETURNING c1;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Samantha H.', 'I feel you Julian. Nursing student working 24 hours a week here. We just have to survive!', now() - interval '26 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Ian B.', 'Protecting days off is something I failed to do last semester. I worked weekends and went to class Monday-Friday. I completely burned out by November.', now() - interval '22 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Aubrey L.', 'Most employers are definitely accommodating IF you tell them early. If you tell them you have a final exam tomorrow, they will be mad. Give them a month warning.', now() - interval '18 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Dominic N.', 'How do you guys find the energy to study after an 8 hour shift on your feet? I work retail and I am just dead when I get home.', now() - interval '14 days') RETURNING c2;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Riley K.', 'Don''t study at home! Go straight from work to a coffee shop or the library. If I sit on my couch, it''s game over.', now() - interval '13 days');
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Dominic N.', 'Going straight to the library is a great idea. Going to try that.', now() - interval '12 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Peyton M.', 'This article makes me feel seen. Being a working student is so hard.', now() - interval '8 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Gabriel E.', 'Time management really is military-grade when you have zero free time. Good tips.', now() - interval '4 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Willow T.', 'Thanks for sharing this!', now() - interval '1 days');
+  END IF;
+
+  -- POST: sustainable-study-diet
+  SELECT id INTO pid FROM public.blog_posts WHERE slug = 'sustainable-study-diet';
+  IF pid IS NOT NULL THEN
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Cooper R.', 'I feel personally attacked by the instant ramen comment. It is cheap and easy!', now() - interval '25 days') RETURNING c1;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c1, 'Skylar V.', 'Haha same, but the brain fog is real. I started adding frozen veggies and a boiled egg to my ramen to at least get some nutrients.', now() - interval '24 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Xavier W.', 'The sugar crash from energy drinks is brutal. I switched to green tea in the afternoons and my energy is way more stable now.', now() - interval '20 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Bella F.', 'Meal prepping on Sundays saves my life. If I don''t have food ready in the fridge, I end up ordering UberEats and going broke.', now() - interval '17 days') RETURNING c2;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Ezra P.', 'What are some cheap, easy meals to prep? I am terrible at cooking.', now() - interval '16 days');
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c2, 'Bella F.', 'Burrito bowls! Just rice, black beans, corn, and some chicken if you eat meat. Extremely cheap and takes 30 mins to make 5 days of food.', now() - interval '15 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Asher L.', 'Drinking more water genuinely solved like 80% of my afternoon fatigue. I didn''t realize I was just dehydrated.', now() - interval '12 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Naomi S.', 'Apples and peanut butter is the elite study snack. Keeps you full for hours.', now() - interval '9 days');
+    INSERT INTO public.blog_comments (post_id, name, content, created_at) VALUES (pid, 'Miles G.', 'Good reminders here. It''s so easy to let your diet go to trash during finals week.', now() - interval '5 days') RETURNING c3;
+    INSERT INTO public.blog_comments (post_id, parent_id, name, content, created_at) VALUES (pid, c3, 'Axon Team', 'Finals week is definitely the hardest time to eat well, but it''s also when your brain needs good fuel the most!', now() - interval '4 days');
+  END IF;
+END $$;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useOutletContext, Navigate } from 'react-router-dom'
-import { ArrowLeft, Clock, Share2, Heart, MessageSquare, Send, Eye } from 'lucide-react'
+import { ArrowLeft, Clock, Share2, Heart, MessageSquare, Send, Eye, Reply } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useToast } from '../../components/Toast'
 
@@ -18,6 +18,11 @@ export default function LandingArticle() {
   const [commentName, setCommentName] = useState('')
   const [commentText, setCommentText] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
+
+  const [replyingTo, setReplyingTo] = useState(null)
+  const [replyName, setReplyName] = useState('')
+  const [replyText, setReplyText] = useState('')
+  const [submittingReply, setSubmittingReply] = useState(false)
   
   useEffect(() => {
     async function fetchPost() {
@@ -75,6 +80,32 @@ export default function LandingArticle() {
     }
     setSubmittingComment(false)
   }
+
+  async function submitReply(e, parentId) {
+    e.preventDefault()
+    if (!replyName.trim() || !replyText.trim() || !post) return
+    
+    setSubmittingReply(true)
+    const newReply = {
+      post_id: post.id,
+      parent_id: parentId,
+      name: replyName.trim(),
+      content: replyText.trim()
+    }
+    
+    const { data, error } = await supabase.from('blog_comments').insert(newReply).select().single()
+    if (!error && data) {
+      setComments([...comments, data]) // append reply so it appears at bottom of thread
+      setReplyText('')
+      setReplyingTo(null)
+      showToast('Reply posted successfully', 'success')
+    } else {
+      showToast('Failed to post reply', 'error')
+    }
+    setSubmittingReply(false)
+  }
+
+  const topLevelComments = comments.filter(c => !c.parent_id)
   
   if (loading) {
     return (
@@ -185,22 +216,84 @@ export default function LandingArticle() {
         </form>
 
         <div className="space-y-6">
-          {comments.map(comment => (
-            <div key={comment.id} className="flex gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-white/5 dark:bg-slate-900">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                {comment.name.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <div className="mb-1 flex items-center gap-2">
-                  <span className="font-bold text-slate-950 dark:text-white">{comment.name}</span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {new Date(comment.created_at).toLocaleDateString()}
-                  </span>
+          {topLevelComments.map(comment => (
+            <div key={comment.id} className="flex flex-col gap-4">
+              {/* Top-Level Comment */}
+              <div className="flex gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-white/5 dark:bg-slate-900">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                  {comment.name.charAt(0).toUpperCase()}
                 </div>
-                <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                  {comment.content}
-                </p>
+                <div className="flex-1">
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-950 dark:text-white">{comment.name}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {new Date(comment.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    {comment.content}
+                  </p>
+                  <button 
+                    onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                    className="mt-3 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                  >
+                    <Reply className="h-3 w-3" /> {replyingTo === comment.id ? 'Cancel' : 'Reply'}
+                  </button>
+                </div>
               </div>
+
+              {/* Replies */}
+              {comments.filter(r => r.parent_id === comment.id).map(reply => (
+                <div key={reply.id} className="ml-8 flex gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-5 shadow-sm md:ml-12 dark:border-white/5 dark:bg-slate-900/50">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200/50 font-bold text-slate-500 dark:bg-slate-800/80 dark:text-slate-400">
+                    {reply.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <div className="mb-1 flex items-center gap-2">
+                      <span className="text-sm font-bold text-slate-950 dark:text-white">{reply.name}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {new Date(reply.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                      {reply.content}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {/* Reply Form */}
+              {replyingTo === comment.id && (
+                <form onSubmit={(e) => submitReply(e, comment.id)} className="ml-8 mt-2 flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 p-5 md:ml-12 dark:border-blue-500/20 dark:bg-blue-900/10">
+                  <input
+                    type="text"
+                    placeholder="Your Name"
+                    required
+                    value={replyName}
+                    onChange={e => setReplyName(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                  />
+                  <textarea
+                    placeholder="Write a reply..."
+                    required
+                    rows={2}
+                    value={replyText}
+                    onChange={e => setReplyText(e.target.value)}
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={submittingReply || !replyName.trim() || !replyText.trim()}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {submittingReply ? 'Posting...' : 'Post Reply'} <Send className="h-3 w-3" />
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           ))}
           {comments.length === 0 && (
