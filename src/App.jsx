@@ -18,7 +18,11 @@ import ManagerAnnouncementsPage from './pages/manager/ManagerAnnouncementsPage'
 import ManagerReportsPage from './pages/manager/ManagerReportsPage'
 import ManagerActivityPage from './pages/manager/ManagerActivityPage'
 import ManagerSettingsPage from './pages/manager/ManagerSettingsPage'
+import ManagerLayout from './pages/manager/ManagerLayout'
+import ManagerDashboardPage from './pages/manager/ManagerDashboardPage'
+import ManagerUsersPage from './pages/manager/ManagerUsersPage'
 import ManagerFeedbackPage from './pages/manager/ManagerFeedbackPage'
+import ManagerBlogPage from './pages/manager/ManagerBlogPage'
 import TermsPage from './pages/TermsPage'
 
 import LandingLayout from './pages/landing/LandingLayout'
@@ -60,6 +64,7 @@ export default function App() {
             <Route path="/manager/reports" element={<ProtectedRoute requireRole="manager"><ManagerReportsPage /></ProtectedRoute>} />
             <Route path="/manager/activity" element={<ProtectedRoute requireRole="manager"><ManagerActivityPage /></ProtectedRoute>} />
             <Route path="/manager/feedback" element={<ProtectedRoute requireRole="manager"><ManagerFeedbackPage /></ProtectedRoute>} />
+            <Route path="/manager/blog" element={<ProtectedRoute requireRole="manager"><ManagerBlogPage /></ProtectedRoute>} />
             <Route path="/manager/ai-helper" element={<ProtectedRoute requireRole="manager"><AIHelperPage role="manager" /></ProtectedRoute>} />
             <Route path="/manager/settings" element={<ProtectedRoute requireRole="manager"><ManagerSettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/home" />} />

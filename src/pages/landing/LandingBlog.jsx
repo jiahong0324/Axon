@@ -1,7 +1,8 @@
+import { useState, useEffect } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { ArrowRight, MessageCircle } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
-import { blogPosts } from '../../data/blogPosts'
+import { supabase } from '../../lib/supabase'
 
 function BlogCard({ post, searchStr }) {
   return (
@@ -21,6 +22,17 @@ function BlogCard({ post, searchStr }) {
 
 export default function LandingBlog() {
   const { searchStr } = useOutletContext()
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchPosts() {
+      const { data } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false })
+      if (data) setPosts(data)
+      setLoading(false)
+    }
+    fetchPosts()
+  }, [])
 
   return (
     <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-20">
@@ -34,9 +46,14 @@ export default function LandingBlog() {
           Request a topic <MessageCircle className="h-4 w-4" />
         </Link>
       </div>
-      <div className="mt-10 grid gap-5 lg:grid-cols-3">
-        {blogPosts.map(post => <BlogCard key={post.title} post={post} searchStr={searchStr} />)}
-      </div>
+      
+      {loading ? (
+        <div className="mt-10 flex justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" /></div>
+      ) : (
+        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          {posts.map(post => <BlogCard key={post.id} post={post} searchStr={searchStr} />)}
+        </div>
+      )}
     </section>
   )
 }

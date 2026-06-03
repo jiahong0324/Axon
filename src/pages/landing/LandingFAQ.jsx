@@ -25,6 +25,22 @@ const faqs = [
   {
     question: 'What is the blog for?',
     answer: 'The blog is designed for study tips, productivity guides, exam strategies, and practical academic advice for students.'
+  },
+  {
+    question: 'How does the AI Helper work?',
+    answer: 'The AI Helper is a built-in assistant that can help you understand complex topics, generate study schedules, brainstorm essay ideas, and answer academic questions in real-time.'
+  },
+  {
+    question: 'Is my data secure?',
+    answer: 'Yes. Your data is securely stored and protected. We use industry-standard encryption and security practices to ensure your academic records and personal notes remain private.'
+  },
+  {
+    question: 'Can I use Axon on my phone?',
+    answer: 'Absolutely! Axon is fully responsive and designed to work seamlessly across your laptop, tablet, and smartphone. You can also install it as a Web App to your home screen.'
+  },
+  {
+    question: 'How do I contact support or request a feature?',
+    answer: 'You can reach out to us using the Contact Us form on this website, or use the "Send Feedback" button directly from your student dashboard once you are logged in.'
   }
 ]
 

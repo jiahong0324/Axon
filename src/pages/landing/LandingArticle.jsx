@@ -1,13 +1,31 @@
+import { useState, useEffect } from 'react'
 import { useParams, Link, useOutletContext, Navigate } from 'react-router-dom'
 import { ArrowLeft, Clock } from 'lucide-react'
-import { blogPosts } from '../../data/blogPosts'
+import { supabase } from '../../lib/supabase'
 
 export default function LandingArticle() {
   const { slug } = useParams()
   const { searchStr } = useOutletContext()
+  const [post, setPost] = useState(null)
+  const [loading, setLoading] = useState(true)
   
-  const post = blogPosts.find(p => p.slug === slug)
+  useEffect(() => {
+    async function fetchPost() {
+      const { data } = await supabase.from('blog_posts').select('*').eq('slug', slug).single()
+      setPost(data)
+      setLoading(false)
+    }
+    fetchPost()
+  }, [slug])
   
+  if (loading) {
+    return (
+      <article className="mx-auto max-w-3xl px-5 py-16 md:px-8 md:py-20 flex justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+      </article>
+    )
+  }
+
   if (!post) {
     return <Navigate to={`/blog${searchStr}`} replace />
   }
