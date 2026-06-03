@@ -177,7 +177,7 @@ export default function LandingArticle() {
       </div>
 
       <section className="mt-20">
-        <div className="mb-8 flex items-center gap-3 border-b border-slate-200 pb-4 dark:border-white/10">
+        <div className="mb-8 flex items-center justify-center gap-3 border-b border-slate-200 pb-4 dark:border-white/10">
           <MessageSquare className="h-6 w-6 text-slate-400" />
           <h2 className="font-heading text-2xl font-extrabold text-slate-950 dark:text-white">
             Comments ({comments.length})
@@ -215,65 +215,73 @@ export default function LandingArticle() {
           </button>
         </form>
 
-        <div className="space-y-6">
-          {topLevelComments.map(comment => (
-            <div key={comment.id} className="flex flex-col gap-4">
+        <div className="space-y-8">
+          {topLevelComments.map(comment => {
+            const replies = comments.filter(r => r.parent_id === comment.id)
+            return (
+            <div key={comment.id} className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm dark:border-white/10 dark:bg-slate-900/50">
               {/* Top-Level Comment */}
-              <div className="flex gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-white/5 dark:bg-slate-900">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              <div className="flex gap-4 md:gap-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-lg font-bold text-blue-700 dark:from-blue-500/20 dark:to-blue-600/20 dark:text-blue-300">
                   {comment.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
-                  <div className="mb-1 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-950 dark:text-white">{comment.name}</span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
-                        {new Date(comment.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
+                  <div className="mb-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                    <span className="text-base font-bold text-slate-950 dark:text-white">{comment.name}</span>
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      {new Date(comment.created_at).toLocaleDateString()}
+                    </span>
                   </div>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  <p className="mt-2 text-base leading-relaxed text-slate-700 dark:text-slate-300">
                     {comment.content}
                   </p>
                   <button 
                     onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                    className="mt-3 flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                    className="mt-4 flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition"
                   >
-                    <Reply className="h-3 w-3" /> {replyingTo === comment.id ? 'Cancel' : 'Reply'}
+                    <Reply className="h-4 w-4" /> {replyingTo === comment.id ? 'Cancel reply' : 'Reply'}
                   </button>
                 </div>
               </div>
 
               {/* Replies */}
-              {comments.filter(r => r.parent_id === comment.id).map(reply => (
-                <div key={reply.id} className="ml-8 flex gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-5 shadow-sm md:ml-12 dark:border-white/5 dark:bg-slate-900/50">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200/50 font-bold text-slate-500 dark:bg-slate-800/80 dark:text-slate-400">
-                    {reply.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="text-sm font-bold text-slate-950 dark:text-white">{reply.name}</span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
-                        {new Date(reply.created_at).toLocaleDateString()}
-                      </span>
+              {replies.length > 0 && (
+                <div className="mt-6 ml-6 space-y-6 border-l-2 border-slate-100 pl-6 dark:border-white/5 md:ml-8 md:pl-8">
+                  {replies.map(reply => (
+                    <div key={reply.id} className="flex gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                        {reply.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1">
+                        <div className="mb-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                          <span className="text-sm font-bold text-slate-950 dark:text-white">{reply.name}</span>
+                          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                            {new Date(reply.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                          {reply.content}
+                        </p>
+                      </div>
                     </div>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                      {reply.content}
-                    </p>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
 
               {/* Reply Form */}
               {replyingTo === comment.id && (
-                <form onSubmit={(e) => submitReply(e, comment.id)} className="ml-8 mt-2 flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 p-5 md:ml-12 dark:border-blue-500/20 dark:bg-blue-900/10">
+                <form onSubmit={(e) => submitReply(e, comment.id)} className={`mt-6 flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-5 dark:border-blue-500/20 dark:bg-blue-900/10 ${replies.length > 0 ? 'ml-6 md:ml-8' : 'ml-0'}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Reply className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">Replying to {comment.name}</span>
+                  </div>
                   <input
                     type="text"
                     placeholder="Your Name"
                     required
                     value={replyName}
                     onChange={e => setReplyName(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:border-blue-500"
                   />
                   <textarea
                     placeholder="Write a reply..."
@@ -281,21 +289,22 @@ export default function LandingArticle() {
                     rows={2}
                     value={replyText}
                     onChange={e => setReplyText(e.target.value)}
-                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:border-blue-500"
                   />
-                  <div className="flex justify-end">
+                  <div className="flex justify-end mt-2">
                     <button
                       type="submit"
                       disabled={submittingReply || !replyName.trim() || !replyText.trim()}
                       className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {submittingReply ? 'Posting...' : 'Post Reply'} <Send className="h-3 w-3" />
+                      {submittingReply ? 'Posting...' : 'Post Reply'} <Send className="h-4 w-4" />
                     </button>
                   </div>
                 </form>
               )}
             </div>
-          ))}
+            )
+          })}
           {comments.length === 0 && (
             <p className="text-center text-slate-500 dark:text-slate-400">
               No comments yet. Be the first to share your thoughts!
