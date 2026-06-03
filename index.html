@@ -20,6 +20,20 @@
     <meta name="twitter:description" content="Your Academic Life, Finally Organized." />
     <meta name="twitter:image" content="https://axon-com.vercel.app/icons/logo.png" />
     <title>Axon</title>
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('axon-theme');
+          var theme = stored ? JSON.parse(stored) : 'system';
+          if (theme === 'system') {
+            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          if (theme === 'light' || theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', theme);
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

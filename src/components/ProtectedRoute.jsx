@@ -51,7 +51,7 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
     }
   }, [])
 
-  if (loading) return <div className="page-shell items-center justify-center"><LoadingSpinner size="lg" /></div>
+  if (loading) return null
   if (!session) return <Navigate to="/login" replace />
   const role = profile?.role || 'student'
   if (requireRole && role !== requireRole) return <Navigate to={role === 'manager' ? '/manager' : '/home'} replace />
