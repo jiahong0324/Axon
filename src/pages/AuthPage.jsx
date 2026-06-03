@@ -55,7 +55,7 @@ export default function AuthPage({ mode = 'login' }) {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] px-4 py-10 text-white">
+    <main className="h-screen overflow-y-auto bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] px-4 py-10 text-white scrollbar-hide">
       <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-md items-center">
         <div className="glass w-full rounded-2xl p-6 shadow-2xl">
           <div className="mb-6 text-center">
