@@ -62,8 +62,8 @@ export default function Sidebar({ user }) {
               <p className="truncate text-xs text-slate-500">{user?.email}</p>
             </div>
           </div>
-          <NavLink to="/?view=true" className="btn-ghost mb-1 w-full justify-start text-slate-300">
-            <Globe className="h-4 w-4" /> View Landing Page
+          <NavLink to="/?view=true" className="mb-2 flex w-fit items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:bg-white/10 hover:text-white">
+            <Globe className="h-3.5 w-3.5" /> Official Website
           </NavLink>
           <button onClick={logout} className="btn-ghost w-full justify-start text-red-400 hover:bg-red-500/10 hover:text-red-300">
             <LogOut className="h-4 w-4" /> Log out
