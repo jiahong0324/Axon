@@ -202,13 +202,14 @@ export default function AIHelperPage() {
             focused ? 'pb-[calc(10px+env(safe-area-inset-bottom))] pt-1' : 'pb-[calc(82px+env(safe-area-inset-bottom))] pt-1 md:pb-3'
           }`}>
             {selectedImage && (
-              <div className="mb-2 relative ml-12 h-16 w-16 overflow-hidden rounded-lg border border-white/20 shadow-md">
+              <div className="mb-2 relative h-16 w-16 overflow-hidden rounded-lg border border-white/20 shadow-md">
                 <img src={selectedImage.url} alt="Upload preview" className="h-full w-full object-cover" />
                 <button 
                   onClick={removeImage} 
-                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-md transition-colors hover:bg-black"
+                  className="absolute right-1 top-1 flex h-5 w-5 min-h-[20px] min-w-[20px] shrink-0 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-md transition-colors hover:bg-black"
+                  style={{ padding: 0 }}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3 w-3 shrink-0" />
                 </button>
               </div>
             )}
@@ -217,11 +218,11 @@ export default function AIHelperPage() {
             }`}>
               <button
                 type="button"
-                className="mb-0.5 ml-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                className="mb-1 ml-1 flex h-8 w-8 min-h-[32px] min-w-[32px] shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
                 onClick={() => fileInputRef.current?.click()}
                 title="Upload Image"
               >
-                <ImagePlus className="h-5 w-5" />
+                <ImagePlus className="h-4 w-4 shrink-0" />
               </button>
               <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageSelect} />
               
