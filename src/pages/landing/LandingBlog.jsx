@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import { ArrowRight, MessageCircle, Heart } from 'lucide-react'
+import { ArrowRight, MessageCircle, Heart, Eye } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
 import { supabase } from '../../lib/supabase'
 
@@ -35,9 +35,15 @@ function BlogCard({ post, searchStr }) {
           <Link to={`/blog/${post.slug}${searchStr}`} className="inline-flex items-center gap-2 text-sm font-extrabold text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200">
             Read Article <ArrowRight className="h-4 w-4" />
           </Link>
-          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500">
-            <Heart className="h-4 w-4 fill-slate-300 stroke-slate-300 dark:fill-slate-700 dark:stroke-slate-700" />
-            {post.likes_count || 0}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500">
+              <Eye className="h-4 w-4" />
+              {post.views_count || 0}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500">
+              <Heart className="h-4 w-4 fill-slate-300 stroke-slate-300 dark:fill-slate-700 dark:stroke-slate-700" />
+              {post.likes_count || 0}
+            </div>
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@ create table if not exists public.blog_posts (
   content text not null,
   image_url text,
   likes_count integer default 0,
+  views_count integer default 0,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   author_id uuid references auth.users(id) on delete set null
 );
@@ -16,6 +17,7 @@ create table if not exists public.blog_posts (
 -- Ensure columns exist if table already existed
 alter table public.blog_posts add column if not exists image_url text;
 alter table public.blog_posts add column if not exists likes_count integer default 0;
+alter table public.blog_posts add column if not exists views_count integer default 0;
 
 -- Enable RLS for blog_posts
 alter table public.blog_posts enable row level security;
@@ -70,7 +72,7 @@ create policy "Managers can delete comments."
   on public.blog_comments for delete
   using (exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'manager'));
 
--- 3. Create function to increment likes securely
+-- 3. Create function to increment likes and views securely
 create or replace function increment_blog_like(post_id uuid)
 returns void
 language plpgsql
@@ -79,6 +81,18 @@ as $$
 begin
   update public.blog_posts
   set likes_count = likes_count + 1
+  where id = post_id;
+end;
+$$;
+
+create or replace function increment_blog_view(post_id uuid)
+returns void
+language plpgsql
+security definer
+as $$
+begin
+  update public.blog_posts
+  set views_count = views_count + 1
   where id = post_id;
 end;
 $$;
@@ -195,3 +209,21 @@ ON CONFLICT (slug) DO UPDATE SET
   read_time = EXCLUDED.read_time,
   image_url = EXCLUDED.image_url,
   content = EXCLUDED.content;
+
+-- 6. Magic Seeding Block (Fake Engagement)
+-- Blast all posts with 1000+ views and 300+ likes
+update public.blog_posts 
+set views_count = floor(random() * 4000 + 1000), 
+    likes_count = floor(random() * 700 + 300);
+
+-- Clear existing comments so we don't duplicate on re-runs
+delete from public.blog_comments;
+
+-- Insert 10 fake comments for every post using a cross join
+insert into public.blog_comments (post_id, name, content, created_at)
+select 
+  p.id, 
+  (array['Alex', 'Sam', 'Jordan', 'Taylor', 'Casey', 'Riley', 'Morgan', 'Avery', 'Quinn', 'Skyler', 'Jamie', 'Charlie'])[floor(random() * 12 + 1)],
+  (array['This article really helped me out! Thanks.', 'I needed this today.', 'Very helpful tips for my exams.', 'Will definitely try this out next week.', 'So true, I completely agree!', 'Thanks for sharing this.', 'This changed my perspective on studying.', 'Bookmarking this for later.', 'Couldn''t agree more.', 'Well written and very practical.', 'Just what I was looking for!', 'Great read, thanks for the advice.'])[floor(random() * 12 + 1)],
+  now() - (random() * interval '30 days')
+from public.blog_posts p cross join generate_series(1, 10);

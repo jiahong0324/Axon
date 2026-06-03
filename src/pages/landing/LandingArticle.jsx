@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useOutletContext, Navigate } from 'react-router-dom'
-import { ArrowLeft, Clock, Share2, Heart, MessageSquare, Send } from 'lucide-react'
+import { ArrowLeft, Clock, Share2, Heart, MessageSquare, Send, Eye } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useToast } from '../../components/Toast'
 
@@ -34,6 +34,8 @@ export default function LandingArticle() {
           .order('created_at', { ascending: false })
           
         if (commentsData) setComments(commentsData)
+        
+        supabase.rpc('increment_blog_view', { post_id: data.id }).then()
       }
       setLoading(false)
     }
@@ -99,6 +101,9 @@ export default function LandingArticle() {
           </span>
           <span className="flex items-center gap-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
             <Clock className="h-4 w-4" /> {post.read_time}
+          </span>
+          <span className="flex items-center gap-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
+            <Eye className="h-4 w-4" /> {post.views_count || 0}
           </span>
         </div>
         <h1 className="font-heading text-3xl font-extrabold tracking-tight text-slate-950 md:text-5xl dark:text-white">
