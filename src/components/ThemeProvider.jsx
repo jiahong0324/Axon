@@ -13,7 +13,7 @@ const accents = {
 }
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'system')
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
   const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || 'blue')
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium')
   const [compactMode, setCompactMode] = useState(() => localStorage.getItem('compactMode') === 'true')
@@ -62,7 +62,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     const handleSync = () => {
-      setTheme(localStorage.getItem('theme') || 'system')
+      setTheme(localStorage.getItem('theme') || 'dark')
       setAccentColor(localStorage.getItem('accentColor') || 'blue')
       setFontSize(localStorage.getItem('fontSize') || 'medium')
       setCompactMode(localStorage.getItem('compactMode') === 'true')

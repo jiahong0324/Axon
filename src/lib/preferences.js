@@ -13,7 +13,7 @@ export const DEFAULT_PREFERENCES = {
   dailyTipEnabled: 'true',
   firstDay: 'Monday',
   timeFormat: '24hr',
-  theme: 'light',
+  theme: 'dark',
   accentColor: 'blue',
   fontSize: 'medium',
   compactMode: 'false'

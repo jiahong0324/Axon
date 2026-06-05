@@ -46,25 +46,46 @@ export default function LandingLayout() {
   const searchStr = isViewing ? '?view=true' : ''
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setHasSession(!!session)
-      if (session && !isViewing) {
-        navigate('/home', { replace: true })
-      } else {
-        setSessionLoading(false)
-      }
-    }).catch(() => {
+    // Safety fallback: ensure loading screen is dismissed after 1.5 seconds maximum
+    const timer = setTimeout(() => {
+      console.warn("LandingLayout auth check timed out, forcing load screen to clear");
       setSessionLoading(false)
-    })
+    }, 1500)
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setHasSession(!!session)
-      if (session && !isViewing) {
-        navigate('/home', { replace: true })
+    try {
+      supabase.auth.getSession().then(({ data }) => {
+        clearTimeout(timer)
+        const session = data?.session || null
+        setHasSession(!!session)
+        if (session && !isViewing) {
+          navigate('/home', { replace: true })
+        } else {
+          setSessionLoading(false)
+        }
+      }).catch((err) => {
+        console.error("LandingLayout getSession error:", err)
+        clearTimeout(timer)
+        setSessionLoading(false)
+      })
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        setHasSession(!!session)
+        if (session && !isViewing) {
+          navigate('/home', { replace: true })
+        }
+      })
+
+      return () => {
+        clearTimeout(timer)
+        if (subscription && typeof subscription.unsubscribe === 'function') {
+          subscription.unsubscribe()
+        }
       }
-    })
-
-    return () => subscription.unsubscribe()
+    } catch (err) {
+      console.error("LandingLayout auth init error:", err)
+      clearTimeout(timer)
+      setSessionLoading(false)
+    }
   }, [navigate, isViewing])
 
   if (sessionLoading && !isViewing) return <SplashLoading />

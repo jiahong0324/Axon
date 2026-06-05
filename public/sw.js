@@ -16,6 +16,10 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
 
+  // Only handle same-origin requests to prevent intercepting Supabase API or external calls
+  const url = new URL(e.request.url)
+  if (url.origin !== self.location.origin) return
+
   const isHtml = e.request.mode === 'navigate' || e.request.headers.get('accept')?.includes('text/html')
 
   if (isHtml) {
