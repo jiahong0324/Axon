@@ -269,7 +269,7 @@ Deno.serve(async req => {
     .card { background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
     h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
-    p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; white-space: pre-line; }
+    p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; white-space: pre-line; text-align: left; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
   </style>
 </head>
