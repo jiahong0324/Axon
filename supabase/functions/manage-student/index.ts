@@ -327,6 +327,77 @@ Deno.serve(async req => {
         break
       }
 
+      case 'send_academic_digest': {
+        if (studentId !== caller.id && callerRole !== 'manager') return json({ error: 'Forbidden' }, 403)
+        const { data: studentProfile } = await adminClient.from('profiles').select('email, full_name, university, course').eq('id', studentId).single()
+        if (!studentProfile?.email) return json({ error: 'Student email not found' }, 404)
+        
+        const brevoKey = Deno.env.get('BREVO_API_KEY')
+        if (!brevoKey) {
+          console.error('Brevo API key not configured')
+          return json({ error: 'Brevo API key not configured on server' }, 500)
+        }
+
+        const includeClasses = data?.classes ?? true
+        const includeAssignments = data?.assignments ?? true
+        const includeExams = data?.exams ?? true
+
+        let classesData: any[] = []
+        let assignmentsData: any[] = []
+        let examsData: any[] = []
+
+        if (includeClasses) {
+          const { data: classes } = await adminClient.from('classes').select('*').eq('user_id', studentId)
+          classesData = classes || []
+        }
+
+        if (includeAssignments) {
+          const { data: assignments } = await adminClient.from('assignments').select('*').eq('user_id', studentId).order('deadline')
+          assignmentsData = assignments || []
+        }
+
+        if (includeExams) {
+          const { data: exams } = await adminClient.from('exams').select('*').eq('user_id', studentId).order('exam_date')
+          examsData = exams || []
+        }
+
+        const htmlContent = buildAcademicDigestHtml({
+          fullName: studentProfile.full_name || 'Student',
+          email: studentProfile.email,
+          university: studentProfile.university,
+          course: studentProfile.course,
+          includeClasses,
+          classes: classesData,
+          includeAssignments,
+          assignments: assignmentsData,
+          includeExams,
+          exams: examsData
+        })
+
+        const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'api-key': brevoKey,
+          },
+          body: JSON.stringify({
+            sender: { name: 'Axon', email: Deno.env.get('BREVO_SENDER_EMAIL') || 'noreply@axon-app.com' },
+            to: [{ email: studentProfile.email, name: studentProfile.full_name || 'Student' }],
+            subject: 'Your Axon Academic Digest',
+            htmlContent: htmlContent
+          })
+        })
+        
+        if (!res.ok) {
+          const errData = await res.json()
+          console.error('Brevo API Error:', errData)
+          return json({ error: errData.message || 'Failed to send academic digest email via Brevo' }, 500)
+        }
+
+        result = { data: { success: true } }
+        break
+      }
+
       case 'change_password':
         if (!data?.password || data.password.length < 8) return json({ error: 'Password must be at least 8 characters' }, 400)
         result = await adminClient.auth.admin.updateUserById(studentId, { password: data.password })
@@ -378,3 +449,240 @@ Deno.serve(async req => {
     return json({ error: err instanceof Error ? err.message : 'Unexpected error' }, 500)
   }
 })
+
+function formatTime(timeStr: string): string {
+  if (!timeStr) return ''
+  const [hoursStr, minutesStr] = timeStr.split(':')
+  const hours = parseInt(hoursStr, 10)
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  const displayHours = hours % 12 === 0 ? 12 : hours % 12
+  return `${displayHours}:${minutesStr} ${ampm}`
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return ''
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  } catch {
+    return dateStr
+  }
+}
+
+interface AcademicDigestParams {
+  fullName: string
+  email: string
+  university?: string
+  course?: string
+  includeClasses: boolean
+  classes: any[]
+  includeAssignments: boolean
+  assignments: any[]
+  includeExams: boolean
+  exams: any[]
+}
+
+function buildAcademicDigestHtml(params: AcademicDigestParams): string {
+  const { fullName, university, course, includeClasses, classes, includeAssignments, assignments, includeExams, exams } = params
+  const dateStr = new Date().toLocaleDateString('en-US', { dateStyle: 'long' })
+  
+  let classesHtml = ''
+  if (includeClasses) {
+    const daysOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    const groupedClasses: Record<string, any[]> = {}
+    daysOrder.forEach(day => { groupedClasses[day] = [] })
+    
+    classes.forEach(c => {
+      if (groupedClasses[c.day]) {
+        groupedClasses[c.day].push(c)
+      } else {
+        groupedClasses[c.day] = [c]
+      }
+    })
+
+    daysOrder.forEach(day => {
+      groupedClasses[day].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
+    })
+
+    let hasAnyClasses = false
+    let daysHtml = ''
+
+    daysOrder.forEach(day => {
+      const dayClasses = groupedClasses[day]
+      if (dayClasses.length > 0) {
+        hasAnyClasses = true
+        let dayTileHtml = ''
+        
+        dayClasses.forEach(c => {
+          const badgeColor = c.class_type === 'T' ? '#10b981' : c.class_type === 'P' ? '#8b5cf6' : '#3b82f6'
+          const badgeText = c.class_type === 'L' ? 'Lecture' : c.class_type === 'T' ? 'Tutorial' : c.class_type === 'P' ? 'Practical' : c.class_type || 'Class'
+          
+          dayTileHtml += `
+            <div style="margin-bottom: 12px; padding: 12px; border-left: 4px solid ${badgeColor}; background: #1e293b; border-radius: 8px; border-top: 1px solid #334155; border-right: 1px solid #334155; border-bottom: 1px solid #334155;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 14px; font-weight: bold; color: #ffffff;">${c.subject}</span>
+                <span style="font-size: 10px; background: rgba(59, 130, 246, 0.1); color: ${badgeColor}; padding: 2px 8px; border-radius: 9999px; border: 1px solid rgba(59, 130, 246, 0.2); font-weight: bold;">${badgeText}</span>
+              </div>
+              <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
+                ⏱️ ${formatTime(c.start_time)} - ${formatTime(c.end_time)}
+              </div>
+              ${c.classroom ? `<div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">📍 Room: ${c.classroom}</div>` : ''}
+              ${c.lecturer ? `<div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">👤 Instructor: ${c.lecturer}</div>` : ''}
+            </div>
+          `
+        })
+
+        daysHtml += `
+          <div style="margin-bottom: 20px;">
+            <h3 style="color: #3b82f6; border-bottom: 1px solid #334155; padding-bottom: 4px; margin-bottom: 10px; font-size: 16px;">${day}</h3>
+            ${dayTileHtml}
+          </div>
+        `
+      }
+    })
+
+    if (!hasAnyClasses) {
+      classesHtml = `
+        <div style="text-align: center; padding: 24px; color: #94a3b8; background: #1e293b; border-radius: 12px; border: 1px solid #334155; margin-bottom: 24px;">
+          📅 No classes in your weekly timetable.
+        </div>
+      `
+    } else {
+      classesHtml = `
+        <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 24px;">
+          <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">📅 Weekly Timetable</h2>
+          ${daysHtml}
+        </div>
+      `
+    }
+  }
+
+  let assignmentsHtml = ''
+  if (includeAssignments) {
+    const pendingAssignments = assignments.filter(a => a.status !== 'Done')
+    
+    if (pendingAssignments.length === 0) {
+      assignmentsHtml = `
+        <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 24px;">
+          <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">📋 Pending Assignments</h2>
+          <div style="text-align: center; padding: 24px; color: #10b981; background: rgba(16, 185, 129, 0.05); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2);">
+            ✅ All caught up! No pending assignments.
+          </div>
+        </div>
+      `
+    } else {
+      let itemsHtml = ''
+      pendingAssignments.forEach(a => {
+        const priorityColor = a.priority === 'High' ? '#ef4444' : a.priority === 'Medium' ? '#f59e0b' : '#3b82f6'
+        itemsHtml += `
+          <div style="padding: 12px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span style="font-weight: bold; color: #ffffff; font-size: 14px;">${a.title}</span>
+              <span style="font-size: 10px; background: rgba(239, 68, 68, 0.1); color: ${priorityColor}; padding: 2px 8px; border-radius: 9999px; border: 1px solid ${priorityColor}33; font-weight: bold;">${a.priority} Priority</span>
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Subject: ${a.subject}</div>
+            <div style="font-size: 12px; color: #ef4444; font-weight: bold; margin-top: 4px;">📅 Due Date: ${formatDate(a.deadline)}</div>
+            ${a.notes ? `<div style="font-size: 12px; color: #64748b; margin-top: 6px; font-style: italic; border-top: 1px dashed #334155; padding-top: 6px;">Note: ${a.notes}</div>` : ''}
+          </div>
+        `
+      })
+
+      assignmentsHtml = `
+        <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 24px;">
+          <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">📋 Pending Assignments</h2>
+          ${itemsHtml}
+        </div>
+      `
+    }
+  }
+
+  let examsHtml = ''
+  if (includeExams) {
+    const todayStr = new Date().toISOString().split('T')[0]
+    const upcomingExams = exams.filter(e => e.exam_date >= todayStr)
+    
+    if (upcomingExams.length === 0) {
+      examsHtml = `
+        <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 24px;">
+          <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">📖 Upcoming Exams</h2>
+          <div style="text-align: center; padding: 24px; color: #94a3b8; background: #1e293b; border-radius: 8px; border: 1px solid #334155;">
+            📖 No upcoming exams scheduled.
+          </div>
+        </div>
+      `
+    } else {
+      let itemsHtml = ''
+      upcomingExams.forEach(e => {
+        itemsHtml += `
+          <div style="padding: 12px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span style="font-weight: bold; color: #ffffff; font-size: 14px;">${e.subject}</span>
+              <span style="font-size: 10px; background: rgba(139, 92, 246, 0.1); color: #8b5cf6; padding: 2px 8px; border-radius: 9999px; border: 1px solid rgba(139, 92, 246, 0.2); font-weight: bold;">${e.exam_type}</span>
+            </div>
+            <div style="font-size: 12px; color: #ef4444; font-weight: bold; margin-top: 4px;">📅 Exam Date: ${formatDate(e.exam_date)}</div>
+            ${e.start_time ? `<div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">⏱️ Time: ${formatTime(e.start_time)} ${e.end_time ? `- ${formatTime(e.end_time)}` : ''}</div>` : ''}
+            ${e.venue ? `<div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">📍 Venue: ${e.venue}</div>` : ''}
+            ${e.notes ? `<div style="font-size: 12px; color: #64748b; margin-top: 6px; font-style: italic; border-top: 1px dashed #334155; padding-top: 6px;">Note: ${e.notes}</div>` : ''}
+          </div>
+        `
+      })
+
+      examsHtml = `
+        <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 24px;">
+          <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">📖 Upcoming Exams</h2>
+          ${itemsHtml}
+        </div>
+      `
+    }
+  }
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+    .card { background-color: #1e293b; border-radius: 16px; padding: 32px; border: 1px solid #334155; }
+    .logo { width: 56px; height: 56px; margin-bottom: 20px; border-radius: 12px; }
+    h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 8px; }
+    .subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 24px; }
+    .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 12px; }
+    .profile-card { background: #111827; border: 1px solid #334155; padding: 16px; border-radius: 12px; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
+        <h1>Academic Planner Digest</h1>
+        <div class="subtitle">Weekly planner summary compiled on ${dateStr}</div>
+      </div>
+      
+      <div class="profile-card">
+        <div style="font-weight: bold; color: #ffffff; font-size: 15px; margin-bottom: 4px;">👤 ${fullName}</div>
+        ${university ? `<div style="font-size: 12px; color: #94a3b8;">🏫 ${university}</div>` : ''}
+        ${course ? `<div style="font-size: 12px; color: #94a3b8;">📚 ${course}</div>` : ''}
+      </div>
+
+      ${classesHtml}
+      ${assignmentsHtml}
+      ${examsHtml}
+      
+      <div style="text-align: center; margin-top: 32px; border-top: 1px solid #334155; padding-top: 20px;">
+        <a href="https://axon-com.vercel.app/login" style="display: inline-block; background-color: #3b82f6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 10px; font-size: 14px;">Open Axon App</a>
+      </div>
+    </div>
+    <div class="footer">
+      &copy; 2026 Axon. All rights reserved. <br>
+      You received this because you requested a copy of your academic planner from your account settings.
+    </div>
+  </div>
+</body>
+</html>
+  `
+}
+

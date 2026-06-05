@@ -1,4 +1,4 @@
-import { Download, LogOut, Save, ShieldAlert, Trash2 } from 'lucide-react'
+import { Download, LogOut, Mail, Save, ShieldAlert, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { jsPDF } from 'jspdf'
@@ -18,6 +18,7 @@ const tabs = [
   ['appearance', 'Appearance'],
   ['notifications', 'Notifications'],
   ['ai', 'AI'],
+  ['email-planner', 'Email Digest'],
   ['data', 'Data']
 ]
 
@@ -33,6 +34,25 @@ export default function SettingsPage() {
   const [sendingTest, setSendingTest] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
+  const [digestOptions, setDigestOptions] = useState({ classes: true, assignments: true, exams: true })
+  const [sendingDigest, setSendingDigest] = useState(false)
+
+  async function sendAcademicEmail() {
+    if (!digestOptions.classes && !digestOptions.assignments && !digestOptions.exams) {
+      return showToast('Please select at least one planner section to include.', 'warning')
+    }
+    setSendingDigest(true)
+    showToast('Sending academic report to your email...', 'info')
+    try {
+      await studentManager.sendAcademicDigest(user.id, digestOptions)
+      showToast('Academic report successfully sent to your email!', 'success')
+    } catch (err) {
+      console.error(err)
+      showToast(err.message || 'Failed to send email report.', 'error')
+    } finally {
+      setSendingDigest(false)
+    }
+  }
 
   useEffect(() => { loadUser() }, [])
 
@@ -521,6 +541,17 @@ export default function SettingsPage() {
         <Section title="Timetable Preferences">
           <Field label="First day of week"><select key={`first-day-${prefTick}`} className="input" defaultValue={pref('firstDay', 'Monday')} onChange={e => setPref('firstDay', e.target.value)}>{['Monday', 'Sunday'].map(v => <option key={v}>{v}</option>)}</select></Field>
           <Field label="Time format"><select key={`time-format-${prefTick}`} className="input" defaultValue={pref('timeFormat', '24hr')} onChange={e => setPref('timeFormat', e.target.value)}>{['12hr', '24hr'].map(v => <option key={v}>{v}</option>)}</select></Field>
+        </Section>
+        <Section id="email-planner" title="Email My Planner">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Send a formatted summary of your academic schedules directly to your registered email address.</p>
+          <div className="space-y-3">
+            <ToggleRow label="Include Weekly Timetable" checked={digestOptions.classes} onChange={next => setDigestOptions(prev => ({ ...prev, classes: next }))} />
+            <ToggleRow label="Include Pending Assignments" checked={digestOptions.assignments} onChange={next => setDigestOptions(prev => ({ ...prev, assignments: next }))} />
+            <ToggleRow label="Include Exam Schedules" checked={digestOptions.exams} onChange={next => setDigestOptions(prev => ({ ...prev, exams: next }))} />
+          </div>
+          <button className="btn-primary w-full mt-4" onClick={sendAcademicEmail} disabled={sendingDigest}>
+            <Mail className="h-4 w-4" /> {sendingDigest ? 'Sending Email...' : 'Email Academic Report'}
+          </button>
         </Section>
         <Section id="data" title="Data & Privacy">
           <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
