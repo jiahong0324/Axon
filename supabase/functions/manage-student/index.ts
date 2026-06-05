@@ -133,7 +133,7 @@ Deno.serve(async req => {
   <style>
     :root { color-scheme: dark; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff !important; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important; }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
     .card { background-color: #1e293b !important;  border-radius: 16px; padding: 40px; text-align: center; border: none !important; }
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
     h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
@@ -159,7 +159,7 @@ Deno.serve(async req => {
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
-  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
+  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
     <div class="card" style="background-color: #1e293b !important;  border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
       <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Welcome to Axon, ${studentProfile.full_name || 'Student'}!</h1>
@@ -218,7 +218,7 @@ Deno.serve(async req => {
   <style>
     :root { color-scheme: dark; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff !important; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important; }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
     .card { background-color: #1e293b !important;  border-radius: 16px; padding: 40px; text-align: center; border: none !important; }
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
     h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
@@ -243,7 +243,7 @@ Deno.serve(async req => {
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
-  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
+  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
     <div class="card" style="background-color: #1e293b !important;  border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
       <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">New Login Alert</h1>
