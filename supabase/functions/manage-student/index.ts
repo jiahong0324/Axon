@@ -125,30 +125,33 @@ Deno.serve(async req => {
             subject: 'Welcome to Axon!',
             htmlContent: `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
+    :root { color-scheme: dark; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a !important; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-    .card { background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
+    .card { background-color: #1e293b !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
-    h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
-    p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
-    .btn { display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
-    .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+    h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
+    p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
+    .btn { display: inline-block; background-color: #3b82f6 !important; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
+    .footer { text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="card">
-      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1>Welcome to Axon, ${studentProfile.full_name || 'Student'}!</h1>
-      <p>We are absolutely thrilled to have you here. Your academic life is about to get a lot more organized and productive.</p>
-      <p>Dive right in and start exploring!</p>
-      <a href="https://axon-com.vercel.app/login" class="btn">Go to Dashboard</a>
+<body style="background-color: #0f172a; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div class="card" style="background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155;">
+      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
+      <h1 style="color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Welcome to Axon, ${studentProfile.full_name || 'Student'}!</h1>
+      <p style="color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We are absolutely thrilled to have you here. Your academic life is about to get a lot more organized and productive.</p>
+      <p style="color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Dive right in and start exploring!</p>
+      <a href="https://axon-com.vercel.app/login" class="btn" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px;">Go to Dashboard</a>
     </div>
-    <div class="footer">
+    <div class="footer" style="text-align: center; margin-top: 32px; color: #64748b; font-size: 14px;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -191,29 +194,32 @@ Deno.serve(async req => {
             subject: 'New Login Alert - Axon',
             htmlContent: `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
+    :root { color-scheme: dark; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a !important; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-    .card { background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
+    .card { background-color: #1e293b !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
-    h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
-    p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
-    .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+    h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
+    p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
+    .footer { text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="card">
-      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1>New Login Alert</h1>
-      <p>Hi ${studentProfile.full_name || 'Student'},</p>
-      <p>We detected a new login to your Axon account. If this was you, no further action is needed.</p>
-      <p>If you did not authorize this login, please reset your password immediately or contact your administrator.</p>
+<body style="background-color: #0f172a; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div class="card" style="background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155;">
+      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
+      <h1 style="color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px;">New Login Alert</h1>
+      <p style="color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Hi ${studentProfile.full_name || 'Student'},</p>
+      <p style="color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We detected a new login to your Axon account. If this was you, no further action is needed.</p>
+      <p style="color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">If you did not authorize this login, please reset your password immediately or contact your administrator.</p>
     </div>
-    <div class="footer">
+    <div class="footer" style="text-align: center; margin-top: 32px; color: #64748b; font-size: 14px;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>

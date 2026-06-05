@@ -29,12 +29,14 @@ import LandingArticle from './pages/landing/LandingArticle'
 import LandingFAQ from './pages/landing/LandingFAQ'
 import LandingContact from './pages/landing/LandingContact'
 import OnboardingPage from './pages/OnboardingPage'
+import AuthEmailHandler from './components/AuthEmailHandler'
 
 export default function App() {
   return (
     <ThemeProvider>
       <ToastProvider>
         <BrowserRouter>
+          <AuthEmailHandler />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />

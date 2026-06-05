@@ -25,24 +25,28 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
   useEffect(() => {
     let active = true
 
-    const checkWelcomeEmail = (user) => {
-      if (!user) return
-      // If account was created in the last 5 minutes, send welcome email
-      const isNewUser = new Date(user.created_at) > new Date(Date.now() - 5 * 60000)
-      const welcomeKey = `welcome_sent_${user.id}`
-      if (isNewUser && !localStorage.getItem(welcomeKey)) {
-        localStorage.setItem(welcomeKey, 'true')
-        studentManager.sendWelcomeEmail(user.id).catch(console.error)
-      }
-    }
-
     async function checkAuth() {
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession()
         if (currentSession?.user) {
-          const { data } = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
+          let { data } = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
+          
+          if (!data) {
+            // Profile doesn't exist (e.g. first time OAuth login), create it
+            await supabase.from('profiles').upsert({
+              id: currentSession.user.id,
+              email: currentSession.user.email,
+              full_name: currentSession.user.user_metadata?.full_name || '',
+              role: 'student',
+              is_active: true
+            }, { onConflict: 'id' })
+            
+            // Re-fetch to get the newly created profile
+            const { data: newData } = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
+            data = newData
+          }
+
           if (active) setProfile(data || { role: 'student', email: currentSession.user.email, full_name: currentSession.user.user_metadata?.full_name || '' })
-          checkWelcomeEmail(currentSession.user)
         }
         if (active) {
           setSession(currentSession)
@@ -62,15 +66,6 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
         if (!currentSession) setProfile(null)
         if (event === 'SIGNED_OUT') {
           setLoading(false)
-        }
-        if (event === 'SIGNED_IN' && currentSession?.user) {
-          checkWelcomeEmail(currentSession.user)
-          
-          const isNewUser = new Date(currentSession.user.created_at) > new Date(Date.now() - 5 * 60000)
-          if (!isNewUser && !sessionStorage.getItem('login_email_sent')) {
-            sessionStorage.setItem('login_email_sent', 'true')
-            studentManager.sendLoginEmail(currentSession.user.id).catch(console.error)
-          }
         }
       }
     })

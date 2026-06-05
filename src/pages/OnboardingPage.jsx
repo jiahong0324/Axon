@@ -45,11 +45,16 @@ export default function OnboardingPage() {
 
   async function handleComplete() {
     setSaving(true)
-    const { error } = await supabase.from('profiles').update({
+    const { error } = await supabase.from('profiles').upsert({
+      id: session.user.id,
+      email: session.user.email,
+      full_name: session.user.user_metadata?.full_name || '',
+      role: 'student',
+      is_active: true,
       university: form.university,
       course: form.course,
       student_id: form.student_id
-    }).eq('id', session.user.id)
+    }, { onConflict: 'id' })
     
     setSaving(false)
     if (!error) {
