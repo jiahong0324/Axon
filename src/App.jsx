@@ -29,6 +29,7 @@ import LandingArticle from './pages/landing/LandingArticle'
 import LandingFAQ from './pages/landing/LandingFAQ'
 import LandingContact from './pages/landing/LandingContact'
 import OnboardingPage from './pages/OnboardingPage'
+import UpdatePasswordPage from './pages/UpdatePasswordPage'
 import AuthEmailHandler from './components/AuthEmailHandler'
 
 export default function App() {
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/update-password" element={<UpdatePasswordPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/" element={<LandingLayout />}>
               <Route index element={<LandingHome />} />
