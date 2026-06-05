@@ -11,7 +11,7 @@ import { supabase } from '../lib/supabase'
 import { initials, formatTime } from '../lib/utils'
 import { registerPushSubscription } from '../lib/pushNotifications'
 import { updatePreference } from '../lib/preferences'
-
+import { studentManager } from '../lib/manageStudent'
 const tabs = [
   ['profile', 'Profile'],
   ['account', 'Account'],
@@ -31,6 +31,8 @@ export default function SettingsPage() {
   const [security, setSecurity] = useState({ email: '', password: '' })
   const [notificationPermission, setNotificationPermission] = useState('Notification' in window ? Notification.permission : 'default')
   const [sendingTest, setSendingTest] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviting, setInviting] = useState(false)
 
   useEffect(() => { loadUser() }, [])
 
@@ -72,6 +74,19 @@ export default function SettingsPage() {
     const { error } = await supabase.auth.updateUser({ password: security.password })
     showToast(error ? 'Password update failed.' : 'Password updated.', error ? 'error' : 'success')
     setSecurity(s => ({ ...s, password: '' }))
+  }
+
+  async function handleInvite() {
+    if (!inviteEmail) return showToast('Please enter an email.', 'error')
+    setInviting(true)
+    const { error } = await studentManager.inviteUser(inviteEmail, 'student')
+    setInviting(false)
+    if (error) {
+      showToast(error, 'error')
+    } else {
+      showToast('Invitation sent successfully!', 'success')
+      setInviteEmail('')
+    }
   }
 
   async function exportData() {
@@ -480,6 +495,22 @@ export default function SettingsPage() {
           <Field label="New password"><input className="input" type="password" value={security.password} onChange={e => setSecurity({ ...security, password: e.target.value })} /></Field>
           <button className="btn-ghost mb-4 w-full md:w-auto" onClick={updatePassword}>Update Password</button>
           <button className="btn-danger w-full md:w-auto" onClick={deleteAccount}><ShieldAlert className="h-4 w-4" /> Delete Account</button>
+        </Section>
+        <Section id="invite" title="Invite a Friend">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Invite your friends to join Axon and study together.</p>
+          <div className="flex flex-col md:flex-row gap-2">
+            <input 
+              className="input flex-1" 
+              type="email" 
+              placeholder="friend@example.com"
+              value={inviteEmail}
+              onChange={e => setInviteEmail(e.target.value)}
+              disabled={inviting}
+            />
+            <button className="btn-primary" onClick={handleInvite} disabled={inviting}>
+              {inviting ? 'Sending...' : 'Send Invite'}
+            </button>
+          </div>
         </Section>
         <Section id="ai" title="AI Preferences">
           <Field label="Language"><select key={`ai-lang-${prefTick}`} className="input" defaultValue={pref('aiLanguage', 'English')} onChange={e => setPref('aiLanguage', e.target.value)}>{['English', 'Bahasa Malaysia', '中文'].map(v => <option key={v}>{v}</option>)}</select></Field>

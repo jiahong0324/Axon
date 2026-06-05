@@ -4,6 +4,7 @@ import ToggleSwitch from '../../components/ToggleSwitch'
 import { useTheme } from '../../components/ThemeProvider'
 import { useToast } from '../../components/Toast'
 import { supabase } from '../../lib/supabase'
+import { studentManager } from '../../lib/manageStudent'
 
 export default function ManagerSettingsPage() {
   const themeCtx = useTheme()
@@ -13,6 +14,8 @@ export default function ManagerSettingsPage() {
   const [password, setPassword] = useState('')
   const [toggles, setToggles] = useState({ newStudent: true, missingResults: true })
   const [portal, setPortal] = useState({ institution: localStorage.getItem('axon_institution') || '', term: localStorage.getItem('axon_term') || '' })
+  const [inviteData, setInviteData] = useState({ email: '', role: 'student' })
+  const [inviting, setInviting] = useState(false)
 
   useEffect(() => { loadProfile() }, [])
 
@@ -42,6 +45,19 @@ export default function ManagerSettingsPage() {
     showToast('Portal settings saved.', 'success')
   }
 
+  async function handleInvite() {
+    if (!inviteData.email) return showToast('Please enter an email.', 'error')
+    setInviting(true)
+    const { error } = await studentManager.inviteUser(inviteData.email, inviteData.role)
+    setInviting(false)
+    if (error) {
+      showToast(error, 'error')
+    } else {
+      showToast('Invitation sent successfully!', 'success')
+      setInviteData({ email: '', role: 'student' })
+    }
+  }
+
   return (
     <main className="main-content">
       <h1 className="page-title flex items-center gap-2"><Settings className="h-6 w-6 text-amber-400" /> Manager Settings</h1>
@@ -55,6 +71,27 @@ export default function ManagerSettingsPage() {
         <Section title="Security" icon={KeyRound}>
           <Field label="New Password"><input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} /></Field>
           <button className="btn-ghost w-full md:w-auto" onClick={changePassword}>Change Password</button>
+        </Section>
+
+        <Section title="Invite User" icon={UserCog}>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Invite a new manager or student to the portal.</p>
+          <div className="flex flex-col md:flex-row gap-2 mb-2">
+            <input 
+              className="input flex-1" 
+              type="email" 
+              placeholder="user@example.com"
+              value={inviteData.email}
+              onChange={e => setInviteData({ ...inviteData, email: e.target.value })}
+              disabled={inviting}
+            />
+            <select className="input md:w-32" value={inviteData.role} onChange={e => setInviteData({ ...inviteData, role: e.target.value })} disabled={inviting}>
+              <option value="student">Student</option>
+              <option value="manager">Manager</option>
+            </select>
+          </div>
+          <button className="manager-primary-btn w-full md:w-auto" onClick={handleInvite} disabled={inviting}>
+            {inviting ? 'Sending...' : 'Send Invite'}
+          </button>
         </Section>
 
         <Section title="Appearance">

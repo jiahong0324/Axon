@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { ChevronRight, Menu, Moon, Sun, X } from 'lucide-react'
 import { useTheme } from '../../components/ThemeProvider'
 import { supabase } from '../../lib/supabase'
+import SplashLoading from '../../components/SplashLoading'
 
 function ThemeToggle({ theme, setTheme }) {
   const isDark = theme === 'dark'
@@ -33,8 +34,6 @@ function FooterGroup({ title, links, searchStr = '' }) {
   )
 }
 
-import SplashLoading from '../../components/SplashLoading'
-
 export default function LandingLayout() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -54,6 +53,8 @@ export default function LandingLayout() {
       } else {
         setSessionLoading(false)
       }
+    }).catch(() => {
+      setSessionLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {

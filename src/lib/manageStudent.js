@@ -21,9 +21,11 @@ async function call(action, studentId, data = {}) {
 
 export const studentManager = {
   createStudent: data => call('create_student', 'new', data),
+  inviteUser: (email, role = 'student') => call('invite_user', 'new', { email, role }),
   changePassword: (id, password) => call('change_password', id, { password }),
   changeEmail: (id, email) => call('change_email', id, { email }),
   sendResetEmail: id => call('send_reset_email', id),
+  sendWelcomeEmail: id => call('send_welcome_email', id),
   deleteAccount: id => call('delete_account', id),
   deactivate: id => call('deactivate', id),
   reactivate: id => call('reactivate', id)
