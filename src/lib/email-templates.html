@@ -17,17 +17,33 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
     .btn { display: inline-block; background-color: #3b82f6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Welcome to Axon!</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Your academic life is about to get a lot more organized. Please confirm your email address to get started.</p>
-      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span style="color: #ffffff !important;">Confirm Email</span></a>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Welcome to Axon!</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Your academic life is about to get a lot more organized. Please confirm your email address to get started.</p>
+      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span data-ogsc="color: #ffffff;" style="color: #ffffff !important;">Confirm Email</span></a>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -51,17 +67,33 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
     .btn { display: inline-block; background-color: #10b981; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">You're invited!</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Someone has invited you to join Axon. Click the button below to accept your invitation and set up your account.</p>
-      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span style="color: #ffffff !important;">Accept Invitation</span></a>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">You're invited!</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Someone has invited you to join Axon. Click the button below to accept your invitation and set up your account.</p>
+      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span data-ogsc="color: #ffffff;" style="color: #ffffff !important;">Accept Invitation</span></a>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -86,19 +118,35 @@
     .btn { display: inline-block; background-color: #f59e0b; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; margin-bottom: 24px; }
     .code-box { background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; border: 1px dashed #334155; padding: 16px 24px; border-radius: 8px; font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #ffffff !important; display: inline-block; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Sign in to Axon</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Click the button below to securely sign in, or enter the temporary passcode.</p>
-      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span style="color: #ffffff !important;">Sign In Automatically</span></a>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Sign in to Axon</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Click the button below to securely sign in, or enter the temporary passcode.</p>
+      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span data-ogsc="color: #ffffff;" style="color: #ffffff !important;">Sign In Automatically</span></a>
       <p style="margin-bottom: 12px; font-size: 14px;">Or use this passcode:</p>
       <div class="code-box">{{ .Token }}</div>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -122,17 +170,33 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
     .btn { display: inline-block; background-color: #0ea5e9; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Confirm Email Change</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We received a request to update the email address for your Axon account. Please click the button below to verify this new email address.</p>
-      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span style="color: #ffffff !important;">Verify New Email</span></a>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Confirm Email Change</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We received a request to update the email address for your Axon account. Please click the button below to verify this new email address.</p>
+      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span data-ogsc="color: #ffffff;" style="color: #ffffff !important;">Verify New Email</span></a>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -156,17 +220,33 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
     .btn { display: inline-block; background-color: #8b5cf6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Reset Your Password</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We received a request to reset the password for your Axon account. If you didn't request this, you can safely ignore this email.</p>
-      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span style="color: #ffffff !important;">Reset Password</span></a>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Reset Your Password</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We received a request to reset the password for your Axon account. If you didn't request this, you can safely ignore this email.</p>
+      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span data-ogsc="color: #ffffff;" style="color: #ffffff !important;">Reset Password</span></a>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -190,17 +270,33 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
     .code-box { background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; border: 1px dashed #334155; padding: 16px 24px; border-radius: 8px; font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #ffffff !important; display: inline-block; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Verify Your Identity</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Please enter the code below to verify your identity and continue with your sensitive operation.</p>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Verify Your Identity</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Please enter the code below to verify your identity and continue with your sensitive operation.</p>
       <div class="code-box">{{ .Token }}</div>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -224,19 +320,35 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
     .alert-box { background-color: #334155; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; text-align: left; margin-top: 24px; font-size: 14px; color: #cbd5e1; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Password Changed</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">This is an automated notification to let you know that the password for your Axon account has just been successfully changed.</p>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Password Changed</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">This is an automated notification to let you know that the password for your Axon account has just been successfully changed.</p>
       <div class="alert-box">
         If you did not make this change, please reset your password and contact support immediately to secure your account.
       </div>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -260,19 +372,35 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
     .alert-box { background-color: #334155; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; text-align: left; margin-top: 24px; font-size: 14px; color: #cbd5e1; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Email Address Updated</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">This is a confirmation that the email address associated with your Axon account has been successfully updated.</p>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Email Address Updated</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">This is a confirmation that the email address associated with your Axon account has been successfully updated.</p>
       <div class="alert-box">
         If you did not make this change, please reset your password and contact support immediately to secure your account.
       </div>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -296,19 +424,35 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
     .alert-box { background-color: #334155; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; text-align: left; margin-top: 24px; font-size: 14px; color: #cbd5e1; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Phone Number Updated</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">This is a confirmation that the phone number associated with your Axon account has been successfully updated.</p>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Phone Number Updated</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">This is a confirmation that the phone number associated with your Axon account has been successfully updated.</p>
       <div class="alert-box">
         If you did not make this change, please reset your password and contact support immediately to secure your account.
       </div>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -332,19 +476,35 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
     .alert-box { background-color: #334155; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; text-align: left; margin-top: 24px; font-size: 14px; color: #cbd5e1; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">New Sign-In Method Linked</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">A new sign-in provider (e.g. Google or GitHub) has been successfully linked to your Axon account.</p>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">New Sign-In Method Linked</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">A new sign-in provider (e.g. Google or GitHub) has been successfully linked to your Axon account.</p>
       <div class="alert-box">
         If you did not authorize this, please log in immediately and review your account settings.
       </div>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -368,19 +528,35 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
     .alert-box { background-color: #334155; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; text-align: left; margin-top: 24px; font-size: 14px; color: #cbd5e1; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Sign-In Method Removed</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">A sign-in provider (e.g. Google or GitHub) has been removed from your Axon account. You will no longer be able to use it to log in.</p>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Sign-In Method Removed</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">A sign-in provider (e.g. Google or GitHub) has been removed from your Axon account. You will no longer be able to use it to log in.</p>
       <div class="alert-box">
         If you did not authorize this, please log in immediately and review your account settings.
       </div>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -404,19 +580,35 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
     .alert-box { background-color: #334155; border-left: 4px solid #10b981; padding: 16px; border-radius: 0 8px 8px 0; text-align: left; margin-top: 24px; font-size: 14px; color: #cbd5e1; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Multi-Factor Authentication Enabled</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Two-factor authentication (MFA) has been successfully enabled on your Axon account for enhanced security.</p>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Multi-Factor Authentication Enabled</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Two-factor authentication (MFA) has been successfully enabled on your Axon account for enhanced security.</p>
       <div class="alert-box">
         If you did not enable this feature, please contact our support team immediately as your account may be compromised.
       </div>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -440,19 +632,35 @@
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 16px; }
     .alert-box { background-color: #334155; border-left: 4px solid #ef4444; padding: 16px; border-radius: 0 8px 8px 0; text-align: left; margin-top: 24px; font-size: 14px; color: #cbd5e1; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Multi-Factor Authentication Disabled</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Two-factor authentication (MFA) has been disabled on your Axon account. Your account is now less secure.</p>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Multi-Factor Authentication Disabled</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Two-factor authentication (MFA) has been disabled on your Axon account. Your account is now less secure.</p>
       <div class="alert-box">
         If you did not disable this feature, please reset your password and contact support immediately to re-secure your account.
       </div>
     </div>
-    <div class="footer">
+    <div class="footer" data-ogsc="color: #64748b;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>

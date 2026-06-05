@@ -140,18 +140,34 @@ Deno.serve(async req => {
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
     .btn { display: inline-block; background-color: #3b82f6 !important; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
     .footer { text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Welcome to Axon, ${studentProfile.full_name || 'Student'}!</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We are absolutely thrilled to have you here. Your academic life is about to get a lot more organized and productive.</p>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Dive right in and start exploring!</p>
-      <a href="https://axon-com.vercel.app/login" class="btn" style="display: inline-block; background-color: #3b82f6 !important; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px;"><span style="color: #ffffff !important;">Go to Dashboard</span></a>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Welcome to Axon, ${studentProfile.full_name || 'Student'}!</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We are absolutely thrilled to have you here. Your academic life is about to get a lot more organized and productive.</p>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Dive right in and start exploring!</p>
+      <a href="https://axon-com.vercel.app/login" class="btn" style="display: inline-block; background-color: #3b82f6 !important; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px;"><span data-ogsc="color: #ffffff;" style="color: #ffffff !important;">Go to Dashboard</span></a>
     </div>
-    <div class="footer" style="text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px;">
+    <div class="footer" data-ogsc="color: #64748b;" style="text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -208,18 +224,34 @@ Deno.serve(async req => {
     h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
     .footer { text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px; }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+      h1 { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+      .btn { color: #ffffff !important; }
+      span { color: #ffffff !important; }
+    }
+    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
+    [data-ogsc] .btn { color: #ffffff !important; }
+    [data-ogsc] span { color: #ffffff !important; }
+    [data-ogsc] a { color: #ffffff !important; }
+    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
   </style>
 </head>
 <body style="background-color: #ffffff !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
   <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff !important;">
     <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
-      <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">New Login Alert</h1>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Hi ${studentProfile.full_name || 'Student'},</p>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We detected a new login to your Axon account. If this was you, no further action is needed.</p>
-      <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">If you did not authorize this login, please reset your password immediately or contact your administrator.</p>
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">New Login Alert</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Hi ${studentProfile.full_name || 'Student'},</p>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We detected a new login to your Axon account. If this was you, no further action is needed.</p>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">If you did not authorize this login, please reset your password immediately or contact your administrator.</p>
     </div>
-    <div class="footer" style="text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px;">
+    <div class="footer" data-ogsc="color: #64748b;" style="text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
