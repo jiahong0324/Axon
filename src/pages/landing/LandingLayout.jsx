@@ -88,8 +88,6 @@ export default function LandingLayout() {
     }
   }, [navigate, isViewing])
 
-  if (sessionLoading && !isViewing) return <SplashLoading />
-
   useEffect(() => {
     // Close menu when route changes
     setMenuOpen(false)
@@ -97,6 +95,8 @@ export default function LandingLayout() {
     const container = document.getElementById('main-scroll-container')
     if (container) container.scrollTo(0, 0)
   }, [location.pathname])
+
+  if (sessionLoading && !isViewing) return <SplashLoading />
 
   const navLinks = [
     ['Home', '/'],
