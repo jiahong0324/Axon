@@ -8,6 +8,7 @@ export default function AuthPage({ mode = 'login' }) {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const isRegister = mode === 'register'
+  const [isForgot, setIsForgot] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,6 +18,17 @@ export default function AuthPage({ mode = 'login' }) {
     setError('')
     setLoading(true)
     try {
+      if (isForgot) {
+        const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
+          redirectTo: window.location.origin
+        })
+        if (error) throw error
+        showToast('Password reset email sent! Check your inbox.', 'success')
+        setIsForgot(false)
+        setLoading(false)
+        return
+      }
+
       const result = isRegister
         ? await supabase.auth.signUp({ email: form.email, password: form.password, options: { data: { full_name: form.name } } })
         : await supabase.auth.signInWithPassword({ email: form.email, password: form.password })
@@ -73,15 +85,17 @@ export default function AuthPage({ mode = 'login' }) {
         <div className="glass w-full rounded-2xl p-6 shadow-2xl">
           <div className="mb-6 text-center">
             <img src="/icons/logo.png" alt="Axon logo" className="mx-auto mb-3 h-12 w-12 rounded-xl object-contain" />
-            <h1 className="font-heading text-3xl font-bold gradient-text">Axon</h1>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your study life, neatly gathered.</p>
+            <h1 className="font-heading text-3xl font-bold gradient-text">{isForgot ? 'Reset Password' : 'Axon'}</h1>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{isForgot ? "Enter your email to receive a reset link." : 'Your study life, neatly gathered.'}</p>
           </div>
-          <div className="mb-5 grid grid-cols-2 rounded-xl bg-slate-200/60 dark:bg-navy-950/70 p-1">
-            <Link to="/login" className={`rounded-lg py-3 text-center text-sm font-semibold transition-all ${!isRegister ? 'bg-theme-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Sign In</Link>
-            <Link to="/register" className={`rounded-lg py-3 text-center text-sm font-semibold transition-all ${isRegister ? 'bg-theme-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Sign Up</Link>
-          </div>
+          {!isForgot && (
+            <div className="mb-5 grid grid-cols-2 rounded-xl bg-slate-200/60 dark:bg-navy-950/70 p-1">
+              <Link to="/login" className={`rounded-lg py-3 text-center text-sm font-semibold transition-all ${!isRegister ? 'bg-theme-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Sign In</Link>
+              <Link to="/register" className={`rounded-lg py-3 text-center text-sm font-semibold transition-all ${isRegister ? 'bg-theme-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Sign Up</Link>
+            </div>
+          )}
           <form onSubmit={submit} className="space-y-4">
-            {isRegister && (
+            {isRegister && !isForgot && (
               <label className="block">
                 <span className="label">Full name</span>
                 <input className="input" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
@@ -91,22 +105,41 @@ export default function AuthPage({ mode = 'login' }) {
               <span className="label">Email</span>
               <input className="input" type="email" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
             </label>
-            <label className="block">
-              <span className="label">Password</span>
-              <input className="input" type="password" required minLength={6} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
-            </label>
+            {!isForgot && (
+              <div className="block">
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="label mb-0">Password</span>
+                  {!isRegister && (
+                    <button type="button" onClick={() => setIsForgot(true)} className="text-xs font-medium text-theme-500 dark:text-theme-400 hover:underline">
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <input className="input" type="password" required minLength={6} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+              </div>
+            )}
             {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
             <button disabled={loading} className="btn-primary w-full">
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isRegister ? 'Create account' : 'Sign in'}
+              {isForgot ? 'Send reset link' : (isRegister ? 'Create account' : 'Sign in')}
             </button>
-            <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
-              By continuing, you agree to our <Link to="/terms" className="font-semibold text-theme-500 dark:text-theme-400 hover:underline">Terms and Conditions</Link>.
-            </p>
+            {isForgot ? (
+              <p className="mt-4 text-center text-sm">
+                <button type="button" onClick={() => setIsForgot(false)} className="font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
+                  Back to Sign In
+                </button>
+              </p>
+            ) : (
+              <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                By continuing, you agree to our <Link to="/terms" className="font-semibold text-theme-500 dark:text-theme-400 hover:underline">Terms and Conditions</Link>.
+              </p>
+            )}
           </form>
-          <div className="my-6 flex items-center before:mt-0.5 before:flex-1 before:border-t before:border-slate-200 dark:before:border-white/10 after:mt-0.5 after:flex-1 after:border-t after:border-slate-200 dark:after:border-white/10">
-            <p className="mx-4 mb-0 text-center text-sm text-slate-500 dark:text-slate-400">Or continue with</p>
-          </div>
+          {!isForgot && (
+            <>
+              <div className="my-6 flex items-center before:mt-0.5 before:flex-1 before:border-t before:border-slate-200 dark:before:border-white/10 after:mt-0.5 after:flex-1 after:border-t after:border-slate-200 dark:after:border-white/10">
+                <p className="mx-4 mb-0 text-center text-sm text-slate-500 dark:text-slate-400">Or continue with</p>
+              </div>
           <div className="grid grid-cols-2 gap-3">
             <button type="button" onClick={() => handleOAuth('google')} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-white transition-colors hover:bg-slate-100 dark:hover:bg-white/10">
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -124,6 +157,8 @@ export default function AuthPage({ mode = 'login' }) {
               Apple
             </button>
           </div>
+            </>
+          )}
         </div>
       </section>
     </main>
