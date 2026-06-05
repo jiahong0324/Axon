@@ -79,13 +79,14 @@ export default function SettingsPage() {
   async function handleInvite() {
     if (!inviteEmail) return showToast('Please enter an email.', 'error')
     setInviting(true)
-    const { error } = await studentManager.inviteUser(inviteEmail, 'student')
-    setInviting(false)
-    if (error) {
-      showToast(error, 'error')
-    } else {
+    try {
+      await studentManager.inviteUser(inviteEmail, 'student')
       showToast('Invitation sent successfully!', 'success')
       setInviteEmail('')
+    } catch (err) {
+      showToast(err.message || 'Failed to send invite.', 'error')
+    } finally {
+      setInviting(false)
     }
   }
 
