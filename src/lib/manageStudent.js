@@ -26,6 +26,7 @@ export const studentManager = {
   changeEmail: (id, email) => call('change_email', id, { email }),
   sendResetEmail: id => call('send_reset_email', id),
   sendWelcomeEmail: id => call('send_welcome_email', id),
+  sendLoginEmail: id => call('send_login_email', id),
   deleteAccount: id => call('delete_account', id),
   deactivate: id => call('deactivate', id),
   reactivate: id => call('reactivate', id)

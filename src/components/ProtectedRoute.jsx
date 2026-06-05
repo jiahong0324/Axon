@@ -65,6 +65,12 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
         }
         if (event === 'SIGNED_IN' && currentSession?.user) {
           checkWelcomeEmail(currentSession.user)
+          
+          const isNewUser = new Date(currentSession.user.created_at) > new Date(Date.now() - 5 * 60000)
+          if (!isNewUser && !sessionStorage.getItem('login_email_sent')) {
+            sessionStorage.setItem('login_email_sent', 'true')
+            studentManager.sendLoginEmail(currentSession.user.id).catch(console.error)
+          }
         }
       }
     })

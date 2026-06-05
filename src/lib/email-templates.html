@@ -15,7 +15,7 @@
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
     h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
     p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
-    .btn { display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
+    .btn { display: inline-block; background-color: #3b82f6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
   </style>
 </head>
@@ -25,7 +25,7 @@
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
       <h1>Welcome to Axon!</h1>
       <p>Your academic life is about to get a lot more organized. Please confirm your email address to get started.</p>
-      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff;">Confirm Email</a>
+      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span style="color: #ffffff !important;">Confirm Email</span></a>
     </div>
     <div class="footer">
       &copy; 2026 Axon. All rights reserved.
@@ -49,7 +49,7 @@
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
     h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
     p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
-    .btn { display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
+    .btn { display: inline-block; background-color: #10b981; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
   </style>
 </head>
@@ -59,7 +59,7 @@
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
       <h1>You're invited!</h1>
       <p>Someone has invited you to join Axon. Click the button below to accept your invitation and set up your account.</p>
-      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff;">Accept Invitation</a>
+      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span style="color: #ffffff !important;">Accept Invitation</span></a>
     </div>
     <div class="footer">
       &copy; 2026 Axon. All rights reserved.
@@ -83,7 +83,7 @@
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
     h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
     p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 24px; }
-    .btn { display: inline-block; background-color: #f59e0b; color: #ffffff; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; margin-bottom: 24px; }
+    .btn { display: inline-block; background-color: #f59e0b; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; margin-bottom: 24px; }
     .code-box { background-color: #0f172a; border: 1px dashed #334155; padding: 16px 24px; border-radius: 8px; font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #ffffff; display: inline-block; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
   </style>
@@ -94,7 +94,7 @@
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
       <h1>Sign in to Axon</h1>
       <p>Click the button below to securely sign in, or enter the temporary passcode.</p>
-      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff;">Sign In Automatically</a>
+      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span style="color: #ffffff !important;">Sign In Automatically</span></a>
       <p style="margin-bottom: 12px; font-size: 14px;">Or use this passcode:</p>
       <div class="code-box">{{ .Token }}</div>
     </div>
@@ -120,7 +120,7 @@
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
     h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
     p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
-    .btn { display: inline-block; background-color: #0ea5e9; color: #ffffff; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
+    .btn { display: inline-block; background-color: #0ea5e9; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
   </style>
 </head>
@@ -130,7 +130,7 @@
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
       <h1>Confirm Email Change</h1>
       <p>We received a request to update the email address for your Axon account. Please click the button below to verify this new email address.</p>
-      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff;">Verify New Email</a>
+      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span style="color: #ffffff !important;">Verify New Email</span></a>
     </div>
     <div class="footer">
       &copy; 2026 Axon. All rights reserved.
@@ -154,7 +154,7 @@
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
     h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
     p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
-    .btn { display: inline-block; background-color: #8b5cf6; color: #ffffff; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
+    .btn { display: inline-block; background-color: #8b5cf6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
   </style>
 </head>
@@ -164,7 +164,7 @@
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
       <h1>Reset Your Password</h1>
       <p>We received a request to reset the password for your Axon account. If you didn't request this, you can safely ignore this email.</p>
-      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff;">Reset Password</a>
+      <a href="{{ .ConfirmationURL }}" class="btn" style="color: #ffffff !important; text-decoration: none;"><span style="color: #ffffff !important;">Reset Password</span></a>
     </div>
     <div class="footer">
       &copy; 2026 Axon. All rights reserved.

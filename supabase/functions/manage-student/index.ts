@@ -167,6 +167,71 @@ Deno.serve(async req => {
         break
       }
 
+      case 'send_login_email': {
+        if (studentId !== caller.id && callerRole !== 'manager') return json({ error: 'Forbidden' }, 403)
+        const { data: studentProfile } = await adminClient.from('profiles').select('email, full_name').eq('id', studentId).single()
+        if (!studentProfile?.email) return json({ error: 'Student email not found' }, 404)
+        
+        const brevoKey = Deno.env.get('BREVO_API_KEY')
+        if (!brevoKey) {
+          console.error('Brevo API key not configured')
+          result = { data: { success: false, message: 'Skipped: BREVO_API_KEY not configured' } }
+          break
+        }
+        
+        const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'api-key': brevoKey,
+          },
+          body: JSON.stringify({
+            sender: { name: 'Axon', email: Deno.env.get('BREVO_SENDER_EMAIL') || 'noreply@axon-app.com' },
+            to: [{ email: studentProfile.email, name: studentProfile.full_name || 'Student' }],
+            subject: 'New Login Alert - Axon',
+            htmlContent: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+    .card { background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
+    .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
+    h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
+    p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
+    .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
+      <h1>New Login Alert</h1>
+      <p>Hi ${studentProfile.full_name || 'Student'},</p>
+      <p>We detected a new login to your Axon account. If this was you, no further action is needed.</p>
+      <p>If you did not authorize this login, please reset your password immediately or contact your administrator.</p>
+    </div>
+    <div class="footer">
+      &copy; 2026 Axon. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
+            `
+          })
+        })
+        
+        if (!res.ok) {
+          const errData = await res.json()
+          console.error('Brevo API Error:', errData)
+          return json({ error: errData.message || 'Failed to send login email via Brevo' }, 500)
+        }
+        result = { data: { success: true } }
+        break
+      }
+
       case 'change_password':
         if (!data?.password || data.password.length < 8) return json({ error: 'Password must be at least 8 characters' }, 400)
         result = await adminClient.auth.admin.updateUserById(studentId, { password: data.password })
