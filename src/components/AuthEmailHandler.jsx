@@ -1,15 +1,27 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { studentManager } from '../lib/manageStudent'
+import { useToast } from '../components/Toast'
 
 export default function AuthEmailHandler() {
+  const navigate = useNavigate()
+  const { showToast } = useToast()
+
   useEffect(() => {
+    if (window.location.hash.includes('error=access_denied') && window.location.hash.includes('error_code=otp_expired')) {
+      showToast('Your password reset link has expired or is invalid. Please request a new one.', 'error')
+      window.history.replaceState(null, '', window.location.pathname)
+    }
+
     let active = true
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return
 
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/update-password')
+      } else if (event === 'SIGNED_IN' && session?.user) {
         // Consider a new user ONLY if created within the last 5 minutes
         const isBrandNew = new Date(Date.now()) - new Date(session.user.created_at) < 5 * 60 * 1000;
         
