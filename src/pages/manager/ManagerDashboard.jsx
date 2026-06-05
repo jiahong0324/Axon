@@ -1,4 +1,4 @@
-import { Activity, BookOpen, CheckSquare, FileText, Megaphone, Plus, Users } from 'lucide-react'
+import { Activity, BookOpen, CheckSquare, FileText, Megaphone, Plus, Users, Mail } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
@@ -7,6 +7,7 @@ import Modal from '../../components/Modal'
 import { useToast } from '../../components/Toast'
 import { supabase } from '../../lib/supabase'
 import { initials } from '../../lib/utils'
+import { studentManager } from '../../lib/manageStudent'
 
 const announcementInitial = { title: '', message: '', type: 'info', expires_at: '' }
 
@@ -18,6 +19,9 @@ export default function ManagerDashboard() {
   const [announcementOpen, setAnnouncementOpen] = useState(false)
   const [studentOpen, setStudentOpen] = useState(false)
   const [announcement, setAnnouncement] = useState(announcementInitial)
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [emailForm, setEmailForm] = useState({ subject: '', message: '', audience: 'all', emails: '' })
+  const [emailLoading, setEmailLoading] = useState(false)
   const { showToast } = useToast()
 
   useEffect(() => { loadDashboard() }, [])
@@ -61,6 +65,34 @@ export default function ManagerDashboard() {
     loadDashboard()
   }
 
+  async function sendEmailBroadcast(e) {
+    e.preventDefault()
+    setEmailLoading(true)
+    try {
+      const payload = {
+        subject: emailForm.subject,
+        message: emailForm.message,
+        audience: emailForm.audience,
+      }
+      if (emailForm.audience === 'custom') {
+        payload.emails = emailForm.emails.split(',').map(email => email.trim()).filter(Boolean)
+        if (payload.emails.length === 0) {
+          showToast('Please enter at least one email address.', 'error')
+          setEmailLoading(false)
+          return
+        }
+      }
+      const res = await studentManager.sendPromotionalEmail(payload)
+      showToast(`Email broadcast sent successfully to ${res.data?.count || 0} user(s).`, 'success')
+      setEmailForm({ subject: '', message: '', audience: 'all', emails: '' })
+      setEmailOpen(false)
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to send email broadcast.', 'error')
+    } finally {
+      setEmailLoading(false)
+    }
+  }
+
   const greeting = useMemo(() => {
     const hour = new Date().getHours()
     return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
@@ -96,6 +128,7 @@ export default function ManagerDashboard() {
           <div className="grid gap-3">
             <QuickLink to="/manager/students" icon={Users} label="Manage Students" />
             <button className="btn-ghost justify-start border-amber-500/20 text-left hover:bg-amber-500/10" onClick={() => setAnnouncementOpen(true)}><Megaphone className="h-4 w-4 text-amber-400" /> Send Announcement</button>
+            <button className="btn-ghost justify-start border-amber-500/20 text-left hover:bg-amber-500/10" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 text-amber-400" /> Send Email Broadcast</button>
             <QuickLink to="/manager/reports" icon={FileText} label="Export Reports" />
             <button className="manager-primary-btn justify-start" onClick={() => setStudentOpen(true)}><Plus className="h-4 w-4" /> Add Student</button>
           </div>
@@ -104,6 +137,7 @@ export default function ManagerDashboard() {
 
       <AnnouncementModal isOpen={announcementOpen} onClose={() => setAnnouncementOpen(false)} form={announcement} setForm={setAnnouncement} onSubmit={sendAnnouncement} />
       <AddStudentModal isOpen={studentOpen} onClose={() => setStudentOpen(false)} onCreated={loadDashboard} />
+      <SendEmailModal isOpen={emailOpen} onClose={() => setEmailOpen(false)} form={emailForm} setForm={setEmailForm} onSubmit={sendEmailBroadcast} loading={emailLoading} />
     </main>
   )
 }
@@ -145,6 +179,59 @@ export function AnnouncementModal({ isOpen, onClose, form, setForm, onSubmit }) 
         </div>
         <Field label="Expires On"><input className="input" type="date" value={form.expires_at} onChange={e => setForm({ ...form, expires_at: e.target.value })} /></Field>
         <button className="manager-primary-btn w-full">Send to All Students</button>
+      </form>
+    </Modal>
+  )
+}
+
+export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loading }) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Send Email Broadcast">
+      <form onSubmit={onSubmit} className="space-y-4">
+        <Field label="Subject">
+          <input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder="e.g. New Feature Release!" />
+        </Field>
+        <div>
+          <p className="label">Audience</p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { id: 'all', label: 'All Students' },
+              { id: 'custom', label: 'Custom List' }
+            ].map(aud => (
+              <button
+                type="button"
+                key={aud.id}
+                onClick={() => setForm({ ...form, audience: aud.id })}
+                className={`rounded-xl border px-3 py-2 text-sm capitalize ${form.audience === aud.id ? 'border-amber-500 bg-amber-500/20 text-amber-300' : 'border-white/10 text-slate-400'}`}
+              >
+                {aud.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {form.audience === 'custom' && (
+          <Field label="Recipients (Comma-separated emails)">
+            <textarea
+              className="input min-h-20"
+              required
+              value={form.emails}
+              onChange={e => setForm({ ...form, emails: e.target.value })}
+              placeholder="student1@uni.edu, student2@uni.edu"
+            />
+          </Field>
+        )}
+        <Field label="Message Content">
+          <textarea
+            className="input min-h-36"
+            required
+            value={form.message}
+            onChange={e => setForm({ ...form, message: e.target.value })}
+            placeholder="Type your promotional or announcement message here..."
+          />
+        </Field>
+        <button className="manager-primary-btn w-full" disabled={loading}>
+          {loading ? 'Sending Broadcast...' : 'Send Broadcast'}
+        </button>
       </form>
     </Modal>
   )

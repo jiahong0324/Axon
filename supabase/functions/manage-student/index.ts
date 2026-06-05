@@ -42,10 +42,10 @@ Deno.serve(async req => {
     const { action, studentId, data } = body
 
     if (!action) return json({ error: 'Missing action' }, 400)
-    if (!['create_student', 'invite_user'].includes(action) && !studentId) return json({ error: 'Missing studentId' }, 400)
+    if (!['create_student', 'invite_user', 'send_promotional_email'].includes(action) && !studentId) return json({ error: 'Missing studentId' }, 400)
 
     // Verify manager privileges for strict actions
-    const strictActions = ['create_student', 'change_password', 'change_email', 'send_reset_email', 'delete_account', 'deactivate', 'reactivate']
+    const strictActions = ['create_student', 'change_password', 'change_email', 'send_reset_email', 'delete_account', 'deactivate', 'reactivate', 'send_promotional_email']
     if (strictActions.includes(action) && callerRole !== 'manager') {
       return json({ error: 'Forbidden: managers only' }, 403)
     }
@@ -125,56 +125,30 @@ Deno.serve(async req => {
             subject: 'Welcome to Axon!',
             htmlContent: `
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8">
-  <meta name="color-scheme" content="dark">
-  <meta name="supported-color-schemes" content="dark">
   <style>
-    :root { color-scheme: dark; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
-    .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+    .card { background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
-    h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
-    p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
-    .btn { display: inline-block; background-color: #3b82f6 !important; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
-    .footer { text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px; }
-
-
-    @media (prefers-color-scheme: dark) {
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; }
-      .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
-      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important; }
-      h1 { color: #ffffff !important; }
-      p { color: #94a3b8 !important; }
-      .footer { color: #64748b !important; }
-      .btn { color: #ffffff !important; }
-      span { color: #ffffff !important; }
-    }
-    [data-ogsc] body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; }
-    [data-ogsc] .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
-    [data-ogsc] h1 { color: #ffffff !important; }
-    [data-ogsc] p { color: #94a3b8 !important; }
-    [data-ogsc] .footer { color: #64748b !important; }
-    [data-ogsc] .btn { color: #ffffff !important; }
-    [data-ogsc] span { color: #ffffff !important; }
-    [data-ogsc] a { color: #ffffff !important; }
-    [data-ogsb] body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; }
-    [data-ogsb] .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
-    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important; }
+    h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
+    p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
+    .btn { display: inline-block; background-color: #3b82f6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
+    .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
   </style>
 </head>
-<body style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
-  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important;">
-    <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
-      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
-      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Welcome to Axon, ${studentProfile.full_name || 'Student'}!</h1>
-      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We are absolutely thrilled to have you here. Your academic life is about to get a lot more organized and productive.</p>
-      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Dive right in and start exploring!</p>
-      <a href="https://axon-com.vercel.app/login" class="btn" style="display: inline-block; background-color: #3b82f6 !important; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px;"><span data-ogsc="color: #ffffff;" style="color: #ffffff !important;">Go to Dashboard</span></a>
+<body>
+  <div class="container">
+    <div class="card">
+      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
+      <h1>Welcome to Axon, ${studentProfile.full_name || 'Student'}!</h1>
+      <p>We are absolutely thrilled to have you here. Your academic life is about to get a lot more organized and productive.</p>
+      <p>Dive right in and start exploring!</p>
+      <a href="https://axon-com.vercel.app/login" class="btn" style="color: #ffffff !important; text-decoration: none;"><span style="color: #ffffff !important;">Go to Dashboard</span></a>
     </div>
-    <div class="footer" data-ogsc="color: #64748b;" style="text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px;">
+    <div class="footer">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -217,55 +191,30 @@ Deno.serve(async req => {
             subject: 'New Login Alert - Axon',
             htmlContent: `
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8">
-  <meta name="color-scheme" content="dark">
-  <meta name="supported-color-schemes" content="dark">
   <style>
-    :root { color-scheme: dark; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
-    .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+    .card { background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
-    h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
-    p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
-    .footer { text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px; }
-
-
-    @media (prefers-color-scheme: dark) {
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; }
-      .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
-      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important; }
-      h1 { color: #ffffff !important; }
-      p { color: #94a3b8 !important; }
-      .footer { color: #64748b !important; }
-      .btn { color: #ffffff !important; }
-      span { color: #ffffff !important; }
-    }
-    [data-ogsc] body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; }
-    [data-ogsc] .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
-    [data-ogsc] h1 { color: #ffffff !important; }
-    [data-ogsc] p { color: #94a3b8 !important; }
-    [data-ogsc] .footer { color: #64748b !important; }
-    [data-ogsc] .btn { color: #ffffff !important; }
-    [data-ogsc] span { color: #ffffff !important; }
-    [data-ogsc] a { color: #ffffff !important; }
-    [data-ogsb] body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; }
-    [data-ogsb] .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
-    [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important; }
+    h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
+    p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
+    .btn { display: inline-block; background-color: #3b82f6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
+    .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
   </style>
 </head>
-<body style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
-  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important;">
-    <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
-      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
-      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">New Login Alert</h1>
-      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Hi ${studentProfile.full_name || 'Student'},</p>
-      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We detected a new login to your Axon account. If this was you, no further action is needed.</p>
-      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">If you did not authorize this login, please reset your password immediately or contact your administrator.</p>
+<body>
+  <div class="container">
+    <div class="card">
+      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
+      <h1>New Login Alert</h1>
+      <p>Hi ${studentProfile.full_name || 'Student'},</p>
+      <p>We detected a new login to your Axon account. If this was you, no further action is needed.</p>
+      <p>If you did not authorize this login, please reset your password immediately or contact your administrator.</p>
     </div>
-    <div class="footer" data-ogsc="color: #64748b;" style="text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px;">
+    <div class="footer">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -281,6 +230,103 @@ Deno.serve(async req => {
           return json({ error: errData.message || 'Failed to send login email via Brevo' }, 500)
         }
         result = { data: { success: true } }
+        break
+      }
+
+      case 'send_promotional_email': {
+        const brevoKey = Deno.env.get('BREVO_API_KEY')
+        if (!brevoKey) return json({ error: 'BREVO_API_KEY not configured' }, 500)
+
+        const { subject, htmlContent, message, audience, emails } = data || {}
+        if (!subject) return json({ error: 'Subject is required' }, 400)
+
+        let targetEmails: { email: string, name?: string }[] = []
+
+        if (audience === 'all') {
+          const { data: students, error: fetchError } = await adminClient
+            .from('profiles')
+            .select('email, full_name')
+            .eq('is_active', true)
+          
+          if (fetchError || !students) return json({ error: 'Failed to fetch students' }, 500)
+          targetEmails = students.map(s => ({ email: s.email, name: s.full_name || 'Student' }))
+        } else if (Array.isArray(emails) && emails.length > 0) {
+          targetEmails = emails.map(e => ({ email: e }))
+        } else {
+          return json({ error: 'No recipients specified. Provide audience="all" or an emails array.' }, 400)
+        }
+
+        if (targetEmails.length === 0) return json({ error: 'No active recipients found' }, 404)
+
+        const finalHtmlContent = htmlContent || `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
+    .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important; }
+    .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
+    h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
+    p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; white-space: pre-line; }
+    .footer { text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px; }
+  </style>
+</head>
+<body style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important;">
+    <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
+      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
+      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">${subject}</h1>
+      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; white-space: pre-line;">${message || 'We have an update for you!'}</p>
+    </div>
+    <div class="footer" data-ogsc="color: #64748b;" style="text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px;">
+      &copy; 2026 Axon. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
+        `
+
+        // Split into chunks of 1000 versions if necessary (Brevo limits 1000 max message versions)
+        const chunkSize = 999
+        let chunks = []
+        for (let i = 0; i < targetEmails.length; i += chunkSize) {
+          chunks.push(targetEmails.slice(i, i + chunkSize))
+        }
+
+        let totalSuccess = 0
+        for (const chunk of chunks) {
+          const messageVersions = chunk.map(recipient => ({
+            to: [{ email: recipient.email, name: recipient.name }]
+          }))
+
+          const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'api-key': brevoKey,
+            },
+            body: JSON.stringify({
+              sender: { name: 'Axon', email: Deno.env.get('BREVO_SENDER_EMAIL') || 'noreply@axon-app.com' },
+              subject: subject,
+              htmlContent: finalHtmlContent,
+              messageVersions: messageVersions
+            })
+          })
+          
+          if (!res.ok) {
+            const errData = await res.json()
+            console.error('Brevo API Error:', errData)
+            return json({ error: errData.message || 'Failed to send promotional email via Brevo' }, 500)
+          }
+          totalSuccess += chunk.length
+        }
+        
+        result = { data: { success: true, count: totalSuccess } }
         break
       }
 
