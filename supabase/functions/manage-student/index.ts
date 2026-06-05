@@ -260,30 +260,27 @@ Deno.serve(async req => {
 
         const finalHtmlContent = htmlContent || `
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8">
-  <meta name="color-scheme" content="dark">
-  <meta name="supported-color-schemes" content="dark">
   <style>
-    :root { color-scheme: dark; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; }
-    .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+    .card { background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
-    h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
-    p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; white-space: pre-line; }
-    .footer { text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px; }
+    h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
+    p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; white-space: pre-line; }
+    .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
   </style>
 </head>
-<body style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
-  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important;">
-    <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: none !important;">
-      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
-      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">${subject}</h1>
-      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; white-space: pre-line;">${message || 'We have an update for you!'}</p>
+<body>
+  <div class="container">
+    <div class="card">
+      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
+      <h1>${subject}</h1>
+      <p>${message || 'We have an update for you!'}</p>
     </div>
-    <div class="footer" data-ogsc="color: #64748b;" style="text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px;">
+    <div class="footer">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
