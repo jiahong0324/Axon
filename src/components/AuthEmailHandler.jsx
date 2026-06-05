@@ -10,23 +10,23 @@ export default function AuthEmailHandler() {
       if (!active) return
 
       if (event === 'SIGNED_IN' && session?.user) {
-        // Consider a new user if created within the last 24 hours to handle delayed confirmations
-        const isNewUser = new Date(session.user.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+        // Consider a new user ONLY if created within the last 5 minutes
+        const isBrandNew = new Date(Date.now()) - new Date(session.user.created_at) < 5 * 60 * 1000;
         
-        if (isNewUser) {
+        if (isBrandNew) {
           const welcomeKey = `welcome_sent_${session.user.id}`
           if (!localStorage.getItem(welcomeKey)) {
             localStorage.setItem(welcomeKey, 'true')
             studentManager.sendWelcomeEmail(session.user.id).catch(console.error)
           } else {
-            // Already received welcome email, so send login email
+            // Already received welcome email on this device, so send login email
             if (!sessionStorage.getItem('login_email_sent')) {
               sessionStorage.setItem('login_email_sent', 'true')
               studentManager.sendLoginEmail(session.user.id).catch(console.error)
             }
           }
         } else {
-          // If not new, send a login alert email instead
+          // If not brand new, send a login alert email instead
           if (!sessionStorage.getItem('login_email_sent')) {
             sessionStorage.setItem('login_email_sent', 'true')
             studentManager.sendLoginEmail(session.user.id).catch(console.error)

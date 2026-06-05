@@ -132,9 +132,9 @@ Deno.serve(async req => {
   <meta name="supported-color-schemes" content="dark">
   <style>
     :root { color-scheme: dark; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a !important; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-    .card { background-color: #1e293b !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
+    .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
     h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
@@ -142,9 +142,9 @@ Deno.serve(async req => {
     .footer { text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px; }
   </style>
 </head>
-<body style="background-color: #0f172a !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
-  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a !important;">
-    <div class="card" style="background-color: #1e293b !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155;">
+<body style="background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important;">
+    <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
       <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Welcome to Axon, ${studentProfile.full_name || 'Student'}!</h1>
       <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We are absolutely thrilled to have you here. Your academic life is about to get a lot more organized and productive.</p>
@@ -201,18 +201,18 @@ Deno.serve(async req => {
   <meta name="supported-color-schemes" content="dark">
   <style>
     :root { color-scheme: dark; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a !important; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-    .card { background-color: #1e293b !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
+    .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
     h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
     p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
     .footer { text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px; }
   </style>
 </head>
-<body style="background-color: #0f172a !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
-  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a !important;">
-    <div class="card" style="background-color: #1e293b !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155;">
+<body style="background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important;">
+    <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
       <h1 style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">New Login Alert</h1>
       <p style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Hi ${studentProfile.full_name || 'Student'},</p>
