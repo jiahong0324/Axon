@@ -57,10 +57,10 @@ export default function OnboardingPage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] flex items-center justify-center text-white"><Loader2 className="h-8 w-8 animate-spin text-theme-500" /></div>
+  if (loading) return <div className="min-h-screen bg-[radial-gradient(circle_at_top,#E0E7FF,#EEF4FB_55%)] dark:bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] flex items-center justify-center text-slate-900 dark:text-white transition-colors duration-300"><Loader2 className="h-8 w-8 animate-spin text-theme-500" /></div>
 
   return (
-    <div className="flex h-screen overflow-y-auto items-center justify-center bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] p-4 text-white scrollbar-hide">
+    <div className="flex h-screen overflow-y-auto items-center justify-center bg-[radial-gradient(circle_at_top,#E0E7FF,#EEF4FB_55%)] dark:bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] p-4 text-slate-900 dark:text-white scrollbar-hide transition-colors duration-300">
       <div className="glass w-full max-w-lg animate-slideUpFade rounded-3xl p-8 shadow-2xl md:p-10">
         
         {/* Progress Bar */}
@@ -76,7 +76,7 @@ export default function OnboardingPage() {
               <Sparkles className="h-10 w-10 text-white" />
             </div>
             <h1 className="mb-4 font-heading text-3xl font-bold">Welcome to Axon!</h1>
-            <p className="mb-8 text-slate-300">Your account is created. Let's take a moment to set up your student profile so Axon can organize your academic life perfectly.</p>
+            <p className="mb-8 text-slate-600 dark:text-slate-300">Your account is created. Let's take a moment to set up your student profile so Axon can organize your academic life perfectly.</p>
             <button onClick={() => setStep(2)} className="btn-primary w-full text-lg">
               Let's Go <ArrowRight className="ml-2 h-5 w-5" />
             </button>
@@ -85,11 +85,11 @@ export default function OnboardingPage() {
 
         {step === 2 && (
           <div className="animate-fadeIn">
-            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-              <GraduationCap className="h-8 w-8 text-theme-400" />
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5">
+              <GraduationCap className="h-8 w-8 text-theme-500 dark:text-theme-400" />
             </div>
             <h2 className="mb-2 font-heading text-2xl font-bold">Where do you study?</h2>
-            <p className="mb-8 text-sm text-slate-400">This helps us customize your experience.</p>
+            <p className="mb-8 text-sm text-slate-500 dark:text-slate-400">This helps us customize your experience.</p>
             
             <div className="space-y-4">
               <label className="block">
@@ -128,11 +128,11 @@ export default function OnboardingPage() {
 
         {step === 3 && (
           <div className="animate-fadeIn">
-            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-              <IdCard className="h-8 w-8 text-purple-400" />
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5">
+              <IdCard className="h-8 w-8 text-purple-500 dark:text-purple-400" />
             </div>
             <h2 className="mb-2 font-heading text-2xl font-bold">What is your Student ID?</h2>
-            <p className="mb-8 text-sm text-slate-400">Your school managers will use this to identify you in the system.</p>
+            <p className="mb-8 text-sm text-slate-500 dark:text-slate-400">Your school managers will use this to identify you in the system.</p>
             
             <label className="block">
               <span className="label">Student ID</span>
