@@ -406,12 +406,14 @@ export default function SettingsPage() {
   function setPref(key, value) { updatePreference(user, key, value); showToast('Preference saved.', 'success') }
 
   return (
-    <main className="main-content">
-      <h1 className="page-title">Settings</h1>
-      <nav className="scrollbar-hide sticky top-0 z-20 mb-4 flex gap-2 overflow-x-auto bg-[var(--bg-primary)] py-2 md:hidden">
-        {tabs.map(([id, label]) => <button key={id} className="min-h-[44px] shrink-0 rounded-full border border-white/10 px-4 text-sm" onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })}>{label}</button>)}
-      </nav>
-      <div className="grid gap-5 xl:grid-cols-2">
+    <main className="main-content !pt-0">
+      <div className="sticky top-0 z-20 -mx-4 bg-[var(--bg-primary)] px-4 pb-3 pt-[calc(env(safe-area-inset-top)+1.25rem)] md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:pt-[calc(env(safe-area-inset-top)+1.25rem)] border-b border-white/10 md:border-none">
+        <h1 className="page-title mb-3 md:mb-6">Settings</h1>
+        <nav className="scrollbar-hide flex gap-2 overflow-x-auto md:hidden">
+          {tabs.map(([id, label]) => <button key={id} className="min-h-[44px] shrink-0 rounded-full border border-white/10 px-4 text-sm" onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })}>{label}</button>)}
+        </nav>
+      </div>
+      <div className="grid gap-5 xl:grid-cols-2 mt-4 md:mt-0">
         <Section id="profile" title="Profile">
           <div className="mb-4 flex items-center gap-4">
             <div className="grid h-16 w-16 place-items-center rounded-full text-xl font-bold text-white" style={{ background: accentHex(profile.avatar_color) }}>{initials(profile.full_name || user?.email)}</div>
