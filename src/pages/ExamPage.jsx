@@ -9,6 +9,7 @@ import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { dateLabel, daysFromToday, formatTime } from '../lib/utils'
 
+
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
 
 export default function ExamPage() {
@@ -17,6 +18,7 @@ export default function ExamPage() {
   const [modal, setModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
 
@@ -32,13 +34,18 @@ export default function ExamPage() {
 
   async function addExam(e) {
     e.preventDefault()
+    setIsSubmitting(true)
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('exams').insert({ ...form, user_id: user.id })
-    if (error) return showToast('Exam could not be added.', 'error')
+    if (error) {
+      setIsSubmitting(false)
+      return showToast('Exam could not be added.', 'error')
+    }
     await logActivity('Added exam', 'exam', form.subject)
     showToast('Exam added.', 'success')
     setModal(false)
     setForm(initialForm)
+    setIsSubmitting(false)
     fetchExams()
   }
 
@@ -80,7 +87,7 @@ export default function ExamPage() {
           <Field label="Exam Type"><select className="input" value={form.exam_type} onChange={e => setForm({ ...form, exam_type: e.target.value })}>{['Quiz', 'Midterm', 'Final', 'Assignment'].map(t => <option key={t}>{t}</option>)}</select></Field>
           <Field label="Venue"><input className="input" value={form.venue} onChange={e => setForm({ ...form, venue: e.target.value })} /></Field>
           <Field label="Notes"><textarea className="input min-h-24" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></Field>
-          <button className="btn-primary w-full">Save Exam</button>
+          <button disabled={isSubmitting} className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Saving...' : 'Save Exam'}</button>
         </form>
       </Modal>
       <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Exam Schedule from Screenshot" maxWidth="max-w-5xl" bodyClassName="overflow-hidden">

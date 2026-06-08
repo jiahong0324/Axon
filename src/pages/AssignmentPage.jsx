@@ -25,6 +25,7 @@ export default function AssignmentPage() {
   const [aiModal, setAiModal] = useState(false)
   const [aiText, setAiText] = useState('')
   const [form, setForm] = useState(initialForm)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
 
@@ -40,13 +41,18 @@ export default function AssignmentPage() {
 
   async function addItem(e) {
     e.preventDefault()
+    setIsSubmitting(true)
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('assignments').insert({ ...form, user_id: user.id })
-    if (error) return showToast('Assignment could not be added.', 'error')
+    if (error) {
+      setIsSubmitting(false)
+      return showToast('Assignment could not be added.', 'error')
+    }
     await logActivity('Added assignment', 'assignment', form.title)
     showToast('Assignment added.', 'success')
     setModal(false)
     setForm(initialForm)
+    setIsSubmitting(false)
     fetchItems()
   }
 
@@ -110,7 +116,7 @@ export default function AssignmentPage() {
           <Field label="Deadline"><input className="input" required type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} /></Field>
           <Field label="Priority"><select className="input" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>{['High', 'Medium', 'Low'].map(p => <option key={p}>{p}</option>)}</select></Field>
           <Field label="Notes"><textarea className="input min-h-24" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></Field>
-          <button className="btn-primary w-full">Save Assignment</button>
+          <button disabled={isSubmitting} className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Saving...' : 'Save Assignment'}</button>
         </form>
       </Modal>
       <Modal isOpen={aiModal} onClose={() => setAiModal(false)} title="AI Priority Plan">

@@ -20,6 +20,7 @@ export default function TimetablePage() {
   const [showForm, setShowForm] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [mobileDay, setMobileDay] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
 
@@ -42,13 +43,18 @@ export default function TimetablePage() {
 
   async function addClass(e) {
     e?.preventDefault()
+    setIsSubmitting(true)
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('classes').insert({ ...form, user_id: user.id })
-    if (error) return showToast('Class could not be added.', 'error')
+    if (error) {
+      setIsSubmitting(false)
+      return showToast('Class could not be added.', 'error')
+    }
     await logActivity('Added class', 'class', form.subject)
     showToast('Class added.', 'success')
     setForm(initialForm)
     setShowForm(false)
+    setIsSubmitting(false)
     fetchClasses()
   }
 
@@ -100,7 +106,7 @@ export default function TimetablePage() {
             <Field label="Classroom"><input className="input" placeholder="e.g. DK1" value={form.classroom} onChange={e => setForm({ ...form, classroom: e.target.value })} /></Field>
             <Field label="Lecturer"><input className="input" placeholder="Name" value={form.lecturer} onChange={e => setForm({ ...form, lecturer: e.target.value })} /></Field>
           </div>
-          <button className="btn-primary w-full mt-2">Save Class</button>
+          <button disabled={isSubmitting} className="btn-primary w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Saving...' : 'Save Class'}</button>
         </form>
       </Modal>
       <div className="mb-4 flex items-center gap-2 md:hidden">
