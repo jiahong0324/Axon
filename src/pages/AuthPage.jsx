@@ -46,6 +46,11 @@ export default function AuthPage({ mode = 'login' }) {
       const user = result.data.user
       if (user) {
         await createProfile(user, 'student')
+        await supabase.from('profiles').update({
+          university: 'Guest University',
+          course: 'Guest Mode',
+          student_id: `GUEST-${user.id.substring(0, 8)}`
+        }).eq('id', user.id)
       }
       navigate('/home')
     } catch (err) {
@@ -218,10 +223,12 @@ export default function AuthPage({ mode = 'login' }) {
               Apple
             </button>
           </div>
-          <button type="button" onClick={() => { setIsGuest(true); setError(''); }} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-white transition-colors hover:bg-slate-100 dark:hover:bg-white/10">
-            <UserCircle className="h-5 w-5" />
-            Continue as Guest
-          </button>
+          <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+            Just want to look around?{' '}
+            <button type="button" onClick={() => { setIsGuest(true); setError(''); }} className="font-semibold text-theme-500 dark:text-theme-400 hover:underline">
+              Continue as Guest
+            </button>
+          </p>
             </>
           )}
         </div>
