@@ -77,7 +77,8 @@ self.addEventListener('push', e => {
     icon: '/icons/logo-colored.png',
     badge: '/icons/badge.png',
     vibrate: data.vibrate || [200, 100, 200],
-    data: data.url || '/'
+    data: data.url || '/',
+    color: '#000000'
   }
 
   const dupKeyEncoded = encodeURIComponent(dupKey)
