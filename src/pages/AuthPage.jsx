@@ -39,6 +39,9 @@ export default function AuthPage({ mode = 'login' }) {
       }
       
       if (result.error) throw result.error
+      if (!result.data.session) {
+        throw new Error('Your Supabase project requires email confirmation. Please disable it or enable Anonymous Sign-ins in your Supabase dashboard for Guest mode to work.')
+      }
 
       const user = result.data.user
       if (user) {
