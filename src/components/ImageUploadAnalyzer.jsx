@@ -14,10 +14,11 @@ CRITICAL RULES:
 6. DO NOT use the cell background color to determine class type
 7. Convert all times to 24-hour HH:MM format (e.g. "10:30 AM" → "10:30", "2:30 PM" → "14:30")
 8. Day names must be exactly: "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"
+9. For the "subject" field, you MUST extract BOTH the subject code AND the full subject name if they are available anywhere in the image (e.g., "BMIS1043 SYSTEMS ANALYSIS AND DESIGN"). Do not just extract the code.
 
 Each object in the array must have exactly these fields:
 {
-  "subject": "subject code or name string",
+  "subject": "BOTH subject code and full name (e.g. 'BMCS1113 COMPUTER ORGANISATION AND ARCHITECTURE')",
   "day": "Monday|Tuesday|Wednesday|Thursday|Friday",
   "start_time": "HH:MM",
   "end_time": "HH:MM",
@@ -32,7 +33,7 @@ const EXAM_PROMPT = `
 Analyze this university exam timetable image. Extract ALL exams and return as a JSON array only, no other text.
 Each object must have:
 {
-  "subject": "string",
+  "subject": "BOTH subject code and full name if available (e.g. 'BMCS1113 COMPUTER ORGANISATION AND ARCHITECTURE')",
   "exam_date": "YYYY-MM-DD",
   "start_time": "HH:MM or empty string",
   "end_time": "HH:MM or empty string",
@@ -44,7 +45,7 @@ Return ONLY valid JSON array. No markdown, no explanation.`
 
 const ASSIGNMENT_PROMPT = `
 Analyze this university assignment or coursework screenshot. Extract ALL assignments and return as a JSON array only, no other text.
-Each object must have: { "title": "string", "subject": "string", "deadline": "YYYY-MM-DD", "priority": "High|Medium|Low", "notes": "string or empty string", "status": "Pending" }
+Each object must have: { "title": "string", "subject": "BOTH subject code and full name if available (e.g. 'BMCS1113 COMPUTER ORGANISATION AND ARCHITECTURE')", "deadline": "YYYY-MM-DD", "priority": "High|Medium|Low", "notes": "string or empty string", "status": "Pending" }
 Return ONLY valid JSON array. No markdown, no explanation.`
 
 const statusMessages = [
