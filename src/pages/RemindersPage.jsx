@@ -105,11 +105,6 @@ export default function RemindersPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button className={showForm ? 'btn-ghost border-red-500/30 text-red-300' : 'btn-add'} onClick={() => setShowForm(v => !v)}>{showForm ? '✕ Cancel' : <><Plus className="h-4 w-4" /> Add Reminder <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></>}</button>
-            {items.length > 0 && (
-              <button className="btn-ghost hidden sm:flex items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300" onClick={clearReminders}>
-                <Trash2 className="h-4 w-4" /> Clear Reminders
-              </button>
-            )}
           </div>
         </div>
         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showForm ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
@@ -130,6 +125,13 @@ export default function RemindersPage() {
                 <button className="btn-danger" onClick={() => deleteItem(item.id)}><Trash2 className="h-4 w-4" /></button>
               </article>
             ))}
+          </div>
+        )}
+        {items.length > 0 && (
+          <div className="mt-6 flex justify-end border-t border-white/10 pt-4">
+            <button className="btn-ghost flex items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300" onClick={clearReminders}>
+              <Trash2 className="h-4 w-4" /> Clear All Reminders
+            </button>
           </div>
         )}
       </section>

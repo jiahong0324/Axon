@@ -91,15 +91,17 @@ export default function ExamPage() {
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
           <button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
           <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Exam <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
-          {exams.length > 0 && (
-            <button className="btn-ghost hidden md:flex items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300" onClick={clearExams}>
-              <Trash2 className="h-4 w-4" /> Clear Exams
-            </button>
-          )}
         </div>
       </div>
       <ExamSection title="Upcoming" exams={upcoming} results={results} deleteExam={deleteExam} />
       <ExamSection title="Past" exams={past} results={results} deleteExam={deleteExam} />
+      {exams.length > 0 && (
+        <div className="mt-8 flex justify-center md:justify-end border-t border-white/10 pt-6">
+          <button className="btn-ghost items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300 flex" onClick={clearExams}>
+            <Trash2 className="h-4 w-4" /> Clear All Exams
+          </button>
+        </div>
+      )}
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Exam">
         <form onSubmit={addExam} className="space-y-4">
           <Field label="Subject"><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>

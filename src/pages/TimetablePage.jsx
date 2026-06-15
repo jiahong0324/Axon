@@ -100,16 +100,10 @@ export default function TimetablePage() {
             <button className="btn-danger flex items-center gap-2 p-2 md:hidden" onClick={clearTimetable}>
               <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
             </button>
-          )}
         </div>
         <div className="flex flex-wrap gap-3">
           <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
           <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Add Class <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
-          {!loading && classes.length > 0 && (
-            <button className="btn-ghost hidden md:flex items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300" onClick={clearTimetable}>
-              <Trash2 className="h-4 w-4" /> Clear Timetable
-            </button>
-          )}
         </div>
       </div>
       <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Add Class">
@@ -156,6 +150,13 @@ export default function TimetablePage() {
         </section>
         )}
       </div>
+      {!loading && classes.length > 0 && (
+        <div className="mt-8 hidden md:flex justify-end border-t border-white/10 pt-6">
+          <button className="btn-ghost items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300 flex" onClick={clearTimetable}>
+            <Trash2 className="h-4 w-4" /> Clear All Classes
+          </button>
+        </div>
+      )}
       <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Timetable from Screenshot" maxWidth="max-w-6xl" bodyClassName="overflow-hidden">
         <ImageUploadAnalyzer type="timetable" onResult={saveAll} />
       </Modal>

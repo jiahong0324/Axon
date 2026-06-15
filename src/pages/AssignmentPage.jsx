@@ -116,11 +116,6 @@ export default function AssignmentPage() {
           <button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
           <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Assignment <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
           <button className="btn-ghost" onClick={prioritize}><Bot className="h-4 w-4" /> What should I do first?</button>
-          {!loading && items.length > 0 && (
-            <button className="btn-ghost hidden md:flex items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300" onClick={clearAssignments}>
-              <Trash2 className="h-4 w-4" /> Clear Assignments
-            </button>
-          )}
         </div>
       </div>
       <section className="flex flex-col gap-4 md:grid md:grid-cols-3">
@@ -134,6 +129,13 @@ export default function AssignmentPage() {
           )
         })}
       </section>
+      {!loading && items.length > 0 && (
+        <div className="mt-8 hidden md:flex justify-end border-t border-white/10 pt-6">
+          <button className="btn-ghost items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300 flex" onClick={clearAssignments}>
+            <Trash2 className="h-4 w-4" /> Clear All Assignments
+          </button>
+        </div>
+      )}
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Assignment">
         <form onSubmit={addItem} className="space-y-4">
           <Field label="Title"><input className="input" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></Field>
