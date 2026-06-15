@@ -104,11 +104,11 @@ export default function AssignmentPage() {
   return (
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between md:justify-start md:gap-4 w-full md:w-auto">
           <h1 className="page-title mb-0">Assignments</h1>
           {!loading && items.length > 0 && (
-            <button className="btn-danger flex items-center gap-2 p-2 md:hidden" onClick={clearAssignments}>
-              <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
+            <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 md:border md:border-red-500/20 md:hover:border-red-500/40 p-2 md:p-0 md:h-10 md:w-10 rounded-lg transition-colors flex items-center justify-center gap-2 shrink-0" onClick={clearAssignments} title="Clear All Assignments">
+              <Trash2 className="h-4 w-4" /> <span className="text-sm md:hidden">Clear</span>
             </button>
           )}
         </div>
@@ -129,13 +129,6 @@ export default function AssignmentPage() {
           )
         })}
       </section>
-      {!loading && items.length > 0 && (
-        <div className="mt-8 hidden md:flex justify-end border-t border-white/10 pt-6">
-          <button className="btn-ghost items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300 flex" onClick={clearAssignments}>
-            <Trash2 className="h-4 w-4" /> Clear All Assignments
-          </button>
-        </div>
-      )}
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Assignment">
         <form onSubmit={addItem} className="space-y-4">
           <Field label="Title"><input className="input" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></Field>

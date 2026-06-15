@@ -80,11 +80,11 @@ export default function ExamPage() {
   return (
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between md:justify-start md:gap-4 w-full md:w-auto">
           <h1 className="page-title mb-0">Exam Planner</h1>
           {exams.length > 0 && (
-            <button className="btn-danger flex items-center gap-2 p-2 md:hidden" onClick={clearExams}>
-              <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
+            <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 md:border md:border-red-500/20 md:hover:border-red-500/40 p-2 md:p-0 md:h-10 md:w-10 rounded-lg transition-colors flex items-center justify-center gap-2 shrink-0" onClick={clearExams} title="Clear All Exams">
+              <Trash2 className="h-4 w-4" /> <span className="text-sm md:hidden">Clear</span>
             </button>
           )}
         </div>
@@ -95,13 +95,6 @@ export default function ExamPage() {
       </div>
       <ExamSection title="Upcoming" exams={upcoming} results={results} deleteExam={deleteExam} />
       <ExamSection title="Past" exams={past} results={results} deleteExam={deleteExam} />
-      {exams.length > 0 && (
-        <div className="mt-8 flex justify-center md:justify-end border-t border-white/10 pt-6">
-          <button className="btn-ghost items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300 flex" onClick={clearExams}>
-            <Trash2 className="h-4 w-4" /> Clear All Exams
-          </button>
-        </div>
-      )}
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Exam">
         <form onSubmit={addExam} className="space-y-4">
           <Field label="Subject"><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>

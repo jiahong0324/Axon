@@ -95,11 +95,11 @@ export default function RemindersPage() {
       </section>
       <section className="card">
         <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between sm:justify-start sm:gap-4 w-full sm:w-auto">
             <h2 className="section-header mb-0"><Bell className="h-5 w-5 text-theme-400" /> My Reminders</h2>
             {items.length > 0 && (
-              <button className="btn-danger flex sm:hidden items-center gap-2 p-2" onClick={clearReminders}>
-                <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
+              <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 sm:border sm:border-red-500/20 sm:hover:border-red-500/40 p-2 sm:p-0 sm:h-10 sm:w-10 rounded-lg transition-colors flex items-center justify-center gap-2 shrink-0" onClick={clearReminders} title="Clear All Reminders">
+                <Trash2 className="h-4 w-4" /> <span className="text-sm sm:hidden">Clear</span>
               </button>
             )}
           </div>
@@ -125,13 +125,6 @@ export default function RemindersPage() {
                 <button className="btn-danger" onClick={() => deleteItem(item.id)}><Trash2 className="h-4 w-4" /></button>
               </article>
             ))}
-          </div>
-        )}
-        {items.length > 0 && (
-          <div className="mt-6 flex justify-end border-t border-white/10 pt-4">
-            <button className="btn-ghost flex items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300" onClick={clearReminders}>
-              <Trash2 className="h-4 w-4" /> Clear All Reminders
-            </button>
           </div>
         )}
       </section>
