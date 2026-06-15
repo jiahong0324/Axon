@@ -65,6 +65,15 @@ export default function ExamPage() {
     setExams(prev => prev.filter(e => e.id !== id))
   }
 
+  async function clearExams() {
+    if (!await confirm({ title: 'Clear exams?', message: 'All exams will be deleted. This cannot be undone.', confirmText: 'Clear' })) return
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('exams').delete().eq('user_id', user.id)
+    if (error) return showToast('Could not clear exams.', 'error')
+    setExams([])
+    showToast('Exams cleared.', 'success')
+  }
+
   const upcoming = exams.filter(e => daysFromToday(e.exam_date) >= 0)
   const past = exams.filter(e => daysFromToday(e.exam_date) < 0)
 
@@ -72,7 +81,15 @@ export default function ExamPage() {
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <h1 className="page-title mb-0">Exam Planner</h1>
-        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap"><button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button><button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Exam <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button></div>
+        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
+          <button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
+          <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Exam <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
+          {exams.length > 0 && (
+            <button className="btn-danger flex items-center gap-2 px-4" onClick={clearExams}>
+              <Trash2 className="h-4 w-4" /> Clear Exams
+            </button>
+          )}
+        </div>
       </div>
       <ExamSection title="Upcoming" exams={upcoming} results={results} deleteExam={deleteExam} />
       <ExamSection title="Past" exams={past} results={results} deleteExam={deleteExam} />

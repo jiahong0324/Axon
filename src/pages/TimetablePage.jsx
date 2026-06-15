@@ -78,6 +78,15 @@ export default function TimetablePage() {
     showToast('Class deleted.', 'success')
   }
 
+  async function clearTimetable() {
+    if (!await confirm({ title: 'Clear timetable?', message: 'All classes will be deleted. This cannot be undone.', confirmText: 'Clear' })) return
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('classes').delete().eq('user_id', user.id)
+    if (error) return showToast('Could not clear timetable.', 'error')
+    setClasses([])
+    showToast('Timetable cleared.', 'success')
+  }
+
   function updateType(type) {
     setForm(prev => ({ ...prev, class_type: type, color: classColors[type] }))
   }
@@ -89,6 +98,11 @@ export default function TimetablePage() {
         <div className="flex flex-wrap gap-3">
           <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
           <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Add Class <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
+          {!loading && classes.length > 0 && (
+            <button className="btn-danger flex items-center gap-2 w-full md:w-auto px-4" onClick={clearTimetable}>
+              <Trash2 className="h-4 w-4" /> Clear Timetable
+            </button>
+          )}
         </div>
       </div>
       <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Add Class">

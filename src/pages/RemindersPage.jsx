@@ -62,6 +62,15 @@ export default function RemindersPage() {
     setItems(prev => prev.filter(item => item.id !== id))
   }
 
+  async function clearReminders() {
+    if (!await confirm({ title: 'Clear reminders?', message: 'All reminders will be deleted. This cannot be undone.', confirmText: 'Clear' })) return
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('reminders').delete().eq('user_id', user.id)
+    if (error) return showToast('Could not clear reminders.', 'error')
+    setItems([])
+    showToast('Reminders cleared.', 'success')
+  }
+
   async function generatePlan() {
     setPlanLoading(true)
     try {
@@ -85,9 +94,16 @@ export default function RemindersPage() {
         {planLoading ? <div className="skeleton h-36 rounded-xl" /> : plan ? <div className="scrollbar-hide max-h-96 overflow-y-auto text-sm leading-6" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }} /> : <p className="muted">Generate a practical study plan based on today’s classes, assignments, exams, and reminders.</p>}
       </section>
       <section className="card">
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 className="section-header mb-0"><Bell className="h-5 w-5 text-theme-400" /> My Reminders</h2>
-          <button className={showForm ? 'btn-ghost border-red-500/30 text-red-300' : 'btn-add'} onClick={() => setShowForm(v => !v)}>{showForm ? '✕ Cancel' : <><Plus className="h-4 w-4" /> Add Reminder <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></>}</button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button className={showForm ? 'btn-ghost border-red-500/30 text-red-300' : 'btn-add'} onClick={() => setShowForm(v => !v)}>{showForm ? '✕ Cancel' : <><Plus className="h-4 w-4" /> Add Reminder <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></>}</button>
+            {items.length > 0 && (
+              <button className="btn-danger flex items-center gap-2 px-4" onClick={clearReminders}>
+                <Trash2 className="h-4 w-4" /> Clear Reminders
+              </button>
+            )}
+          </div>
         </div>
         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showForm ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <form onSubmit={addItem} className="mb-5 grid gap-3 md:grid-cols-4">

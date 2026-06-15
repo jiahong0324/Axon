@@ -80,6 +80,15 @@ export default function AssignmentPage() {
     setItems(prev => prev.filter(item => item.id !== id))
   }
 
+  async function clearAssignments() {
+    if (!await confirm({ title: 'Clear assignments?', message: 'All assignments will be deleted. This cannot be undone.', confirmText: 'Clear' })) return
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('assignments').delete().eq('user_id', user.id)
+    if (error) return showToast('Could not clear assignments.', 'error')
+    setItems([])
+    showToast('Assignments cleared.', 'success')
+  }
+
   async function prioritize() {
     setAiModal(true)
     setAiText('Thinking...')
@@ -96,7 +105,16 @@ export default function AssignmentPage() {
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <h1 className="page-title mb-0">Assignments</h1>
-        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap"><button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button><button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Assignment <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button><button className="btn-ghost" onClick={prioritize}><Bot className="h-4 w-4" /> What should I do first?</button></div>
+        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
+          <button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
+          <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Assignment <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
+          <button className="btn-ghost" onClick={prioritize}><Bot className="h-4 w-4" /> What should I do first?</button>
+          {!loading && items.length > 0 && (
+            <button className="btn-danger flex items-center gap-2 px-4" onClick={clearAssignments}>
+              <Trash2 className="h-4 w-4" /> Clear Assignments
+            </button>
+          )}
+        </div>
       </div>
       <section className="flex flex-col gap-4 md:grid md:grid-cols-3">
         {statuses.map(status => {

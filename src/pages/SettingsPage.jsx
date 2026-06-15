@@ -1,4 +1,4 @@
-import { Download, LogOut, Mail, Save, ShieldAlert, Trash2 } from 'lucide-react'
+import { Download, LogOut, Mail, Save, ShieldAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { jsPDF } from 'jspdf'
@@ -298,23 +298,6 @@ export default function SettingsPage() {
     }
   }
 
-  async function clearTable(table) {
-    const displayName = table === 'classes' ? 'timetable' : table
-    if (!await confirm({ title: `Clear ${displayName}?`, message: `All ${displayName} will be deleted. This cannot be undone.`, confirmText: 'Clear' })) return
-    const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from(table).delete().eq('user_id', user.id)
-    showToast(`${displayName.charAt(0).toUpperCase() + displayName.slice(1)} cleared.`, 'success')
-
-    if (table === 'push_subscriptions' && 'Notification' in window && Notification.permission === 'granted') {
-      showToast('Re-registering this device...', 'info')
-      const sub = await registerPushSubscription(user)
-      if (sub) {
-        showToast('This device successfully re-registered for notifications!', 'success')
-      } else {
-        showToast('Auto-registration failed. Please refresh the page.', 'error')
-      }
-    }
-  }
 
   async function deleteAccount() {
     if (!await confirm({ title: 'Delete account?', message: 'This permanently deletes your Axon account. Please confirm before continuing.', confirmText: 'Delete account' })) return
@@ -559,7 +542,6 @@ export default function SettingsPage() {
           <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
             <button className="btn-primary" onClick={exportData}><Download className="h-4 w-4" /> Export my data</button>
 
-            {['classes', 'assignments', 'exams', 'reminders'].map(table => <button key={table} className="btn-danger" onClick={() => clearTable(table)}><Trash2 className="h-4 w-4" /> Clear {table === 'classes' ? 'timetable' : table}</button>)}
             <button className="btn-ghost" onClick={globalSignOut}><LogOut className="h-4 w-4" /> Sign out all devices</button>
           </div>
         </Section>
