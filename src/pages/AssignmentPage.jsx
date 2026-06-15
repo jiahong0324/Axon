@@ -104,13 +104,20 @@ export default function AssignmentPage() {
   return (
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-        <h1 className="page-title mb-0">Assignments</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="page-title mb-0">Assignments</h1>
+          {!loading && items.length > 0 && (
+            <button className="btn-danger flex items-center gap-2 p-2 md:hidden" onClick={clearAssignments}>
+              <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
+            </button>
+          )}
+        </div>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
           <button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
           <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Assignment <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
           <button className="btn-ghost" onClick={prioritize}><Bot className="h-4 w-4" /> What should I do first?</button>
           {!loading && items.length > 0 && (
-            <button className="btn-danger flex items-center gap-2 px-4" onClick={clearAssignments}>
+            <button className="btn-danger hidden md:flex items-center gap-2 px-4" onClick={clearAssignments}>
               <Trash2 className="h-4 w-4" /> Clear Assignments
             </button>
           )}

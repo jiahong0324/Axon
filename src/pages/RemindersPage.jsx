@@ -95,11 +95,18 @@ export default function RemindersPage() {
       </section>
       <section className="card">
         <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 className="section-header mb-0"><Bell className="h-5 w-5 text-theme-400" /> My Reminders</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="section-header mb-0"><Bell className="h-5 w-5 text-theme-400" /> My Reminders</h2>
+            {items.length > 0 && (
+              <button className="btn-danger flex sm:hidden items-center gap-2 p-2" onClick={clearReminders}>
+                <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
+              </button>
+            )}
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <button className={showForm ? 'btn-ghost border-red-500/30 text-red-300' : 'btn-add'} onClick={() => setShowForm(v => !v)}>{showForm ? '✕ Cancel' : <><Plus className="h-4 w-4" /> Add Reminder <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></>}</button>
             {items.length > 0 && (
-              <button className="btn-danger flex items-center gap-2 px-4" onClick={clearReminders}>
+              <button className="btn-danger hidden sm:flex items-center gap-2 px-4" onClick={clearReminders}>
                 <Trash2 className="h-4 w-4" /> Clear Reminders
               </button>
             )}

@@ -94,12 +94,19 @@ export default function TimetablePage() {
   return (
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-        <h1 className="page-title mb-0">Timetable</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="page-title mb-0">Timetable</h1>
+          {!loading && classes.length > 0 && (
+            <button className="btn-danger flex items-center gap-2 p-2 md:hidden" onClick={clearTimetable}>
+              <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-3">
           <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
           <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Add Class <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
           {!loading && classes.length > 0 && (
-            <button className="btn-danger flex items-center gap-2 w-full md:w-auto px-4" onClick={clearTimetable}>
+            <button className="btn-danger hidden md:flex items-center gap-2 px-4" onClick={clearTimetable}>
               <Trash2 className="h-4 w-4" /> Clear Timetable
             </button>
           )}
