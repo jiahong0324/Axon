@@ -72,6 +72,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
   const [items, setItems] = useState([])
   const [messageIndex, setMessageIndex] = useState(0)
   const [error, setError] = useState('')
+  const [isImporting, setIsImporting] = useState(false)
 
   useEffect(() => {
     if (step !== 'analyzing') return undefined
@@ -102,6 +103,18 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
     } catch {
       setError("AI couldn't read this image clearly")
       setStep('error')
+    }
+  }
+
+  async function handleImport() {
+    if (isImporting) return
+    setIsImporting(true)
+    try {
+      await onResult(selected.map(item => cleanItem(item, type)))
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsImporting(false)
     }
   }
 
@@ -225,7 +238,23 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
       {step === 'results' && (
         <div className="mt-4 flex shrink-0 flex-col gap-3 border-t border-white/10 pt-4 md:flex-row md:justify-end">
           <button className="btn-ghost" onClick={startOver}><RotateCcw className="h-4 w-4" /> Start Over</button>
-          <button className="btn-import" disabled={selected.length === 0} onClick={() => onResult(selected.map(item => cleanItem(item, type)))}><Check className="h-4 w-4" /> Import Selected {type === 'timetable' ? 'Classes' : 'Items'} ({selected.length})</button>
+          <button
+            className="btn-import disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={selected.length === 0 || isImporting}
+            onClick={handleImport}
+          >
+            {isImporting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Importing...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" />
+                Import Selected {type === 'timetable' ? 'Classes' : 'Items'} ({selected.length})
+              </>
+            )}
+          </button>
         </div>
       )}
     </div>
