@@ -100,6 +100,7 @@ export default function TimetablePage() {
             <button className="btn-danger flex items-center gap-2 p-2 md:hidden" onClick={clearTimetable}>
               <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
             </button>
+          )}
         </div>
         <div className="flex flex-wrap gap-3">
           <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
