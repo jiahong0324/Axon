@@ -92,7 +92,7 @@ export default function ExamPage() {
           <button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
           <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Exam <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
           {exams.length > 0 && (
-            <button className="btn-danger hidden md:flex items-center gap-2 px-4" onClick={clearExams}>
+            <button className="btn-ghost hidden md:flex items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300" onClick={clearExams}>
               <Trash2 className="h-4 w-4" /> Clear Exams
             </button>
           )}

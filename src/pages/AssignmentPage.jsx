@@ -117,7 +117,7 @@ export default function AssignmentPage() {
           <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Assignment <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
           <button className="btn-ghost" onClick={prioritize}><Bot className="h-4 w-4" /> What should I do first?</button>
           {!loading && items.length > 0 && (
-            <button className="btn-danger hidden md:flex items-center gap-2 px-4" onClick={clearAssignments}>
+            <button className="btn-ghost hidden md:flex items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300" onClick={clearAssignments}>
               <Trash2 className="h-4 w-4" /> Clear Assignments
             </button>
           )}

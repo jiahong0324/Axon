@@ -106,7 +106,7 @@ export default function TimetablePage() {
           <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
           <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Add Class <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
           {!loading && classes.length > 0 && (
-            <button className="btn-danger hidden md:flex items-center gap-2 px-4" onClick={clearTimetable}>
+            <button className="btn-ghost hidden md:flex items-center gap-2 px-4 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300" onClick={clearTimetable}>
               <Trash2 className="h-4 w-4" /> Clear Timetable
             </button>
           )}
