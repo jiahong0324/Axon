@@ -80,17 +80,22 @@ export default function ExamPage() {
   return (
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-        <div className="flex items-center justify-between md:justify-start md:gap-4 w-full md:w-auto">
+        <div className="flex items-center justify-between">
           <h1 className="page-title mb-0">Exam Planner</h1>
           {exams.length > 0 && (
-            <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 md:border md:border-red-500/20 md:hover:border-red-500/40 p-2 md:p-0 md:h-10 md:w-10 rounded-lg transition-colors flex items-center justify-center gap-2 shrink-0" onClick={clearExams} title="Clear All Exams">
-              <Trash2 className="h-4 w-4" /> <span className="text-sm md:hidden">Clear</span>
+            <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex md:hidden items-center justify-center gap-2 shrink-0" onClick={clearExams}>
+              <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
             </button>
           )}
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
           <button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
           <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Exam <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
+          {exams.length > 0 && (
+            <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearExams} title="Clear All Exams">
+              <Trash2 className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
       <ExamSection title="Upcoming" exams={upcoming} results={results} deleteExam={deleteExam} />

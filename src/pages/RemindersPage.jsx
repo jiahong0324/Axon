@@ -95,16 +95,21 @@ export default function RemindersPage() {
       </section>
       <section className="card">
         <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center justify-between sm:justify-start sm:gap-4 w-full sm:w-auto">
+          <div className="flex items-center justify-between">
             <h2 className="section-header mb-0"><Bell className="h-5 w-5 text-theme-400" /> My Reminders</h2>
             {items.length > 0 && (
-              <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 sm:border sm:border-red-500/20 sm:hover:border-red-500/40 p-2 sm:p-0 sm:h-10 sm:w-10 rounded-lg transition-colors flex items-center justify-center gap-2 shrink-0" onClick={clearReminders} title="Clear All Reminders">
-                <Trash2 className="h-4 w-4" /> <span className="text-sm sm:hidden">Clear</span>
+              <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex sm:hidden items-center justify-center gap-2 shrink-0" onClick={clearReminders}>
+                <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
               </button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button className={showForm ? 'btn-ghost border-red-500/30 text-red-300' : 'btn-add'} onClick={() => setShowForm(v => !v)}>{showForm ? '✕ Cancel' : <><Plus className="h-4 w-4" /> Add Reminder <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></>}</button>
+            {items.length > 0 && (
+              <button className="hidden sm:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearReminders} title="Clear All Reminders">
+                <Trash2 className="h-5 w-5" />
+              </button>
+            )}
           </div>
         </div>
         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showForm ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
