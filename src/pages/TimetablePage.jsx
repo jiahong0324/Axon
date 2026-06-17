@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
+import { ChevronDown, Clock, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import ClassTypeBadge from '../components/ClassTypeBadge'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -136,11 +136,9 @@ export default function TimetablePage() {
         </form>
       </Modal>
       <div className="mb-4 flex items-center gap-2 md:hidden">
-        <button className="btn-ghost px-3" onClick={() => setMobileDay(v => Math.max(0, v - 1))}><ChevronLeft className="h-4 w-4" /></button>
         <div className="scrollbar-hide flex flex-1 gap-2 overflow-x-auto">
           {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] shrink-0 rounded-full px-4 text-sm ${mobileDay === index ? 'bg-theme-500 text-white' : 'border border-white/10 text-slate-400'}`}>{day.slice(0, 3)}</button>)}
         </div>
-        <button className="btn-ghost px-3" onClick={() => setMobileDay(v => Math.min(days.length - 1, v + 1))}><ChevronRight className="h-4 w-4" /></button>
       </div>
       <div className="pb-3">
         {loading ? <SkeletonTimetable /> : (
@@ -173,49 +171,74 @@ function Field({ label, children }) { return <label className="block"><span clas
 
 function ClassTile({ item, onDelete }) {
   const styles = {
-    L: { bar: 'bg-blue-500', text: 'text-blue-400' },
-    T: { bar: 'bg-emerald-500', text: 'text-emerald-400' },
-    P: { bar: 'bg-violet-500', text: 'text-violet-400' }
+    L: {
+      from: 'from-blue-500/10',
+      to: 'to-blue-600/5',
+      text: 'text-blue-400',
+      iconBg: 'bg-blue-500/10',
+      shadow: 'hover:shadow-[0_8px_30px_-12px_rgba(59,130,246,0.3)]'
+    },
+    T: {
+      from: 'from-emerald-500/10',
+      to: 'to-emerald-600/5',
+      text: 'text-emerald-400',
+      iconBg: 'bg-emerald-500/10',
+      shadow: 'hover:shadow-[0_8px_30px_-12px_rgba(16,185,129,0.3)]'
+    },
+    P: {
+      from: 'from-violet-500/10',
+      to: 'to-violet-600/5',
+      text: 'text-violet-400',
+      iconBg: 'bg-violet-500/10',
+      shadow: 'hover:shadow-[0_8px_30px_-12px_rgba(139,92,246,0.3)]'
+    }
   }
 
   const s = styles[item.class_type] || styles.L
 
   return (
-    <article className="group relative flex w-full flex-row items-start gap-3 md:flex-col md:items-stretch md:gap-0">
-      {/* Mobile Time Column (Hidden on md) */}
-      <div className="flex w-[65px] shrink-0 flex-col items-end pt-1 text-right md:hidden">
-        <span className={`text-[15px] font-bold ${s.text}`}>{formatTime(item.start_time)}</span>
-        <span className="mt-0.5 text-xs font-medium text-slate-500">{formatTime(item.end_time)}</span>
-      </div>
+    <article className={`group relative flex h-full min-h-[160px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${s.from} ${s.to} p-4 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-slate-800/50 ${s.shadow}`}>
+      
+      {/* Subtle glossy highlight */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      
+      <button className="btn-danger absolute right-3 top-3 z-10 opacity-0 transition-opacity group-hover:opacity-100" onClick={onDelete}>
+        <Trash2 className="h-4 w-4" />
+      </button>
 
-      {/* Solid Card Content */}
-      <div className="relative flex-1 overflow-hidden rounded-xl border border-white/10 bg-slate-900/80 p-3 sm:p-4 transition-colors hover:border-white/20 hover:bg-slate-900">
-        {/* Solid left color bar */}
-        <div className={`absolute bottom-0 left-0 top-0 w-1.5 ${s.bar}`} />
-
-        <button className="btn-danger absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100" onClick={onDelete}>
-          <Trash2 className="h-4 w-4" />
-        </button>
-
-        {/* Desktop Time (Hidden on mobile) */}
-        <div className="mb-3 hidden items-baseline gap-2 md:flex">
-          <span className={`text-[17px] font-bold leading-none ${s.text}`}>{formatTime(item.start_time)}</span>
-          <span className="text-[13px] font-medium text-slate-500">- {formatTime(item.end_time)}</span>
+      <div className="relative z-10 flex flex-1 flex-col">
+        {/* Top Header: Time and Badge */}
+        <div className="mb-3 flex items-start justify-between">
+          <div className="flex flex-col pr-6">
+            <span className={`font-black text-[22px] tracking-tight leading-none ${s.text} drop-shadow-sm`}>
+              {formatTime(item.start_time)}
+            </span>
+            <span className="mt-1 font-medium text-xs text-slate-400 opacity-80">
+              until {formatTime(item.end_time)}
+            </span>
+          </div>
+          <div className="shrink-0"><ClassTypeBadge type={item.class_type} /></div>
         </div>
 
-        <div className="mb-2 pr-6"><ClassTypeBadge type={item.class_type} /></div>
-        
-        <h3 className="mb-3 text-[14px] font-semibold leading-snug text-slate-100 sm:text-[15px]">
+        {/* Body: Subject */}
+        <h3 className="mb-4 text-[15px] font-bold leading-snug text-slate-100">
           {item.subject}
         </h3>
 
-        <div className="mt-auto space-y-1.5">
-          <p className="flex items-start gap-2 text-[13px] font-medium text-slate-400">
-            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" /> <span className="leading-tight">{item.classroom || 'TBA'}</span>
-          </p>
-          <p className="flex items-start gap-2 text-[13px] font-medium text-slate-400">
-            <User className="mt-0.5 h-3.5 w-3.5 shrink-0" /> <span className="leading-tight">{item.lecturer || 'TBA'}</span>
-          </p>
+        {/* Footer: Details */}
+        <div className="mt-auto space-y-2 border-t border-white/5 pt-3">
+          <div className="flex items-center gap-2.5 text-sm text-slate-300">
+            <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${s.iconBg}`}>
+              <MapPin className={`h-3.5 w-3.5 ${s.text}`} />
+            </div>
+            <span className="truncate font-medium leading-tight">{item.classroom || 'TBA'}</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-sm text-slate-300">
+            <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${s.iconBg}`}>
+              <User className={`h-3.5 w-3.5 ${s.text}`} />
+            </div>
+            <span className="truncate font-medium leading-tight">{item.lecturer || 'TBA'}</span>
+          </div>
         </div>
       </div>
     </article>
