@@ -99,6 +99,26 @@ export const translations = {
     'reminders.myReminders': 'My Reminders',
     'reminders.add': 'Add Reminder',
     'reminders.clear': 'Clear',
+
+    // Timetable
+    'timetable.addClass': 'Add Class',
+    'timetable.clearClasses': 'Clear',
+    'timetable.saveClass': 'Save Class',
+    'timetable.subject': 'Subject',
+    'timetable.day': 'Day',
+    'timetable.startTime': 'Start Time',
+    'timetable.endTime': 'End Time',
+    'timetable.classType': 'Class Type',
+    'timetable.classroom': 'Classroom',
+    'timetable.lecturer': 'Lecturer',
+    'timetable.lecture': 'Lecture',
+    'timetable.tutorial': 'Tutorial',
+    'timetable.practical': 'Practical',
+    'timetable.days.Monday': 'Monday',
+    'timetable.days.Tuesday': 'Tuesday',
+    'timetable.days.Wednesday': 'Wednesday',
+    'timetable.days.Thursday': 'Thursday',
+    'timetable.days.Friday': 'Friday',
   },
   zh: {
     // Settings
@@ -200,5 +220,25 @@ export const translations = {
     'reminders.myReminders': '我的提醒',
     'reminders.add': '添加提醒',
     'reminders.clear': '清空',
+
+    // Timetable
+    'timetable.addClass': '添加课程',
+    'timetable.clearClasses': '清空',
+    'timetable.saveClass': '保存课程',
+    'timetable.subject': '科目',
+    'timetable.day': '星期',
+    'timetable.startTime': '开始时间',
+    'timetable.endTime': '结束时间',
+    'timetable.classType': '课程类型',
+    'timetable.classroom': '教室',
+    'timetable.lecturer': '讲师',
+    'timetable.lecture': '讲座',
+    'timetable.tutorial': '辅导',
+    'timetable.practical': '实验',
+    'timetable.days.Monday': '星期一',
+    'timetable.days.Tuesday': '星期二',
+    'timetable.days.Wednesday': '星期三',
+    'timetable.days.Thursday': '星期四',
+    'timetable.days.Friday': '星期五',
   }
 }
