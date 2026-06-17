@@ -8,6 +8,7 @@ import { useToast } from '../components/Toast'
 import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { dateLabel, daysFromToday, formatTime } from '../lib/utils'
+import { useLanguage } from '../components/LanguageProvider'
 
 
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
@@ -21,6 +22,7 @@ export default function ExamPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
+  const { t } = useLanguage()
 
   useEffect(() => { fetchExams() }, [])
 
@@ -81,16 +83,16 @@ export default function ExamPage() {
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div className="flex items-center justify-between">
-          <h1 className="page-title mb-0">Exam Planner</h1>
+          <h1 className="page-title mb-0">{t('exams.title')}</h1>
           {exams.length > 0 && (
             <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex md:hidden items-center justify-center gap-2 shrink-0" onClick={clearExams}>
-              <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
+              <Trash2 className="h-4 w-4" /> <span className="text-sm">{t('exams.clear')}</span>
             </button>
           )}
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
-          <button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
-          <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Exam <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
+          <button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> {t('exams.extract')}</button>
+          <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> {t('exams.add')} <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
           {exams.length > 0 && (
             <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearExams} title="Clear All Exams">
               <Trash2 className="h-5 w-5" />
@@ -98,8 +100,8 @@ export default function ExamPage() {
           )}
         </div>
       </div>
-      <ExamSection title="Upcoming" exams={upcoming} results={results} deleteExam={deleteExam} />
-      <ExamSection title="Past" exams={past} results={results} deleteExam={deleteExam} />
+      <ExamSection title={t('exams.upcoming')} exams={upcoming} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.upcoming'))} />
+      <ExamSection title={t('exams.past')} exams={past} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.past'))} />
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Exam">
         <form onSubmit={addExam} className="space-y-4">
           <Field label="Subject"><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
@@ -124,11 +126,11 @@ export default function ExamPage() {
 
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 
-function ExamSection({ title, exams, results, deleteExam }) {
+function ExamSection({ title, exams, results, deleteExam, emptyMsg }) {
   return (
     <section className="mb-6">
       <h2 className="section-header">{title}</h2>
-      {exams.length === 0 ? <div className="card"><EmptyState emoji="📖" message={`No ${title.toLowerCase()} exams.`} /></div> : (
+      {exams.length === 0 ? <div className="card"><EmptyState emoji="📖" message={emptyMsg || `No exams.`} /></div> : (
         <div className="grid gap-4 lg:grid-cols-2">
           {exams.map(exam => <ExamCard key={exam.id} exam={exam} result={results.find(r => r.exam_id === exam.id)} deleteExam={deleteExam} />)}
         </div>

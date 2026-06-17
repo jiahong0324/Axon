@@ -13,6 +13,7 @@ import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { dateLabel, markdownToHtml } from '../lib/utils'
 import { SkeletonList } from '../components/SkeletonLoader'
+import { useLanguage } from '../components/LanguageProvider'
 
 const statuses = ['Pending', 'In Progress', 'Done']
 const initialForm = { title: '', subject: '', deadline: '', priority: 'Medium', notes: '', status: 'Pending' }
@@ -28,6 +29,7 @@ export default function AssignmentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
+  const { t } = useLanguage()
 
   useEffect(() => { fetchItems() }, [])
 
@@ -105,17 +107,17 @@ export default function AssignmentPage() {
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div className="flex items-center justify-between">
-          <h1 className="page-title mb-0">Assignments</h1>
+          <h1 className="page-title mb-0">{t('assignments.title')}</h1>
           {!loading && items.length > 0 && (
             <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex md:hidden items-center justify-center gap-2 shrink-0" onClick={clearAssignments}>
-              <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
+              <Trash2 className="h-4 w-4" /> <span className="text-sm">{t('assignments.clear')}</span>
             </button>
           )}
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
-          <button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
-          <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> Add Assignment <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
-          <button className="btn-ghost" onClick={prioritize}><Bot className="h-4 w-4" /> What should I do first?</button>
+          <button className="btn-import" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> {t('assignments.extract')}</button>
+          <button className="btn-add" onClick={() => setModal(true)}><Plus className="h-4 w-4" /> {t('assignments.add')} <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
+          <button className="btn-ghost" onClick={prioritize}><Bot className="h-4 w-4" /> {t('assignments.aiPlan')}</button>
           {!loading && items.length > 0 && (
             <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearAssignments} title="Clear All Assignments">
               <Trash2 className="h-5 w-5" />
@@ -128,8 +130,8 @@ export default function AssignmentPage() {
           const column = items.filter(i => i.status === status)
           return (
             <div key={status} className="card min-h-[420px]">
-              <h2 className="mb-4 font-semibold">{status === 'Pending' ? '📋' : status === 'In Progress' ? '⚡' : '✅'} {status}</h2>
-              {loading ? <SkeletonList count={3} /> : column.length === 0 ? <EmptyState message="No assignments here." /> : <div className="space-y-3">{column.map(item => <AssignmentCard key={item.id} item={item} updateItem={updateItem} deleteItem={deleteItem} />)}</div>}
+              <h2 className="mb-4 font-semibold">{status === 'Pending' ? '📋 ' + t('assignments.pending') : status === 'In Progress' ? '⚡ ' + t('assignments.inProgress') : '✅ ' + t('assignments.done')}</h2>
+              {loading ? <SkeletonList count={3} /> : column.length === 0 ? <EmptyState message={t('assignments.empty')} /> : <div className="space-y-3">{column.map(item => <AssignmentCard key={item.id} item={item} updateItem={updateItem} deleteItem={deleteItem} />)}</div>}
             </div>
           )
         })}
