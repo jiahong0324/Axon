@@ -30,7 +30,8 @@ export default {
           red: '#EF4444',
           yellow: '#F59E0B',
           cyan: '#06B6D4',
-          orange: '#F97316'
+          orange: '#F97316',
+          pink: '#EC4899'
         }
       },
       fontFamily: {

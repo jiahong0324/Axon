@@ -491,7 +491,7 @@ export default function SettingsPage() {
         </Section>
         <Section id="appearance" title="Appearance">
           <ThemeSegment value={themeCtx.theme} onChange={themeCtx.setTheme} />
-          <Segment label="Accent" value={themeCtx.accentColor} onChange={themeCtx.setAccentColor} options={['blue', 'purple', 'green', 'cyan', 'orange', 'red']} />
+          <Segment label="Accent" value={themeCtx.accentColor} onChange={themeCtx.setAccentColor} options={['blue', 'purple', 'green', 'cyan', 'orange', 'red', 'pink']} />
           <Segment label="Font size" value={themeCtx.fontSize} onChange={themeCtx.setFontSize} options={['small', 'medium', 'large']} />
           <ToggleRow label="Compact mode" checked={themeCtx.compactMode} onChange={themeCtx.setCompactMode} />
         </Section>
@@ -592,12 +592,12 @@ function MinuteSelector({ value, onChange }) {
 }
 
 function accentHex(color) {
-  return { blue: '#3B82F6', purple: '#8B5CF6', green: '#10B981', cyan: '#06B6D4', orange: '#F97316', red: '#EF4444' }[color] || '#3B82F6'
+  return { blue: '#3B82F6', purple: '#8B5CF6', green: '#10B981', cyan: '#06B6D4', orange: '#F97316', red: '#EF4444', pink: '#EC4899' }[color] || '#3B82F6'
 }
 
 function colorName(value) {
   if (!value?.startsWith?.('#')) return value || 'blue'
   const normalized = value.toUpperCase()
-  const match = Object.entries({ blue: '#3B82F6', purple: '#8B5CF6', green: '#10B981', cyan: '#06B6D4', orange: '#F97316', red: '#EF4444' }).find(([, hex]) => hex === normalized)
+  const match = Object.entries({ blue: '#3B82F6', purple: '#8B5CF6', green: '#10B981', cyan: '#06B6D4', orange: '#F97316', red: '#EF4444', pink: '#EC4899' }).find(([, hex]) => hex === normalized)
   return match?.[0] || 'blue'
 }

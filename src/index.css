@@ -681,3 +681,15 @@ input, select, textarea { font-size: 16px; }
   --color-theme-800: 153 27 27;
   --color-theme-900: 127 29 29;
 }
+[data-accent="pink"] {
+  --color-theme-50: 253 242 248;
+  --color-theme-100: 252 231 243;
+  --color-theme-200: 251 207 232;
+  --color-theme-300: 249 168 212;
+  --color-theme-400: 244 114 182;
+  --color-theme-500: 236 72 153;
+  --color-theme-600: 219 39 119;
+  --color-theme-700: 190 24 93;
+  --color-theme-800: 157 23 77;
+  --color-theme-900: 131 24 67;
+}

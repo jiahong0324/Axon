@@ -9,7 +9,8 @@ const accents = {
   green: '#10B981',
   cyan: '#06B6D4',
   orange: '#F97316',
-  red: '#EF4444'
+  red: '#EF4444',
+  pink: '#EC4899'
 }
 
 export function ThemeProvider({ children }) {
