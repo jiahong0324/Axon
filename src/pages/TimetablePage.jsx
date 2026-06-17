@@ -1,4 +1,4 @@
-import { ChevronDown, Clock, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
+import { ChevronDown, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import ClassTypeBadge from '../components/ClassTypeBadge'
 import { useConfirmDialog } from '../components/ConfirmModal'
