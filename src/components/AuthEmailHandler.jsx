@@ -32,20 +32,20 @@ export default function AuthEmailHandler() {
             studentManager.sendWelcomeEmail(session.user.id).catch(console.error)
           } else {
             // Already received welcome email on this device, so send login email
-            if (!sessionStorage.getItem('login_email_sent')) {
-              sessionStorage.setItem('login_email_sent', 'true')
+            if (!localStorage.getItem('login_email_sent')) {
+              localStorage.setItem('login_email_sent', 'true')
               studentManager.sendLoginEmail(session.user.id).catch(console.error)
             }
           }
         } else {
           // If not brand new, send a login alert email instead
-          if (!sessionStorage.getItem('login_email_sent')) {
-            sessionStorage.setItem('login_email_sent', 'true')
+          if (!localStorage.getItem('login_email_sent')) {
+            localStorage.setItem('login_email_sent', 'true')
             studentManager.sendLoginEmail(session.user.id).catch(console.error)
           }
         }
       } else if (event === 'SIGNED_OUT') {
-        sessionStorage.removeItem('login_email_sent')
+        localStorage.removeItem('login_email_sent')
       }
     })
 

@@ -141,7 +141,7 @@ export default function TimetablePage() {
       </Modal>
       <div className="mb-4 flex items-center justify-center gap-2 md:hidden">
         <div className="scrollbar-hide flex gap-2 overflow-x-auto px-2">
-          {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] shrink-0 rounded-full px-4 text-sm ${mobileDay === index ? 'bg-theme-500 text-white' : 'border border-white/10 text-slate-400'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
+          {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] shrink-0 rounded-full px-4 text-sm border ${mobileDay === index ? 'border-theme-500 bg-theme-500/20 text-theme-400' : 'border-white/10 text-slate-400'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
         </div>
       </div>
       <div className="pb-3">
