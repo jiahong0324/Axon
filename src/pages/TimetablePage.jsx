@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import ClassTypeBadge from '../components/ClassTypeBadge'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -19,10 +19,7 @@ export default function TimetablePage() {
   const [form, setForm] = useState(initialForm)
   const [showForm, setShowForm] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
-  const [mobileDay, setMobileDay] = useState(() => {
-    const day = new Date().getDay()
-    return day >= 1 && day <= 5 ? day - 1 : 0
-  })
+  const [mobileDay, setMobileDay] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
@@ -170,38 +167,25 @@ export default function TimetablePage() {
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 
 function ClassTile({ item, onDelete }) {
-  const borderClass = item.class_type === 'T' ? 'bg-green-500' : item.class_type === 'P' ? 'bg-purple-500' : 'bg-theme-500'
+  const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-theme-500'
   const timeColor = item.class_type === 'T' ? 'text-green-400' : item.class_type === 'P' ? 'text-purple-400' : 'text-theme-400'
-  const bgTypeColor = item.class_type === 'T' ? 'bg-green-500/10' : item.class_type === 'P' ? 'bg-purple-500/10' : 'bg-theme-500/10'
-  const borderColor = item.class_type === 'T' ? 'border-green-500/20' : item.class_type === 'P' ? 'border-purple-500/20' : 'border-theme-500/20'
+  const timeBg = item.class_type === 'T' ? 'bg-green-500/10' : item.class_type === 'P' ? 'bg-purple-500/10' : 'bg-theme-500/10'
 
   return (
-    <article className="group relative flex flex-row md:flex-col gap-3 w-full items-start md:items-stretch">
-      {/* Mobile Time Column (Hidden on md) */}
-      <div className="w-[65px] shrink-0 pt-1 flex flex-col items-end text-right md:hidden">
-        <span className={`font-bold text-[15px] ${timeColor}`}>{formatTime(item.start_time)}</span>
-        <span className="text-slate-400 font-medium text-xs mt-0.5">{formatTime(item.end_time)}</span>
+    <article className={`group relative rounded-xl border border-l-4 border-white/10 ${border} p-3`}>
+      <button className="btn-danger absolute right-1 top-1 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
+      <div className="mb-2 pr-10"><ClassTypeBadge type={item.class_type} /></div>
+      <h3 className="font-semibold text-[15px]">{item.subject}</h3>
+      
+      <div className={`mt-2.5 mb-3 inline-flex items-center gap-1.5 rounded-md px-2 py-1 ${timeBg}`}>
+        <Clock className={`h-3.5 w-3.5 ${timeColor}`} />
+        <span className={`font-bold ${timeColor}`}>{formatTime(item.start_time)}</span>
+        <span className={`text-xs font-medium opacity-60 ${timeColor}`}>-</span>
+        <span className={`font-bold ${timeColor}`}>{formatTime(item.end_time)}</span>
       </div>
 
-      {/* Card Content */}
-      <div className={`flex-1 rounded-xl border ${borderColor} ${bgTypeColor} p-3 sm:p-4 relative transition-all hover:border-white/30 md:hover:-translate-y-1`}>
-        <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl ${borderClass}`} />
-        
-        <button className="btn-danger absolute right-2 top-2 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
-        
-        {/* Desktop Time (Hidden on mobile) */}
-        <div className="hidden md:flex items-end gap-2 mb-3">
-           <span className={`font-bold text-lg leading-none ${timeColor}`}>{formatTime(item.start_time)}</span>
-           <span className="text-slate-400 font-medium text-sm leading-none mb-0.5">- {formatTime(item.end_time)}</span>
-        </div>
-
-        <div className="mb-2 pr-8"><ClassTypeBadge type={item.class_type} /></div>
-        <h3 className="font-bold text-[14px] sm:text-[15px] text-white leading-snug">{item.subject}</h3>
-        <div className="mt-3 space-y-1.5">
-          <p className="text-slate-300 text-[13px] sm:text-sm flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 shrink-0 opacity-70" /> <span className="leading-tight">{item.classroom || 'TBA'}</span></p>
-          <p className="text-slate-300 text-[13px] sm:text-sm flex items-start gap-2"><User className="h-4 w-4 mt-0.5 shrink-0 opacity-70" /> <span className="leading-tight">{item.lecturer || 'TBA'}</span></p>
-        </div>
-      </div>
+      <p className="muted flex items-start gap-2 text-sm"><MapPin className="h-4 w-4 mt-0.5 shrink-0" /> <span className="leading-tight">{item.classroom || 'TBA'}</span></p>
+      <p className="muted mt-1.5 flex items-start gap-2 text-sm"><User className="h-4 w-4 mt-0.5 shrink-0" /> <span className="leading-tight">{item.lecturer || 'TBA'}</span></p>
     </article>
   )
 }
