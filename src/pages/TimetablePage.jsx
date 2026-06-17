@@ -151,9 +151,8 @@ export default function TimetablePage() {
             const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
             const isToday = index === new Date().getDay() - 1
             return (
-              <div key={day} className={`card ${mobileDay !== index ? 'hidden md:block' : ''} ${isToday ? 'border-theme-500/50 shadow-lg shadow-theme-500/10 relative overflow-hidden' : ''}`}>
-                {isToday && <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-theme-500 to-purple-500" />}
-                <h2 className={`mb-4 flex items-center justify-between font-bold ${isToday ? 'text-theme-400' : ''}`}>
+              <div key={day} className={`card ${mobileDay !== index ? 'hidden md:block' : ''}`}>
+                <h2 className="mb-4 flex items-center justify-between font-bold">
                   {t(`timetable.days.${day}`)}
                   <span className="text-xs font-normal text-slate-500 bg-white/5 px-2 py-1 rounded-full">{dayClasses.length} {t('timetable.addClass').split(' ')[1]}</span>
                 </h2>
