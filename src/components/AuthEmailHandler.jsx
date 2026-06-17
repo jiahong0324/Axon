@@ -22,30 +22,30 @@ export default function AuthEmailHandler() {
       if (event === 'PASSWORD_RECOVERY') {
         navigate('/update-password')
       } else if (event === 'SIGNED_IN' && session?.user) {
-        // Consider a new user ONLY if created within the last 5 minutes
         const isBrandNew = new Date(Date.now()) - new Date(session.user.created_at) < 5 * 60 * 1000;
+        const lastSignIn = session.user.last_sign_in_at;
+        const signInKey = `last_sign_in_${session.user.id}`;
+        const storedSignIn = localStorage.getItem(signInKey);
         
         if (isBrandNew) {
           const welcomeKey = `welcome_sent_${session.user.id}`
           if (!localStorage.getItem(welcomeKey)) {
             localStorage.setItem(welcomeKey, 'true')
             studentManager.sendWelcomeEmail(session.user.id).catch(console.error)
-          } else {
-            // Already received welcome email on this device, so send login email
-            if (!localStorage.getItem('login_email_sent')) {
-              localStorage.setItem('login_email_sent', 'true')
-              studentManager.sendLoginEmail(session.user.id).catch(console.error)
+            
+            if (lastSignIn) {
+              localStorage.setItem(signInKey, lastSignIn)
             }
-          }
-        } else {
-          // If not brand new, send a login alert email instead
-          if (!localStorage.getItem('login_email_sent')) {
-            localStorage.setItem('login_email_sent', 'true')
-            studentManager.sendLoginEmail(session.user.id).catch(console.error)
+            return
           }
         }
+        
+        if (lastSignIn && storedSignIn !== lastSignIn) {
+          localStorage.setItem(signInKey, lastSignIn)
+          studentManager.sendLoginEmail(session.user.id).catch(console.error)
+        }
       } else if (event === 'SIGNED_OUT') {
-        localStorage.removeItem('login_email_sent')
+        // Nothing to do here since last_sign_in_at handles uniqueness
       }
     })
 
