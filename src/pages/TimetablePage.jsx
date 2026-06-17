@@ -107,9 +107,13 @@ export default function TimetablePage() {
             </button>
           )}
         </div>
-        <div className="flex flex-wrap gap-3">
-          <button className="btn-secondary" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4 text-theme-500" /> <span className="hidden sm:inline">{t('timetable.extract')}</span><span className="sm:hidden">Extract</span></button>
-          <button className="btn-primary" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> <span className="hidden sm:inline">{t('timetable.add')}</span><span className="sm:hidden">Add</span></button>
+        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+          <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}>
+            <Sparkles className="h-4 w-4" /> {t('timetable.extract')}
+          </button>
+          <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(true)}>
+            <Plus className="h-4 w-4" /> {t('timetable.add')} <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" />
+          </button>
           {!loading && classes.length > 0 && (
             <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearTimetable} title="Clear All Classes">
               <Trash2 className="h-5 w-5" />
