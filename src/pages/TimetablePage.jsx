@@ -112,7 +112,7 @@ export default function TimetablePage() {
             <Sparkles className="h-4 w-4" /> {t('timetable.extract')}
           </button>
           <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4" /> {t('timetable.add')} <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" />
+            <Plus className="h-4 w-4" /> {t('timetable.addClass')} <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" />
           </button>
           {!loading && classes.length > 0 && (
             <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearTimetable} title="Clear All Classes">
@@ -121,37 +121,42 @@ export default function TimetablePage() {
           )}
         </div>
       </div>
-      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Add Class">
+      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title={t('timetable.addClass')}>
         <form onSubmit={addClass} className="space-y-4">
-          <Field label="Subject"><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
-          <Field label="Day"><select className="input" value={form.day} onChange={e => setForm({ ...form, day: e.target.value })}>{days.map(d => <option key={d}>{d}</option>)}</select></Field>
+          <Field label={t('timetable.subject')}><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
+          <Field label={t('timetable.day')}><select className="input" value={form.day} onChange={e => setForm({ ...form, day: e.target.value })}>{days.map(d => <option key={d} value={d}>{t(`timetable.days.${d}`)}</option>)}</select></Field>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Start Time"><input className="input" type="time" required value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
-            <Field label="End Time"><input className="input" type="time" required value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
+            <Field label={t('timetable.startTime')}><input className="input" type="time" required value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
+            <Field label={t('timetable.endTime')}><input className="input" type="time" required value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
           </div>
-          <Field label="Class Type">
-            <div className="grid grid-cols-3 gap-2">{['L', 'T', 'P'].map(type => <button type="button" key={type} onClick={() => updateType(type)} className={`font-medium rounded-xl border px-1 py-3 text-[13px] sm:text-sm tracking-tight truncate ${form.class_type === type ? 'border-theme-500 bg-theme-500/20 text-theme-400' : 'border-white/10 text-slate-400'}`}>{type === 'L' ? 'Lecture' : type === 'T' ? 'Tutorial' : 'Practical'}</button>)}</div>
+          <Field label={t('timetable.classType')}>
+            <div className="grid grid-cols-3 gap-2">{['L', 'T', 'P'].map(type => <button type="button" key={type} onClick={() => updateType(type)} className={`font-medium rounded-xl border px-1 py-3 text-[13px] sm:text-sm tracking-tight truncate ${form.class_type === type ? 'border-theme-500 bg-theme-500/20 text-theme-400' : 'border-white/10 text-slate-400'}`}>{type === 'L' ? t('timetable.lecture') : type === 'T' ? t('timetable.tutorial') : t('timetable.practical')}</button>)}</div>
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Classroom"><input className="input" placeholder="e.g. DK1" value={form.classroom} onChange={e => setForm({ ...form, classroom: e.target.value })} /></Field>
-            <Field label="Lecturer"><input className="input" placeholder="Name" value={form.lecturer} onChange={e => setForm({ ...form, lecturer: e.target.value })} /></Field>
+            <Field label={t('timetable.classroom')}><input className="input" placeholder="e.g. DK1" value={form.classroom} onChange={e => setForm({ ...form, classroom: e.target.value })} /></Field>
+            <Field label={t('timetable.lecturer')}><input className="input" placeholder="Name" value={form.lecturer} onChange={e => setForm({ ...form, lecturer: e.target.value })} /></Field>
           </div>
-          <button disabled={isSubmitting} className="btn-primary w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Saving...' : 'Save Class'}</button>
+          <button disabled={isSubmitting} className="btn-primary w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Saving...' : t('timetable.saveClass')}</button>
         </form>
       </Modal>
       <div className="mb-4 flex items-center justify-center gap-2 md:hidden">
         <div className="scrollbar-hide flex gap-2 overflow-x-auto px-2">
-          {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] shrink-0 rounded-full px-4 text-sm ${mobileDay === index ? 'bg-theme-500 text-white' : 'border border-white/10 text-slate-400'}`}>{day.slice(0, 3)}</button>)}
+          {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] shrink-0 rounded-full px-4 text-sm ${mobileDay === index ? 'bg-theme-500 text-white' : 'border border-white/10 text-slate-400'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
         </div>
       </div>
       <div className="pb-3">
         {loading ? <SkeletonTimetable /> : (
         <section className="grid gap-4 md:grid-cols-5">
-          {days.map(day => {
+          {days.map((day, index) => {
             const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
+            const isToday = index === new Date().getDay() - 1
             return (
-              <div key={day} className={`card min-h-[360px] ${days[mobileDay] === day ? '' : 'hidden md:block'}`}>
-                <h2 className="mb-4 font-semibold">{day}</h2>
+              <div key={day} className={`card ${mobileDay !== index ? 'hidden md:block' : ''} ${isToday ? 'border-theme-500/50 shadow-lg shadow-theme-500/10 relative overflow-hidden' : ''}`}>
+                {isToday && <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-theme-500 to-purple-500" />}
+                <h2 className={`mb-4 flex items-center justify-between font-bold ${isToday ? 'text-theme-400' : ''}`}>
+                  {t(`timetable.days.${day}`)}
+                  <span className="text-xs font-normal text-slate-500 bg-white/5 px-2 py-1 rounded-full">{dayClasses.length} {t('timetable.addClass').split(' ')[1]}</span>
+                </h2>
                 {dayClasses.length === 0 ? <EmptyState emoji="·" message="Free day" /> : (
                   <div className="space-y-3">
                     {dayClasses.map(c => <ClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}

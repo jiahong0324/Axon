@@ -17,16 +17,17 @@ import { useEffect, useRef, useState } from 'react'
 import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq, analyzeImageWithGroq } from '../lib/groq'
 import { markdownToHtml } from '../lib/utils'
+import { useLanguage } from '../components/LanguageProvider'
 
 const studentActions = [
-  { icon: Brain, mobile: 'Explain', desktop: 'Explain a concept simply', prompt: 'Explain a concept simply' },
-  { icon: FileText, mobile: 'Summarize', desktop: 'Summarize my notes', prompt: 'Summarize my notes' },
-  { icon: HelpCircle, mobile: 'Quiz me', desktop: 'Generate quiz questions', prompt: 'Generate quiz questions' },
-  { icon: CalendarClock, mobile: 'Study plan', desktop: 'Make a study plan', prompt: 'Make a study plan' },
-  { icon: Languages, mobile: 'Translate', desktop: 'Translate to Chinese', prompt: 'Translate to Chinese' },
-  { icon: ListChecks, mobile: 'Prioritize', desktop: 'Help prioritize my tasks', prompt: 'Help prioritize my tasks' },
-  { icon: Sparkles, mobile: 'Notes', desktop: 'Write study notes', prompt: 'Write study notes' },
-  { icon: Code2, mobile: 'Code help', desktop: 'Explain this code', prompt: 'Explain this code' }
+  { icon: Brain, mobile: 'Explain', tKey: 'explain' },
+  { icon: FileText, mobile: 'Summarize', tKey: 'summarize' },
+  { icon: HelpCircle, mobile: 'Quiz me', tKey: 'quiz' },
+  { icon: CalendarClock, mobile: 'Study plan', tKey: 'plan' },
+  { icon: Languages, mobile: 'Translate', tKey: 'translate' },
+  { icon: ListChecks, mobile: 'Prioritize', tKey: 'prioritize' },
+  { icon: Sparkles, mobile: 'Notes', tKey: 'notes' },
+  { icon: Code2, mobile: 'Code help', tKey: 'code' }
 ]
 
 const managerActions = [
@@ -51,6 +52,7 @@ export default function AIHelperPage({ role = 'student' }) {
   const isManager = role === 'manager'
   const welcomeMessage = isManager ? managerWelcome : studentWelcome
   const quickActions = isManager ? managerActions : studentActions
+  const { t } = useLanguage()
 
   const [messages, setMessages] = useState(() => {
     const saved = JSON.parse(localStorage.getItem(isManager ? 'aiManagerChat' : 'aiChat') || '[]')
@@ -159,15 +161,15 @@ export default function AIHelperPage({ role = 'student' }) {
             <Sparkles className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="font-semibold">Quick Actions</h2>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Start with a study task</p>
+            <h2 className="font-semibold">{t('ai.quickActions')}</h2>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('ai.startTask')}</p>
           </div>
         </div>
         <div className="space-y-2">
           {quickActions.map(action => (
-            <button key={action.desktop} className="ai-action-button btn-ghost w-full justify-start text-left text-sm" onClick={() => fillPrompt(action.prompt)}>
+            <button key={action.tKey || action.desktop} className="ai-action-button btn-ghost w-full justify-start text-left text-sm" onClick={() => fillPrompt(action.tKey ? t(`ai.${action.tKey}`) : action.prompt)}>
               <action.icon className="h-4 w-4 text-theme-300" />
-              <span>{action.desktop}</span>
+              <span>{action.tKey ? t(`ai.${action.tKey}`) : action.desktop}</span>
             </button>
           ))}
         </div>
@@ -180,8 +182,8 @@ export default function AIHelperPage({ role = 'student' }) {
               <Bot className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate font-heading text-base font-bold md:text-xl">AI Study Helper</h1>
-              <p className="truncate text-xs" style={{ color: 'var(--text-muted)' }}>Ready for explanations, plans, and study context</p>
+              <h1 className="truncate font-heading text-base font-bold md:text-xl">{t('ai.title')}</h1>
+              <p className="truncate text-xs" style={{ color: 'var(--text-muted)' }}>{t('ai.subtitle')}</p>
             </div>
           </div>
           <button className="ai-clear-button min-h-0 min-w-0 rounded-xl p-2 text-sm transition-colors hover:bg-white/5" style={{ color: 'var(--text-muted)' }} onClick={() => setMessages([welcomeMessage])} aria-label="Clear chat">
@@ -201,8 +203,8 @@ export default function AIHelperPage({ role = 'student' }) {
               <div className="flex w-max gap-2">
                 {quickActions.map(action => (
                   <button
-                    key={action.mobile}
-                    onClick={() => fillPrompt(action.prompt)}
+                    key={action.tKey || action.mobile}
+                    onClick={() => fillPrompt(action.tKey ? t(`ai.${action.tKey}`) : action.prompt)}
                     className="ai-action-chip flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
                     style={{ minHeight: '34px', minWidth: 'auto' }}
                   >
@@ -246,7 +248,7 @@ export default function AIHelperPage({ role = 'student' }) {
                 ref={textareaRef}
                 className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-1 py-2.5 text-base outline-none shadow-none transition-all duration-200 focus:border-0 focus:ring-0 focus:shadow-none"
                 style={{ color: 'var(--text-primary)', maxHeight: '128px', height: '42px' }}
-                placeholder="Ask Axon anything..."
+                placeholder={t('ai.placeholder')}
                 rows={1}
                 value={input}
                 onChange={e => {
