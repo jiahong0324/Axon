@@ -9,6 +9,7 @@ import { askGroq } from '../lib/groq'
 import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml, formatTime } from '../lib/utils'
+import { useLanguage } from '../components/LanguageProvider'
 
 const initialForm = { title: '', reminder_time: '09:00', repeat_type: 'once', is_active: true }
 
@@ -20,6 +21,7 @@ export default function RemindersPage() {
   const [planLoading, setPlanLoading] = useState(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
+  const { t } = useLanguage()
 
   useEffect(() => { fetchItems(); requestPermission() }, [])
   useEffect(() => {
@@ -85,26 +87,26 @@ export default function RemindersPage() {
 
   return (
     <main className="main-content">
-      <h1 className="page-title">Smart Reminders</h1>
+      <h1 className="page-title">{t('reminders.title')}</h1>
       <section className="card mb-6 border-l-4 border-l-purple-500">
         <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-          <h2 className="section-header mb-0"><Bot className="h-5 w-5 text-purple-400" /> AI Daily Study Plan</h2>
-          <button className="btn-plan" onClick={generatePlan}>Generate Today's Plan</button>
+          <h2 className="section-header mb-0"><Bot className="h-5 w-5 text-purple-400" /> {t('reminders.aiPlan')}</h2>
+          <button className="btn-plan" onClick={generatePlan}>{t('reminders.generatePlan')}</button>
         </div>
-        {planLoading ? <div className="skeleton h-36 rounded-xl" /> : plan ? <div className="scrollbar-hide max-h-96 overflow-y-auto text-sm leading-6" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }} /> : <p className="muted">Generate a practical study plan based on today’s classes, assignments, exams, and reminders.</p>}
+        {planLoading ? <div className="skeleton h-36 rounded-xl" /> : plan ? <div className="scrollbar-hide max-h-96 overflow-y-auto text-sm leading-6" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }} /> : <p className="muted">{t('reminders.planDesc')}</p>}
       </section>
       <section className="card">
         <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center justify-between">
-            <h2 className="section-header mb-0"><Bell className="h-5 w-5 text-theme-400" /> My Reminders</h2>
+            <h2 className="section-header mb-0"><Bell className="h-5 w-5 text-theme-400" /> {t('reminders.myReminders')}</h2>
             {items.length > 0 && (
               <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex sm:hidden items-center justify-center gap-2 shrink-0" onClick={clearReminders}>
-                <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
+                <Trash2 className="h-4 w-4" /> <span className="text-sm">{t('reminders.clear')}</span>
               </button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button className={showForm ? 'btn-ghost border-red-500/30 text-red-300' : 'btn-add'} onClick={() => setShowForm(v => !v)}>{showForm ? '✕ Cancel' : <><Plus className="h-4 w-4" /> Add Reminder <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></>}</button>
+            <button className={showForm ? 'btn-ghost border-red-500/30 text-red-300' : 'btn-add'} onClick={() => setShowForm(v => !v)}>{showForm ? '✕ Cancel' : <><Plus className="h-4 w-4" /> {t('reminders.add')} <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></>}</button>
             {items.length > 0 && (
               <button className="hidden sm:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearReminders} title="Clear All Reminders">
                 <Trash2 className="h-5 w-5" />

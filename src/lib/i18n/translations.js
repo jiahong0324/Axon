@@ -12,6 +12,22 @@ export const translations = {
     'settings.language': 'Language',
     'settings.invite': 'Invite a Friend',
     'settings.timetablePrefs': 'Timetable Preferences',
+    'settings.deadlines': 'Deadlines & Due Dates',
+    'settings.assignReminders': 'Assignment due reminders',
+    'settings.examAlerts': 'Exam countdown alerts',
+    'settings.remindBeforeDeadline': 'Remind me before deadline:',
+    'settings.eventStarts': 'Event Start Reminders',
+    'settings.classStarts': 'Class start reminders',
+    'settings.examStarts': 'Exam start reminders',
+    'settings.remindBeforeClass': 'Remind me before class/exam starts',
+    'settings.1day': '1 day',
+    'settings.3days': '3 days',
+    'settings.1week': '1 week',
+    'settings.5min': '5 minutes',
+    'settings.10min': '10 minutes',
+    'settings.15min': '15 minutes',
+    'settings.20min': '20 minutes',
+    'settings.30min': '30 minutes',
     
     // Theme & Appearance
     'theme.light': 'Light',
@@ -74,6 +90,15 @@ export const translations = {
     'exams.upcoming': 'Upcoming',
     'exams.past': 'Past',
     'exams.empty': 'No {type} exams.',
+
+    // Reminders
+    'reminders.title': 'Smart Reminders',
+    'reminders.aiPlan': 'AI Daily Study Plan',
+    'reminders.generatePlan': "Generate Today's Plan",
+    'reminders.planDesc': "Generate a practical study plan based on today's classes, assignments, exams, and reminders.",
+    'reminders.myReminders': 'My Reminders',
+    'reminders.add': 'Add Reminder',
+    'reminders.clear': 'Clear',
   },
   zh: {
     // Settings
@@ -88,6 +113,22 @@ export const translations = {
     'settings.language': '语言',
     'settings.invite': '邀请好友',
     'settings.timetablePrefs': '课表偏好',
+    'settings.deadlines': '截止日期与提醒',
+    'settings.assignReminders': '作业截止提醒',
+    'settings.examAlerts': '考试倒计时提醒',
+    'settings.remindBeforeDeadline': '在截止日期前提醒我：',
+    'settings.eventStarts': '事件开始提醒',
+    'settings.classStarts': '课程开始提醒',
+    'settings.examStarts': '考试开始提醒',
+    'settings.remindBeforeClass': '在课程/考试开始前提醒我：',
+    'settings.1day': '1 天',
+    'settings.3days': '3 天',
+    'settings.1week': '1 周',
+    'settings.5min': '5 分钟',
+    'settings.10min': '10 分钟',
+    'settings.15min': '15 分钟',
+    'settings.20min': '20 分钟',
+    'settings.30min': '30 分钟',
 
     // Theme & Appearance
     'theme.light': '浅色',
@@ -150,5 +191,14 @@ export const translations = {
     'exams.upcoming': '即将到来',
     'exams.past': '已结束',
     'exams.empty': '没有{type}的考试。',
+
+    // Reminders
+    'reminders.title': '智能提醒',
+    'reminders.aiPlan': 'AI 每日学习计划',
+    'reminders.generatePlan': '生成今日计划',
+    'reminders.planDesc': '根据今天的课程、作业、考试和提醒生成实用的学习计划。',
+    'reminders.myReminders': '我的提醒',
+    'reminders.add': '添加提醒',
+    'reminders.clear': '清空',
   }
 }

@@ -466,13 +466,15 @@ export default function SettingsPage() {
 
             <div className="h-px bg-white/10 w-full" />
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-theme-400">Deadlines & Due Dates</h4>
-              <PreferenceToggle label="Assignment due reminders" k="assignmentReminders" />
-              <PreferenceToggle label="Exam countdown alerts" k="examAlerts" />
+              <h4 className="text-sm font-semibold text-theme-400">{t('settings.deadlines')}</h4>
+              <PreferenceToggle label={t('settings.assignReminders')} k="assignmentReminders" />
+              <PreferenceToggle label={t('settings.examAlerts')} k="examAlerts" />
               <div className="mt-2">
-                <Field label="Remind me before deadline:">
+                <Field label={t('settings.remindBeforeDeadline')}>
                   <select key={`due-remind-${prefTick}`} className="input" defaultValue={pref('reminderLeadTime', '3 days')} onChange={e => setPref('reminderLeadTime', e.target.value)}>
-                    {['1 day', '3 days', '1 week'].map(v => <option key={v}>{v}</option>)}
+                    <option value="1 day">{t('settings.1day')}</option>
+                    <option value="3 days">{t('settings.3days')}</option>
+                    <option value="1 week">{t('settings.1week')}</option>
                   </select>
                 </Field>
               </div>
@@ -481,9 +483,9 @@ export default function SettingsPage() {
             <div className="h-px bg-white/10 w-full" />
 
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-purple-400">Event Start Reminders</h4>
-              <PreferenceToggle label="Class start reminders" k="axon_class_notify" />
-              <PreferenceToggle label="Exam start reminders" k="axon_exam_notify" />
+              <h4 className="text-sm font-semibold text-purple-400">{t('settings.eventStarts')}</h4>
+              <PreferenceToggle label={t('settings.classStarts')} k="axon_class_notify" />
+              <PreferenceToggle label={t('settings.examStarts')} k="axon_exam_notify" />
               <div className="mt-2">
                 <MinuteSelector key={`min-sel-${prefTick}`} value={pref('axon_notify_minutes', '10')} onChange={v => setPref('axon_notify_minutes', v)} />
               </div>
@@ -591,12 +593,15 @@ function PreferenceToggle({ label, k }) {
 
 function MinuteSelector({ value, onChange }) {
   const [selected, setSelected] = useState(String(value))
+  const { t } = useLanguage()
 
   useEffect(() => {
     setSelected(String(value))
   }, [value])
 
-  return <div><p className="label">Remind me before class/exam starts</p><div className="flex flex-wrap gap-2">{['5', '10', '15', '20', '30'].map(v => <button key={v} onClick={() => { setSelected(v); onChange(v) }} className={`rounded-full px-4 py-2 text-sm ${selected === v ? 'bg-theme-500 text-white' : 'border border-white/10'}`}>{v} minutes</button>)}</div></div>
+  const mins = ['5', '10', '15', '20', '30']
+
+  return <div><p className="label">{t('settings.remindBeforeClass')}</p><div className="flex flex-wrap gap-2">{mins.map(v => <button key={v} onClick={() => { setSelected(v); onChange(v) }} className={`rounded-full px-4 py-2 text-sm ${selected === v ? 'bg-theme-500 text-white' : 'border border-white/10'}`}>{t(`settings.${v}min`)}</button>)}</div></div>
 }
 
 function accentHex(color) {
