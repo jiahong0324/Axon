@@ -96,7 +96,22 @@ export default function ManagerSettingsPage() {
         </Section>
 
         <Section title="Appearance">
-          <p className="label">Theme</p>
+          <Field label="Language">
+            <select 
+              className="input mb-2" 
+              value={localStorage.getItem('appLanguage') || 'en'} 
+              onChange={e => {
+                const val = e.target.value
+                localStorage.setItem('appLanguage', val)
+                window.dispatchEvent(new CustomEvent('language-changed', { detail: val }))
+                showToast('Language updated', 'success')
+              }}
+            >
+              <option value="en">English</option>
+              <option value="zh">中文</option>
+            </select>
+          </Field>
+          <p className="label mt-2">Theme</p>
           <div className="grid grid-cols-3 gap-2">
             {['dark', 'light', 'system'].map(option => <button key={option} className={`rounded-xl px-3 py-2 text-sm capitalize ${themeCtx.theme === option ? 'bg-amber-500 text-white' : 'border border-white/10'}`} onClick={() => themeCtx.setTheme(option)}>{option}</button>)}
           </div>

@@ -490,6 +490,12 @@ export default function SettingsPage() {
           </div>
         </Section>
         <Section id="appearance" title="Appearance">
+          <Field label="Language">
+            <select key={`app-lang-${prefTick}`} className="input" defaultValue={pref('appLanguage', 'en')} onChange={e => setPref('appLanguage', e.target.value)}>
+              <option value="en">English</option>
+              <option value="zh">中文</option>
+            </select>
+          </Field>
           <ThemeSegment value={themeCtx.theme} onChange={themeCtx.setTheme} />
           <Segment label="Accent" value={themeCtx.accentColor} onChange={themeCtx.setAccentColor} options={['blue', 'purple', 'green', 'cyan', 'orange', 'red', 'pink']} />
           <Segment label="Font size" value={themeCtx.fontSize} onChange={themeCtx.setFontSize} options={['small', 'medium', 'large']} />

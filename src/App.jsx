@@ -32,46 +32,50 @@ import OnboardingPage from './pages/OnboardingPage'
 import UpdatePasswordPage from './pages/UpdatePasswordPage'
 import AuthEmailHandler from './components/AuthEmailHandler'
 
+import { LanguageProvider } from './components/LanguageProvider'
+
 export default function App() {
   return (
-    <ThemeProvider>
-      <ToastProvider>
-        <BrowserRouter>
-          <AuthEmailHandler />
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/update-password" element={<UpdatePasswordPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/" element={<LandingLayout />}>
-              <Route index element={<LandingHome />} />
-              <Route path="blog" element={<LandingBlog />} />
-              <Route path="blog/:slug" element={<LandingArticle />} />
-              <Route path="faq" element={<LandingFAQ />} />
-              <Route path="contact" element={<LandingContact />} />
-            </Route>
-            <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
-            <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />
-            <Route path="/assignments" element={<ProtectedRoute requireRole="student"><AssignmentPage /></ProtectedRoute>} />
-            <Route path="/exams" element={<ProtectedRoute requireRole="student"><ExamPage /></ProtectedRoute>} />
-            <Route path="/ai-helper" element={<ProtectedRoute requireRole="student"><AIHelperPage /></ProtectedRoute>} />
-            <Route path="/reminders" element={<ProtectedRoute requireRole="student"><RemindersPage /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute requireRole="student"><SettingsPage /></ProtectedRoute>} />
-            <Route path="/manager" element={<ProtectedRoute requireRole="manager"><ManagerDashboard /></ProtectedRoute>} />
-            <Route path="/manager/students" element={<ProtectedRoute requireRole="manager"><ManagerStudentsPage /></ProtectedRoute>} />
-            <Route path="/manager/students/:studentId" element={<ProtectedRoute requireRole="manager"><ManagerStudentDetail /></ProtectedRoute>} />
-            <Route path="/manager/announcements" element={<ProtectedRoute requireRole="manager"><ManagerAnnouncementsPage /></ProtectedRoute>} />
-            <Route path="/manager/reports" element={<ProtectedRoute requireRole="manager"><ManagerReportsPage /></ProtectedRoute>} />
-            <Route path="/manager/activity" element={<ProtectedRoute requireRole="manager"><ManagerActivityPage /></ProtectedRoute>} />
-            <Route path="/manager/feedback" element={<ProtectedRoute requireRole="manager"><ManagerFeedbackPage /></ProtectedRoute>} />
-            <Route path="/manager/blog" element={<ProtectedRoute requireRole="manager"><ManagerBlogPage /></ProtectedRoute>} />
-            <Route path="/manager/ai-helper" element={<ProtectedRoute requireRole="manager"><AIHelperPage role="manager" /></ProtectedRoute>} />
-            <Route path="/manager/settings" element={<ProtectedRoute requireRole="manager"><ManagerSettingsPage /></ProtectedRoute>} />
-            <Route path="*" element={<Navigate to="/home" />} />
-          </Routes>
-        </BrowserRouter>
-      </ToastProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <BrowserRouter>
+            <AuthEmailHandler />
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/update-password" element={<UpdatePasswordPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/" element={<LandingLayout />}>
+                <Route index element={<LandingHome />} />
+                <Route path="blog" element={<LandingBlog />} />
+                <Route path="blog/:slug" element={<LandingArticle />} />
+                <Route path="faq" element={<LandingFAQ />} />
+                <Route path="contact" element={<LandingContact />} />
+              </Route>
+              <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
+              <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />
+              <Route path="/assignments" element={<ProtectedRoute requireRole="student"><AssignmentPage /></ProtectedRoute>} />
+              <Route path="/exams" element={<ProtectedRoute requireRole="student"><ExamPage /></ProtectedRoute>} />
+              <Route path="/ai-helper" element={<ProtectedRoute requireRole="student"><AIHelperPage /></ProtectedRoute>} />
+              <Route path="/reminders" element={<ProtectedRoute requireRole="student"><RemindersPage /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute requireRole="student"><SettingsPage /></ProtectedRoute>} />
+              <Route path="/manager" element={<ProtectedRoute requireRole="manager"><ManagerDashboard /></ProtectedRoute>} />
+              <Route path="/manager/students" element={<ProtectedRoute requireRole="manager"><ManagerStudentsPage /></ProtectedRoute>} />
+              <Route path="/manager/students/:studentId" element={<ProtectedRoute requireRole="manager"><ManagerStudentDetail /></ProtectedRoute>} />
+              <Route path="/manager/announcements" element={<ProtectedRoute requireRole="manager"><ManagerAnnouncementsPage /></ProtectedRoute>} />
+              <Route path="/manager/reports" element={<ProtectedRoute requireRole="manager"><ManagerReportsPage /></ProtectedRoute>} />
+              <Route path="/manager/activity" element={<ProtectedRoute requireRole="manager"><ManagerActivityPage /></ProtectedRoute>} />
+              <Route path="/manager/feedback" element={<ProtectedRoute requireRole="manager"><ManagerFeedbackPage /></ProtectedRoute>} />
+              <Route path="/manager/blog" element={<ProtectedRoute requireRole="manager"><ManagerBlogPage /></ProtectedRoute>} />
+              <Route path="/manager/ai-helper" element={<ProtectedRoute requireRole="manager"><AIHelperPage role="manager" /></ProtectedRoute>} />
+              <Route path="/manager/settings" element={<ProtectedRoute requireRole="manager"><ManagerSettingsPage /></ProtectedRoute>} />
+              <Route path="*" element={<Navigate to="/home" />} />
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   )
 }

@@ -4,19 +4,21 @@ import FeedbackModal from './FeedbackModal'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { initials } from '../lib/utils'
+import { useLanguage } from './LanguageProvider'
 
 const navItems = [
-  { label: 'Home', path: '/home', icon: LayoutDashboard },
-  { label: 'Timetable', path: '/timetable', icon: CalendarDays },
-  { label: 'Assignments', path: '/assignments', icon: CheckSquare },
-  { label: 'Exams', path: '/exams', icon: BookOpen },
-  { label: 'AI Helper', path: '/ai-helper', icon: Bot },
-  { label: 'Reminders', path: '/reminders', icon: Bell },
-  { label: 'Settings', path: '/settings', icon: Settings }
+  { label: 'Home', tKey: 'sidebar.home', path: '/home', icon: LayoutDashboard },
+  { label: 'Timetable', tKey: 'sidebar.timetable', path: '/timetable', icon: CalendarDays },
+  { label: 'Assignments', tKey: 'sidebar.assignments', path: '/assignments', icon: CheckSquare },
+  { label: 'Exams', tKey: 'sidebar.exams', path: '/exams', icon: BookOpen },
+  { label: 'AI Helper', tKey: 'sidebar.aiHelper', path: '/ai-helper', icon: Bot },
+  { label: 'Reminders', tKey: 'sidebar.reminders', path: '/reminders', icon: Bell },
+  { label: 'Settings', tKey: 'sidebar.settings', path: '/settings', icon: Settings }
 ]
 
 export default function Sidebar({ user }) {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [moreOpen, setMoreOpen] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const name = user?.user_metadata?.full_name || user?.email || 'Student'
@@ -46,7 +48,7 @@ export default function Sidebar({ user }) {
           {navItems.map(item => (
             <NavLink key={item.path} to={item.path} end={item.path === '/home'} className={linkClass}>
               <item.icon className="h-5 w-5" />
-              {item.label}
+              {item.tKey ? t(item.tKey) : item.label}
             </NavLink>
           ))}
         </nav>
@@ -66,7 +68,7 @@ export default function Sidebar({ user }) {
             <Globe className="h-3.5 w-3.5" /> Official Website
           </NavLink>
           <button onClick={logout} className="btn-ghost w-full justify-start text-red-400 hover:bg-red-500/10 hover:text-red-300">
-            <LogOut className="h-4 w-4" /> Log out
+            <LogOut className="h-4 w-4" /> {t('sidebar.logout')}
           </button>
         </div>
       </aside>
@@ -81,7 +83,7 @@ export default function Sidebar({ user }) {
             {({ isActive }) => <>
               {isActive && <span className="absolute top-1 h-1 w-1 rounded-full bg-theme-400" />}
               <item.icon className="mb-1 h-6 w-6" />
-              <span className="max-w-full truncate">{item.label}</span>
+              <span className="max-w-full truncate">{item.tKey ? t(item.tKey) : item.label}</span>
             </>}
           </NavLink>
         ))}
@@ -101,7 +103,7 @@ export default function Sidebar({ user }) {
               {moreItems.map(item => (
                 <NavLink key={item.path} to={item.path} onClick={() => setMoreOpen(false)} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5">
                   <item.icon className="h-5 w-5 text-theme-500 dark:text-theme-400" />
-                  {item.label}
+                  {item.tKey ? t(item.tKey) : item.label}
                 </NavLink>
               ))}
               <div className="my-2 h-px bg-slate-200 dark:bg-white/10" />
@@ -111,7 +113,7 @@ export default function Sidebar({ user }) {
               </NavLink>
               <button onClick={logout} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-red-400 hover:bg-red-500/10">
                 <LogOut className="h-5 w-5 text-red-400" />
-                Log out
+                {t('sidebar.logout')}
               </button>
               <button onClick={() => { setMoreOpen(false); setFeedbackOpen(true) }} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-theme-500 dark:text-theme-400 hover:bg-slate-100 dark:hover:bg-white/5 font-medium">
                 <MessageSquare className="h-5 w-5" />
