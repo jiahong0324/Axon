@@ -152,9 +152,8 @@ export default function TimetablePage() {
             const isToday = index === new Date().getDay() - 1
             return (
               <div key={day} className={`card ${mobileDay !== index ? 'hidden md:block' : ''}`}>
-                <h2 className="mb-4 flex items-center justify-between font-bold">
+                <h2 className="mb-4 font-bold">
                   {t(`timetable.days.${day}`)}
-                  <span className="text-xs font-normal text-slate-500 bg-white/5 px-2 py-1 rounded-full">{dayClasses.length} {t('timetable.addClass').split(' ')[1]}</span>
                 </h2>
                 {dayClasses.length === 0 ? <EmptyState emoji="·" message="Free day" /> : (
                   <div className="space-y-3">
