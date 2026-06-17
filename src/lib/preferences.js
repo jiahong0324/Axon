@@ -16,7 +16,8 @@ export const DEFAULT_PREFERENCES = {
   theme: 'dark',
   accentColor: 'blue',
   fontSize: 'medium',
-  compactMode: 'false'
+  compactMode: 'false',
+  appLanguage: 'en'
 }
 
 export async function syncPreferences(user) {
@@ -81,6 +82,7 @@ export async function updatePreference(user, key, value) {
   if (key === 'accentColor') window.dispatchEvent(new CustomEvent('accent-changed', { detail: strValue }))
   if (key === 'fontSize') window.dispatchEvent(new CustomEvent('font-size-changed', { detail: strValue }))
   if (key === 'compactMode') window.dispatchEvent(new CustomEvent('compact-changed', { detail: strValue === 'true' }))
+  if (key === 'appLanguage') window.dispatchEvent(new CustomEvent('language-changed', { detail: strValue }))
 
   // 3. Save remotely in Supabase User Metadata
   let currentUser = user
