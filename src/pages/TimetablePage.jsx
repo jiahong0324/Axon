@@ -180,28 +180,14 @@ function Field({ label, children }) { return <label className="block"><span clas
 
 function ClassTile({ item, onDelete }) {
   const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-theme-500'
-  
-  const timeColor = item.class_type === 'T' ? 'text-green-400' : item.class_type === 'P' ? 'text-purple-400' : 'text-theme-400'
-  const timeBg = item.class_type === 'T' ? 'bg-green-500/10' : item.class_type === 'P' ? 'bg-purple-500/10' : 'bg-theme-500/10'
-  const timeBorder = item.class_type === 'T' ? 'border-green-500/20' : item.class_type === 'P' ? 'border-purple-500/20' : 'border-theme-500/20'
-
   return (
-    <article className={`group relative rounded-xl border border-l-4 border-white/10 ${border} p-4 bg-slate-900/40 hover:bg-slate-900/80 transition-colors`}>
-      <button className="btn-danger absolute right-2 top-2 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
-      
-      <div className="mb-3 pr-10"><ClassTypeBadge type={item.class_type} /></div>
-      
-      <h3 className="font-bold text-base leading-snug mb-3 text-slate-100">{item.subject}</h3>
-      
-      <div className={`mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${timeBg} ${timeColor} border ${timeBorder} font-bold text-sm shadow-sm`}>
-        <Clock className="h-4 w-4" />
-        <span>{formatTime(item.start_time)} - {formatTime(item.end_time)}</span>
-      </div>
-      
-      <div className="space-y-2 pt-3 border-t border-white/5">
-        <p className="text-slate-400 text-sm flex items-center gap-2.5"><MapPin className="h-4 w-4 text-slate-500" /> {item.classroom || 'TBA'}</p>
-        <p className="text-slate-400 text-sm flex items-center gap-2.5"><User className="h-4 w-4 text-slate-500" /> {item.lecturer || 'TBA'}</p>
-      </div>
+    <article className={`group relative rounded-xl border border-l-4 border-white/10 ${border} p-3`}>
+      <button className="btn-danger absolute right-1 top-1 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
+      <div className="mb-2 pr-10"><ClassTypeBadge type={item.class_type} /></div>
+      <h3 className="font-semibold">{item.subject}</h3>
+      <p className="muted">{formatTime(item.start_time)} - {formatTime(item.end_time)}</p>
+      <p className="muted mt-2 flex items-center gap-2"><MapPin className="h-4 w-4" /> {item.classroom || 'TBA'}</p>
+      <p className="muted mt-1 flex items-center gap-2"><User className="h-4 w-4" /> {item.lecturer || 'TBA'}</p>
     </article>
   )
 }
