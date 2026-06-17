@@ -202,8 +202,8 @@ input, select, textarea { font-size: 16px; }
   .page-title { @apply text-xl md:text-2xl font-bold font-heading mb-6; }
   .card { @apply glass rounded-xl md:rounded-2xl p-4 md:p-5 transition-all duration-200; }
   .btn-primary { @apply bg-gradient-to-r from-theme-500 to-purple-600 text-white px-5 py-2.5 min-h-[48px] rounded-xl font-medium transition-all duration-200 inline-flex items-center justify-center gap-2 shadow-lg shadow-theme-500/20 disabled:opacity-50 disabled:cursor-not-allowed; }
-  .btn-import { @apply text-emerald-500 px-5 py-2.5 min-h-[48px] rounded-xl font-medium transition-all duration-200 inline-flex items-center justify-center gap-2 border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 hover:border-emerald-500/30; }
-  .btn-add { @apply text-theme-500 px-5 py-2.5 min-h-[48px] rounded-xl font-medium transition-all duration-200 inline-flex items-center justify-center gap-3 border border-theme-500/20 bg-theme-500/10 hover:bg-theme-500/20 hover:border-theme-500/30; }
+  .btn-import { @apply bg-emerald-500 text-white px-5 py-2.5 min-h-[48px] rounded-xl font-medium transition-all duration-200 inline-flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-add { @apply bg-gradient-to-r from-theme-500 to-purple-600 text-white px-5 py-2.5 min-h-[48px] rounded-xl font-medium transition-all duration-200 inline-flex items-center justify-center gap-3 shadow-lg shadow-theme-500/20 disabled:opacity-50 disabled:cursor-not-allowed; }
   .btn-plan { @apply text-purple-500 px-5 py-2.5 min-h-[48px] rounded-xl font-medium transition-all duration-200 inline-flex items-center justify-center gap-2 border border-purple-500/20 bg-purple-500/10 hover:bg-purple-500/20 hover:border-purple-500/30; }
   .btn-ghost { @apply border border-white/10 text-slate-300 px-4 py-3 min-h-[48px] rounded-xl hover:bg-white/5 transition-colors inline-flex items-center justify-center gap-2; }
   .btn-danger { @apply text-red-400 hover:text-red-300 hover:bg-red-500/10 p-3 min-h-[48px] min-w-[48px] rounded-lg transition-colors inline-flex items-center justify-center; }
