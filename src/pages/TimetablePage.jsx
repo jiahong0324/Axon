@@ -170,77 +170,15 @@ export default function TimetablePage() {
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 
 function ClassTile({ item, onDelete }) {
-  const styles = {
-    L: {
-      from: 'from-blue-500/10',
-      to: 'to-blue-600/5',
-      text: 'text-blue-400',
-      iconBg: 'bg-blue-500/10',
-      shadow: 'hover:shadow-[0_8px_30px_-12px_rgba(59,130,246,0.3)]'
-    },
-    T: {
-      from: 'from-emerald-500/10',
-      to: 'to-emerald-600/5',
-      text: 'text-emerald-400',
-      iconBg: 'bg-emerald-500/10',
-      shadow: 'hover:shadow-[0_8px_30px_-12px_rgba(16,185,129,0.3)]'
-    },
-    P: {
-      from: 'from-violet-500/10',
-      to: 'to-violet-600/5',
-      text: 'text-violet-400',
-      iconBg: 'bg-violet-500/10',
-      shadow: 'hover:shadow-[0_8px_30px_-12px_rgba(139,92,246,0.3)]'
-    }
-  }
-
-  const s = styles[item.class_type] || styles.L
-
+  const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-theme-500'
   return (
-    <article className={`group relative flex h-full min-h-[160px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${s.from} ${s.to} p-4 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-slate-800/50 ${s.shadow}`}>
-      
-      {/* Subtle glossy highlight */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      
-      <button className="btn-danger absolute right-3 top-3 z-10 opacity-0 transition-opacity group-hover:opacity-100" onClick={onDelete}>
-        <Trash2 className="h-4 w-4" />
-      </button>
-
-      <div className="relative z-10 flex flex-1 flex-col">
-        {/* Top Header: Time and Badge */}
-        <div className="mb-3 flex items-start justify-between">
-          <div className="flex flex-col pr-6">
-            <span className={`font-black text-[22px] tracking-tight leading-none ${s.text} drop-shadow-sm`}>
-              {formatTime(item.start_time)}
-            </span>
-            <span className="mt-1 font-medium text-xs text-slate-400 opacity-80">
-              until {formatTime(item.end_time)}
-            </span>
-          </div>
-          <div className="shrink-0"><ClassTypeBadge type={item.class_type} /></div>
-        </div>
-
-        {/* Body: Subject */}
-        <h3 className="mb-4 text-[15px] font-bold leading-snug text-slate-100">
-          {item.subject}
-        </h3>
-
-        {/* Footer: Details */}
-        <div className="mt-auto space-y-2 border-t border-white/5 pt-3">
-          <div className="flex items-center gap-2.5 text-sm text-slate-300">
-            <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${s.iconBg}`}>
-              <MapPin className={`h-3.5 w-3.5 ${s.text}`} />
-            </div>
-            <span className="truncate font-medium leading-tight">{item.classroom || 'TBA'}</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-sm text-slate-300">
-            <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${s.iconBg}`}>
-              <User className={`h-3.5 w-3.5 ${s.text}`} />
-            </div>
-            <span className="truncate font-medium leading-tight">{item.lecturer || 'TBA'}</span>
-          </div>
-        </div>
-      </div>
+    <article className={`group relative rounded-xl border border-l-4 border-white/10 ${border} p-3`}>
+      <button className="btn-danger absolute right-1 top-1 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
+      <div className="mb-2 pr-10"><ClassTypeBadge type={item.class_type} /></div>
+      <h3 className="font-semibold">{item.subject}</h3>
+      <p className="muted">{formatTime(item.start_time)} - {formatTime(item.end_time)}</p>
+      <p className="muted mt-2 flex items-center gap-2"><MapPin className="h-4 w-4" /> {item.classroom || 'TBA'}</p>
+      <p className="muted mt-1 flex items-center gap-2"><User className="h-4 w-4" /> {item.lecturer || 'TBA'}</p>
     </article>
   )
 }
