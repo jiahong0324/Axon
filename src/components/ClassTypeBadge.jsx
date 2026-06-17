@@ -1,5 +1,5 @@
 const config = {
-  L: { label: 'Lecture', color: 'border border-theme-200 bg-theme-50 text-theme-700 dark:border-theme-500/30 dark:bg-theme-500/20 dark:text-theme-400' },
+  L: { label: 'Lecture', color: 'border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/20 dark:text-blue-400' },
   T: { label: 'Tutorial', color: 'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-green-500/30 dark:bg-green-500/20 dark:text-green-400' },
   P: { label: 'Practical', color: 'border border-violet-200 bg-violet-50 text-violet-700 dark:border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-400' }
 }

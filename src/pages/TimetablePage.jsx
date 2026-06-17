@@ -167,9 +167,9 @@ export default function TimetablePage() {
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 
 function ClassTile({ item, onDelete }) {
-  const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-theme-500'
-  const timeColor = item.class_type === 'T' ? 'text-green-400' : item.class_type === 'P' ? 'text-purple-400' : 'text-theme-400'
-  const timeBg = item.class_type === 'T' ? 'bg-green-500/10' : item.class_type === 'P' ? 'bg-purple-500/10' : 'bg-theme-500/10'
+  const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-blue-500'
+  const timeColor = item.class_type === 'T' ? 'text-green-400' : item.class_type === 'P' ? 'text-purple-400' : 'text-blue-400'
+  const timeBg = item.class_type === 'T' ? 'bg-green-500/10' : item.class_type === 'P' ? 'bg-purple-500/10' : 'bg-blue-500/10'
 
   return (
     <article className={`group relative rounded-xl border border-l-4 border-white/10 ${border} p-3`}>
