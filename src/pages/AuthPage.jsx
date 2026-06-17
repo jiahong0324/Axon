@@ -2,12 +2,16 @@ import { Loader2, UserCircle } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createProfile, supabase } from '../lib/supabase'
-import { Link, useNavigate } from 'react-router-dom'
-import { createProfile, supabase } from '../lib/supabase'
 import { useToast } from '../components/Toast'
 import { useLanguage } from '../components/LanguageProvider'
+
+export default function AuthPage({ mode = 'login' }) {
+  const navigate = useNavigate()
   const { showToast } = useToast()
   const isRegister = mode === 'register'
+  const [isForgot, setIsForgot] = useState(false)
+  const [isGuest, setIsGuest] = useState(false)
+  const [guestName, setGuestName] = useState('')
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
