@@ -12,6 +12,7 @@ import { buildUserContext } from '../lib/buildUserContext'
 import { SkeletonStats, SkeletonList } from '../components/SkeletonLoader'
 import { supabase } from '../lib/supabase'
 import { daysFromToday, dateLabel, formatTime } from '../lib/utils'
+import { useLanguage } from '../components/LanguageProvider'
 
 export default function HomePage() {
   const [user, setUser] = useState(null)
@@ -24,6 +25,7 @@ export default function HomePage() {
   const [banner, setBanner] = useState(() => localStorage.getItem('axon_pwa_dismissed') !== 'true')
   const [loading, setLoading] = useState(true)
   const { showToast } = useToast()
+  const { t } = useLanguage()
   const [currentTime, setCurrentTime] = useState(new Date())
   const todayName = format(currentTime, 'EEEE')
 
@@ -79,7 +81,7 @@ export default function HomePage() {
   const nextExamDays = exams[0] ? daysFromToday(exams[0].exam_date) : null
   const nextExamValue = nextExamDays === null ? '-' : nextExamDays === 0 ? 'Today!' : nextExamDays
   const hour = currentTime.getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+  const greeting = hour < 12 ? t('home.morning') : hour < 18 ? t('home.afternoon') : t('home.evening')
 
   if (loading) return (
     <main className="home-dashboard main-content scrollbar-hide">
@@ -90,11 +92,11 @@ export default function HomePage() {
       <SkeletonStats />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         <div className="card space-y-4">
-          <h2 className="section-header">📚 Today's Classes</h2>
+          <h2 className="section-header">📚 {t('home.todayClasses')}</h2>
           <SkeletonList count={3} />
         </div>
         <div className="card space-y-4">
-          <h2 className="section-header mb-0">📝 Due Soon</h2>
+          <h2 className="section-header mb-0">📝 {t('home.dueSoon')}</h2>
           <SkeletonList count={3} />
         </div>
       </div>
@@ -134,17 +136,17 @@ export default function HomePage() {
       </header>
 
       <section className="mb-6 grid gap-4 md:grid-cols-3">
-        <Summary icon={BookOpen} label="Today's Classes" value={todayClasses.length} tone="text-theme-600 dark:text-theme-400" border="border-l-theme-500" />
-        <Summary icon={AlertCircle} label="Due Soon" value={dueSoon.length} tone="text-amber-600 dark:text-yellow-400" border="border-l-yellow-500" />
-        <Summary icon={Calendar} label="Days to Next Exam" value={nextExamValue} valueClass={nextExamDays === 0 ? 'text-red-500' : ''} tone="text-violet-600 dark:text-purple-400" border="border-l-purple-500" />
+        <Summary icon={BookOpen} label={t('home.todayClasses')} value={todayClasses.length} tone="text-theme-600 dark:text-theme-400" border="border-l-theme-500" />
+        <Summary icon={AlertCircle} label={t('home.dueSoon')} value={dueSoon.length} tone="text-amber-600 dark:text-yellow-400" border="border-l-yellow-500" />
+        <Summary icon={Calendar} label={t('home.daysToExam')} value={nextExamValue} valueClass={nextExamDays === 0 ? 'text-red-500' : ''} tone="text-violet-600 dark:text-purple-400" border="border-l-purple-500" />
       </section>
 
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         <div className="flex h-full flex-col">
           <div className="home-panel card flex h-full flex-1 flex-col">
-            <h2 className="section-header">📚 Today's Classes</h2>
+            <h2 className="section-header">📚 {t('home.todayClasses')}</h2>
             {todayClasses.length === 0 ? (
-              <div className="flex flex-1 items-center justify-center py-10"><EmptyState emoji="🎉" message="No classes today!" /></div>
+              <div className="flex flex-1 items-center justify-center py-10"><EmptyState emoji="🎉" message={t('home.noClasses')} /></div>
             ) : (
               <div className="space-y-3">{todayClasses.map(c => <ClassCard key={c.id} item={c} />)}</div>
             )}
@@ -154,13 +156,13 @@ export default function HomePage() {
         <div className="flex flex-col gap-4 md:gap-6">
           <section className="home-panel card">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="section-header mb-0">📝 Due Soon</h2>
-              <Link to="/assignments" className="text-sm font-medium text-theme-400 hover:text-theme-300">View all →</Link>
+              <h2 className="section-header mb-0">📝 {t('home.dueSoon')}</h2>
+              <Link to="/assignments" className="text-sm font-medium text-theme-400 hover:text-theme-300">{t('home.viewAll')}</Link>
             </div>
             {dueSoon.length === 0 ? (
               <div className="success-row flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm font-medium text-slate-300">
                 <CheckCircle className="h-5 w-5 text-emerald-400" />
-                No urgent assignments.
+                {t('home.noUrgent')}
               </div>
             ) : (
               <div className="space-y-3">
@@ -179,10 +181,10 @@ export default function HomePage() {
 
           <section className="home-panel card">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="section-header mb-0">📖 Upcoming Exams</h2>
-              <Link to="/exams" className="text-sm font-medium text-theme-400 hover:text-theme-300">View all exams →</Link>
+              <h2 className="section-header mb-0">📖 {t('home.upcomingExams')}</h2>
+              <Link to="/exams" className="text-sm font-medium text-theme-400 hover:text-theme-300">{t('home.viewAllExams')}</Link>
             </div>
-            {exams.length === 0 ? <p className="muted">🎉 No exams coming up!</p> : (
+            {exams.length === 0 ? <p className="muted">🎉 {t('home.noExams')}</p> : (
               <div className="space-y-3">{exams.slice(0, 3).map(exam => <ExamMiniCard key={exam.id} exam={exam} />)}</div>
             )}
           </section>
@@ -191,8 +193,8 @@ export default function HomePage() {
 
       <section className="ai-tip-card card border-l-4 border-l-purple-500 bg-[#1a1f35]">
         <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-          <h2 className="flex items-center gap-2 text-lg font-semibold"><Flame className="h-5 w-5 text-orange-400" /> AI Daily Tip</h2>
-          <button className="btn-ghost px-3 py-2" onClick={refreshTip}><RefreshCw className="h-4 w-4" /> Refresh</button>
+          <h2 className="flex items-center gap-2 text-lg font-semibold"><Flame className="h-5 w-5 text-orange-400" /> {t('home.aiTip')}</h2>
+          <button className="btn-ghost px-3 py-2" onClick={refreshTip}><RefreshCw className="h-4 w-4" /> {t('home.refresh')}</button>
         </div>
         {tipLoading ? <div className="space-y-3"><div className="skeleton h-4 rounded-full" /><div className="skeleton h-4 w-4/5 rounded-full" /><div className="skeleton h-4 w-2/3 rounded-full" /></div> : <p className="text-base leading-relaxed" style={{ color: 'var(--text-secondary, #dbe4f0)' }}>{tip}</p>}
       </section>

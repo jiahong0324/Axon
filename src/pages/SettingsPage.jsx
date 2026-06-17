@@ -12,6 +12,7 @@ import { initials, formatTime } from '../lib/utils'
 import { registerPushSubscription } from '../lib/pushNotifications'
 import { updatePreference } from '../lib/preferences'
 import { studentManager } from '../lib/manageStudent'
+import { useLanguage } from '../components/LanguageProvider'
 const tabs = [
   ['profile', 'Profile'],
   ['account', 'Account'],
@@ -27,6 +28,7 @@ export default function SettingsPage() {
   const themeCtx = useTheme()
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
+  const { t } = useLanguage()
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState({ full_name: '', university: '', course: '', student_id: '', avatar_color: 'blue' })
   const [security, setSecurity] = useState({ email: '', password: '' })
@@ -391,13 +393,13 @@ export default function SettingsPage() {
   return (
     <main className="main-content !pt-0">
       <div className="sticky top-0 z-20 -mx-4 bg-[var(--bg-primary)] px-4 pb-3 pt-[calc(env(safe-area-inset-top)+1.25rem)] md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:pt-[calc(env(safe-area-inset-top)+1.25rem)] border-b border-white/10 md:border-none">
-        <h1 className="page-title mb-3 md:mb-6">Settings</h1>
+        <h1 className="page-title mb-3 md:mb-6">{t('settings.title')}</h1>
         <nav className="scrollbar-hide flex gap-2 overflow-x-auto md:hidden">
-          {tabs.map(([id, label]) => <button key={id} className="min-h-[44px] shrink-0 rounded-full border border-white/10 px-4 text-sm" onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })}>{label}</button>)}
+          {tabs.map(([id, label]) => <button key={id} className="min-h-[44px] shrink-0 rounded-full border border-white/10 px-4 text-sm" onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })}>{t(`settings.${id === 'email-planner' ? 'emailDigest' : id}`)}</button>)}
         </nav>
       </div>
       <div className="grid gap-5 xl:grid-cols-2 mt-4 md:mt-0">
-        <Section id="profile" title="Profile">
+        <Section id="profile" title={t('settings.profile')}>
           <div className="mb-4 flex items-center gap-4">
             <div className="grid h-16 w-16 place-items-center rounded-full text-xl font-bold text-white" style={{ background: accentHex(profile.avatar_color) }}>{initials(profile.full_name || user?.email)}</div>
             <div><p className="font-semibold">{user?.email}</p><p className="muted">Student profile</p></div>
@@ -410,7 +412,7 @@ export default function SettingsPage() {
           <button className="btn-primary w-full md:w-auto" onClick={saveProfile}><Save className="h-4 w-4" /> Save Profile</button>
         </Section>
 
-        <Section id="notifications" title="Notification Preferences">
+        <Section id="notifications" title={t('settings.notifications')}>
           <div className="space-y-6">
             <div className="space-y-2">
               <div className="flex items-start justify-between">
@@ -489,7 +491,7 @@ export default function SettingsPage() {
 
           </div>
         </Section>
-        <Section id="appearance" title="Appearance">
+        <Section id="appearance" title={t('settings.appearance')}>
           <Field label="Language">
             <select key={`app-lang-${prefTick}`} className="input" defaultValue={pref('appLanguage', 'en')} onChange={e => setPref('appLanguage', e.target.value)}>
               <option value="en">English</option>
@@ -501,14 +503,14 @@ export default function SettingsPage() {
           <Segment label="Font size" value={themeCtx.fontSize} onChange={themeCtx.setFontSize} options={['small', 'medium', 'large']} />
           <ToggleRow label="Compact mode" checked={themeCtx.compactMode} onChange={themeCtx.setCompactMode} />
         </Section>
-        <Section id="account" title="Account & Security">
+        <Section id="account" title={t('settings.account')}>
           <Field label="Change email"><input className="input" type="email" value={security.email} onChange={e => setSecurity({ ...security, email: e.target.value })} /></Field>
           <button className="btn-ghost mb-4 w-full md:w-auto" onClick={updateEmail}>Update Email</button>
           <Field label="New password"><input className="input" type="password" value={security.password} onChange={e => setSecurity({ ...security, password: e.target.value })} /></Field>
           <button className="btn-ghost mb-4 w-full md:w-auto" onClick={updatePassword}>Update Password</button>
           <button className="btn-danger w-full md:w-auto" onClick={deleteAccount}><ShieldAlert className="h-4 w-4" /> Delete Account</button>
         </Section>
-        <Section id="invite" title="Invite a Friend">
+        <Section id="invite" title={t('settings.invite')}>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Invite your friends to join Axon and study together.</p>
           <div className="flex flex-col md:flex-row gap-2">
             <input 
@@ -524,16 +526,16 @@ export default function SettingsPage() {
             </button>
           </div>
         </Section>
-        <Section id="ai" title="AI Preferences">
+        <Section id="ai" title={t('settings.ai')}>
           <Field label="Language"><select key={`ai-lang-${prefTick}`} className="input" defaultValue={pref('aiLanguage', 'English')} onChange={e => setPref('aiLanguage', e.target.value)}>{['English', 'Bahasa Malaysia', '中文'].map(v => <option key={v}>{v}</option>)}</select></Field>
           <Field label="Style"><select key={`ai-style-${prefTick}`} className="input" defaultValue={pref('aiStyle', 'Casual')} onChange={e => setPref('aiStyle', e.target.value)}>{['Casual', 'Formal', 'Bullet points only'].map(v => <option key={v}>{v}</option>)}</select></Field>
           <PreferenceToggle label="Auto-generate daily tip" k="dailyTipEnabled" />
         </Section>
-        <Section title="Timetable Preferences">
+        <Section title={t('settings.timetablePrefs')}>
           <Field label="First day of week"><select key={`first-day-${prefTick}`} className="input" defaultValue={pref('firstDay', 'Monday')} onChange={e => setPref('firstDay', e.target.value)}>{['Monday', 'Sunday'].map(v => <option key={v}>{v}</option>)}</select></Field>
           <Field label="Time format"><select key={`time-format-${prefTick}`} className="input" defaultValue={pref('timeFormat', '24hr')} onChange={e => setPref('timeFormat', e.target.value)}>{['12hr', '24hr'].map(v => <option key={v}>{v}</option>)}</select></Field>
         </Section>
-        <Section id="email-planner" title="Email My Planner">
+        <Section id="email-planner" title={t('settings.emailDigest')}>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Send a formatted summary of your academic schedules directly to your registered email address.</p>
           <div className="space-y-3">
             <ToggleRow label="Include Weekly Timetable" checked={digestOptions.classes} onChange={next => setDigestOptions(prev => ({ ...prev, classes: next }))} />
@@ -544,11 +546,11 @@ export default function SettingsPage() {
             <Mail className="h-4 w-4" /> {sendingDigest ? 'Sending Email...' : 'Email Academic Report'}
           </button>
         </Section>
-        <Section id="data" title="Data & Privacy">
+        <Section id="data" title={t('settings.data')}>
           <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
-            <button className="btn-primary" onClick={exportData}><Download className="h-4 w-4" /> Export my data</button>
+            <button className="btn-primary" onClick={exportData}><Download className="h-4 w-4" /> {t('action.export')}</button>
 
-            <button className="btn-ghost" onClick={globalSignOut}><LogOut className="h-4 w-4" /> Sign out all devices</button>
+            <button className="btn-ghost" onClick={globalSignOut}><LogOut className="h-4 w-4" /> {t('action.logoutAll')}</button>
           </div>
         </Section>
       </div>

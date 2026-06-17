@@ -3,13 +3,15 @@ export const translations = {
     // Settings
     'settings.title': 'Settings',
     'settings.profile': 'Profile',
-    'settings.account': 'Account',
+    'settings.account': 'Account & Security',
     'settings.appearance': 'Appearance',
-    'settings.notifications': 'Notifications',
-    'settings.ai': 'AI',
+    'settings.notifications': 'Notification Preferences',
+    'settings.ai': 'AI Preferences',
     'settings.emailDigest': 'Email Digest',
-    'settings.data': 'Data',
+    'settings.data': 'Data & Privacy',
     'settings.language': 'Language',
+    'settings.invite': 'Invite a Friend',
+    'settings.timetablePrefs': 'Timetable Preferences',
     
     // Theme & Appearance
     'theme.light': 'Light',
@@ -19,10 +21,11 @@ export const translations = {
     'language.chinese': '中文',
 
     // General Actions
-    'action.save': 'Save Changes',
+    'action.save': 'Save',
     'action.cancel': 'Cancel',
-    'action.delete': 'Delete',
-    'action.export': 'Export Data',
+    'action.delete': 'Delete Account',
+    'action.export': 'Export my data',
+    'action.logoutAll': 'Sign out all devices',
     
     // Sidebar
     'sidebar.home': 'Home',
@@ -33,18 +36,44 @@ export const translations = {
     'sidebar.reminders': 'Reminders',
     'sidebar.settings': 'Settings',
     'sidebar.logout': 'Sign out',
+
+    // Home
+    'home.morning': 'Good morning',
+    'home.afternoon': 'Good afternoon',
+    'home.evening': 'Good evening',
+    'home.todayClasses': "Today's Classes",
+    'home.dueSoon': 'Due Soon',
+    'home.upcomingExams': 'Upcoming Exams',
+    'home.daysToExam': 'Days to Next Exam',
+    'home.aiTip': 'AI Daily Tip',
+    'home.noClasses': 'No classes today!',
+    'home.noUrgent': 'No urgent assignments.',
+    'home.noExams': 'No exams coming up!',
+    'home.viewAll': 'View all →',
+    'home.viewAllExams': 'View all exams →',
+    'home.refresh': 'Refresh',
+
+    // Timetable & Assignments
+    'timetable.title': 'Timetable',
+    'timetable.clear': 'Clear',
+    'timetable.add': 'Add Class',
+    'timetable.extract': 'Extract from Image',
+    'assignments.title': 'Assignments',
+    'assignments.add': 'Add Assignment',
   },
   zh: {
     // Settings
     'settings.title': '设置',
     'settings.profile': '个人资料',
-    'settings.account': '账户',
+    'settings.account': '账户与安全',
     'settings.appearance': '外观',
-    'settings.notifications': '通知',
-    'settings.ai': '人工智能',
+    'settings.notifications': '通知偏好',
+    'settings.ai': 'AI 偏好',
     'settings.emailDigest': '邮件摘要',
-    'settings.data': '数据',
+    'settings.data': '数据与隐私',
     'settings.language': '语言',
+    'settings.invite': '邀请好友',
+    'settings.timetablePrefs': '课表偏好',
 
     // Theme & Appearance
     'theme.light': '浅色',
@@ -54,10 +83,11 @@ export const translations = {
     'language.chinese': '中文',
 
     // General Actions
-    'action.save': '保存更改',
+    'action.save': '保存',
     'action.cancel': '取消',
-    'action.delete': '删除',
+    'action.delete': '删除账户',
     'action.export': '导出数据',
+    'action.logoutAll': '登出所有设备',
 
     // Sidebar
     'sidebar.home': '首页',
@@ -68,5 +98,29 @@ export const translations = {
     'sidebar.reminders': '提醒',
     'sidebar.settings': '设置',
     'sidebar.logout': '退出登录',
+
+    // Home
+    'home.morning': '早上好',
+    'home.afternoon': '下午好',
+    'home.evening': '晚上好',
+    'home.todayClasses': '今天的课程',
+    'home.dueSoon': '即将截止',
+    'home.upcomingExams': '即将到来的考试',
+    'home.daysToExam': '距离下次考试',
+    'home.aiTip': 'AI 每日提示',
+    'home.noClasses': '今天没有课！',
+    'home.noUrgent': '没有紧急作业。',
+    'home.noExams': '没有即将到来的考试！',
+    'home.viewAll': '查看全部 →',
+    'home.viewAllExams': '查看所有考试 →',
+    'home.refresh': '刷新',
+
+    // Timetable & Assignments
+    'timetable.title': '课表',
+    'timetable.clear': '清空',
+    'timetable.add': '添加课程',
+    'timetable.extract': '从图片提取',
+    'assignments.title': '作业',
+    'assignments.add': '添加作业',
   }
 }

@@ -10,6 +10,7 @@ import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { classColors, days, formatTime } from '../lib/utils'
 import { SkeletonTimetable } from '../components/SkeletonLoader'
+import { useLanguage } from '../components/LanguageProvider'
 
 const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue' }
 
@@ -19,10 +20,14 @@ export default function TimetablePage() {
   const [form, setForm] = useState(initialForm)
   const [showForm, setShowForm] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
-  const [mobileDay, setMobileDay] = useState(0)
+  const [mobileDay, setMobileDay] = useState(() => {
+    const day = new Date().getDay()
+    return day >= 1 && day <= 5 ? day - 1 : 0
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
+  const { t } = useLanguage()
 
   useEffect(() => { fetchClasses() }, [])
   useEffect(() => {
@@ -95,7 +100,7 @@ export default function TimetablePage() {
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div className="flex items-center justify-between">
-          <h1 className="page-title mb-0">Timetable</h1>
+          <h1 className="page-title mb-0">{t('timetable.title')}</h1>
           {!loading && classes.length > 0 && (
             <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex md:hidden items-center justify-center gap-2 shrink-0" onClick={clearTimetable}>
               <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
@@ -103,8 +108,8 @@ export default function TimetablePage() {
           )}
         </div>
         <div className="flex flex-wrap gap-3">
-          <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4" /> Import Screenshot</button>
-          <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Add Class <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" /></button>
+          <button className="btn-secondary" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4 text-theme-500" /> <span className="hidden sm:inline">{t('timetable.extract')}</span><span className="sm:hidden">Extract</span></button>
+          <button className="btn-primary" onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> <span className="hidden sm:inline">{t('timetable.add')}</span><span className="sm:hidden">Add</span></button>
           {!loading && classes.length > 0 && (
             <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearTimetable} title="Clear All Classes">
               <Trash2 className="h-5 w-5" />
