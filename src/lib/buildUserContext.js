@@ -50,7 +50,22 @@ ${announcements.length === 0 ? 'No announcements.' : announcements.slice(0, 5).m
     supabase.from('reminders').select('*').eq('user_id', user.id).eq('is_active', true)
   ])
 
-  const classes = classesRes.data || []
+  let classes = classesRes.data || []
+  
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const savedActive = localStorage.getItem(`axon_active_timetable_${user.id}`) || 'account'
+    if (savedActive !== 'account') {
+      try {
+        const profiles = JSON.parse(localStorage.getItem(`axon_linked_timetables_${user.id}`) || '[]')
+        const activeProfile = profiles.find(p => p.id === savedActive)
+        if (activeProfile && activeProfile.classes) {
+          classes = activeProfile.classes
+        }
+      } catch (e) {
+        console.error('Failed to load linked timetable in AI context', e)
+      }
+    }
+  }
   const assignments = assignmentsRes.data || []
   const exams = examsRes.data || []
   const reminders = remindersRes.data || []

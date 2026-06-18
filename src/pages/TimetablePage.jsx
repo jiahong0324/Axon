@@ -11,15 +11,36 @@ import { supabase } from '../lib/supabase'
 import { classColors, days, formatTime } from '../lib/utils'
 import { SkeletonTimetable } from '../components/SkeletonLoader'
 import { useLanguage } from '../components/LanguageProvider'
+import { clearCache, readCache, writeCache } from '../lib/cache'
 
 const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue' }
+const LIVE_PROFILE_ID = 'account'
+const linkedKey = userId => `axon_linked_timetables_${userId}`
+const activeKey = userId => `axon_active_timetable_${userId}`
+const classesCacheKey = userId => `axon_classes_${userId}`
+
+function readLinkedProfiles(userId) {
+  try {
+    return JSON.parse(localStorage.getItem(linkedKey(userId)) || '[]')
+  } catch {
+    return []
+  }
+}
+
+function saveLinkedProfiles(userId, profiles) {
+  localStorage.setItem(linkedKey(userId), JSON.stringify(profiles))
+}
 
 export default function TimetablePage() {
+  const [user, setUser] = useState(null)
   const [classes, setClasses] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(initialForm)
   const [showForm, setShowForm] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
+  const [linkedProfiles, setLinkedProfiles] = useState([])
+  const [activeProfileId, setActiveProfileId] = useState(LIVE_PROFILE_ID)
+  const [newProfileName, setNewProfileName] = useState('')
   const [mobileDay, setMobileDay] = useState(() => {
     const day = new Date().getDay()
     return day >= 1 && day <= 5 ? day - 1 : 0
@@ -28,8 +49,15 @@ export default function TimetablePage() {
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { t } = useLanguage()
+  const activeProfile = activeProfileId === LIVE_PROFILE_ID
+    ? { id: LIVE_PROFILE_ID, name: t('timetable.liveProfile'), source: 'live' }
+    : linkedProfiles.find(profile => profile.id === activeProfileId)
+  const isLiveProfile = activeProfileId === LIVE_PROFILE_ID
 
-  useEffect(() => { fetchClasses() }, [])
+  useEffect(() => { initializeTimetables() }, [])
+  useEffect(() => {
+    if (user) fetchClasses()
+  }, [user, activeProfileId])
   useEffect(() => {
     function onKeyDown(e) {
       if (e.key === 'Escape') setShowForm(false)
@@ -38,25 +66,98 @@ export default function TimetablePage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  async function fetchClasses() {
+  async function initializeTimetables() {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+    const profiles = readLinkedProfiles(user.id)
+    setLinkedProfiles(profiles)
+    const savedActive = localStorage.getItem(activeKey(user.id)) || LIVE_PROFILE_ID
+    setActiveProfileId(savedActive === LIVE_PROFILE_ID || profiles.some(profile => profile.id === savedActive) ? savedActive : LIVE_PROFILE_ID)
+  }
+
+  async function fetchClasses() {
+    if (!user) return
+    if (!isLiveProfile) {
+      setClasses(activeProfile?.classes || [])
+      setLoading(false)
+      return
+    }
+
+    const cached = readCache(classesCacheKey(user.id), 10 * 60 * 1000)
+    if (cached) {
+      setClasses(cached)
+      setLoading(false)
+    } else {
+      setLoading(true)
+    }
+
     const { data } = await supabase.from('classes').select('*').eq('user_id', user.id)
+    writeCache(classesCacheKey(user.id), data || [])
     setClasses(data || [])
     setLoading(false)
+  }
+
+  function switchProfile(profileId) {
+    if (!user) return
+    localStorage.setItem(activeKey(user.id), profileId)
+    setActiveProfileId(profileId)
+  }
+
+  function persistLinkedProfiles(nextProfiles) {
+    if (!user) return
+    setLinkedProfiles(nextProfiles)
+    saveLinkedProfiles(user.id, nextProfiles)
+  }
+
+  function updateActiveLinkedClasses(nextClasses) {
+    const nextProfiles = linkedProfiles.map(profile =>
+      profile.id === activeProfileId ? { ...profile, classes: nextClasses } : profile
+    )
+    persistLinkedProfiles(nextProfiles)
+    setClasses(nextClasses)
+  }
+
+  function addLinkedProfile() {
+    const name = newProfileName.trim()
+    if (!name) return showToast(t('timetable.profileRequired'), 'error')
+    if (linkedProfiles.some(profile => profile.name.toLowerCase() === name.toLowerCase())) {
+      return showToast(t('timetable.profileExists'), 'error')
+    }
+    const nextProfile = { id: `profile-${Date.now()}`, name, classes: [] }
+    persistLinkedProfiles([...linkedProfiles, nextProfile])
+    setNewProfileName('')
+    switchProfile(nextProfile.id)
+    showToast(t('timetable.profileAdded'), 'success')
+  }
+
+  async function deleteLinkedProfile(profileId) {
+    if (!await confirm({ title: t('timetable.deleteProfileTitle'), message: t('timetable.deleteProfileMessage'), confirmText: t('common.delete') })) return
+    const nextProfiles = linkedProfiles.filter(profile => profile.id !== profileId)
+    persistLinkedProfiles(nextProfiles)
+    if (activeProfileId === profileId) switchProfile(LIVE_PROFILE_ID)
+    showToast(t('timetable.profileDeleted'), 'success')
   }
 
   async function addClass(e) {
     e?.preventDefault()
     setIsSubmitting(true)
-    const { data: { user } } = await supabase.auth.getUser()
+    if (!isLiveProfile) {
+      updateActiveLinkedClasses([...classes, { ...form, id: `local-${Date.now()}` }])
+      showToast(t('timetable.added'), 'success')
+      setForm(initialForm)
+      setShowForm(false)
+      setIsSubmitting(false)
+      return
+    }
     const { error } = await supabase.from('classes').insert({ ...form, user_id: user.id })
     if (error) {
       setIsSubmitting(false)
-      return showToast('Class could not be added.', 'error')
+      return showToast(t('timetable.addFailed'), 'error')
     }
     await logActivity('Added class', 'class', form.subject)
-    showToast('Class added.', 'success')
+    clearCache(classesCacheKey(user.id))
+    showToast(t('timetable.added'), 'success')
     setForm(initialForm)
     setShowForm(false)
     setIsSubmitting(false)
@@ -64,32 +165,48 @@ export default function TimetablePage() {
   }
 
   async function saveAll(items) {
-    const { data: { user } } = await supabase.auth.getUser()
-    const rows = items.map(item => ({ ...item, user_id: user.id, color: item.color || classColors[item.class_type] || 'blue' }))
-    const { error } = await supabase.from('classes').insert(rows)
-    if (error) return showToast('Could not save extracted classes.', 'error')
-    await Promise.all(rows.map(item => logActivity('Added class', 'class', item.subject)))
-    showToast('Extracted classes saved.', 'success')
+    const rows = items.map((item, index) => ({ ...item, id: item.id || `local-${Date.now()}-${index}`, color: item.color || classColors[item.class_type] || 'blue' }))
+    if (!isLiveProfile) {
+      updateActiveLinkedClasses([...classes, ...rows])
+      showToast(t('timetable.savedExtracted'), 'success')
+      setAnalyzerOpen(false)
+      return
+    }
+    const liveRows = rows.map(({ id, ...item }) => ({ ...item, user_id: user.id }))
+    const { error } = await supabase.from('classes').insert(liveRows)
+    if (error) return showToast(t('timetable.saveExtractedFailed'), 'error')
+    await Promise.all(liveRows.map(item => logActivity('Added class', 'class', item.subject)))
+    clearCache(classesCacheKey(user.id))
+    showToast(t('timetable.savedExtracted'), 'success')
     setAnalyzerOpen(false)
     fetchClasses()
   }
 
   async function deleteClass(id) {
-    if (!await confirm({ title: 'Delete class?', message: 'This class will be removed from your timetable.', confirmText: 'Delete' })) return
+    if (!await confirm({ title: t('timetable.deleteTitle'), message: t('timetable.deleteMessage'), confirmText: t('common.delete') })) return
     const deleted = classes.find(c => c.id === id)
-    await supabase.from('classes').delete().eq('id', id)
-    if (deleted) await logActivity('Deleted class', 'class', deleted.subject)
-    setClasses(prev => prev.filter(c => c.id !== id))
-    showToast('Class deleted.', 'success')
+    if (isLiveProfile) {
+      await supabase.from('classes').delete().eq('id', id)
+      if (deleted) await logActivity('Deleted class', 'class', deleted.subject)
+      clearCache(classesCacheKey(user.id))
+      setClasses(prev => prev.filter(c => c.id !== id))
+    } else {
+      updateActiveLinkedClasses(classes.filter(c => c.id !== id))
+    }
+    showToast(t('timetable.deleted'), 'success')
   }
 
   async function clearTimetable() {
-    if (!await confirm({ title: 'Clear timetable?', message: 'All classes will be deleted. This cannot be undone.', confirmText: 'Clear' })) return
-    const { data: { user } } = await supabase.auth.getUser()
-    const { error } = await supabase.from('classes').delete().eq('user_id', user.id)
-    if (error) return showToast('Could not clear timetable.', 'error')
+    if (!await confirm({ title: t('timetable.clearTitle'), message: t('timetable.clearMessage'), confirmText: t('common.clear') })) return
+    if (isLiveProfile) {
+      const { error } = await supabase.from('classes').delete().eq('user_id', user.id)
+      if (error) return showToast(t('timetable.saveExtractedFailed'), 'error')
+      clearCache(classesCacheKey(user.id))
+    } else {
+      updateActiveLinkedClasses([])
+    }
     setClasses([])
-    showToast('Timetable cleared.', 'success')
+    showToast(t('timetable.cleared'), 'success')
   }
 
   function updateType(type) {
@@ -103,7 +220,7 @@ export default function TimetablePage() {
           <h1 className="page-title mb-0">{t('timetable.title')}</h1>
           {!loading && classes.length > 0 && (
             <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex md:hidden items-center justify-center gap-2 shrink-0" onClick={clearTimetable}>
-              <Trash2 className="h-4 w-4" /> <span className="text-sm">Clear</span>
+              <Trash2 className="h-4 w-4" /> <span className="text-sm">{t('timetable.clear')}</span>
             </button>
           )}
         </div>
@@ -115,7 +232,7 @@ export default function TimetablePage() {
             <Plus className="h-4 w-4" /> {t('timetable.addClass')} <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" />
           </button>
           {!loading && classes.length > 0 && (
-            <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearTimetable} title="Clear All Classes">
+            <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
               <Trash2 className="h-5 w-5" />
             </button>
           )}
@@ -136,9 +253,49 @@ export default function TimetablePage() {
             <Field label={t('timetable.classroom')}><input className="input" placeholder="e.g. DK1" value={form.classroom} onChange={e => setForm({ ...form, classroom: e.target.value })} /></Field>
             <Field label={t('timetable.lecturer')}><input className="input" placeholder="Name" value={form.lecturer} onChange={e => setForm({ ...form, lecturer: e.target.value })} /></Field>
           </div>
-          <button disabled={isSubmitting} className="btn-primary w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Saving...' : t('timetable.saveClass')}</button>
+          <button disabled={isSubmitting} className="btn-primary w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? t('common.saving') : t('timetable.saveClass')}</button>
         </form>
       </Modal>
+      <section className="card mb-5">
+        <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-start">
+          <div>
+            <h2 className="section-header mb-1">{t('timetable.linkedTitle')}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t('timetable.linkedDesc')}</p>
+          </div>
+          <div className="rounded-full border border-theme-500/20 bg-theme-500/10 px-3 py-1 text-xs font-semibold text-theme-300">
+            {t('timetable.currentlyViewing')}: {activeProfile?.name || t('timetable.liveProfile')}
+          </div>
+        </div>
+        <div className="mb-4 flex flex-wrap gap-2">
+          <button
+            className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${isLiveProfile ? 'border-theme-500 bg-theme-500 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}
+            onClick={() => switchProfile(LIVE_PROFILE_ID)}
+          >
+            {t('timetable.liveProfile')} <span className="ml-2 text-xs opacity-80">{t('timetable.liveBadge')}</span>
+          </button>
+          {linkedProfiles.map(profile => (
+            <div key={profile.id} className={`flex items-center rounded-xl border transition-colors ${activeProfileId === profile.id ? 'border-theme-500 bg-theme-500/20 text-theme-200' : 'border-white/10 text-slate-400'}`}>
+              <button className="px-3 py-2 text-sm font-semibold" onClick={() => switchProfile(profile.id)}>
+                {profile.name} <span className="ml-2 text-xs opacity-80">{t('timetable.localBadge')}</span>
+              </button>
+              <button className="border-l border-white/10 p-2 text-red-300 hover:bg-red-500/10" onClick={() => deleteLinkedProfile(profile.id)} aria-label={t('common.delete')}>
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+          <input
+            className="input"
+            value={newProfileName}
+            onChange={e => setNewProfileName(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') addLinkedProfile() }}
+            placeholder={t('timetable.profilePlaceholder')}
+            aria-label={t('timetable.profileName')}
+          />
+          <button className="btn-primary" onClick={addLinkedProfile}><Plus className="h-4 w-4" /> {t('timetable.addProfile')}</button>
+        </div>
+      </section>
       <div className="mb-4 flex w-full items-center justify-center md:hidden">
         <div className="flex w-full gap-1.5 px-2">
           {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] flex-1 rounded-full font-bold text-sm border transition-colors ${mobileDay === index ? 'border-theme-500 bg-theme-500 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
@@ -159,7 +316,7 @@ export default function TimetablePage() {
                       {t(`timetable.days.${day}`)}
                     </h2>
                   </div>
-                  {dayClasses.length === 0 ? <EmptyState emoji="·" message="Free day" /> : (
+                  {dayClasses.length === 0 ? <EmptyState emoji="." message={t('timetable.freeDay')} /> : (
                     <div className="space-y-4">
                       {dayClasses.map(c => <MobileClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}
                     </div>
@@ -178,7 +335,7 @@ export default function TimetablePage() {
                   <h2 className="mb-4 font-bold">
                     {t(`timetable.days.${day}`)}
                   </h2>
-                  {dayClasses.length === 0 ? <EmptyState emoji="·" message="Free day" /> : (
+                  {dayClasses.length === 0 ? <EmptyState emoji="." message={t('timetable.freeDay')} /> : (
                     <div className="space-y-3">
                       {dayClasses.map(c => <DesktopClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}
                     </div>
@@ -190,7 +347,7 @@ export default function TimetablePage() {
         </div>
         )}
       </div>
-      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Timetable from Screenshot" maxWidth="max-w-6xl" bodyClassName="overflow-hidden">
+      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title={t('timetable.importTitle')} maxWidth="max-w-6xl" bodyClassName="overflow-hidden">
         <ImageUploadAnalyzer type="timetable" onResult={saveAll} />
       </Modal>
       {ConfirmDialog}

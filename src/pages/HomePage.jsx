@@ -53,7 +53,21 @@ export default function HomePage() {
         .select('*')
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
         .order('created_at', { ascending: false })
-      setClasses(classesRes.data || [])
+      let activeClasses = classesRes.data || []
+      const savedActive = localStorage.getItem(`axon_active_timetable_${user.id}`) || 'account'
+      if (savedActive !== 'account') {
+        try {
+          const profiles = JSON.parse(localStorage.getItem(`axon_linked_timetables_${user.id}`) || '[]')
+          const activeProfile = profiles.find(p => p.id === savedActive)
+          if (activeProfile && activeProfile.classes) {
+            activeClasses = activeProfile.classes
+          }
+        } catch (e) {
+          console.error('Failed to load linked timetable', e)
+        }
+      }
+
+      setClasses(activeClasses)
       setAssignments(assignmentsRes.data || [])
       setExams(examsRes.data || [])
       setAnnouncements((announcementRows || []).filter(a => !sessionStorage.getItem(`axon_ann_dismissed_${a.id}`)))

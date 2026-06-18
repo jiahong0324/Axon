@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { initials } from '../lib/utils'
+import { markExplicitLogout } from '../lib/authEvents'
 
 const navItems = [
   { label: 'Dashboard', path: '/manager', icon: LayoutDashboard },
@@ -24,6 +25,7 @@ export default function ManagerSidebar({ user, profile }) {
   const moreItems = navItems.filter(item => ['Reports', 'Activity', 'Feedback', 'Blog Posts', 'Settings'].includes(item.label))
 
   async function logout() {
+    markExplicitLogout()
     await supabase.auth.signOut()
     navigate('/login')
   }

@@ -3,14 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { studentManager } from '../lib/manageStudent'
 import { useToast } from '../components/Toast'
+import { useLanguage } from '../components/LanguageProvider'
+import { consumeExplicitLogout } from '../lib/authEvents'
 
 export default function AuthEmailHandler() {
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { t } = useLanguage()
 
   useEffect(() => {
     if (window.location.hash.includes('error=access_denied') && window.location.hash.includes('error_code=otp_expired')) {
-      showToast('Your password reset link has expired or is invalid. Please request a new one.', 'error')
+      showToast(t('auth.resetExpired'), 'error')
       window.history.replaceState(null, '', window.location.pathname)
     }
 
@@ -42,7 +45,9 @@ export default function AuthEmailHandler() {
         
         if (lastSignIn && storedSignIn !== lastSignIn) {
           localStorage.setItem(signInKey, lastSignIn)
-          studentManager.sendLoginEmail(session.user.id).catch(console.error)
+          if (consumeExplicitLogout()) {
+            studentManager.sendLoginEmail(session.user.id).catch(console.error)
+          }
         }
       } else if (event === 'SIGNED_OUT') {
         // Nothing to do here since last_sign_in_at handles uniqueness
@@ -53,7 +58,7 @@ export default function AuthEmailHandler() {
       active = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [navigate, showToast, t])
 
   return null
 }

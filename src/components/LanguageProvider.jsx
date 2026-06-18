@@ -16,15 +16,15 @@ export function LanguageProvider({ children }) {
         setLanguageState(storedLang)
       }
     }
-    
-    // Custom event we will dispatch in preferences.js
-    window.addEventListener('language-changed', (e) => {
+    const handleLanguageChanged = (e) => {
       setLanguageState(e.detail)
-    })
+    }
+    
+    window.addEventListener('language-changed', handleLanguageChanged)
     window.addEventListener('preferences-synced', handleSync)
 
     return () => {
-      window.removeEventListener('language-changed', () => {})
+      window.removeEventListener('language-changed', handleLanguageChanged)
       window.removeEventListener('preferences-synced', handleSync)
     }
   }, [language])

@@ -13,6 +13,7 @@ import { registerPushSubscription } from '../lib/pushNotifications'
 import { updatePreference } from '../lib/preferences'
 import { studentManager } from '../lib/manageStudent'
 import { useLanguage } from '../components/LanguageProvider'
+import { markExplicitLogout } from '../lib/authEvents'
 const tabs = [
   ['profile', 'Profile'],
   ['account', 'Account'],
@@ -308,6 +309,7 @@ export default function SettingsPage() {
       const { error } = await supabase.rpc('delete_user')
       if (error) throw error
 
+      markExplicitLogout()
       await supabase.auth.signOut()
       navigate('/login')
     } catch (err) {
@@ -316,6 +318,7 @@ export default function SettingsPage() {
   }
 
   async function globalSignOut() {
+    markExplicitLogout()
     await supabase.auth.signOut({ scope: 'global' })
     navigate('/login')
   }
