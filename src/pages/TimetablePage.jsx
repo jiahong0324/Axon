@@ -41,6 +41,7 @@ export default function TimetablePage() {
   const [linkedProfiles, setLinkedProfiles] = useState([])
   const [activeProfileId, setActiveProfileId] = useState(LIVE_PROFILE_ID)
   const [newProfileName, setNewProfileName] = useState('')
+  const [showAddProfileModal, setShowAddProfileModal] = useState(false)
   const [mobileDay, setMobileDay] = useState(() => {
     const day = new Date().getDay()
     return day >= 1 && day <= 5 ? day - 1 : 0
@@ -70,7 +71,11 @@ export default function TimetablePage() {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
-    const profiles = readLinkedProfiles(user.id)
+    let profiles = readLinkedProfiles(user.id)
+    if (profiles.length > 1) {
+      profiles = [profiles[0]]
+      saveLinkedProfiles(user.id, profiles)
+    }
     setLinkedProfiles(profiles)
     const savedActive = localStorage.getItem(activeKey(user.id)) || LIVE_PROFILE_ID
     setActiveProfileId(savedActive === LIVE_PROFILE_ID || profiles.some(profile => profile.id === savedActive) ? savedActive : LIVE_PROFILE_ID)
@@ -119,6 +124,7 @@ export default function TimetablePage() {
   }
 
   function addLinkedProfile() {
+    if (linkedProfiles.length >= 1) return showToast('Maximum 1 linked timetable allowed.', 'error')
     const name = newProfileName.trim()
     if (!name) return showToast(t('timetable.profileRequired'), 'error')
     if (linkedProfiles.some(profile => profile.name.toLowerCase() === name.toLowerCase())) {
@@ -127,6 +133,7 @@ export default function TimetablePage() {
     const nextProfile = { id: `profile-${Date.now()}`, name, classes: [] }
     persistLinkedProfiles([...linkedProfiles, nextProfile])
     setNewProfileName('')
+    setShowAddProfileModal(false)
     switchProfile(nextProfile.id)
     showToast(t('timetable.profileAdded'), 'success')
   }
@@ -209,13 +216,14 @@ export default function TimetablePage() {
     showToast(t('timetable.cleared'), 'success')
   }
 
+
   function updateType(type) {
     setForm(prev => ({ ...prev, class_type: type, color: classColors[type] }))
   }
 
   return (
     <main className="main-content">
-      <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
+      <div className="mb-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="page-title mb-0">{t('timetable.title')}</h1>
           {!loading && classes.length > 0 && (
@@ -224,20 +232,61 @@ export default function TimetablePage() {
             </button>
           )}
         </div>
-        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-          <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}>
-            <Sparkles className="h-4 w-4" /> {t('timetable.extract')}
-          </button>
-          <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4" /> {t('timetable.addClass')} <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" />
-          </button>
-          {!loading && classes.length > 0 && (
-            <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
-              <Trash2 className="h-5 w-5" />
+
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center bg-[#192436] rounded-xl p-1 w-full md:w-80 border border-white/5 shadow-sm shrink-0">
+             <button 
+                onClick={() => switchProfile(LIVE_PROFILE_ID)}
+                className={`flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition-all ${isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+             >
+                {t('timetable.liveProfile')}
+             </button>
+
+             {linkedProfiles.length > 0 ? (
+               <div className={`flex-1 flex items-center rounded-lg transition-all ${!isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}>
+                 <button 
+                    onClick={() => switchProfile(linkedProfiles[0].id)}
+                    className="flex-1 py-2 px-3 text-sm font-semibold truncate text-left"
+                 >
+                    {linkedProfiles[0].name}
+                 </button>
+                 <button onClick={(e) => { e.stopPropagation(); deleteLinkedProfile(linkedProfiles[0].id); }} className={`p-2 rounded-r-lg transition-colors ${!isLiveProfile ? 'text-white hover:bg-white/20' : 'text-slate-400 hover:text-red-400 hover:bg-white/5'}`}>
+                   <Trash2 className="h-4 w-4" />
+                 </button>
+               </div>
+             ) : (
+               <button 
+                  onClick={() => setShowAddProfileModal(true)}
+                  className="flex-1 py-2 px-3 text-sm font-semibold rounded-lg text-theme-400 hover:bg-theme-500/10 transition-all flex items-center justify-center gap-2"
+               >
+                  <Plus className="h-4 w-4" /> {t('timetable.addProfile')}
+               </button>
+             )}
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+            <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}>
+              <Sparkles className="h-4 w-4" /> {t('timetable.extract')}
             </button>
-          )}
+            <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(true)}>
+              <Plus className="h-4 w-4" /> {t('timetable.addClass')} <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" />
+            </button>
+            {!loading && classes.length > 0 && (
+              <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
+                <Trash2 className="h-5 w-5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
+      <Modal isOpen={showAddProfileModal} onClose={() => setShowAddProfileModal(false)} title={t('timetable.addProfile')}>
+        <div className="space-y-4">
+          <Field label={t('timetable.profileName')}>
+            <input className="input" placeholder={t('timetable.profilePlaceholder')} value={newProfileName} onChange={e => setNewProfileName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addLinkedProfile() }} />
+          </Field>
+          <button className="btn-primary w-full" onClick={addLinkedProfile}>{t('timetable.addProfile')}</button>
+        </div>
+      </Modal>
       <Modal isOpen={showForm} onClose={() => setShowForm(false)} title={t('timetable.addClass')}>
         <form onSubmit={addClass} className="space-y-4">
           <Field label={t('timetable.subject')}><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
@@ -256,46 +305,6 @@ export default function TimetablePage() {
           <button disabled={isSubmitting} className="btn-primary w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? t('common.saving') : t('timetable.saveClass')}</button>
         </form>
       </Modal>
-      <section className="card mb-5">
-        <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-start">
-          <div>
-            <h2 className="section-header mb-1">{t('timetable.linkedTitle')}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t('timetable.linkedDesc')}</p>
-          </div>
-          <div className="rounded-full border border-theme-500/20 bg-theme-500/10 px-3 py-1 text-xs font-semibold text-theme-300">
-            {t('timetable.currentlyViewing')}: {activeProfile?.name || t('timetable.liveProfile')}
-          </div>
-        </div>
-        <div className="mb-4 flex flex-wrap gap-2">
-          <button
-            className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${isLiveProfile ? 'border-theme-500 bg-theme-500 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}
-            onClick={() => switchProfile(LIVE_PROFILE_ID)}
-          >
-            {t('timetable.liveProfile')} <span className="ml-2 text-xs opacity-80">{t('timetable.liveBadge')}</span>
-          </button>
-          {linkedProfiles.map(profile => (
-            <div key={profile.id} className={`flex items-center rounded-xl border transition-colors ${activeProfileId === profile.id ? 'border-theme-500 bg-theme-500/20 text-theme-200' : 'border-white/10 text-slate-400'}`}>
-              <button className="px-3 py-2 text-sm font-semibold" onClick={() => switchProfile(profile.id)}>
-                {profile.name} <span className="ml-2 text-xs opacity-80">{t('timetable.localBadge')}</span>
-              </button>
-              <button className="border-l border-white/10 p-2 text-red-300 hover:bg-red-500/10" onClick={() => deleteLinkedProfile(profile.id)} aria-label={t('common.delete')}>
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="grid gap-2 md:grid-cols-[1fr_auto]">
-          <input
-            className="input"
-            value={newProfileName}
-            onChange={e => setNewProfileName(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') addLinkedProfile() }}
-            placeholder={t('timetable.profilePlaceholder')}
-            aria-label={t('timetable.profileName')}
-          />
-          <button className="btn-primary" onClick={addLinkedProfile}><Plus className="h-4 w-4" /> {t('timetable.addProfile')}</button>
-        </div>
-      </section>
       <div className="mb-4 flex w-full items-center justify-center md:hidden">
         <div className="flex w-full gap-1.5 px-2">
           {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] flex-1 rounded-full font-bold text-sm border transition-colors ${mobileDay === index ? 'border-theme-500 bg-theme-500 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
