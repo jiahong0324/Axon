@@ -226,9 +226,15 @@ export default function TimetablePage() {
       <div className="mb-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="page-title mb-0">{t('timetable.title')}</h1>
-          {!loading && classes.length > 0 && (
-            <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex md:hidden items-center justify-center gap-2 shrink-0" onClick={clearTimetable}>
-              <Trash2 className="h-4 w-4" /> <span className="text-sm">{t('timetable.clear')}</span>
+          {isLiveProfile ? (
+            !loading && classes.length > 0 && (
+              <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex md:hidden items-center justify-center gap-2 shrink-0" onClick={clearTimetable}>
+                <Trash2 className="h-4 w-4" /> <span className="text-sm">{t('timetable.clear')}</span>
+              </button>
+            )
+          ) : (
+            <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex md:hidden items-center justify-center gap-2 shrink-0" onClick={() => deleteLinkedProfile(activeProfileId)}>
+              <Trash2 className="h-4 w-4" /> <span className="text-sm">{t('common.delete')}</span>
             </button>
           )}
         </div>
@@ -259,11 +265,6 @@ export default function TimetablePage() {
                  </button>
                )}
             </div>
-            {!isLiveProfile && (
-               <button onClick={() => deleteLinkedProfile(activeProfileId)} className="text-red-400 hover:bg-red-500/10 p-2 rounded-lg shrink-0 transition-colors" title={t('timetable.deleteProfileTitle')}>
-                 <Trash2 className="h-5 w-5" />
-               </button>
-            )}
           </div>
 
           <div className="flex flex-row gap-2 w-full md:w-auto">
@@ -273,10 +274,16 @@ export default function TimetablePage() {
             <button className="btn-add flex-1 justify-center px-1 sm:px-3 md:flex-none md:w-auto text-[13px] sm:text-sm" onClick={() => setShowForm(true)}>
               <Plus className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.addClass')}</span> <span className="hidden sm:block h-5 w-px bg-white/25 mx-1" /><ChevronDown className="hidden sm:block h-4 w-4 shrink-0" />
             </button>
-            {!loading && classes.length > 0 && (
-              <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
-                <Trash2 className="h-5 w-5" />
-              </button>
+            {isLiveProfile ? (
+              !loading && classes.length > 0 && (
+                <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
+                  <Trash2 className="h-5 w-5" />
+                </button>
+              )
+            ) : (
+                <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={() => deleteLinkedProfile(activeProfileId)} title={t('timetable.deleteProfileTitle')}>
+                  <Trash2 className="h-5 w-5" />
+                </button>
             )}
           </div>
         </div>
