@@ -141,22 +141,27 @@ export default function TimetablePage() {
       </Modal>
       <div className="mb-4 flex items-center justify-center gap-2 md:hidden">
         <div className="scrollbar-hide flex gap-2 overflow-x-auto px-2">
-          {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] shrink-0 rounded-full px-4 text-sm border transition-colors ${mobileDay === index ? 'border-theme-500 bg-theme-500 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
+          {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] shrink-0 rounded-full px-5 font-bold text-sm border transition-colors ${mobileDay === index ? 'border-theme-500 bg-theme-500 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
         </div>
       </div>
       <div className="pb-3">
         {loading ? <SkeletonTimetable /> : (
-        <section className="grid gap-4 md:grid-cols-5">
+        <section className="grid gap-6 md:grid-cols-5 items-start">
           {days.map((day, index) => {
             const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
             const isToday = index === new Date().getDay() - 1
             return (
-              <div key={day} className={`card ${mobileDay !== index ? 'hidden md:block' : ''}`}>
-                <h2 className="mb-4 font-bold">
-                  {t(`timetable.days.${day}`)}
-                </h2>
+              <div key={day} className={`flex flex-col gap-4 ${mobileDay !== index ? 'hidden md:flex' : 'flex'}`}>
+                <div className="flex items-center justify-between md:block md:space-y-0 px-1 md:px-0">
+                  <h2 className={`font-black tracking-wide ${mobileDay === index ? 'text-[28px] text-theme-500 md:text-lg' : 'text-lg text-white'} md:mb-4 ${isToday ? 'md:text-theme-500' : ''}`}>
+                    {t(`timetable.days.${day}`)}
+                  </h2>
+                  <span className="md:hidden rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300 border border-white/10">
+                    {dayClasses.length} Class
+                  </span>
+                </div>
                 {dayClasses.length === 0 ? <EmptyState emoji="·" message="Free day" /> : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {dayClasses.map(c => <ClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}
                   </div>
                 )}
@@ -177,15 +182,46 @@ export default function TimetablePage() {
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 
 function ClassTile({ item, onDelete }) {
-  const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-theme-500'
+  const typeColors = {
+    L: { border: 'border-l-blue-500', text: 'text-blue-400', badge: 'bg-blue-500/20 text-blue-400' },
+    T: { border: 'border-l-emerald-500', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-400' },
+    P: { border: 'border-l-purple-500', text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-400' },
+  }
+  const colors = typeColors[item.class_type] || typeColors['L']
+
+  const formattedStart = formatTime(item.start_time)
+  const formattedEnd = formatTime(item.end_time)
+
   return (
-    <article className={`group relative rounded-xl border border-l-4 border-white/10 ${border} p-3`}>
-      <button className="btn-danger absolute right-1 top-1 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
-      <div className="mb-2 pr-10"><ClassTypeBadge type={item.class_type} /></div>
-      <h3 className="font-semibold">{item.subject}</h3>
-      <p className="muted">{formatTime(item.start_time)} - {formatTime(item.end_time)}</p>
-      <p className="muted mt-2 flex items-center gap-2"><MapPin className="h-4 w-4" /> {item.classroom || 'TBA'}</p>
-      <p className="muted mt-1 flex items-center gap-2"><User className="h-4 w-4" /> {item.lecturer || 'TBA'}</p>
+    <article className="group relative flex gap-3 w-full">
+      <div className={`flex flex-col font-black text-sm pt-1 shrink-0 w-[65px] md:w-[48px] lg:w-[60px] text-center md:text-left ${colors.text}`}>
+        <span>{formattedStart}</span>
+        <span className="opacity-70 mt-1">{formattedEnd}</span>
+      </div>
+
+      <div className={`flex-1 rounded-[20px] border border-white/5 bg-[#1a1b23]/50 p-4 border-l-4 ${colors.border} relative overflow-hidden transition-colors hover:bg-white/[0.03]`}>
+        <button className="btn-danger absolute right-2 top-2 opacity-0 group-hover:opacity-100 z-10" onClick={onDelete}>
+          <Trash2 className="h-4 w-4" />
+        </button>
+        
+        <div className="mb-3 flex items-center justify-between">
+          <ClassTypeBadge type={item.class_type} />
+        </div>
+        
+        <div className={`flex items-start gap-1.5 mb-2 font-bold text-sm ${colors.text}`}>
+          <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>{item.classroom || 'TBA'}</span>
+        </div>
+        
+        <h3 className="font-black text-white mb-4 uppercase leading-tight tracking-wider text-[15px] md:text-xs xl:text-[15px]">
+          {item.subject}
+        </h3>
+        
+        <div className="flex items-center gap-2 text-sm text-slate-400 font-medium">
+          <User className="h-4 w-4 shrink-0" />
+          <span className="truncate">{item.lecturer || 'TBA'}</span>
+        </div>
+      </div>
     </article>
   )
 }

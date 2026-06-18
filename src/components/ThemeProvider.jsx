@@ -17,9 +17,10 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
   const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || 'blue')
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium')
+  const [fontFamily, setFontFamily] = useState(() => localStorage.getItem('fontFamily') || 'sans')
   const [compactMode, setCompactMode] = useState(() => localStorage.getItem('compactMode') === 'true')
 
-  const isMounted = useRef({ theme: false, accentColor: false, fontSize: false, compactMode: false })
+  const isMounted = useRef({ theme: false, accentColor: false, fontSize: false, fontFamily: false, compactMode: false })
 
   useEffect(() => {
     const resolved = theme === 'system'
@@ -54,6 +55,15 @@ export function ThemeProvider({ children }) {
   }, [fontSize])
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-font', fontFamily)
+    localStorage.setItem('fontFamily', fontFamily)
+    if (isMounted.current.fontFamily) {
+      import('../lib/preferences').then(m => m.updatePreference(null, 'fontFamily', fontFamily))
+    }
+    isMounted.current.fontFamily = true
+  }, [fontFamily])
+
+  useEffect(() => {
     localStorage.setItem('compactMode', compactMode)
     if (isMounted.current.compactMode) {
       import('../lib/preferences').then(m => m.updatePreference(null, 'compactMode', compactMode))
@@ -66,6 +76,7 @@ export function ThemeProvider({ children }) {
       setTheme(localStorage.getItem('theme') || 'dark')
       setAccentColor(localStorage.getItem('accentColor') || 'blue')
       setFontSize(localStorage.getItem('fontSize') || 'medium')
+      setFontFamily(localStorage.getItem('fontFamily') || 'sans')
       setCompactMode(localStorage.getItem('compactMode') === 'true')
     }
     
@@ -74,8 +85,8 @@ export function ThemeProvider({ children }) {
   }, [])
 
   const value = useMemo(() => ({
-    theme, setTheme, accentColor, setAccentColor, fontSize, setFontSize, compactMode, setCompactMode
-  }), [theme, accentColor, fontSize, compactMode])
+    theme, setTheme, accentColor, setAccentColor, fontSize, setFontSize, fontFamily, setFontFamily, compactMode, setCompactMode
+  }), [theme, accentColor, fontSize, fontFamily, compactMode])
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

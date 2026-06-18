@@ -503,6 +503,7 @@ export default function SettingsPage() {
           <ThemeSegment value={themeCtx.theme} onChange={themeCtx.setTheme} />
           <Segment label="Accent" value={themeCtx.accentColor} onChange={themeCtx.setAccentColor} options={['blue', 'purple', 'green', 'cyan', 'orange', 'red', 'pink']} />
           <Segment label="Font size" value={themeCtx.fontSize} onChange={themeCtx.setFontSize} options={['small', 'medium', 'large']} />
+          <Segment label="Text style" value={themeCtx.fontFamily} onChange={themeCtx.setFontFamily} options={['sans', 'serif', 'mono']} />
           <ToggleRow label="Compact mode" checked={themeCtx.compactMode} onChange={themeCtx.setCompactMode} />
         </Section>
         <Section id="account" title={t('settings.account')}>

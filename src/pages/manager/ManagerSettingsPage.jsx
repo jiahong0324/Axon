@@ -115,7 +115,15 @@ export default function ManagerSettingsPage() {
           <div className="grid grid-cols-3 gap-2">
             {['dark', 'light', 'system'].map(option => <button key={option} className={`rounded-xl px-3 py-2 text-sm capitalize ${themeCtx.theme === option ? 'bg-amber-500 text-white' : 'border border-white/10'}`} onClick={() => themeCtx.setTheme(option)}>{option}</button>)}
           </div>
-          <p className="muted">Manager amber accent is fixed to keep this portal visually distinct.</p>
+          <p className="label mt-4">Font size</p>
+          <div className="flex flex-wrap gap-2">
+            {['small', 'medium', 'large'].map(opt => <button key={opt} className={`rounded-xl border px-3 py-2 capitalize ${themeCtx.fontSize === opt ? 'border-amber-500 bg-amber-500/20 text-amber-500' : 'border-white/10'}`} onClick={() => themeCtx.setFontSize(opt)}>{opt}</button>)}
+          </div>
+          <p className="label mt-4">Text style</p>
+          <div className="flex flex-wrap gap-2">
+            {['sans', 'serif', 'mono'].map(opt => <button key={opt} className={`rounded-xl border px-3 py-2 capitalize ${themeCtx.fontFamily === opt ? 'border-amber-500 bg-amber-500/20 text-amber-500' : 'border-white/10'}`} onClick={() => themeCtx.setFontFamily(opt)}>{opt}</button>)}
+          </div>
+          <p className="muted mt-4">Manager amber accent is fixed to keep this portal visually distinct.</p>
         </Section>
 
         <Section title="Notifications">
