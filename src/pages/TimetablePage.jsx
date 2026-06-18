@@ -234,34 +234,36 @@ export default function TimetablePage() {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex items-center bg-[#192436] rounded-lg p-0.5 w-full md:max-w-[280px] border border-white/5 shadow-sm shrink-0">
-             <button 
-                onClick={() => switchProfile(LIVE_PROFILE_ID)}
-                className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded-md transition-all ${isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-             >
-                {t('timetable.liveProfile')}
-             </button>
+          <div className="flex w-full md:w-auto items-center gap-2">
+            <div className="flex items-center bg-[#192436] rounded-lg p-0.5 flex-1 md:flex-none md:w-[280px] border border-white/5 shadow-sm">
+               <button 
+                  onClick={() => switchProfile(LIVE_PROFILE_ID)}
+                  className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded-md transition-all ${isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+               >
+                  {t('timetable.liveProfile')}
+               </button>
 
-             {linkedProfiles.length > 0 ? (
-               <div className={`group relative flex-1 flex items-center justify-center rounded-md transition-all ${!isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}>
+               {linkedProfiles.length > 0 ? (
                  <button 
                     onClick={() => switchProfile(linkedProfiles[0].id)}
-                    className="w-full py-1.5 px-2 text-xs font-semibold truncate text-center"
+                    className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded-md truncate text-center transition-all ${!isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
                  >
                     {linkedProfiles[0].name}
                  </button>
-                 <button onClick={(e) => { e.stopPropagation(); deleteLinkedProfile(linkedProfiles[0].id); }} className={`absolute right-0.5 p-1 rounded-md transition-all opacity-0 group-hover:opacity-100 ${!isLiveProfile ? 'text-white hover:bg-white/20' : 'text-slate-400 hover:text-red-400 hover:bg-white/5'}`}>
-                   <Trash2 className="h-3.5 w-3.5" />
+               ) : (
+                 <button 
+                    onClick={() => setShowAddProfileModal(true)}
+                    className="flex-1 py-1.5 px-2 text-xs font-semibold rounded-md text-theme-400 hover:bg-theme-500/10 transition-all flex items-center justify-center gap-1.5"
+                 >
+                    <Plus className="h-3.5 w-3.5" /> {t('timetable.addProfile')}
                  </button>
-               </div>
-             ) : (
-               <button 
-                  onClick={() => setShowAddProfileModal(true)}
-                  className="flex-1 py-1.5 px-2 text-xs font-semibold rounded-md text-theme-400 hover:bg-theme-500/10 transition-all flex items-center justify-center gap-1.5"
-               >
-                  <Plus className="h-3.5 w-3.5" /> {t('timetable.addProfile')}
+               )}
+            </div>
+            {!isLiveProfile && (
+               <button onClick={() => deleteLinkedProfile(activeProfileId)} className="text-red-400 hover:bg-red-500/10 p-2 rounded-lg shrink-0 transition-colors" title={t('timetable.deleteProfileTitle')}>
+                 <Trash2 className="h-5 w-5" />
                </button>
-             )}
+            )}
           </div>
 
           <div className="flex flex-row gap-2 w-full md:w-auto">
