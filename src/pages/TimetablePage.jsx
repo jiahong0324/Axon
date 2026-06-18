@@ -378,7 +378,7 @@ export default function TimetablePage() {
         )}
       </div>
 
-      {!loading && classes.length === 0 && (
+      {!loading && classes.length === 0 && isLiveProfile && (
         <div className="mt-8 flex flex-col md:hidden items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
           <div className="w-16 h-16 bg-theme-500/20 text-theme-400 rounded-full flex items-center justify-center mb-6">
             {isLiveProfile ? <Sparkles className="h-8 w-8" /> : <Plus className="h-8 w-8" />}
