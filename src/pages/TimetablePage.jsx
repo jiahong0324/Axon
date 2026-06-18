@@ -234,7 +234,7 @@ export default function TimetablePage() {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex items-center bg-[#192436] rounded-lg p-0.5 w-full max-w-[280px] border border-white/5 shadow-sm shrink-0">
+          <div className="flex items-center bg-[#192436] rounded-lg p-0.5 w-full md:max-w-[280px] border border-white/5 shadow-sm shrink-0">
              <button 
                 onClick={() => switchProfile(LIVE_PROFILE_ID)}
                 className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded-md transition-all ${isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
