@@ -264,12 +264,12 @@ export default function TimetablePage() {
              )}
           </div>
 
-          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-            <button className="btn-import w-full md:w-auto" onClick={() => setAnalyzerOpen(true)}>
-              <Sparkles className="h-4 w-4" /> {t('timetable.extract')}
+          <div className="flex flex-row gap-2 w-full md:w-auto">
+            <button className="btn-import flex-1 justify-center px-1 sm:px-3 md:flex-none md:w-auto text-[13px] sm:text-sm" onClick={() => setAnalyzerOpen(true)}>
+              <Sparkles className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.extract')}</span>
             </button>
-            <button className="btn-add w-full md:w-auto" onClick={() => setShowForm(true)}>
-              <Plus className="h-4 w-4" /> {t('timetable.addClass')} <span className="h-5 w-px bg-white/25" /><ChevronDown className="h-4 w-4" />
+            <button className="btn-add flex-1 justify-center px-1 sm:px-3 md:flex-none md:w-auto text-[13px] sm:text-sm" onClick={() => setShowForm(true)}>
+              <Plus className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.addClass')}</span> <span className="hidden sm:block h-5 w-px bg-white/25 mx-1" /><ChevronDown className="hidden sm:block h-4 w-4 shrink-0" />
             </button>
             {!loading && classes.length > 0 && (
               <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
