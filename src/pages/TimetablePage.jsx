@@ -229,18 +229,28 @@ export default function TimetablePage() {
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
             {!loading && (
               <>
-                <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('timetable.extract')}>
-                  <Sparkles className="h-5 w-5" />
-                </button>
+                {isLiveProfile && (
+                  <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('timetable.extract')}>
+                    <Sparkles className="h-5 w-5" />
+                  </button>
+                )}
                 <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setShowForm(true)} title={t('timetable.addClass')}>
                   <Plus className="h-5 w-5" />
                 </button>
                 <div className="hidden md:flex flex-row gap-2">
-                  <button className="btn-import justify-center px-3 text-sm" onClick={() => setAnalyzerOpen(true)}>
-                    <Sparkles className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.extract')}</span>
-                  </button>
+                  {isLiveProfile && (
+                    <button className="btn-import justify-center px-3 text-sm" onClick={() => setAnalyzerOpen(true)}>
+                      <Sparkles className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.extract')}</span>
+                    </button>
+                  )}
                   <button className="btn-add justify-center px-3 text-sm" onClick={() => setShowForm(true)}>
-                    <Plus className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.addClass')}</span> <span className="h-5 w-px bg-white/25 mx-1" /><ChevronDown className="h-4 w-4 shrink-0" />
+                    <Plus className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.addClass')}</span>
+                    {isLiveProfile && (
+                      <>
+                        <span className="h-5 w-px bg-white/25 mx-1" />
+                        <ChevronDown className="h-4 w-4 shrink-0" />
+                      </>
+                    )}
                   </button>
                 </div>
                 {classes.length > 0 && (
@@ -371,15 +381,21 @@ export default function TimetablePage() {
       {!loading && classes.length === 0 && (
         <div className="mt-8 flex flex-col md:hidden items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
           <div className="w-16 h-16 bg-theme-500/20 text-theme-400 rounded-full flex items-center justify-center mb-6">
-            <Sparkles className="h-8 w-8" />
+            {isLiveProfile ? <Sparkles className="h-8 w-8" /> : <Plus className="h-8 w-8" />}
           </div>
           <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">No classes yet</h2>
-          <p className="text-slate-400 max-w-sm mb-8 leading-relaxed">Get started by importing your timetable from a screenshot, or add your classes manually.</p>
+          <p className="text-slate-400 max-w-sm mb-8 leading-relaxed">
+            {isLiveProfile 
+              ? "Get started by importing your timetable from a screenshot, or add your classes manually."
+              : "Get started by adding your classes manually."}
+          </p>
           
           <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
-            <button className="btn-import flex-1 justify-center py-3.5 text-[15px]" onClick={() => setAnalyzerOpen(true)}>
-              <Sparkles className="h-5 w-5 shrink-0" /> <span>{t('timetable.extract')}</span>
-            </button>
+            {isLiveProfile && (
+              <button className="btn-import flex-1 justify-center py-3.5 text-[15px]" onClick={() => setAnalyzerOpen(true)}>
+                <Sparkles className="h-5 w-5 shrink-0" /> <span>{t('timetable.extract')}</span>
+              </button>
+            )}
             <button className="btn-add flex-1 justify-center py-3.5 text-[15px]" onClick={() => setShowForm(true)}>
               <Plus className="h-5 w-5 shrink-0" /> <span>{t('timetable.addClass')}</span>
             </button>
