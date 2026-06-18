@@ -84,13 +84,23 @@ export default function ExamPage() {
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div className="flex items-center justify-between">
           <h1 className="page-title mb-0">{t('exams.title')}</h1>
-          {exams.length > 0 && (
-            <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex md:hidden items-center justify-center gap-2 shrink-0" onClick={clearExams}>
-              <Trash2 className="h-4 w-4" /> <span className="text-sm">{t('exams.clear')}</span>
-            </button>
-          )}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <>
+              <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('exams.extract')}>
+                <Sparkles className="h-5 w-5" />
+              </button>
+              <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setModal(true)} title={t('exams.add')}>
+                <Plus className="h-5 w-5" />
+              </button>
+              {exams.length > 0 && (
+                <button className="md:hidden text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1 md:ml-2" onClick={clearExams} title={t('exams.clear')}>
+                  <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('exams.clear')}</span>
+                </button>
+              )}
+            </>
+          </div>
         </div>
-        <div className="flex flex-row gap-2 w-full md:w-auto">
+        <div className="hidden md:flex flex-row gap-2 w-auto">
           <button className="btn-import flex-1 justify-center px-1 sm:px-3 text-[13px] sm:text-sm md:flex-none md:w-auto" onClick={() => setAnalyzerOpen(true)}><Sparkles className="h-4 w-4 shrink-0" /> <span className="truncate">{t('exams.extract')}</span></button>
           <button className="btn-add flex-1 justify-center px-1 sm:px-3 text-[13px] sm:text-sm md:flex-none md:w-auto" onClick={() => setModal(true)}><Plus className="h-4 w-4 shrink-0" /> <span className="truncate">{t('exams.add')}</span> <span className="hidden sm:block h-5 w-px bg-white/25 mx-1" /><ChevronDown className="hidden sm:block h-4 w-4 shrink-0" /></button>
           {exams.length > 0 && (
@@ -100,8 +110,28 @@ export default function ExamPage() {
           )}
         </div>
       </div>
-      <ExamSection title={t('exams.upcoming')} exams={upcoming} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.upcoming'))} />
-      <ExamSection title={t('exams.past')} exams={past} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.past'))} />
+      {exams.length === 0 && (
+        <div className="mt-8 flex flex-col md:hidden items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
+          <div className="w-16 h-16 bg-theme-500/20 text-theme-400 rounded-full flex items-center justify-center mb-6">
+            <Sparkles className="h-8 w-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">No exams yet</h2>
+          <p className="text-slate-400 max-w-sm mb-8 leading-relaxed">Get started by importing your exam schedule from a screenshot, or add them manually.</p>
+          
+          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+            <button className="btn-import flex-1 justify-center py-3.5 text-[15px]" onClick={() => setAnalyzerOpen(true)}>
+              <Sparkles className="h-5 w-5 shrink-0" /> <span>{t('exams.extract')}</span>
+            </button>
+            <button className="btn-add flex-1 justify-center py-3.5 text-[15px]" onClick={() => setModal(true)}>
+              <Plus className="h-5 w-5 shrink-0" /> <span>{t('exams.add')}</span>
+            </button>
+          </div>
+        </div>
+      )}
+      <div className={exams.length === 0 ? 'hidden md:block' : 'block'}>
+        <ExamSection title={t('exams.upcoming')} exams={upcoming} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.upcoming'))} />
+        <ExamSection title={t('exams.past')} exams={past} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.past'))} />
+      </div>
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Exam">
         <form onSubmit={addExam} className="space-y-4">
           <Field label="Subject"><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
