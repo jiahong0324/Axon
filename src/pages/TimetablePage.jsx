@@ -158,9 +158,6 @@ export default function TimetablePage() {
                     <h2 className="font-black tracking-wide text-[28px] text-white">
                       {t(`timetable.days.${day}`)}
                     </h2>
-                    <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300 border border-white/10">
-                      {dayClasses.length} Class
-                    </span>
                   </div>
                   {dayClasses.length === 0 ? <EmptyState emoji="·" message="Free day" /> : (
                     <div className="space-y-4">
