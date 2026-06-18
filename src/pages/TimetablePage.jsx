@@ -243,14 +243,14 @@ export default function TimetablePage() {
              </button>
 
              {linkedProfiles.length > 0 ? (
-               <div className={`flex-1 flex items-center rounded-md transition-all ${!isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}>
+               <div className={`group relative flex-1 flex items-center justify-center rounded-md transition-all ${!isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}>
                  <button 
                     onClick={() => switchProfile(linkedProfiles[0].id)}
-                    className="flex-1 py-1.5 px-2 text-xs font-semibold truncate text-center"
+                    className="w-full py-1.5 px-2 text-xs font-semibold truncate text-center"
                  >
                     {linkedProfiles[0].name}
                  </button>
-                 <button onClick={(e) => { e.stopPropagation(); deleteLinkedProfile(linkedProfiles[0].id); }} className={`p-1.5 rounded-r-md transition-colors ${!isLiveProfile ? 'text-white hover:bg-white/20' : 'text-slate-400 hover:text-red-400 hover:bg-white/5'}`}>
+                 <button onClick={(e) => { e.stopPropagation(); deleteLinkedProfile(linkedProfiles[0].id); }} className={`absolute right-0.5 p-1 rounded-md transition-all opacity-0 group-hover:opacity-100 ${!isLiveProfile ? 'text-white hover:bg-white/20' : 'text-slate-400 hover:text-red-400 hover:bg-white/5'}`}>
                    <Trash2 className="h-3.5 w-3.5" />
                  </button>
                </div>
