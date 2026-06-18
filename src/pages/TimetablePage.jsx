@@ -146,29 +146,51 @@ export default function TimetablePage() {
       </div>
       <div className="pb-3">
         {loading ? <SkeletonTimetable /> : (
-        <section className="grid gap-6 md:grid-cols-5 items-start">
-          {days.map((day, index) => {
-            const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
-            const isToday = index === new Date().getDay() - 1
-            return (
-              <div key={day} className={`flex flex-col gap-4 ${mobileDay !== index ? 'hidden md:flex' : 'flex'}`}>
-                <div className="flex items-center justify-between md:block md:space-y-0 px-1 md:px-0">
-                  <h2 className={`font-black tracking-wide ${mobileDay === index ? 'text-[28px] text-theme-500 md:text-lg' : 'text-lg text-white'} md:mb-4 ${isToday ? 'md:text-theme-500' : ''}`}>
+        <div className="w-full">
+          {/* Mobile View */}
+          <section className="flex flex-col md:hidden">
+            {days.map((day, index) => {
+              if (mobileDay !== index) return null;
+              const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
+              return (
+                <div key={day} className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between px-1">
+                    <h2 className="font-black tracking-wide text-[28px] text-theme-500">
+                      {t(`timetable.days.${day}`)}
+                    </h2>
+                    <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300 border border-white/10">
+                      {dayClasses.length} Class
+                    </span>
+                  </div>
+                  {dayClasses.length === 0 ? <EmptyState emoji="·" message="Free day" /> : (
+                    <div className="space-y-4">
+                      {dayClasses.map(c => <MobileClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </section>
+
+          {/* Desktop View */}
+          <section className="hidden md:grid gap-4 md:grid-cols-5">
+            {days.map((day, index) => {
+              const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
+              return (
+                <div key={day} className="card">
+                  <h2 className="mb-4 font-bold">
                     {t(`timetable.days.${day}`)}
                   </h2>
-                  <span className="md:hidden rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300 border border-white/10">
-                    {dayClasses.length} Class
-                  </span>
+                  {dayClasses.length === 0 ? <EmptyState emoji="·" message="Free day" /> : (
+                    <div className="space-y-3">
+                      {dayClasses.map(c => <DesktopClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}
+                    </div>
+                  )}
                 </div>
-                {dayClasses.length === 0 ? <EmptyState emoji="·" message="Free day" /> : (
-                  <div className="space-y-4">
-                    {dayClasses.map(c => <ClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </section>
+              )
+            })}
+          </section>
+        </div>
         )}
       </div>
       <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Timetable from Screenshot" maxWidth="max-w-6xl" bodyClassName="overflow-hidden">
@@ -181,7 +203,21 @@ export default function TimetablePage() {
 
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 
-function ClassTile({ item, onDelete }) {
+function DesktopClassTile({ item, onDelete }) {
+  const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-theme-500'
+  return (
+    <article className={`group relative rounded-xl border border-l-4 border-white/10 ${border} p-3`}>
+      <button className="btn-danger absolute right-1 top-1 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
+      <div className="mb-2 pr-10"><ClassTypeBadge type={item.class_type} /></div>
+      <h3 className="font-semibold">{item.subject}</h3>
+      <p className="muted">{formatTime(item.start_time)} - {formatTime(item.end_time)}</p>
+      <p className="muted mt-2 flex items-center gap-2"><MapPin className="h-4 w-4" /> {item.classroom || 'TBA'}</p>
+      <p className="muted mt-1 flex items-center gap-2"><User className="h-4 w-4" /> {item.lecturer || 'TBA'}</p>
+    </article>
+  )
+}
+
+function MobileClassTile({ item, onDelete }) {
   const typeColors = {
     L: { border: 'border-l-blue-500', text: 'text-blue-400', badge: 'bg-blue-500/20 text-blue-400' },
     T: { border: 'border-l-emerald-500', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-400' },
@@ -194,7 +230,7 @@ function ClassTile({ item, onDelete }) {
 
   return (
     <article className="group relative flex gap-3 w-full">
-      <div className={`flex flex-col font-black text-sm pt-1 shrink-0 w-[65px] md:w-[48px] lg:w-[60px] text-center md:text-left ${colors.text}`}>
+      <div className={`flex flex-col font-black text-sm pt-1 shrink-0 w-[65px] text-center ${colors.text}`}>
         <span>{formattedStart}</span>
         <span className="opacity-70 mt-1">{formattedEnd}</span>
       </div>
@@ -213,7 +249,7 @@ function ClassTile({ item, onDelete }) {
           <span>{item.classroom || 'TBA'}</span>
         </div>
         
-        <h3 className="font-black text-white mb-4 uppercase leading-tight tracking-wider text-[15px] md:text-xs xl:text-[15px]">
+        <h3 className="font-black text-white mb-4 uppercase leading-tight tracking-wider text-[15px]">
           {item.subject}
         </h3>
         
