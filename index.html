@@ -20,6 +20,45 @@
     <meta name="twitter:description" content="Your Academic Life, Finally Organized." />
     <meta name="twitter:image" content="https://axon-com.vercel.app/icons/logo.png" />
     <title>Axon</title>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        background-color: #0A0F1E;
+      }
+      html[data-theme='light'] body, html[data-theme='light'] {
+        background-color: #f8fafc;
+      }
+      
+      #prerender-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #0A0F1E;
+      }
+      html[data-theme='light'] #prerender-splash {
+        background-color: #f8fafc;
+      }
+      #prerender-splash img {
+        position: relative;
+        z-index: 10;
+        height: 7rem;
+        width: 7rem;
+        border-radius: 1.5rem;
+        object-fit: cover;
+        box-shadow: 0 0 45px 5px rgba(59, 130, 246, 0.45);
+        animation: prerender-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        transition: all 1s;
+      }
+      @keyframes prerender-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: .5; }
+      }
+    </style>
     <script>
       (function() {
         try {
@@ -30,6 +69,10 @@
           if (theme === 'light' || theme === 'dark') {
             document.documentElement.setAttribute('data-theme', theme);
             if (theme === 'dark') document.documentElement.classList.add('dark');
+            var metaThemeColor = document.querySelector('meta[name="theme-color"]');
+            if (metaThemeColor) {
+              metaThemeColor.setAttribute('content', theme === 'dark' ? '#0A0F1E' : '#f8fafc');
+            }
           }
           var accent = localStorage.getItem('accentColor') || 'blue';
           document.documentElement.setAttribute('data-accent', accent);
@@ -38,7 +81,11 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="prerender-splash">
+        <img src="/icons/logo.png" alt="Axon Logo" />
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
