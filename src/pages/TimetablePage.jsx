@@ -226,17 +226,29 @@ export default function TimetablePage() {
       <div className="mb-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="page-title mb-0">{t('timetable.title')}</h1>
-          {isLiveProfile ? (
-            !loading && classes.length > 0 && (
-              <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex md:hidden items-center justify-center gap-2 shrink-0" onClick={clearTimetable}>
-                <Trash2 className="h-4 w-4" /> <span className="text-sm">{t('timetable.clear')}</span>
-              </button>
-            )
-          ) : (
-            <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex md:hidden items-center justify-center gap-2 shrink-0" onClick={() => deleteLinkedProfile(activeProfileId)}>
-              <Trash2 className="h-4 w-4" /> <span className="text-sm">{t('common.delete')}</span>
-            </button>
-          )}
+          <div className="flex items-center gap-1 sm:gap-2">
+            {!loading && (
+              <>
+                <button className="text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('timetable.extract')}>
+                  <Sparkles className="h-5 w-5" />
+                </button>
+                <button className="text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setShowForm(true)} title={t('timetable.addClass')}>
+                  <Plus className="h-5 w-5" />
+                </button>
+                {classes.length > 0 && (
+                  isLiveProfile ? (
+                    <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1 md:ml-2" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
+                      <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('timetable.clear')}</span>
+                    </button>
+                  ) : (
+                    <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1 md:ml-2" onClick={() => deleteLinkedProfile(activeProfileId)} title={t('timetable.deleteProfileTitle')}>
+                      <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('common.delete')}</span>
+                    </button>
+                  )
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -348,25 +360,22 @@ export default function TimetablePage() {
         )}
       </div>
 
-      {!loading && (
-        <div className="mt-4 pb-8 flex flex-row gap-2 w-full md:w-auto md:justify-end">
-          <button className="btn-import flex-1 md:flex-none justify-center px-1 sm:px-3 md:w-auto text-[13px] sm:text-sm" onClick={() => setAnalyzerOpen(true)}>
-            <Sparkles className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.extract')}</span>
-          </button>
-          <button className="btn-add flex-1 md:flex-none justify-center px-1 sm:px-3 md:w-auto text-[13px] sm:text-sm" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.addClass')}</span> <span className="hidden sm:block h-5 w-px bg-white/25 mx-1" /><ChevronDown className="hidden sm:block h-4 w-4 shrink-0" />
-          </button>
-          {isLiveProfile ? (
-            classes.length > 0 && (
-              <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
-                <Trash2 className="h-5 w-5" />
-              </button>
-            )
-          ) : (
-              <button className="hidden md:flex text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 h-[48px] w-[48px] rounded-lg transition-colors items-center justify-center shrink-0" onClick={() => deleteLinkedProfile(activeProfileId)} title={t('timetable.deleteProfileTitle')}>
-                <Trash2 className="h-5 w-5" />
-              </button>
-          )}
+      {!loading && classes.length === 0 && (
+        <div className="mt-8 flex flex-col items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
+          <div className="w-16 h-16 bg-theme-500/20 text-theme-400 rounded-full flex items-center justify-center mb-6">
+            <Sparkles className="h-8 w-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">No classes yet</h2>
+          <p className="text-slate-400 max-w-sm mb-8 leading-relaxed">Get started by importing your timetable from a screenshot, or add your classes manually.</p>
+          
+          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+            <button className="btn-import flex-1 justify-center py-3.5 text-[15px]" onClick={() => setAnalyzerOpen(true)}>
+              <Sparkles className="h-5 w-5 shrink-0" /> <span>{t('timetable.extract')}</span>
+            </button>
+            <button className="btn-add flex-1 justify-center py-3.5 text-[15px]" onClick={() => setShowForm(true)}>
+              <Plus className="h-5 w-5 shrink-0" /> <span>{t('timetable.addClass')}</span>
+            </button>
+          </div>
         </div>
       )}
       <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title={t('timetable.importTitle')} maxWidth="max-w-6xl" bodyClassName="overflow-hidden">
