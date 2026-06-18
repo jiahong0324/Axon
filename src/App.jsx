@@ -3,7 +3,6 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import ProtectedRoute from './components/ProtectedRoute'
 import { ThemeProvider } from './components/ThemeProvider'
 import { ToastProvider } from './components/Toast'
-import SplashLoading from './components/SplashLoading'
 import AuthEmailHandler from './components/AuthEmailHandler'
 import { LanguageProvider } from './components/LanguageProvider'
 
@@ -37,6 +36,14 @@ const LandingArticle = lazy(() => import('./pages/landing/LandingArticle'))
 const LandingFAQ = lazy(() => import('./pages/landing/LandingFAQ'))
 const LandingContact = lazy(() => import('./pages/landing/LandingContact'))
 
+function PageLoader() {
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-[#0A0F1E]">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-theme-500 border-t-transparent" />
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <LanguageProvider>
@@ -44,7 +51,7 @@ export default function App() {
         <ToastProvider>
           <BrowserRouter>
             <AuthEmailHandler />
-            <Suspense fallback={<SplashLoading />}>
+            <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
