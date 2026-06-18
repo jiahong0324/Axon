@@ -226,7 +226,7 @@ export default function TimetablePage() {
       <div className="mb-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="page-title mb-0">{t('timetable.title')}</h1>
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
             {!loading && (
               <>
                 <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('timetable.extract')}>
@@ -235,13 +235,21 @@ export default function TimetablePage() {
                 <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setShowForm(true)} title={t('timetable.addClass')}>
                   <Plus className="h-5 w-5" />
                 </button>
+                <div className="hidden md:flex flex-row gap-2">
+                  <button className="btn-import justify-center px-3 text-sm" onClick={() => setAnalyzerOpen(true)}>
+                    <Sparkles className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.extract')}</span>
+                  </button>
+                  <button className="btn-add justify-center px-3 text-sm" onClick={() => setShowForm(true)}>
+                    <Plus className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.addClass')}</span> <span className="h-5 w-px bg-white/25 mx-1" /><ChevronDown className="h-4 w-4 shrink-0" />
+                  </button>
+                </div>
                 {classes.length > 0 && (
                   isLiveProfile ? (
-                    <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1 md:ml-2" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
+                    <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
                       <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('timetable.clear')}</span>
                     </button>
                   ) : (
-                    <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1 md:ml-2" onClick={() => deleteLinkedProfile(activeProfileId)} title={t('timetable.deleteProfileTitle')}>
+                    <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1" onClick={() => deleteLinkedProfile(activeProfileId)} title={t('timetable.deleteProfileTitle')}>
                       <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('common.delete')}</span>
                     </button>
                   )
@@ -279,15 +287,6 @@ export default function TimetablePage() {
             </div>
           </div>
 
-
-          <div className="hidden md:flex flex-row gap-2 w-auto">
-            <button className="btn-import justify-center px-3 w-auto text-sm" onClick={() => setAnalyzerOpen(true)}>
-              <Sparkles className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.extract')}</span>
-            </button>
-            <button className="btn-add justify-center px-3 w-auto text-sm" onClick={() => setShowForm(true)}>
-              <Plus className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.addClass')}</span> <span className="h-5 w-px bg-white/25 mx-1" /><ChevronDown className="h-4 w-4 shrink-0" />
-            </button>
-          </div>
 
         </div>
       </div>
