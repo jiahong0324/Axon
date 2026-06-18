@@ -139,9 +139,9 @@ export default function TimetablePage() {
           <button disabled={isSubmitting} className="btn-primary w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Saving...' : t('timetable.saveClass')}</button>
         </form>
       </Modal>
-      <div className="mb-4 flex items-center justify-center gap-2 md:hidden">
-        <div className="scrollbar-hide flex gap-2 overflow-x-auto px-2">
-          {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] shrink-0 rounded-full px-5 font-bold text-sm border transition-colors ${mobileDay === index ? 'border-theme-500 bg-theme-500 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
+      <div className="mb-4 flex w-full items-center justify-center md:hidden">
+        <div className="flex w-full gap-1.5 px-2">
+          {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] flex-1 rounded-full font-bold text-sm border transition-colors ${mobileDay === index ? 'border-theme-500 bg-theme-500 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
         </div>
       </div>
       <div className="pb-3">
@@ -155,7 +155,7 @@ export default function TimetablePage() {
               return (
                 <div key={day} className="flex flex-col gap-4">
                   <div className="flex items-center justify-between px-1">
-                    <h2 className="font-black tracking-wide text-[28px] text-theme-500">
+                    <h2 className="font-black tracking-wide text-[28px] text-white">
                       {t(`timetable.days.${day}`)}
                     </h2>
                     <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-slate-300 border border-white/10">
@@ -204,9 +204,10 @@ export default function TimetablePage() {
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 
 function DesktopClassTile({ item, onDelete }) {
-  const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-theme-500'
+  const border = item.class_type === 'T' ? 'border-l-emerald-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-blue-500'
+  const glow = item.class_type === 'T' ? 'from-emerald-500/15' : item.class_type === 'P' ? 'from-purple-500/15' : 'from-blue-500/15'
   return (
-    <article className={`group relative rounded-xl border border-l-4 border-white/10 ${border} p-3`}>
+    <article className={`group relative rounded-xl border border-white/5 bg-[#1a1b23]/50 bg-gradient-to-r ${glow} to-transparent border-l-2 ${border} p-3 transition-colors hover:bg-white/[0.03]`}>
       <button className="btn-danger absolute right-1 top-1 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
       <div className="mb-2 pr-10"><ClassTypeBadge type={item.class_type} /></div>
       <h3 className="font-semibold">{item.subject}</h3>
@@ -219,9 +220,9 @@ function DesktopClassTile({ item, onDelete }) {
 
 function MobileClassTile({ item, onDelete }) {
   const typeColors = {
-    L: { border: 'border-l-blue-500', text: 'text-blue-400', badge: 'bg-blue-500/20 text-blue-400' },
-    T: { border: 'border-l-emerald-500', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-400' },
-    P: { border: 'border-l-purple-500', text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-400' },
+    L: { border: 'border-l-blue-500', glow: 'from-blue-500/15', text: 'text-blue-400', badge: 'bg-blue-500/20 text-blue-400' },
+    T: { border: 'border-l-emerald-500', glow: 'from-emerald-500/15', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-400' },
+    P: { border: 'border-l-purple-500', glow: 'from-purple-500/15', text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-400' },
   }
   const colors = typeColors[item.class_type] || typeColors['L']
 
@@ -230,12 +231,12 @@ function MobileClassTile({ item, onDelete }) {
 
   return (
     <article className="group relative flex gap-3 w-full">
-      <div className={`flex flex-col font-black text-sm pt-1 shrink-0 w-[65px] text-center ${colors.text}`}>
+      <div className={`flex flex-col font-black text-[15px] pt-1 shrink-0 w-[70px] text-center ${colors.text}`}>
         <span>{formattedStart}</span>
         <span className="opacity-70 mt-1">{formattedEnd}</span>
       </div>
 
-      <div className={`flex-1 rounded-[20px] border border-white/5 bg-[#1a1b23]/50 p-4 border-l-4 ${colors.border} relative overflow-hidden transition-colors hover:bg-white/[0.03]`}>
+      <div className={`flex-1 rounded-[20px] border border-white/5 bg-[#1a1b23]/50 bg-gradient-to-r ${colors.glow} to-transparent p-4 border-l-2 ${colors.border} relative overflow-hidden transition-colors hover:bg-white/[0.03]`}>
         <button className="btn-danger absolute right-2 top-2 opacity-0 group-hover:opacity-100 z-10" onClick={onDelete}>
           <Trash2 className="h-4 w-4" />
         </button>
