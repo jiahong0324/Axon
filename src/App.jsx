@@ -5,6 +5,7 @@ import { ThemeProvider } from './components/ThemeProvider'
 import { ToastProvider } from './components/Toast'
 import AuthEmailHandler from './components/AuthEmailHandler'
 import { LanguageProvider } from './components/LanguageProvider'
+import SplashLoading from './components/SplashLoading'
 
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
@@ -33,16 +34,9 @@ const LandingLayout = lazy(() => import('./pages/landing/LandingLayout'))
 const LandingHome = lazy(() => import('./pages/landing/LandingHome'))
 const LandingBlog = lazy(() => import('./pages/landing/LandingBlog'))
 const LandingArticle = lazy(() => import('./pages/landing/LandingArticle'))
+
 const LandingFAQ = lazy(() => import('./pages/landing/LandingFAQ'))
 const LandingContact = lazy(() => import('./pages/landing/LandingContact'))
-
-function PageLoader() {
-  return (
-    <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-[#0A0F1E]">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-theme-500 border-t-transparent" />
-    </div>
-  )
-}
 
 export default function App() {
   return (
@@ -51,7 +45,7 @@ export default function App() {
         <ToastProvider>
           <BrowserRouter>
             <AuthEmailHandler />
-            <Suspense fallback={<PageLoader />}>
+            <Suspense fallback={<SplashLoading />}>
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
