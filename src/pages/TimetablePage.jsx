@@ -206,7 +206,7 @@ function Field({ label, children }) { return <label className="block"><span clas
 function DesktopClassTile({ item, onDelete }) {
   const border = item.class_type === 'T' ? 'border-l-emerald-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-blue-500'
   return (
-    <article className={`group relative rounded-xl border border-white/10 bg-[#1E2028] border-l-4 ${border} p-4 transition-colors hover:bg-[#252833] shadow-sm`}>
+    <article className={`group relative rounded-xl border border-white/10 bg-[#192436] border-l-4 ${border} p-4 transition-colors hover:bg-[#202e45] shadow-sm`}>
       <button className="btn-danger absolute right-1 top-1 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
       <div className="mb-2 pr-10"><ClassTypeBadge type={item.class_type} /></div>
       <h3 className="font-semibold">{item.subject}</h3>
@@ -235,7 +235,7 @@ function MobileClassTile({ item, onDelete }) {
         <span className="opacity-70 mt-1">{formattedEnd}</span>
       </div>
 
-      <div className={`flex-1 rounded-[20px] border border-white/10 bg-[#1E2028] p-5 border-l-4 ${colors.border} relative overflow-hidden shadow-sm transition-colors hover:bg-[#252833]`}>
+      <div className={`flex-1 rounded-[20px] border border-white/10 bg-[#192436] p-5 border-l-4 ${colors.border} relative overflow-hidden shadow-sm transition-colors hover:bg-[#202e45]`}>
         <button className="btn-danger absolute right-2 top-2 opacity-0 group-hover:opacity-100 z-10" onClick={onDelete}>
           <Trash2 className="h-4 w-4" />
         </button>
