@@ -266,7 +266,28 @@ export default function TimetablePage() {
     <main className="main-content">
       <div className="mb-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h1 className="page-title mb-0">{t('timetable.title')}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="page-title mb-0">{t('timetable.title')}</h1>
+            {!loading && (
+              <select 
+                className="bg-slate-800/50 border border-white/10 rounded-lg text-sm text-slate-200 py-1.5 px-3 hover:border-white/20 transition-colors focus:outline-none focus:border-theme-500 cursor-pointer outline-none font-medium h-9"
+                value={activeProfileId}
+                onChange={(e) => {
+                  if (e.target.value === 'add_new') {
+                     setShowAddProfileModal(true)
+                  } else {
+                     switchProfile(e.target.value)
+                  }
+                }}
+              >
+                <option value={LIVE_PROFILE_ID}>{t('timetable.liveProfile')}</option>
+                {linkedProfiles.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+                {linkedProfiles.length === 0 && <option value="add_new">+ {t('timetable.addProfile')}</option>}
+              </select>
+            )}
+          </div>
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
             {!loading && (
               <>
@@ -305,32 +326,7 @@ export default function TimetablePage() {
           </div>
         </div>
 
-        <div className="flex justify-center w-full">
-          <div className="flex items-center bg-[#192436] rounded-lg p-1 w-[240px] border border-white/5 shadow-sm mx-auto">
-               <button 
-                  onClick={() => switchProfile(LIVE_PROFILE_ID)}
-                  className={`flex-1 py-1.5 px-2 !min-h-0 !min-w-0 h-8 text-xs font-medium rounded-md transition-all ${isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-               >
-                  {t('timetable.liveProfile')}
-               </button>
 
-               {linkedProfiles.length > 0 ? (
-                 <button 
-                    onClick={() => switchProfile(linkedProfiles[0].id)}
-                    className={`flex-1 py-1.5 px-2 !min-h-0 !min-w-0 h-8 text-xs font-medium rounded-md truncate text-center transition-all ${!isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-                 >
-                    {linkedProfiles[0].name}
-                 </button>
-               ) : (
-                 <button 
-                    onClick={() => setShowAddProfileModal(true)}
-                    className="flex-1 py-1.5 px-2 !min-h-0 !min-w-0 h-8 text-xs font-medium rounded-md text-theme-400 hover:bg-theme-500/10 transition-all flex items-center justify-center gap-1.5"
-                 >
-                    <Plus className="h-3.5 w-3.5" /> {t('timetable.addProfile')}
-                 </button>
-               )}
-            </div>
-        </div>
       </div>
       <Modal isOpen={showAddProfileModal} onClose={() => setShowAddProfileModal(false)} title={t('timetable.addProfile')}>
         <div className="space-y-4">
