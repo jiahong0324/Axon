@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase'
 import { dateLabel, daysFromToday, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
 import SubjectSelect from '../components/SubjectSelect'
+import SkeletonList from '../components/SkeletonList'
 
 
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
@@ -22,6 +23,7 @@ export default function ExamPage() {
   const [form, setForm] = useState(initialForm)
   const [subjects, setSubjects] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loading, setLoading] = useState(true)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { t } = useLanguage()
@@ -29,6 +31,7 @@ export default function ExamPage() {
   useEffect(() => { fetchExams() }, [])
 
   async function fetchExams() {
+    setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     const { data } = await supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date')
     const { data: resultRows } = await supabase.from('exam_results').select('*').eq('student_id', user.id)
@@ -39,6 +42,7 @@ export default function ExamPage() {
     if (classesData) {
       setSubjects([...new Set(classesData.map(c => c.subject))])
     }
+    setLoading(false)
   }
 
   async function addExam(e) {
@@ -114,7 +118,7 @@ export default function ExamPage() {
           </div>
         </div>
       </div>
-      {exams.length === 0 && (
+      {(!loading && exams.length === 0) && (
         <div className="mt-8 flex flex-col md:hidden items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
           <div className="w-16 h-16 bg-theme-500/20 text-theme-400 rounded-full flex items-center justify-center mb-6">
             <Sparkles className="h-8 w-8" />
@@ -132,9 +136,9 @@ export default function ExamPage() {
           </div>
         </div>
       )}
-      <div className={exams.length === 0 ? 'hidden md:block' : 'block'}>
-        <ExamSection title={t('exams.upcoming')} exams={upcoming} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.upcoming'))} />
-        <ExamSection title={t('exams.past')} exams={past} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.past'))} />
+      <div className={(!loading && exams.length === 0) ? 'hidden md:block' : 'block'}>
+        <ExamSection loading={loading} title={t('exams.upcoming')} exams={upcoming} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.upcoming'))} />
+        <ExamSection loading={loading} title={t('exams.past')} exams={past} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.past'))} />
       </div>
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Exam">
         <form onSubmit={addExam} className="space-y-4">
@@ -166,7 +170,18 @@ export default function ExamPage() {
 
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 
-function ExamSection({ title, exams, results, deleteExam, emptyMsg }) {
+function ExamSection({ title, exams, results, deleteExam, emptyMsg, loading }) {
+  if (loading) return (
+    <section className="mb-10">
+      <div className="flex items-center gap-3 mb-6">
+        <h2 className="text-xl font-bold text-white tracking-tight">{title}</h2>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SkeletonList count={2} />
+      </div>
+    </section>
+  );
+
   return (
     <section className="mb-10">
       <div className="flex items-center gap-3 mb-6">
