@@ -266,11 +266,10 @@ export default function TimetablePage() {
     <main className="main-content">
       <div className="mb-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="page-title mb-0">{t('timetable.title')}</h1>
-            {!loading && (
+          {!loading ? (
+            <div className="relative flex items-center group">
               <select 
-                className="bg-slate-800/50 border border-white/10 rounded-lg text-sm text-slate-200 py-1.5 px-3 hover:border-white/20 transition-colors focus:outline-none focus:border-theme-500 cursor-pointer outline-none font-medium h-9"
+                className="page-title mb-0 appearance-none bg-transparent border-none focus:outline-none pr-8 cursor-pointer z-10 text-white"
                 value={activeProfileId}
                 onChange={(e) => {
                   if (e.target.value === 'add_new') {
@@ -280,14 +279,17 @@ export default function TimetablePage() {
                   }
                 }}
               >
-                <option value={LIVE_PROFILE_ID}>{t('timetable.liveProfile')}</option>
+                <option value={LIVE_PROFILE_ID} className="text-base bg-slate-900">{t('timetable.title')}</option>
                 {linkedProfiles.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
+                  <option key={p.id} value={p.id} className="text-base bg-slate-900">{p.name}</option>
                 ))}
-                {linkedProfiles.length === 0 && <option value="add_new">+ {t('timetable.addProfile')}</option>}
+                {linkedProfiles.length === 0 && <option value="add_new" className="text-base bg-slate-900">+ {t('timetable.addProfile')}</option>}
               </select>
-            )}
-          </div>
+              <ChevronDown className="h-6 w-6 text-theme-400 absolute right-0 pointer-events-none z-0 opacity-70 group-hover:opacity-100 transition-opacity" />
+            </div>
+          ) : (
+            <h1 className="page-title mb-0">{t('timetable.title')}</h1>
+          )}
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
             {!loading && (
               <>
