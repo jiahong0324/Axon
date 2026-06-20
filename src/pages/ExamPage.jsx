@@ -82,7 +82,7 @@ export default function ExamPage() {
   return (
     <main className="main-content">
       <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between w-full">
           <h1 className="page-title mb-0">{t('exams.title')}</h1>
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
             <>
