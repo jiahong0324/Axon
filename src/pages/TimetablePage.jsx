@@ -256,7 +256,7 @@ export default function TimetablePage() {
                     )}
                   </button>
                 </div>
-                {classes.length > 0 && (
+                {classes.length > 0 && isLiveProfile && (
                   <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
                     <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('timetable.clear')}</span>
                   </button>
