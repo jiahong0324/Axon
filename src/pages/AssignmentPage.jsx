@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase'
 import { dateLabel, markdownToHtml } from '../lib/utils'
 import { SkeletonList } from '../components/SkeletonLoader'
 import { useLanguage } from '../components/LanguageProvider'
+import SubjectSelect from '../components/SubjectSelect'
 
 const statuses = ['Pending', 'In Progress', 'Done']
 const initialForm = { title: '', subject: '', deadline: '', priority: 'Medium', notes: '', status: 'Pending' }
@@ -177,10 +178,11 @@ export default function AssignmentPage() {
         <form onSubmit={addItem} className="space-y-4">
           <Field label="Title"><input className="input" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></Field>
           <Field label="Subject">
-            <input className="input" required list="assignment-subjects" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} />
-            <datalist id="assignment-subjects">
-              {subjects.map(s => <option key={s} value={s} />)}
-            </datalist>
+            <SubjectSelect 
+              value={form.subject} 
+              onChange={val => setForm({ ...form, subject: val })} 
+              subjects={subjects} 
+            />
           </Field>
           <Field label="Deadline"><input className="input" required type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} /></Field>
           <Field label="Priority"><select className="input" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>{['High', 'Medium', 'Low'].map(p => <option key={p}>{p}</option>)}</select></Field>

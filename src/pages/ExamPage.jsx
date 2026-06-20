@@ -9,6 +9,7 @@ import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { dateLabel, daysFromToday, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
+import SubjectSelect from '../components/SubjectSelect'
 
 
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
@@ -138,10 +139,11 @@ export default function ExamPage() {
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Exam">
         <form onSubmit={addExam} className="space-y-4">
           <Field label="Subject">
-            <input className="input" required list="exam-subjects" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} />
-            <datalist id="exam-subjects">
-              {subjects.map(s => <option key={s} value={s} />)}
-            </datalist>
+            <SubjectSelect 
+              value={form.subject} 
+              onChange={val => setForm({ ...form, subject: val })} 
+              subjects={subjects} 
+            />
           </Field>
           <Field label="Exam Date"><input className="input" required type="date" value={form.exam_date} onChange={e => setForm({ ...form, exam_date: e.target.value })} /></Field>
           <div className="grid gap-4 md:grid-cols-2">
