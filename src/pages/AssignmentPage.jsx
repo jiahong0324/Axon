@@ -26,6 +26,7 @@ export default function AssignmentPage() {
   const [aiModal, setAiModal] = useState(false)
   const [aiText, setAiText] = useState('')
   const [form, setForm] = useState(initialForm)
+  const [subjects, setSubjects] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
@@ -38,6 +39,12 @@ export default function AssignmentPage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { data } = await supabase.from('assignments').select('*').eq('user_id', user.id).order('deadline')
     setItems(data || [])
+    
+    const { data: classesData } = await supabase.from('classes').select('subject').eq('user_id', user.id)
+    if (classesData) {
+      setSubjects([...new Set(classesData.map(c => c.subject))])
+    }
+    
     setLoading(false)
   }
 
@@ -169,7 +176,12 @@ export default function AssignmentPage() {
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Assignment">
         <form onSubmit={addItem} className="space-y-4">
           <Field label="Title"><input className="input" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></Field>
-          <Field label="Subject"><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
+          <Field label="Subject">
+            <input className="input" required list="assignment-subjects" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} />
+            <datalist id="assignment-subjects">
+              {subjects.map(s => <option key={s} value={s} />)}
+            </datalist>
+          </Field>
           <Field label="Deadline"><input className="input" required type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} /></Field>
           <Field label="Priority"><select className="input" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>{['High', 'Medium', 'Low'].map(p => <option key={p}>{p}</option>)}</select></Field>
           <Field label="Notes"><textarea className="input min-h-24" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></Field>

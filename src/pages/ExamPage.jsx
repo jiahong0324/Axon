@@ -19,6 +19,7 @@ export default function ExamPage() {
   const [modal, setModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
+  const [subjects, setSubjects] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
@@ -32,6 +33,11 @@ export default function ExamPage() {
     const { data: resultRows } = await supabase.from('exam_results').select('*').eq('student_id', user.id)
     setExams(data || [])
     setResults(resultRows || [])
+
+    const { data: classesData } = await supabase.from('classes').select('subject').eq('user_id', user.id)
+    if (classesData) {
+      setSubjects([...new Set(classesData.map(c => c.subject))])
+    }
   }
 
   async function addExam(e) {
@@ -131,7 +137,12 @@ export default function ExamPage() {
       </div>
       <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Exam">
         <form onSubmit={addExam} className="space-y-4">
-          <Field label="Subject"><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
+          <Field label="Subject">
+            <input className="input" required list="exam-subjects" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} />
+            <datalist id="exam-subjects">
+              {subjects.map(s => <option key={s} value={s} />)}
+            </datalist>
+          </Field>
           <Field label="Exam Date"><input className="input" required type="date" value={form.exam_date} onChange={e => setForm({ ...form, exam_date: e.target.value })} /></Field>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Start Time"><input className="input" type="time" placeholder="e.g. 09:00" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
