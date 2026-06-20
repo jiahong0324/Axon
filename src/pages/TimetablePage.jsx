@@ -42,6 +42,7 @@ export default function TimetablePage() {
   const [activeProfileId, setActiveProfileId] = useState(LIVE_PROFILE_ID)
   const [newProfileName, setNewProfileName] = useState('')
   const [showAddProfileModal, setShowAddProfileModal] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [mobileDay, setMobileDay] = useState(() => {
     const day = new Date().getDay()
     return day >= 1 && day <= 5 ? day - 1 : 0
@@ -268,24 +269,47 @@ export default function TimetablePage() {
         <div className="flex items-center justify-between">
           {!loading ? (
             <div className="relative flex items-center group">
-              <select 
-                className="page-title mb-0 appearance-none bg-transparent border-none focus:outline-none pr-8 cursor-pointer z-10 text-white"
-                value={activeProfileId}
-                onChange={(e) => {
-                  if (e.target.value === 'add_new') {
-                     setShowAddProfileModal(true)
-                  } else {
-                     switchProfile(e.target.value)
-                  }
-                }}
+              <button 
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="page-title mb-0 flex items-center gap-1.5 focus:outline-none hover:opacity-80 transition-opacity"
               >
-                <option value={LIVE_PROFILE_ID} className="text-base bg-slate-900">{t('timetable.title')}</option>
-                {linkedProfiles.map(p => (
-                  <option key={p.id} value={p.id} className="text-base bg-slate-900">{p.name}</option>
-                ))}
-                {linkedProfiles.length === 0 && <option value="add_new" className="text-base bg-slate-900">+ {t('timetable.addProfile')}</option>}
-              </select>
-              <ChevronDown className="h-6 w-6 text-theme-400 absolute right-0 pointer-events-none z-0 opacity-70 group-hover:opacity-100 transition-opacity" />
+                {isLiveProfile ? t('timetable.title') : activeProfile?.name}
+                <ChevronDown className={`h-6 w-6 text-theme-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+                  <div className="absolute top-full left-0 mt-2 w-56 bg-slate-900 border border-white/10 shadow-xl shadow-black/50 rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="p-1.5 flex flex-col gap-1">
+                      <button 
+                        onClick={() => { switchProfile(LIVE_PROFILE_ID); setIsDropdownOpen(false); }}
+                        className={`flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${isLiveProfile ? 'bg-theme-500/20 text-theme-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                      >
+                        {t('timetable.liveProfile')} {t('timetable.title')}
+                      </button>
+                      {linkedProfiles.map(p => (
+                        <button 
+                          key={p.id}
+                          onClick={() => { switchProfile(p.id); setIsDropdownOpen(false); }}
+                          className={`flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${activeProfileId === p.id ? 'bg-theme-500/20 text-theme-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                        >
+                          {p.name}
+                        </button>
+                      ))}
+                      
+                      <div className="h-px w-full bg-white/5 my-1" />
+                      
+                      <button 
+                        onClick={() => { setShowAddProfileModal(true); setIsDropdownOpen(false); }}
+                        className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-theme-400 hover:bg-theme-500/10 transition-colors gap-2"
+                      >
+                        <Plus className="h-4 w-4" /> {t('timetable.addProfile')}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <h1 className="page-title mb-0">{t('timetable.title')}</h1>
