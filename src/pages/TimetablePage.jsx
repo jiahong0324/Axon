@@ -268,12 +268,10 @@ export default function TimetablePage() {
             <div className="relative flex items-center group">
               <button 
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2.5 px-3 py-2 -ml-3 rounded-2xl bg-transparent hover:bg-slate-800/50 border border-transparent hover:border-white/5 transition-all duration-300 focus:outline-none group"
+                className="flex items-center gap-1.5 focus:outline-none group"
               >
-                <h1 className="page-title mb-0 text-white group-hover:text-theme-200 transition-colors">{isLiveProfile ? t('timetable.title') : activeProfile?.name}</h1>
-                <div className="flex items-center justify-center bg-white/5 border border-white/10 group-hover:bg-theme-500/20 group-hover:border-theme-500/30 transition-all duration-300 rounded-full h-8 w-8 shadow-sm">
-                  <ChevronsUpDown className={`h-4 w-4 text-slate-400 group-hover:text-theme-300 transition-all duration-300`} strokeWidth={2.5} />
-                </div>
+                <h1 className="page-title mb-0 text-white group-hover:opacity-80 transition-opacity">{isLiveProfile ? t('timetable.title') : activeProfile?.name}</h1>
+                <ChevronDown className={`h-5 w-5 text-slate-400 group-hover:text-white transition-all duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
               </button>
 
               {isDropdownOpen && (
