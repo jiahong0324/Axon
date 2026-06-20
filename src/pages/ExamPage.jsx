@@ -208,7 +208,7 @@ function ExamCard({ exam, result, deleteExam }) {
   const typeColor = typeMap[exam.exam_type] || 'bg-slate-500/10 text-slate-300 border-slate-500/30';
 
   return (
-    <article className={`group relative rounded-[24px] border p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] ${isPast ? 'bg-white/[0.01] border-white/5 opacity-60 hover:opacity-100 grayscale hover:grayscale-0' : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'}`}>
+    <article className={`group relative rounded-[24px] border p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] ${isPast ? 'bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.04]' : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'}`}>
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
           <h3 className={`font-bold text-[18px] tracking-tight leading-snug ${isPast ? 'text-slate-400' : 'text-white'}`}>{exam.subject}</h3>

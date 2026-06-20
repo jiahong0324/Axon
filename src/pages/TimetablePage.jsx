@@ -305,12 +305,11 @@ export default function TimetablePage() {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex w-full md:w-auto items-center gap-2">
-            <div className="flex items-center bg-[#192436] rounded-lg p-0.5 flex-1 md:flex-none md:w-[280px] border border-white/5 shadow-sm">
+        <div className="flex justify-center w-full">
+          <div className="flex items-center bg-[#192436] rounded-lg p-1 w-[240px] border border-white/5 shadow-sm mx-auto">
                <button 
                   onClick={() => switchProfile(LIVE_PROFILE_ID)}
-                  className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded-md transition-all ${isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                  className={`flex-1 py-1.5 px-2 !min-h-0 !min-w-0 h-8 text-xs font-medium rounded-md transition-all ${isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
                >
                   {t('timetable.liveProfile')}
                </button>
@@ -318,22 +317,19 @@ export default function TimetablePage() {
                {linkedProfiles.length > 0 ? (
                  <button 
                     onClick={() => switchProfile(linkedProfiles[0].id)}
-                    className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded-md truncate text-center transition-all ${!isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                    className={`flex-1 py-1.5 px-2 !min-h-0 !min-w-0 h-8 text-xs font-medium rounded-md truncate text-center transition-all ${!isLiveProfile ? 'bg-theme-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
                  >
                     {linkedProfiles[0].name}
                  </button>
                ) : (
                  <button 
                     onClick={() => setShowAddProfileModal(true)}
-                    className="flex-1 py-1.5 px-2 text-xs font-semibold rounded-md text-theme-400 hover:bg-theme-500/10 transition-all flex items-center justify-center gap-1.5"
+                    className="flex-1 py-1.5 px-2 !min-h-0 !min-w-0 h-8 text-xs font-medium rounded-md text-theme-400 hover:bg-theme-500/10 transition-all flex items-center justify-center gap-1.5"
                  >
                     <Plus className="h-3.5 w-3.5" /> {t('timetable.addProfile')}
                  </button>
                )}
             </div>
-          </div>
-
-
         </div>
       </div>
       <Modal isOpen={showAddProfileModal} onClose={() => setShowAddProfileModal(false)} title={t('timetable.addProfile')}>
