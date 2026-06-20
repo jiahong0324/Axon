@@ -253,16 +253,16 @@ export default function TimetablePage() {
                     )}
                   </button>
                 </div>
-                {classes.length > 0 && (
-                  isLiveProfile ? (
+                {isLiveProfile ? (
+                  classes.length > 0 && (
                     <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
                       <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('timetable.clear')}</span>
                     </button>
-                  ) : (
-                    <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1" onClick={() => deleteLinkedProfile(activeProfileId)} title={t('timetable.deleteProfileTitle')}>
-                      <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('common.delete')}</span>
-                    </button>
                   )
+                ) : (
+                  <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1" onClick={() => deleteLinkedProfile(activeProfileId)} title={t('timetable.deleteProfileTitle')}>
+                    <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('common.delete')}</span>
+                  </button>
                 )}
               </>
             )}
@@ -326,13 +326,15 @@ export default function TimetablePage() {
           <button disabled={isSubmitting} className="btn-primary w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? t('common.saving') : t('timetable.saveClass')}</button>
         </form>
       </Modal>
-      <div className="mb-4 flex w-full items-center justify-center md:hidden">
-        <div className="flex w-full gap-1.5 px-2">
-          {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] flex-1 rounded-full font-bold text-sm border transition-colors ${mobileDay === index ? 'border-theme-500 bg-theme-500 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
+      {!loading && classes.length > 0 && (
+        <div className="mb-4 flex w-full items-center justify-center md:hidden">
+          <div className="flex w-full gap-1.5 px-2">
+            {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] flex-1 rounded-full font-bold text-sm border transition-colors ${mobileDay === index ? 'border-theme-500 bg-theme-500 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
+          </div>
         </div>
-      </div>
+      )}
       <div className="pb-3">
-        {loading ? <SkeletonTimetable /> : (
+        {loading ? <SkeletonTimetable /> : classes.length > 0 && (
         <div className="w-full">
           {/* Mobile View */}
           <section className="flex flex-col md:hidden">
@@ -378,8 +380,8 @@ export default function TimetablePage() {
         )}
       </div>
 
-      {!loading && classes.length === 0 && isLiveProfile && (
-        <div className="mt-8 flex flex-col md:hidden items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
+      {!loading && classes.length === 0 && (
+        <div className="mt-8 flex flex-col items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px] md:max-w-md md:mx-auto">
           <div className="w-16 h-16 bg-theme-500/20 text-theme-400 rounded-full flex items-center justify-center mb-6">
             {isLiveProfile ? <Sparkles className="h-8 w-8" /> : <Plus className="h-8 w-8" />}
           </div>
