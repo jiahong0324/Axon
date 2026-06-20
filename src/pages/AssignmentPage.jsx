@@ -151,20 +151,19 @@ export default function AssignmentPage() {
           const isPending = status === 'Pending';
           const isInProgress = status === 'In Progress';
           
-          const glowColor = isPending ? 'shadow-indigo-500/10' : isInProgress ? 'shadow-blue-500/10' : 'shadow-emerald-500/10';
           const borderColor = isPending ? 'border-t-indigo-500' : isInProgress ? 'border-t-blue-500' : 'border-t-emerald-500';
-          const headerAccent = isPending ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : isInProgress ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]';
+          const headerAccent = isPending ? 'bg-indigo-500 text-white' : isInProgress ? 'bg-blue-500 text-white' : 'bg-emerald-500 text-white';
+          const tKey = isPending ? 'assignments.pending' : isInProgress ? 'assignments.inProgress' : 'assignments.done';
           
           return (
-            <div key={status} className={`flex flex-col h-full rounded-[28px] bg-gradient-to-b from-white/[0.04] to-transparent border border-white/[0.05] border-t-2 ${borderColor} shadow-2xl ${glowColor} overflow-hidden backdrop-blur-md relative`}>
-              <div className={`absolute top-0 left-0 right-0 h-32 opacity-20 pointer-events-none bg-gradient-to-b ${isPending ? 'from-indigo-500' : isInProgress ? 'from-blue-500' : 'from-emerald-500'} to-transparent`} />
+            <div key={status} className={`flex flex-col h-full rounded-[28px] bg-gradient-to-b from-white/[0.04] to-transparent border border-white/[0.05] border-t-2 ${borderColor} shadow-2xl shadow-black/20 overflow-hidden backdrop-blur-md relative`}>
               
               <div className="p-6 pb-4 relative z-10 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className={`flex items-center justify-center w-8 h-8 rounded-full ${headerAccent} text-sm font-bold`}>
                     {isPending ? '📋' : isInProgress ? '⚡' : '✅'}
                   </span>
-                  <h2 className="font-bold text-white tracking-wide uppercase text-[15px]">{t(`assignments.${status.toLowerCase().replace(' ', '')}`) || status}</h2>
+                  <h2 className="font-bold text-white tracking-wide uppercase text-[15px]">{t(tKey) || status}</h2>
                 </div>
                 <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/10 shadow-inner">{column.length}</span>
               </div>
