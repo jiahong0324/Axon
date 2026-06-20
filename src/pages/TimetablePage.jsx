@@ -13,7 +13,7 @@ import { SkeletonTimetable } from '../components/SkeletonLoader'
 import { useLanguage } from '../components/LanguageProvider'
 import { clearCache, readCache, writeCache } from '../lib/cache'
 
-const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue' }
+const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue', is_replacement: false, date: '' }
 const LIVE_PROFILE_ID = 'account'
 const linkedKey = userId => `axon_linked_timetables_${userId}`
 const activeKey = userId => `axon_active_timetable_${userId}`
@@ -104,8 +104,10 @@ export default function TimetablePage() {
     }
 
     const { data } = await supabase.from('classes').select('*').eq('user_id', user.id)
-    writeCache(classesCacheKey(user.id), data || [])
-    setClasses(data || [])
+    const replacements = user.user_metadata?.replacement_classes || []
+    const combined = [...(data || []), ...replacements]
+    writeCache(classesCacheKey(user.id), combined)
+    setClasses(combined)
     setLoading(false)
   }
 
@@ -156,19 +158,44 @@ export default function TimetablePage() {
   async function addClass(e) {
     e?.preventDefault()
     setIsSubmitting(true)
+    
+    let finalForm = { ...form }
+    if (form.is_replacement) {
+      if (!form.date) {
+        setIsSubmitting(false)
+        return showToast('Please select a date', 'error')
+      }
+      const dayIndex = new Date(form.date).getDay()
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      finalForm.day = dayNames[dayIndex]
+    }
+
     if (!isLiveProfile) {
-      updateActiveLinkedClasses([...classes, { ...form, id: `local-${Date.now()}` }])
+      updateActiveLinkedClasses([...classes, { ...finalForm, id: `local-${Date.now()}` }])
       showToast(t('timetable.added'), 'success')
       setForm(initialForm)
       setShowForm(false)
       setIsSubmitting(false)
       return
     }
-    const { error } = await supabase.from('classes').insert({ ...form, user_id: user.id })
-    if (error) {
-      setIsSubmitting(false)
-      return showToast(t('timetable.addFailed'), 'error')
+    
+    if (finalForm.is_replacement) {
+      const newReplacement = { ...finalForm, id: `rep-${Date.now()}` }
+      const replacements = user.user_metadata?.replacement_classes || []
+      const { error } = await supabase.auth.updateUser({ data: { replacement_classes: [...replacements, newReplacement] } })
+      if (error) {
+        setIsSubmitting(false)
+        return showToast(t('timetable.addFailed'), 'error')
+      }
+    } else {
+      const { is_replacement, date, ...dbForm } = finalForm
+      const { error } = await supabase.from('classes').insert({ ...dbForm, user_id: user.id })
+      if (error) {
+        setIsSubmitting(false)
+        return showToast(t('timetable.addFailed'), 'error')
+      }
     }
+
     await logActivity('Added class', 'class', form.subject)
     clearCache(classesCacheKey(user.id))
     showToast(t('timetable.added'), 'success')
@@ -200,7 +227,13 @@ export default function TimetablePage() {
     if (!await confirm({ title: t('timetable.deleteTitle'), message: t('timetable.deleteMessage'), confirmText: t('common.delete') })) return
     const deleted = classes.find(c => c.id === id)
     if (isLiveProfile) {
-      await supabase.from('classes').delete().eq('id', id)
+      if (deleted?.is_replacement) {
+         const replacements = user.user_metadata?.replacement_classes || []
+         const nextReplacements = replacements.filter(r => r.id !== id)
+         await supabase.auth.updateUser({ data: { replacement_classes: nextReplacements } })
+      } else {
+         await supabase.from('classes').delete().eq('id', id)
+      }
       if (deleted) await logActivity('Deleted class', 'class', deleted.subject)
       clearCache(classesCacheKey(user.id))
       setClasses(prev => prev.filter(c => c.id !== id))
@@ -215,6 +248,7 @@ export default function TimetablePage() {
     if (isLiveProfile) {
       const { error } = await supabase.from('classes').delete().eq('user_id', user.id)
       if (error) return showToast(t('timetable.saveExtractedFailed'), 'error')
+      await supabase.auth.updateUser({ data: { replacement_classes: [] } })
       clearCache(classesCacheKey(user.id))
     } else {
       updateActiveLinkedClasses([])
@@ -313,7 +347,15 @@ export default function TimetablePage() {
       <Modal isOpen={showForm} onClose={() => setShowForm(false)} title={t('timetable.addClass')}>
         <form onSubmit={addClass} className="space-y-4">
           <Field label={t('timetable.subject')}><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
-          <Field label={t('timetable.day')}><select className="input" value={form.day} onChange={e => setForm({ ...form, day: e.target.value })}>{days.map(d => <option key={d} value={d}>{t(`timetable.days.${d}`)}</option>)}</select></Field>
+          <div className="flex items-center gap-2 mb-1 pl-1">
+            <input type="checkbox" id="is_replacement" checked={form.is_replacement} onChange={e => setForm({ ...form, is_replacement: e.target.checked, date: '' })} className="rounded border-white/10 bg-[#192436] text-theme-500 focus:ring-theme-500" />
+            <label htmlFor="is_replacement" className="text-sm font-medium text-slate-300">Replacement class (specific date)</label>
+          </div>
+          {form.is_replacement ? (
+            <Field label="Date"><input className="input" type="date" required value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></Field>
+          ) : (
+            <Field label={t('timetable.day')}><select className="input" value={form.day} onChange={e => setForm({ ...form, day: e.target.value })}>{days.map(d => <option key={d} value={d}>{t(`timetable.days.${d}`)}</option>)}</select></Field>
+          )}
           <div className="grid gap-4 md:grid-cols-2">
             <Field label={t('timetable.startTime')}><input className="input" type="time" required value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
             <Field label={t('timetable.endTime')}><input className="input" type="time" required value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
@@ -421,7 +463,10 @@ function DesktopClassTile({ item, onDelete }) {
   return (
     <article className={`group relative rounded-xl border border-white/10 bg-[#192436] border-l-4 ${border} p-4 transition-colors hover:bg-[#202e45] shadow-sm`}>
       <button className="btn-danger absolute right-1 top-1 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
-      <div className="mb-2 pr-10"><ClassTypeBadge type={item.class_type} /></div>
+      <div className="mb-2 pr-10 flex flex-wrap items-center gap-2">
+        <ClassTypeBadge type={item.class_type} />
+        {item.is_replacement && <span className="text-[10px] uppercase font-bold bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded-md border border-orange-500/20">Rep: {item.date}</span>}
+      </div>
       <h3 className="font-semibold">{item.subject}</h3>
       <p className="muted">{formatTime(item.start_time)} - {formatTime(item.end_time)}</p>
       <p className="muted mt-2 flex items-center gap-2"><MapPin className="h-4 w-4" /> {item.classroom || 'TBA'}</p>
@@ -453,8 +498,9 @@ function MobileClassTile({ item, onDelete }) {
           <Trash2 className="h-4 w-4" />
         </button>
         
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center gap-2 pr-8">
           <ClassTypeBadge type={item.class_type} />
+          {item.is_replacement && <span className="text-[10px] uppercase font-bold bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded-md border border-orange-500/20">Rep: {item.date}</span>}
         </div>
         
         <div className={`flex items-start gap-1.5 mb-2 font-bold text-sm ${colors.text}`}>
