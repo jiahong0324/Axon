@@ -145,27 +145,31 @@ export default function AssignmentPage() {
           </div>
         </div>
       </div>
-      <section className={`${!loading && items.length === 0 ? 'hidden md:grid md:grid-cols-3 md:gap-6' : 'flex flex-col gap-6 md:grid md:grid-cols-3 md:gap-6'}`}>
+      <section className={`${!loading && items.length === 0 ? 'hidden md:grid md:grid-cols-3 md:gap-6' : 'flex flex-col gap-6 md:grid md:grid-cols-3 md:gap-8'}`}>
         {statuses.map(status => {
           const column = items.filter(i => i.status === status)
           const isPending = status === 'Pending';
           const isInProgress = status === 'In Progress';
-          const headerColor = isPending ? 'text-slate-300' : isInProgress ? 'text-theme-400' : 'text-emerald-400';
-          const headerBg = isPending ? 'bg-slate-500/10' : isInProgress ? 'bg-theme-500/10' : 'bg-emerald-500/10';
+          
+          const glowColor = isPending ? 'shadow-indigo-500/10' : isInProgress ? 'shadow-blue-500/10' : 'shadow-emerald-500/10';
+          const borderColor = isPending ? 'border-t-indigo-500' : isInProgress ? 'border-t-blue-500' : 'border-t-emerald-500';
+          const headerAccent = isPending ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : isInProgress ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]';
           
           return (
-            <div key={status} className="flex flex-col h-full">
-              <div className="pb-3 mb-3 flex items-center justify-between border-b border-white/10">
-                <div className="flex items-center gap-2.5">
-                  <span className={`flex items-center justify-center w-8 h-8 rounded-lg ${headerBg} ${headerColor} text-sm`}>
+            <div key={status} className={`flex flex-col h-full rounded-[28px] bg-gradient-to-b from-white/[0.04] to-transparent border border-white/[0.05] border-t-2 ${borderColor} shadow-2xl ${glowColor} overflow-hidden backdrop-blur-md relative`}>
+              <div className={`absolute top-0 left-0 right-0 h-32 opacity-20 pointer-events-none bg-gradient-to-b ${isPending ? 'from-indigo-500' : isInProgress ? 'from-blue-500' : 'from-emerald-500'} to-transparent`} />
+              
+              <div className="p-6 pb-4 relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className={`flex items-center justify-center w-8 h-8 rounded-full ${headerAccent} text-sm font-bold`}>
                     {isPending ? '📋' : isInProgress ? '⚡' : '✅'}
                   </span>
-                  <h2 className="font-semibold text-base text-white tracking-tight">{t(`assignments.${status.toLowerCase().replace(' ', '')}`) || status}</h2>
+                  <h2 className="font-bold text-white tracking-wide uppercase text-[15px]">{t(`assignments.${status.toLowerCase().replace(' ', '')}`) || status}</h2>
                 </div>
-                <span className="text-slate-400 text-sm font-medium">{column.length}</span>
+                <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/10 shadow-inner">{column.length}</span>
               </div>
-              <div className="flex-1">
-                {loading ? <SkeletonList count={3} /> : column.length === 0 ? <EmptyState message={t('assignments.empty')} /> : <div className="space-y-3">{column.map(item => <AssignmentCard key={item.id} item={item} updateItem={updateItem} deleteItem={deleteItem} />)}</div>}
+              <div className="p-5 pt-2 flex-1 relative z-10">
+                {loading ? <SkeletonList count={3} /> : column.length === 0 ? <EmptyState message={t('assignments.empty')} /> : <div className="space-y-4">{column.map(item => <AssignmentCard key={item.id} item={item} updateItem={updateItem} deleteItem={deleteItem} />)}</div>}
               </div>
             </div>
           )
@@ -221,37 +225,46 @@ function Field({ label, children }) { return <label className="block"><span clas
 function AssignmentCard({ item, updateItem, deleteItem }) {
   const isDone = item.status === 'Done';
   return (
-    <article className={`group relative rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 ${isDone ? 'bg-white/[0.02] border-white/5 opacity-70 hover:opacity-100' : 'bg-white/[0.04] border-white/10 hover:border-white/20'}`}>
-      <div className="mb-2 flex items-start justify-between gap-3">
-        <h3 className={`font-medium text-[15px] leading-snug ${isDone ? 'line-through text-slate-400' : 'text-slate-100'}`}>{item.title}</h3>
+    <article className={`group relative rounded-2xl border p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] ${isDone ? 'bg-white/[0.01] border-white/5 opacity-50 hover:opacity-100 grayscale hover:grayscale-0' : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'}`}>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <h3 className={`font-semibold text-[16px] tracking-tight leading-snug ${isDone ? 'line-through text-slate-500' : 'text-slate-50'}`}>{item.title}</h3>
         <div className="shrink-0"><PriorityBadge priority={item.priority} /></div>
       </div>
       
-      <div className="flex flex-wrap items-center gap-1.5 mb-3 text-[13px] text-slate-400">
-        <span>{item.subject}</span>
-        <span>·</span>
-        <CountdownBadge deadline={item.deadline} status={item.status} />
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <span className="px-2.5 py-1 rounded-md bg-black/30 border border-white/10 text-slate-300 text-[11px] font-bold tracking-wide uppercase">{item.subject}</span>
+        <span className="text-slate-600 text-sm">•</span>
+        <span className="text-slate-400 flex items-center gap-1.5"><CountdownBadge deadline={item.deadline} status={item.status} /></span>
       </div>
 
       {item.notes && (
-        <p className="mb-4 text-[13px] text-slate-400 line-clamp-2 leading-relaxed">{item.notes}</p>
+        <div className="mb-4 rounded-xl bg-black/20 p-3.5 border border-white/5 relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/10 rounded-l-xl"></div>
+          <p className="text-[13px] text-slate-400 line-clamp-3 leading-relaxed pl-1">{item.notes}</p>
+        </div>
       )}
       
-      <div className="mt-2 flex flex-wrap gap-2 items-center justify-between">
+      <div className="mt-4 pt-4 border-t border-white/5 flex flex-wrap gap-2 items-center justify-between">
         <div className="flex gap-2">
-          {statuses.filter(s => s !== item.status).map(s => (
-            <button 
-              key={s} 
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${s === 'Done' ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`} 
-              onClick={() => updateItem(item.id, { status: s })}
-            >
-              {s === 'Done' && <Check className="h-3 w-3" />}
-              {s}
-            </button>
-          ))}
+          {statuses.filter(s => s !== item.status).map(s => {
+            const btnClass = s === 'Done' ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/20 hover:border-emerald-500/40' : 
+                             s === 'In Progress' ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border-blue-500/20 hover:border-blue-500/40' : 
+                             'bg-white/5 text-slate-300 hover:bg-white/10 border-white/10 hover:border-white/20';
+            return (
+              <button 
+                key={s} 
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider border transition-all duration-200 ${btnClass}`} 
+                onClick={() => updateItem(item.id, { status: s })}
+              >
+                {s === 'Done' && <Check className="h-3.5 w-3.5" />}
+                {s === 'In Progress' && <Sparkles className="h-3.5 w-3.5" />}
+                {s}
+              </button>
+            )
+          })}
         </div>
         <button 
-          className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" 
+          className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100" 
           onClick={() => deleteItem(item.id)}
           title="Delete Assignment"
         >
