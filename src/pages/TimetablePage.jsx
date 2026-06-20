@@ -72,17 +72,16 @@ export default function TimetablePage() {
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
     
-    const remoteProfiles = user.user_metadata?.linked_timetables || []
+    const remoteProfiles = user.user_metadata?.linked_timetables
     const localProfiles = readLinkedProfiles(user.id)
     
-    let profiles = remoteProfiles.length > 0 ? remoteProfiles : localProfiles
+    // If remoteProfiles exists in metadata (even if empty []), use it. Otherwise, use local.
+    let profiles = remoteProfiles !== undefined ? remoteProfiles : localProfiles
     if (profiles.length > 1) {
       profiles = [profiles[0]]
-      saveLinkedProfiles(user.id, profiles)
-    } else if (remoteProfiles.length > 0) {
-      saveLinkedProfiles(user.id, profiles)
     }
     
+    saveLinkedProfiles(user.id, profiles)
     setLinkedProfiles(profiles)
     const savedActive = localStorage.getItem(activeKey(user.id)) || LIVE_PROFILE_ID
     setActiveProfileId(savedActive === LIVE_PROFILE_ID || profiles.some(profile => profile.id === savedActive) ? savedActive : LIVE_PROFILE_ID)
