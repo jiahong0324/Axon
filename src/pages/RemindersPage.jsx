@@ -1,4 +1,4 @@
-import { Bell, Bot, ChevronDown, Plus, Trash2 } from 'lucide-react'
+import { Bell, Bot, ChevronDown, Plus, Trash2, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -23,7 +23,18 @@ export default function RemindersPage() {
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { t } = useLanguage()
 
-  useEffect(() => { fetchItems(); requestPermission() }, [])
+  useEffect(() => { 
+    fetchItems()
+    requestPermission()
+    
+    // Load daily plan from localStorage
+    const savedPlan = localStorage.getItem('daily_study_plan_content')
+    const savedDate = localStorage.getItem('daily_study_plan_date')
+    const today = new Date().toISOString().split('T')[0]
+    if (savedPlan && savedDate === today) {
+      setPlan(savedPlan)
+    }
+  }, [])
   useEffect(() => {
     function onKeyDown(e) {
       if (e.key === 'Escape') setShowForm(false)
@@ -77,12 +88,21 @@ export default function RemindersPage() {
     setPlanLoading(true)
     try {
       const context = await buildUserContext()
-      setPlan(await askGroq('Create a practical hour-by-hour study schedule for today from 8am to 10pm. Include breaks. Be specific and encouraging.', context))
+      const newPlan = await askGroq('Create a practical hour-by-hour study schedule for today from 8am to 10pm. Include breaks. Be specific and encouraging.', context)
+      setPlan(newPlan)
+      localStorage.setItem('daily_study_plan_content', newPlan)
+      localStorage.setItem('daily_study_plan_date', new Date().toISOString().split('T')[0])
     } catch {
       setPlan('Could not generate a plan right now. Try again after checking your Groq API key.')
     } finally {
       setPlanLoading(false)
     }
+  }
+
+  function deletePlan() {
+    setPlan('')
+    localStorage.removeItem('daily_study_plan_content')
+    localStorage.removeItem('daily_study_plan_date')
   }
 
   return (
@@ -91,9 +111,21 @@ export default function RemindersPage() {
       <section className="card mb-6 border-l-4 border-l-purple-500">
         <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
           <h2 className="section-header mb-0"><Bot className="h-5 w-5 text-purple-400" /> {t('reminders.aiPlan')}</h2>
-          <button className="btn-plan" onClick={generatePlan}>{t('reminders.generatePlan')}</button>
+          {!plan && !planLoading && <button className="btn-plan" onClick={generatePlan}>{t('reminders.generatePlan')}</button>}
         </div>
-        {planLoading ? <div className="skeleton h-36 rounded-xl" /> : plan ? <div className="scrollbar-hide max-h-96 overflow-y-auto text-sm leading-6" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }} /> : <p className="muted">{t('reminders.planDesc')}</p>}
+        {planLoading ? <div className="skeleton h-36 rounded-xl" /> : plan ? (
+          <div>
+            <div className="scrollbar-hide max-h-96 overflow-y-auto text-sm leading-6 mb-4" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }} />
+            <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-white/5">
+              <button className="px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2" onClick={deletePlan}>
+                <Trash2 className="h-4 w-4" /> Delete Plan
+              </button>
+              <button className="btn-plan !min-h-0 !py-2 !px-4 text-sm" onClick={generatePlan}>
+                <RefreshCw className="h-4 w-4" /> Regenerate
+              </button>
+            </div>
+          </div>
+        ) : <p className="muted">{t('reminders.planDesc')}</p>}
       </section>
       <section className="card">
         <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
