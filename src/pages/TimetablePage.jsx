@@ -71,11 +71,18 @@ export default function TimetablePage() {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
-    let profiles = readLinkedProfiles(user.id)
+    
+    const remoteProfiles = user.user_metadata?.linked_timetables || []
+    const localProfiles = readLinkedProfiles(user.id)
+    
+    let profiles = remoteProfiles.length > 0 ? remoteProfiles : localProfiles
     if (profiles.length > 1) {
       profiles = [profiles[0]]
       saveLinkedProfiles(user.id, profiles)
+    } else if (remoteProfiles.length > 0) {
+      saveLinkedProfiles(user.id, profiles)
     }
+    
     setLinkedProfiles(profiles)
     const savedActive = localStorage.getItem(activeKey(user.id)) || LIVE_PROFILE_ID
     setActiveProfileId(savedActive === LIVE_PROFILE_ID || profiles.some(profile => profile.id === savedActive) ? savedActive : LIVE_PROFILE_ID)
@@ -113,6 +120,7 @@ export default function TimetablePage() {
     if (!user) return
     setLinkedProfiles(nextProfiles)
     saveLinkedProfiles(user.id, nextProfiles)
+    supabase.auth.updateUser({ data: { linked_timetables: nextProfiles } })
   }
 
   function updateActiveLinkedClasses(nextClasses) {
@@ -229,20 +237,16 @@ export default function TimetablePage() {
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
             {!loading && (
               <>
-                {isLiveProfile && (
-                  <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('timetable.extract')}>
-                    <Sparkles className="h-5 w-5" />
-                  </button>
-                )}
+                <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('timetable.extract')}>
+                  <Sparkles className="h-5 w-5" />
+                </button>
                 <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setShowForm(true)} title={t('timetable.addClass')}>
                   <Plus className="h-5 w-5" />
                 </button>
                 <div className="hidden md:flex flex-row gap-2">
-                  {isLiveProfile && (
-                    <button className="btn-import justify-center px-3 text-sm" onClick={() => setAnalyzerOpen(true)}>
-                      <Sparkles className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.extract')}</span>
-                    </button>
-                  )}
+                  <button className="btn-import justify-center px-3 text-sm" onClick={() => setAnalyzerOpen(true)}>
+                    <Sparkles className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.extract')}</span>
+                  </button>
                   <button className="btn-add justify-center px-3 text-sm" onClick={() => setShowForm(true)}>
                     <Plus className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.addClass')}</span>
                     {isLiveProfile && (
@@ -253,13 +257,12 @@ export default function TimetablePage() {
                     )}
                   </button>
                 </div>
-                {isLiveProfile ? (
-                  classes.length > 0 && (
-                    <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
-                      <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('timetable.clear')}</span>
-                    </button>
-                  )
-                ) : (
+                {classes.length > 0 && (
+                  <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
+                    <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('timetable.clear')}</span>
+                  </button>
+                )}
+                {!isLiveProfile && (
                   <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1" onClick={() => deleteLinkedProfile(activeProfileId)} title={t('timetable.deleteProfileTitle')}>
                     <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('common.delete')}</span>
                   </button>
@@ -393,11 +396,9 @@ export default function TimetablePage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
-            {isLiveProfile && (
-              <button className="btn-import flex-1 justify-center py-3.5 text-[15px]" onClick={() => setAnalyzerOpen(true)}>
-                <Sparkles className="h-5 w-5 shrink-0" /> <span>{t('timetable.extract')}</span>
-              </button>
-            )}
+            <button className="btn-import flex-1 justify-center py-3.5 text-[15px]" onClick={() => setAnalyzerOpen(true)}>
+              <Sparkles className="h-5 w-5 shrink-0" /> <span>{t('timetable.extract')}</span>
+            </button>
             <button className="btn-add flex-1 justify-center py-3.5 text-[15px]" onClick={() => setShowForm(true)}>
               <Plus className="h-5 w-5 shrink-0" /> <span>{t('timetable.addClass')}</span>
             </button>
