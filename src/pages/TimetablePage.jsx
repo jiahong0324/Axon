@@ -78,9 +78,6 @@ export default function TimetablePage() {
     
     // If remoteProfiles exists in metadata (even if empty []), use it. Otherwise, use local.
     let profiles = remoteProfiles !== undefined ? remoteProfiles : localProfiles
-    if (profiles.length > 1) {
-      profiles = [profiles[0]]
-    }
     
     saveLinkedProfiles(user.id, profiles)
     setLinkedProfiles(profiles)
@@ -134,7 +131,7 @@ export default function TimetablePage() {
   }
 
   function addLinkedProfile() {
-    if (linkedProfiles.length >= 1) return showToast('Maximum 1 linked timetable allowed.', 'error')
+    if (linkedProfiles.length >= 5) return showToast('Maximum 5 linked timetables allowed.', 'error')
     const name = newProfileName.trim()
     if (!name) return showToast(t('timetable.profileRequired'), 'error')
     if (linkedProfiles.some(profile => profile.name.toLowerCase() === name.toLowerCase())) {
