@@ -151,8 +151,8 @@ export default function AssignmentPage() {
           const isPending = status === 'Pending';
           const isInProgress = status === 'In Progress';
           
-          const borderColor = isPending ? 'border-t-indigo-500' : isInProgress ? 'border-t-blue-500' : 'border-t-emerald-500';
-          const headerAccent = isPending ? 'bg-indigo-500 text-white' : isInProgress ? 'bg-blue-500 text-white' : 'bg-emerald-500 text-white';
+          const borderColor = isPending ? 'border-t-purple-500' : isInProgress ? 'border-t-blue-500' : 'border-t-emerald-500';
+          const headerAccent = isPending ? 'bg-purple-500 text-white' : isInProgress ? 'bg-blue-500 text-white' : 'bg-emerald-500 text-white';
           const tKey = isPending ? 'assignments.pending' : isInProgress ? 'assignments.inProgress' : 'assignments.done';
           
           return (
@@ -263,7 +263,7 @@ function AssignmentCard({ item, updateItem, deleteItem }) {
           })}
         </div>
         <button 
-          className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100" 
+          className="flex items-center justify-center w-[28px] h-[28px] text-slate-500 hover:text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100" 
           onClick={() => deleteItem(item.id)}
           title="Delete Assignment"
         >
