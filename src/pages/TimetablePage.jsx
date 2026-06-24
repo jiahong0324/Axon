@@ -286,7 +286,12 @@ export default function TimetablePage() {
   }
 
   return (
-    <main className="main-content">
+    <main 
+      className="main-content"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEndHandler}
+    >
       <div className="mb-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           {!loading ? (
@@ -422,12 +427,7 @@ export default function TimetablePage() {
         <div className="w-full">
           {/* Mobile View */}
           {classes.length > 0 && (
-          <section 
-            className="flex flex-col md:hidden"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEndHandler}
-          >
+          <section className="flex flex-col md:hidden">
             {days.map((day, index) => {
               if (mobileDay !== index) return null;
               const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
