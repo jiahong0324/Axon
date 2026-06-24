@@ -1,5 +1,5 @@
 const CHAT_MODEL = 'openai/gpt-oss-120b'
-const VISION_MODEL = 'qwen/qwen3.6-27b'
+const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
