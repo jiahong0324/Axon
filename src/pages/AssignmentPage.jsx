@@ -1,4 +1,4 @@
-import { Bot, BookOpen, Calendar, Check, ChevronDown, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { Bot, BookOpen, Calendar, Check, ChevronDown, Plus, Sparkles, Trash2, Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import CountdownBadge from '../components/CountdownBadge'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -27,6 +27,7 @@ export default function AssignmentPage() {
   const [aiModal, setAiModal] = useState(false)
   const [aiText, setAiText] = useState('')
   const [form, setForm] = useState(initialForm)
+  const [editingId, setEditingId] = useState(null)
   const [subjects, setSubjects] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { showToast } = useToast()
@@ -53,17 +54,35 @@ export default function AssignmentPage() {
     e.preventDefault()
     setIsSubmitting(true)
     const { data: { user } } = await supabase.auth.getUser()
-    const { error } = await supabase.from('assignments').insert({ ...form, user_id: user.id })
-    if (error) {
-      setIsSubmitting(false)
-      return showToast('Assignment could not be added.', 'error')
+    
+    if (editingId) {
+      const { error } = await supabase.from('assignments').update(form).eq('id', editingId)
+      if (error) {
+        setIsSubmitting(false)
+        return showToast('Assignment could not be updated.', 'error')
+      }
+      showToast('Assignment updated.', 'success')
+    } else {
+      const { error } = await supabase.from('assignments').insert({ ...form, user_id: user.id })
+      if (error) {
+        setIsSubmitting(false)
+        return showToast('Assignment could not be added.', 'error')
+      }
+      await logActivity('Added assignment', 'assignment', form.title)
+      showToast('Assignment added.', 'success')
     }
-    await logActivity('Added assignment', 'assignment', form.title)
-    showToast('Assignment added.', 'success')
+
     setModal(false)
     setForm(initialForm)
+    setEditingId(null)
     setIsSubmitting(false)
     fetchItems()
+  }
+
+  function openEditModal(item) {
+    setForm({ title: item.title, subject: item.subject, deadline: item.deadline, priority: item.priority, notes: item.notes || '', status: item.status })
+    setEditingId(item.id)
+    setModal(true)
   }
 
   async function saveAll(items) {
@@ -168,7 +187,7 @@ export default function AssignmentPage() {
                 <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/10 shadow-inner">{column.length}</span>
               </div>
               <div className="p-5 pt-2 flex-1 relative z-10">
-                {loading ? <SkeletonList count={3} /> : column.length === 0 ? <EmptyState message={t('assignments.empty')} /> : <div className="space-y-4">{column.map(item => <AssignmentCard key={item.id} item={item} updateItem={updateItem} deleteItem={deleteItem} />)}</div>}
+                {loading ? <SkeletonList count={3} /> : column.length === 0 ? <EmptyState message={t('assignments.empty')} /> : <div className="space-y-4">{column.map(item => <AssignmentCard key={item.id} item={item} updateItem={updateItem} deleteItem={deleteItem} onEdit={() => openEditModal(item)} />)}</div>}
               </div>
             </div>
           )
@@ -192,7 +211,7 @@ export default function AssignmentPage() {
           </div>
         </div>
       )}
-      <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Assignment">
+      <Modal isOpen={modal} onClose={() => { setModal(false); setForm(initialForm); setEditingId(null); }} title={editingId ? "Edit Assignment" : "Add Assignment"}>
         <form onSubmit={addItem} className="space-y-4">
           <Field label="Title"><input className="input" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></Field>
           <Field label="Subject">
@@ -221,7 +240,7 @@ export default function AssignmentPage() {
 
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 
-function AssignmentCard({ item, updateItem, deleteItem }) {
+function AssignmentCard({ item, updateItem, deleteItem, onEdit }) {
   const isDone = item.status === 'Done';
   return (
     <article className={`group relative rounded-2xl border p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] ${isDone ? 'bg-white/[0.01] border-white/5 opacity-50 hover:opacity-100 grayscale hover:grayscale-0' : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'}`}>
@@ -267,13 +286,22 @@ function AssignmentCard({ item, updateItem, deleteItem }) {
             )
           })}
         </div>
-        <button 
-          className="flex items-center justify-center w-[28px] h-[28px] text-slate-500 hover:text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100" 
-          onClick={() => deleteItem(item.id)}
-          title="Delete Assignment"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <button 
+            className="flex items-center justify-center w-[28px] h-[28px] text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 hover:shadow-[0_0_12px_rgba(59,130,246,0.2)] rounded-lg transition-all" 
+            onClick={onEdit}
+            title="Edit Assignment"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button 
+            className="flex items-center justify-center w-[28px] h-[28px] text-slate-500 hover:text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] rounded-lg transition-all" 
+            onClick={() => deleteItem(item.id)}
+            title="Delete Assignment"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </article>
   )

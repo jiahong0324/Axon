@@ -1,4 +1,4 @@
-import { ChevronDown, Clock, MapPin, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { ChevronDown, Clock, MapPin, Plus, Sparkles, Trash2, Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -21,6 +21,7 @@ export default function ExamPage() {
   const [modal, setModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
+  const [editingId, setEditingId] = useState(null)
   const [subjects, setSubjects] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -49,17 +50,35 @@ export default function ExamPage() {
     e.preventDefault()
     setIsSubmitting(true)
     const { data: { user } } = await supabase.auth.getUser()
-    const { error } = await supabase.from('exams').insert({ ...form, user_id: user.id })
-    if (error) {
-      setIsSubmitting(false)
-      return showToast('Exam could not be added.', 'error')
+
+    if (editingId) {
+      const { error } = await supabase.from('exams').update(form).eq('id', editingId)
+      if (error) {
+        setIsSubmitting(false)
+        return showToast('Exam could not be updated.', 'error')
+      }
+      showToast('Exam updated.', 'success')
+    } else {
+      const { error } = await supabase.from('exams').insert({ ...form, user_id: user.id })
+      if (error) {
+        setIsSubmitting(false)
+        return showToast('Exam could not be added.', 'error')
+      }
+      await logActivity('Added exam', 'exam', form.subject)
+      showToast('Exam added.', 'success')
     }
-    await logActivity('Added exam', 'exam', form.subject)
-    showToast('Exam added.', 'success')
+
     setModal(false)
     setForm(initialForm)
+    setEditingId(null)
     setIsSubmitting(false)
     fetchExams()
+  }
+
+  function openEditModal(exam) {
+    setForm({ subject: exam.subject, exam_date: exam.exam_date, start_time: exam.start_time || '', end_time: exam.end_time || '', exam_type: exam.exam_type, venue: exam.venue || '', notes: exam.notes || '' })
+    setEditingId(exam.id)
+    setModal(true)
   }
 
   async function saveAll(items) {
@@ -137,10 +156,10 @@ export default function ExamPage() {
         </div>
       )}
       <div className={(!loading && exams.length === 0) ? 'hidden md:block' : 'block'}>
-        <ExamSection loading={loading} title={t('exams.upcoming')} exams={upcoming} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.upcoming'))} />
-        <ExamSection loading={loading} title={t('exams.past')} exams={past} results={results} deleteExam={deleteExam} emptyMsg={t('exams.empty').replace('{type}', t('exams.past'))} />
+        <ExamSection loading={loading} title={t('exams.upcoming')} exams={upcoming} results={results} deleteExam={deleteExam} onEdit={openEditModal} emptyMsg={t('exams.empty').replace('{type}', t('exams.upcoming'))} />
+        <ExamSection loading={loading} title={t('exams.past')} exams={past} results={results} deleteExam={deleteExam} onEdit={openEditModal} emptyMsg={t('exams.empty').replace('{type}', t('exams.past'))} />
       </div>
-      <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Exam">
+      <Modal isOpen={modal} onClose={() => { setModal(false); setForm(initialForm); setEditingId(null); }} title={editingId ? "Edit Exam" : "Add Exam"}>
         <form onSubmit={addExam} className="space-y-4">
           <Field label="Subject">
             <SubjectSelect 
@@ -170,7 +189,7 @@ export default function ExamPage() {
 
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 
-function ExamSection({ title, exams, results, deleteExam, emptyMsg, loading }) {
+function ExamSection({ title, exams, results, deleteExam, onEdit, emptyMsg, loading }) {
   if (loading) return (
     <section className="mb-10">
       <div className="flex items-center gap-3 mb-6">
@@ -197,14 +216,14 @@ function ExamSection({ title, exams, results, deleteExam, emptyMsg, loading }) {
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
-          {exams.map(exam => <ExamCard key={exam.id} exam={exam} result={results.find(r => r.exam_id === exam.id)} deleteExam={deleteExam} />)}
+          {exams.map(exam => <ExamCard key={exam.id} exam={exam} result={results.find(r => r.exam_id === exam.id)} deleteExam={deleteExam} onEdit={() => onEdit(exam)} />)}
         </div>
       )}
     </section>
   )
 }
 
-function ExamCard({ exam, result, deleteExam }) {
+function ExamCard({ exam, result, deleteExam, onEdit }) {
   const days = daysFromToday(exam.exam_date)
   const isPast = days < 0;
   
@@ -291,9 +310,16 @@ function ExamCard({ exam, result, deleteExam }) {
         </div>
       )}
 
-      <div className="mt-2 pt-4 border-t border-white/5 flex justify-end">
+      <div className="mt-2 pt-4 border-t border-white/5 flex justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         <button 
-          className="flex items-center justify-center w-[32px] h-[32px] text-slate-500 hover:text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100" 
+          className="flex items-center justify-center w-[32px] h-[32px] text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 hover:shadow-[0_0_12px_rgba(59,130,246,0.2)] rounded-lg transition-all" 
+          onClick={onEdit}
+          title="Edit Exam"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+        <button 
+          className="flex items-center justify-center w-[32px] h-[32px] text-slate-500 hover:text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] rounded-lg transition-all" 
           onClick={() => deleteExam(exam.id)}
           title="Delete Exam"
         >
