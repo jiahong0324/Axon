@@ -13,6 +13,9 @@ export default async function handler(req, res) {
 
   try {
     const { mode, prompt, systemContext, base64Image, mimeType } = req.body || {}
+    const safeMimeType = mimeType || 'image/jpeg'
+    const cleanBase64 = base64Image ? base64Image.replace(/\s+/g, '') : ''
+    
     const body = mode === 'vision'
       ? {
           model: VISION_MODEL,
@@ -20,7 +23,7 @@ export default async function handler(req, res) {
             {
               role: 'user',
               content: [
-                { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Image}` } },
+                { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } },
                 { type: 'text', text: prompt }
               ]
             }
