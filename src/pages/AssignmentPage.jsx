@@ -233,6 +233,8 @@ function AssignmentCard({ item, updateItem, deleteItem }) {
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <span className="px-2.5 py-1 rounded-md bg-black/30 border border-white/10 text-slate-300 text-[11px] font-bold tracking-wide uppercase">{item.subject}</span>
         <span className="text-slate-600 text-sm">•</span>
+        <span className="text-slate-400 text-sm">{dateLabel(item.deadline)}</span>
+        <span className="text-slate-600 text-sm">•</span>
         <span className="text-slate-400 flex items-center gap-1.5"><CountdownBadge deadline={item.deadline} status={item.status} /></span>
       </div>
 
