@@ -55,7 +55,11 @@ export default async function handler(req, res) {
       return res.status(groqRes.status).json({ error: data.error?.message || 'Groq API error' })
     }
 
-    return res.status(200).json({ content: data.choices?.[0]?.message?.content || '' })
+    let content = data.choices?.[0]?.message?.content || ''
+    // Remove <think>...</think> block which Qwen reasoning models output
+    content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+
+    return res.status(200).json({ content })
   } catch (error) {
     return res.status(500).json({ error: 'Groq proxy failed' })
   }
