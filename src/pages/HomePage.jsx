@@ -183,7 +183,7 @@ export default function HomePage() {
                 {dueSoon.map(a => (
                   <div key={a.id} className="home-list-card rounded-xl border border-white/10 p-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div><p className="font-semibold">{a.title}</p><p className="muted">{a.subject} · {dateLabel(a.deadline)}</p></div>
+                      <div><p className="font-semibold">{a.title}</p><p className="muted">{a.subject}</p></div>
                       <PriorityBadge priority={a.priority} />
                     </div>
                     <CountdownBadge deadline={a.deadline} />
