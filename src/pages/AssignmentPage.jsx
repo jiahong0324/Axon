@@ -1,4 +1,4 @@
-import { Bot, Check, ChevronDown, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { Bot, BookOpen, Calendar, Check, ChevronDown, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import CountdownBadge from '../components/CountdownBadge'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -225,15 +225,20 @@ function AssignmentCard({ item, updateItem, deleteItem }) {
   const isDone = item.status === 'Done';
   return (
     <article className={`group relative rounded-2xl border p-5 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] ${isDone ? 'bg-white/[0.01] border-white/5 opacity-50 hover:opacity-100 grayscale hover:grayscale-0' : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'}`}>
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <h3 className={`font-semibold text-[16px] tracking-tight leading-snug ${isDone ? 'line-through text-slate-500' : 'text-slate-50'}`}>{item.title}</h3>
-        <div className="shrink-0"><PriorityBadge priority={item.priority} /></div>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <h3 className={`font-semibold text-lg tracking-tight leading-snug ${isDone ? 'line-through text-slate-500' : 'text-slate-50'}`}>{item.title}</h3>
+        <div className="shrink-0 mt-1"><PriorityBadge priority={item.priority} /></div>
       </div>
       
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span className="px-2.5 py-1 rounded-md bg-black/30 border border-white/10 text-slate-300 text-[11px] font-bold tracking-wide uppercase">{item.subject}</span>
-        <span className="text-slate-600 text-sm">•</span>
-        <span className="text-slate-400 flex items-center gap-1.5"><CountdownBadge deadline={item.deadline} status={item.status} /></span>
+      <div className="flex flex-col gap-2.5 mb-5">
+        <div className="flex items-center gap-2.5 text-slate-400">
+          <BookOpen className="w-4 h-4 shrink-0 text-slate-500" />
+          <span className="text-[13px] font-medium truncate">{item.subject}</span>
+        </div>
+        <div className="flex items-center gap-2.5 text-slate-400">
+          <Calendar className="w-4 h-4 shrink-0 text-slate-500" />
+          <CountdownBadge deadline={item.deadline} status={item.status} />
+        </div>
       </div>
 
       {item.notes && (
