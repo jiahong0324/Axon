@@ -47,6 +47,8 @@ export default function TimetablePage() {
     const day = new Date().getDay()
     return day >= 1 && day <= 5 ? day - 1 : 0
   })
+  const [touchStart, setTouchStart] = useState(null)
+  const [touchEnd, setTouchEnd] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
@@ -260,6 +262,29 @@ export default function TimetablePage() {
     setForm(prev => ({ ...prev, class_type: type, color: classColors[type] }))
   }
 
+  const minSwipeDistance = 50
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+
+  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX)
+
+  const onTouchEndHandler = () => {
+    if (!touchStart || !touchEnd) return
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+    
+    if (isLeftSwipe) {
+      setMobileDay(prev => Math.min(days.length - 1, prev + 1))
+    }
+    if (isRightSwipe) {
+      setMobileDay(prev => Math.max(0, prev - 1))
+    }
+  }
+
   return (
     <main className="main-content">
       <div className="mb-6 flex flex-col gap-4">
@@ -397,7 +422,12 @@ export default function TimetablePage() {
         <div className="w-full">
           {/* Mobile View */}
           {classes.length > 0 && (
-          <section className="flex flex-col md:hidden">
+          <section 
+            className="flex flex-col md:hidden"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEndHandler}
+          >
             {days.map((day, index) => {
               if (mobileDay !== index) return null;
               const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
