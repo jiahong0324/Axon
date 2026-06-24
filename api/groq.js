@@ -21,6 +21,10 @@ export default async function handler(req, res) {
           model: VISION_MODEL,
           messages: [
             {
+              role: 'system',
+              content: 'Provide the final answer directly. DO NOT output internal reasoning. DO NOT use <think> tags. Be extremely concise.'
+            },
+            {
               role: 'user',
               content: [
                 { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } },
@@ -28,7 +32,7 @@ export default async function handler(req, res) {
               ]
             }
           ],
-          max_tokens: 4096,
+          max_tokens: 1500,
           temperature: 0.2
         }
       : {
