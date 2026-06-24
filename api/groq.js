@@ -28,7 +28,7 @@ export default async function handler(req, res) {
               ]
             }
           ],
-          max_tokens: 2000,
+          max_tokens: 4096,
           temperature: 0.2
         }
       : {
@@ -57,7 +57,8 @@ export default async function handler(req, res) {
 
     let content = data.choices?.[0]?.message?.content || ''
     // Remove <think>...</think> block which Qwen reasoning models output
-    content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+    // Also matches if the model gets cut off and never outputs the closing </think>
+    content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
 
     return res.status(200).json({ content })
   } catch (error) {
