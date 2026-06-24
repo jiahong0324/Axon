@@ -266,22 +266,26 @@ export default function TimetablePage() {
 
   const onTouchStart = (e) => {
     setTouchEnd(null)
-    setTouchStart(e.targetTouches[0].clientX)
+    setTouchStart({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY })
   }
 
-  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX)
+  const onTouchMove = (e) => setTouchEnd({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY })
 
   const onTouchEndHandler = () => {
     if (!touchStart || !touchEnd) return
-    const distance = touchStart - touchEnd
-    const isLeftSwipe = distance > minSwipeDistance
-    const isRightSwipe = distance < -minSwipeDistance
+    const distanceX = touchStart.x - touchEnd.x
+    const distanceY = touchStart.y - touchEnd.y
+    const isLeftSwipe = distanceX > minSwipeDistance
+    const isRightSwipe = distanceX < -minSwipeDistance
     
-    if (isLeftSwipe) {
-      setMobileDay(prev => Math.min(days.length - 1, prev + 1))
-    }
-    if (isRightSwipe) {
-      setMobileDay(prev => Math.max(0, prev - 1))
+    // Ensure horizontal swipe is more dominant than vertical scroll
+    if (Math.abs(distanceX) > Math.abs(distanceY)) {
+      if (isLeftSwipe) {
+        setMobileDay(prev => Math.min(days.length - 1, prev + 1))
+      }
+      if (isRightSwipe) {
+        setMobileDay(prev => Math.max(0, prev - 1))
+      }
     }
   }
 
@@ -432,7 +436,7 @@ export default function TimetablePage() {
               if (mobileDay !== index) return null;
               const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
               return (
-                <div key={day} className="flex flex-col gap-4">
+                <div key={day} className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="flex items-center justify-between px-1">
                     <h2 className="font-black tracking-wide text-[28px] text-white">
                       {t(`timetable.days.${day}`)}
