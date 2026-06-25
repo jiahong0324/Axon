@@ -89,22 +89,41 @@ export default function TimetablePage() {
 
   async function fetchClasses() {
     if (!user) return
+    
+    const today = new Date()
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
     if (!isLiveProfile) {
-      setClasses(activeProfile?.classes || [])
+      let linkedClasses = activeProfile?.classes || []
+      const validLinkedClasses = linkedClasses.filter(c => !c.is_replacement || !c.date || c.date >= todayString)
+      
+      if (linkedClasses.length !== validLinkedClasses.length) {
+        updateActiveLinkedClasses(validLinkedClasses)
+      } else {
+        setClasses(linkedClasses)
+      }
       setLoading(false)
       return
     }
 
     const cached = readCache(classesCacheKey(user.id), 10 * 60 * 1000)
     if (cached) {
-      setClasses(cached)
+      const validCached = cached.filter(c => !c.is_replacement || !c.date || c.date >= todayString)
+      setClasses(validCached)
       setLoading(false)
     } else {
       setLoading(true)
     }
 
     const { data } = await supabase.from('classes').select('*').eq('user_id', user.id)
-    const replacements = user.user_metadata?.replacement_classes || []
+    let replacements = user.user_metadata?.replacement_classes || []
+    const validReplacements = replacements.filter(r => !r.date || r.date >= todayString)
+    
+    if (replacements.length !== validReplacements.length) {
+      await supabase.auth.updateUser({ data: { replacement_classes: validReplacements } })
+      replacements = validReplacements
+    }
+
     const combined = [...(data || []), ...replacements]
     writeCache(classesCacheKey(user.id), combined)
     setClasses(combined)
