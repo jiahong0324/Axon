@@ -1,5 +1,5 @@
 const CHAT_MODEL = 'openai/gpt-oss-120b'
-const VISION_MODEL = 'openrouter/free' // Automatically selects best free vision model
+const VISION_MODEL = 'google/gemma-4-31b-it:free' // Explicitly use a stable free vision model
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

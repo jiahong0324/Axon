@@ -97,7 +97,16 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
       const base64 = await toBase64(file)
       const prompt = type === 'exam' ? EXAM_PROMPT : type === 'assignment' ? ASSIGNMENT_PROMPT : TIMETABLE_PROMPT
       const raw = await analyzeImageWithGroq(base64, file.type, prompt)
-      const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
+      
+      let jsonString = raw
+      const match = raw.match(/\[\s*\{[\s\S]*\}\s*\]/)
+      if (match) {
+        jsonString = match[0]
+      } else {
+        jsonString = raw.replace(/```json|```/g, '').trim()
+      }
+      
+      const parsed = JSON.parse(jsonString)
       if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Empty result')
       setItems(parsed.map((item, index) => normalizeItem(item, type, index)))
       setStep('results')
