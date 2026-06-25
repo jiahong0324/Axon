@@ -46,7 +46,15 @@ export default async function handler(req, res) {
         body: JSON.stringify(body)
       })
 
-      const data = await githubRes.json()
+      const responseText = await githubRes.text()
+      let data = {}
+      try {
+        data = JSON.parse(responseText)
+      } catch (e) {
+        // If the response is not valid JSON (e.g. plain text "Unauthorized")
+        data = { error: { message: responseText || `HTTP ${githubRes.status}` } }
+      }
+
       if (!githubRes.ok) {
         return res.status(githubRes.status).json({ error: data.error?.message || 'GitHub Models API error' })
       }
