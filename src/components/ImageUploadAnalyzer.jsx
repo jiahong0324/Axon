@@ -90,8 +90,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
     setStep('ready')
   }
 
-  async  function handleImageSelect(e) {
-    const file = e.target.files?.[0]
+  async function analyze() {
     if (!file) return
 
     setStep('analyzing')
