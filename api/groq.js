@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       }
 
       const body = {
-        model: 'Llama-3.2-11B-Vision-Instruct',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'user',
