@@ -28,8 +28,8 @@ export default async function handler(req, res) {
             parts: [
               { text: 'Provide the final answer directly. DO NOT output internal reasoning. DO NOT use <think> tags. Be extremely concise.\n\n' + prompt },
               {
-                inline_data: {
-                  mime_type: safeMimeType,
+                inlineData: {
+                  mimeType: safeMimeType,
                   data: cleanBase64
                 }
               }
