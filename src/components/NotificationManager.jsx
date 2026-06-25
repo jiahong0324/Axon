@@ -18,6 +18,7 @@ export default function NotificationManager() {
           key.startsWith('notified_reminder_') || 
           key.startsWith('notified_class_') || 
           key.startsWith('notified_exam_') ||
+          key.startsWith('notified_attendance_') ||
           key.startsWith('notified_assignment_due_') ||
           key.startsWith('notified_exam_countdown_') ||
           key.startsWith('axon_last_checked_')
@@ -119,6 +120,32 @@ export default function NotificationManager() {
           if (localStorage.getItem(key)) return
           new Notification(`Class starting in ${notifyMinutes} min!`, {
             body: `${cls.subject} [${cls.class_type}] at ${cls.classroom || 'TBA'}`,
+            icon: '/icons/logo.png',
+            badge: '/icons/logo.png',
+            vibrate: [200, 100, 200]
+          })
+          localStorage.setItem(key, '1')
+        })
+      }
+
+      const attendanceNotify = localStorage.getItem('axon_attendance_notify') !== 'false'
+      const attendanceMinutes = parseInt(localStorage.getItem('axon_attendance_minutes') || '10', 10)
+      const targetEndTime = new Date(now.getTime() + attendanceMinutes * 60000)
+      const targetEndTimeStr = `${String(targetEndTime.getHours()).padStart(2, '0')}:${String(targetEndTime.getMinutes()).padStart(2, '0')}`
+
+      if (attendanceNotify) {
+        const { data: endingClasses } = await supabase
+          .from('classes')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('day', todayDay)
+          .eq('end_time', targetEndTimeStr)
+
+        endingClasses?.forEach(cls => {
+          const key = `notified_attendance_${cls.id}_${todayDate}_${targetEndTimeStr}`
+          if (localStorage.getItem(key)) return
+          new Notification(`Attendance Reminder!`, {
+            body: `${cls.subject} is ending in ${attendanceMinutes} min. Don't forget to take the attendance code!`,
             icon: '/icons/logo.png',
             badge: '/icons/logo.png',
             vibrate: [200, 100, 200]

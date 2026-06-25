@@ -494,6 +494,16 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            <div className="h-px bg-white/10 w-full" />
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-blue-400">{t('settings.attendanceReminders') || 'Attendance Reminders'}</h4>
+              <PreferenceToggle label={t('settings.remindAttendance') || 'Remind to take attendance code'} k="axon_attendance_notify" />
+              <div className="mt-2">
+                <AttendanceMinuteSelector key={`att-min-sel-${prefTick}`} value={pref('axon_attendance_minutes', '10')} onChange={v => setPref('axon_attendance_minutes', v)} />
+              </div>
+            </div>
+
           </div>
         </Section>
         <Section id="appearance" title={t('settings.appearance')}>
@@ -606,6 +616,19 @@ function MinuteSelector({ value, onChange }) {
   const mins = ['5', '10', '15', '20', '30']
 
   return <div><p className="label">{t('settings.remindBeforeClass')}</p><div className="flex flex-wrap gap-2">{mins.map(v => <button key={v} onClick={() => { setSelected(v); onChange(v) }} className={`rounded-full px-4 py-2 text-sm ${selected === v ? 'bg-theme-500 text-white' : 'border border-white/10'}`}>{t(`settings.${v}min`)}</button>)}</div></div>
+}
+
+function AttendanceMinuteSelector({ value, onChange }) {
+  const [selected, setSelected] = useState(String(value))
+  const { t } = useLanguage()
+
+  useEffect(() => {
+    setSelected(String(value))
+  }, [value])
+
+  const mins = ['5', '10', '15', '20']
+
+  return <div><p className="label">{t('settings.remindBeforeClassEnd') || 'Remind before class ends'}</p><div className="flex flex-wrap gap-2">{mins.map(v => <button key={v} onClick={() => { setSelected(v); onChange(v) }} className={`rounded-full px-4 py-2 text-sm ${selected === v ? 'bg-theme-500 text-white' : 'border border-white/10'}`}>{t(`settings.${v}min`) || `${v} min`}</button>)}</div></div>
 }
 
 function accentHex(color) {
