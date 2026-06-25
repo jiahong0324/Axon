@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     
     if (mode === 'vision') {
       const body = {
-        model: 'llama-3.2-11b-vision-preview', // Groq's super fast free vision model
+        model: 'llama-3.2-11b-vision-instruct', // Groq's super fast free vision model
         messages: [
           {
             role: 'user',
