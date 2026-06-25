@@ -35,7 +35,7 @@ export default async function handler(req, res) {
             ]
           }
         ],
-        system_instruction: {
+        systemInstruction: {
           parts: [
             { text: 'Provide the final answer directly. DO NOT output internal reasoning. DO NOT use <think> tags. Be extremely concise.' }
           ]
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
         }
       }
 
-      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
