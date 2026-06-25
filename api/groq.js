@@ -1,4 +1,5 @@
 const CHAT_MODEL = 'openai/gpt-oss-120b'
+const VISION_MODEL = 'google/gemini-flash-1.5' // OpenRouter Vision Model
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -16,46 +17,46 @@ export default async function handler(req, res) {
     const cleanBase64 = base64Image ? base64Image.replace(/\s+/g, '') : ''
     
     if (mode === 'vision') {
-      const geminiApiKey = process.env.GEMINI_API_KEY
-      if (!geminiApiKey) {
-        return res.status(500).json({ error: 'Missing GEMINI_API_KEY environment variable' })
+      const openRouterApiKey = process.env.OPENROUTER_API_KEY
+      if (!openRouterApiKey) {
+        return res.status(500).json({ error: 'Missing OPENROUTER_API_KEY environment variable' })
       }
 
-      const geminiBody = {
-        contents: [
+      const body = {
+        model: VISION_MODEL,
+        messages: [
           {
-            parts: [
-              { text: 'Provide the final answer directly. DO NOT output internal reasoning. DO NOT use <think> tags. Be extremely concise.\n\n' + prompt },
-              {
-                inline_data: {
-                  mime_type: safeMimeType,
-                  data: cleanBase64
-                }
-              }
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Provide the final answer directly. DO NOT output internal reasoning. DO NOT use <think> tags. Be extremely concise.\n\n' + prompt },
+              { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } }
             ]
           }
         ],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 1500
-        }
+        max_tokens: 1500,
+        temperature: 0.2
       }
 
-      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+      const openRouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${openRouterApiKey}`,
+          'HTTP-Referer': 'http://localhost:3000', // Required by OpenRouter
+          'X-Title': 'Axon AI Helper' // Recommended by OpenRouter
         },
-        body: JSON.stringify(geminiBody)
+        body: JSON.stringify(body)
       })
 
-      const data = await geminiRes.json()
-      if (!geminiRes.ok) {
-        return res.status(geminiRes.status).json({ error: data.error?.message || 'Gemini API error' })
+      const data = await openRouterRes.json()
+      if (!openRouterRes.ok) {
+        return res.status(openRouterRes.status).json({ error: data.error?.message || 'OpenRouter API error' })
       }
 
-      const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-      return res.status(200).json({ content: content.trim() })
+      let content = data.choices?.[0]?.message?.content || ''
+      content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+
+      return res.status(200).json({ content })
     } else {
       const body = {
         model: CHAT_MODEL,
