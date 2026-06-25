@@ -497,8 +497,8 @@ export default function SettingsPage() {
             <div className="h-px bg-white/10 w-full" />
 
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-blue-400">{t('settings.attendanceReminders') || 'Attendance Reminders'}</h4>
-              <PreferenceToggle label={t('settings.remindAttendance') || 'Remind to take attendance code'} k="axon_attendance_notify" />
+              <h4 className="text-sm font-semibold text-blue-400">Attendance Reminders</h4>
+              <PreferenceToggle label="Remind to take attendance code" k="axon_attendance_notify" />
               <div className="mt-2">
                 <AttendanceMinuteSelector key={`att-min-sel-${prefTick}`} value={pref('axon_attendance_minutes', '10')} onChange={v => setPref('axon_attendance_minutes', v)} />
               </div>
@@ -628,7 +628,7 @@ function AttendanceMinuteSelector({ value, onChange }) {
 
   const mins = ['5', '10', '15', '20']
 
-  return <div><p className="label">{t('settings.remindBeforeClassEnd') || 'Remind before class ends'}</p><div className="flex flex-wrap gap-2">{mins.map(v => <button key={v} onClick={() => { setSelected(v); onChange(v) }} className={`rounded-full px-4 py-2 text-sm ${selected === v ? 'bg-theme-500 text-white' : 'border border-white/10'}`}>{t(`settings.${v}min`) || `${v} min`}</button>)}</div></div>
+  return <div><p className="label">Remind Before Class End</p><div className="flex flex-wrap gap-2">{mins.map(v => <button key={v} onClick={() => { setSelected(v); onChange(v) }} className={`rounded-full px-4 py-2 text-sm ${selected === v ? 'bg-theme-500 text-white' : 'border border-white/10'}`}>{t(`settings.${v}min`)}</button>)}</div></div>
 }
 
 function accentHex(color) {
