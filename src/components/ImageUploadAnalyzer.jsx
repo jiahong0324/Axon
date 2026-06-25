@@ -110,8 +110,8 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
       if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Empty result')
       setItems(parsed.map((item, index) => normalizeItem(item, type, index)))
       setStep('results')
-    } catch {
-      setError("AI couldn't read this image clearly")
+    } catch (err) {
+      setError(err.message || "AI couldn't read this image clearly")
       setStep('error')
     }
   }
