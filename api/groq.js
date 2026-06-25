@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         contents: [
           {
             parts: [
-              { text: prompt },
+              { text: 'Provide the final answer directly. DO NOT output internal reasoning. DO NOT use <think> tags. Be extremely concise.\n\n' + prompt },
               {
                 inline_data: {
                   mime_type: safeMimeType,
@@ -35,11 +35,6 @@ export default async function handler(req, res) {
             ]
           }
         ],
-        systemInstruction: {
-          parts: [
-            { text: 'Provide the final answer directly. DO NOT output internal reasoning. DO NOT use <think> tags. Be extremely concise.' }
-          ]
-        },
         generationConfig: {
           temperature: 0.2,
           maxOutputTokens: 1500
