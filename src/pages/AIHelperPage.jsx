@@ -68,13 +68,40 @@ export default function AIHelperPage({ role = 'student' }) {
   function handleImageSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
+    
+    // Compress image before setting to avoid payload limits and timeouts
     const reader = new FileReader()
-    reader.onload = () => {
-      setSelectedImage({
-        url: URL.createObjectURL(file),
-        base64: reader.result.split(',')[1],
-        mimeType: file.type
-      })
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+        const maxDim = 800
+        
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width)
+            width = maxDim
+          } else {
+            width = Math.round((width * maxDim) / height)
+            height = maxDim
+          }
+        }
+        
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.6)
+        setSelectedImage({
+          url: dataUrl,
+          base64: dataUrl.split(',')[1],
+          mimeType: 'image/jpeg'
+        })
+      }
+      img.src = e.target.result
     }
     reader.readAsDataURL(file)
   }

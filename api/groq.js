@@ -17,46 +17,46 @@ export default async function handler(req, res) {
     const cleanBase64 = base64Image ? base64Image.replace(/\s+/g, '') : ''
     
     if (mode === 'vision') {
-      const openRouterApiKey = process.env.OPENROUTER_API_KEY
-      if (!openRouterApiKey) {
-        return res.status(500).json({ error: 'Missing OPENROUTER_API_KEY environment variable' })
+      const geminiApiKey = process.env.GEMINI_API_KEY
+      if (!geminiApiKey) {
+        return res.status(500).json({ error: 'Missing GEMINI_API_KEY environment variable' })
       }
 
-      const body = {
-        model: 'openrouter/free',
-        messages: [
+      const geminiBody = {
+        contents: [
           {
-            role: 'user',
-            content: [
-              { type: 'text', text: 'Provide the final answer directly. DO NOT output internal reasoning. DO NOT use <think> tags. Be extremely concise.\n\n' + prompt },
-              { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } }
+            parts: [
+              { text: 'Provide the final answer directly. DO NOT output internal reasoning. DO NOT use <think> tags. Be extremely concise.\n\n' + prompt },
+              {
+                inlineData: {
+                  mimeType: safeMimeType,
+                  data: cleanBase64
+                }
+              }
             ]
           }
         ],
-        max_tokens: 1500,
-        temperature: 0.2
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 1500
+        }
       }
 
-      const openRouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${openRouterApiKey}`,
-          'HTTP-Referer': 'http://localhost:3000',
-          'X-Title': 'Axon AI Helper'
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(geminiBody)
       })
 
-      const data = await openRouterRes.json()
-      if (!openRouterRes.ok) {
-        return res.status(openRouterRes.status).json({ error: data.error?.message || 'OpenRouter API error' })
+      const data = await geminiRes.json()
+      if (!geminiRes.ok) {
+        return res.status(geminiRes.status).json({ error: data.error?.message || 'Gemini API error' })
       }
 
-      let content = data.choices?.[0]?.message?.content || ''
-      content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
-
-      return res.status(200).json({ content })
+      const content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      return res.status(200).json({ content: content.trim() })
     } else {
       const body = {
         model: CHAT_MODEL,

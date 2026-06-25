@@ -90,30 +90,66 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
     setStep('ready')
   }
 
-  async function analyze() {
+  async  function handleImageSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
     setStep('analyzing')
-    setError('')
-    try {
-      const base64 = await toBase64(file)
-      const prompt = type === 'exam' ? EXAM_PROMPT : type === 'assignment' ? ASSIGNMENT_PROMPT : TIMETABLE_PROMPT
-      const raw = await analyzeImageWithGroq(base64, file.type, prompt)
-      
-      let jsonString = raw
-      const match = raw.match(/\[\s*\{[\s\S]*\}\s*\]/)
-      if (match) {
-        jsonString = match[0]
-      } else {
-        jsonString = raw.replace(/```json|```/g, '').trim()
+    setError(null)
+    
+    // Compress image before setting to avoid payload limits and timeouts
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = async () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+        const maxDim = 800
+        
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width)
+            width = maxDim
+          } else {
+            width = Math.round((width * maxDim) / height)
+            height = maxDim
+          }
+        }
+        
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.6)
+        const base64 = dataUrl.split(',')[1]
+        
+        try {
+          const prompt = type === 'exam' ? EXAM_PROMPT : type === 'assignment' ? ASSIGNMENT_PROMPT : TIMETABLE_PROMPT
+          const raw = await analyzeImageWithGroq(base64, 'image/jpeg', prompt)
+          
+          let jsonString = raw
+          const match = raw.match(/\[\s*\{[\s\S]*\}\s*\]/)
+          if (match) {
+            jsonString = match[0]
+          } else {
+            jsonString = raw.replace(/```json|```/g, '').trim()
+          }
+          
+          const parsed = JSON.parse(jsonString)
+          if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Empty result')
+          
+          setItems(parsed.map((item, index) => normalizeItem(item, type, index)))
+          setStep('results')
+        } catch (err) {
+          setError(err.message || "AI couldn't read this image clearly")
+          setStep('error')
+        }
       }
-      
-      const parsed = JSON.parse(jsonString)
-      if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Empty result')
-      setItems(parsed.map((item, index) => normalizeItem(item, type, index)))
-      setStep('results')
-    } catch (err) {
-      setError(err.message || "AI couldn't read this image clearly")
-      setStep('error')
+      img.src = event.target.result
     }
+    reader.readAsDataURL(file)
   }
 
   async function handleImport() {
