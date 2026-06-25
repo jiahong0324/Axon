@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       }
 
       const body = {
-        model: 'google/gemma-4-31b-it:free',
+        model: 'openrouter/free',
         messages: [
           {
             role: 'user',
