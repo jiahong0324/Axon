@@ -171,6 +171,28 @@ export default async function handler(req, res) {
         }
       }
 
+      // E. Attendance Reminders
+      const attendanceNotify = prefs.axon_attendance_notify !== false && prefs.axon_attendance_notify !== 'false'
+      const attendanceMinutes = parseInt(prefs.axon_attendance_minutes || '10', 10)
+      
+      if (attendanceNotify) {
+        const userClasses = todayClasses?.filter(cls => cls.user_id === sub.user_id) || []
+        const nowTime = new Date()
+        const targetEndTime = new Date(nowTime.getTime() + attendanceMinutes * 60000)
+        const targetEndTimeStr = timeFormatter.format(targetEndTime)
+
+        userClasses.forEach(cls => {
+          if (cls.end_time === targetEndTimeStr) {
+            subPayloads.push({
+              id: `attendance_${cls.id}`,
+              title: `Attendance Reminder!`,
+              body: `${cls.subject} is ending in ${attendanceMinutes} min. Don't forget to take the attendance code!`,
+              url: '/'
+            })
+          }
+        })
+      }
+
       // D. Daily Deadlines (09:00 AM)
       if (currentTime === '09:00') {
         const assignmentReminders = prefs.assignmentReminders !== false && prefs.assignmentReminders !== 'false'
