@@ -12,39 +12,39 @@ const GlassPanel = ({ children, className = "" }) => (
 // --- Scene 1: The Ecosystem (0 - 0.07) ---
 const EcosystemScene = ({ progress }) => {
   const opacity = useTransform(progress, [0, 0.05, 0.07], [1, 1, 0])
-  const scale = useTransform(progress, [0, 0.07], [1, 1.2])
+  const scale = useTransform(progress, [0, 0.07], [1, 1.1])
   
   // Floating parallax background elements
-  const float1 = useTransform(progress, [0, 0.07], [0, -200])
-  const float2 = useTransform(progress, [0, 0.07], [0, 150])
+  const float1 = useTransform(progress, [0, 0.07], [0, -150])
+  const float2 = useTransform(progress, [0, 0.07], [0, 100])
 
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none" style={{ opacity }}>
       {/* 3D Background Parallax */}
-      <motion.div className="absolute top-20 left-20 w-64 h-64 bg-theme-500/20 rounded-full blur-[80px]" style={{ y: float1 }} />
-      <motion.div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px]" style={{ y: float2 }} />
+      <motion.div className="absolute top-20 left-20 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]" style={{ y: float1 }} />
+      <motion.div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]" style={{ y: float2 }} />
 
       <motion.div className="w-full max-w-6xl relative z-10 px-4" style={{ scale }}>
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-theme-100 dark:bg-theme-900/50 text-theme-600 dark:text-theme-400 mb-6 font-bold tracking-widest text-sm shadow-sm border border-theme-200 dark:border-theme-700/50">
-            <LayoutDashboard className="w-4 h-4 mr-2" /> UNIMIND V2.0
-          </div>
-          <h1 className="text-6xl md:text-[5.5rem] font-black text-slate-900 dark:text-white tracking-tighter leading-[1.1] drop-shadow-2xl mb-6">
-            The Ultimate <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-theme-500 to-purple-600 drop-shadow-lg">Ecosystem.</span>
+        <div className="text-center mb-12">
+          <h1 className="text-6xl md:text-[5.5rem] font-black text-white tracking-tighter leading-[1.1] drop-shadow-2xl mb-4">
+            The Ultimate <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg">Ecosystem.</span>
           </h1>
-          <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-medium max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl text-slate-300 font-medium max-w-3xl mx-auto">
             Everything you need to dominate your academic life, seamlessly integrated into one intelligent platform.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 perspective-1000">
-          <GlassPanel className="p-6 md:p-8 col-span-1 md:col-span-2 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-theme-400/20 to-transparent rounded-bl-full pointer-events-none" />
+          {/* Activity Overview Card */}
+          <div className="p-6 md:p-8 col-span-1 md:col-span-2 relative overflow-hidden group rounded-3xl bg-[#0B0F19] border border-slate-800 shadow-2xl">
+            {/* Background Curve */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-900/20 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3 pointer-events-none" />
+            
             <div className="flex items-center justify-between mb-8 relative z-10">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                <Activity className="w-6 h-6 text-theme-500" /> Activity Overview
+              <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Activity className="w-6 h-6 text-blue-500" /> Activity Overview
               </h3>
-              <span className="px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 text-sm font-bold border border-emerald-200 dark:border-emerald-500/30 shadow-sm flex items-center gap-2">
+              <span className="px-4 py-1.5 rounded-full bg-emerald-900/30 text-emerald-400 text-sm font-bold border border-emerald-500/20 shadow-sm flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 +24% Productivity
               </span>
@@ -57,44 +57,42 @@ const EcosystemScene = ({ progress }) => {
                     initial={{ height: 0 }}
                     whileInView={{ height: `${height}%` }}
                     transition={{ type: "spring", bounce: 0.4, duration: 1.5, delay: i * 0.1 }}
-                    className="w-full bg-gradient-to-t from-theme-600 to-theme-400 rounded-t-lg shadow-lg relative group-hover:from-theme-500 group-hover:to-theme-300 transition-colors"
+                    className="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-lg shadow-lg relative group-hover:from-blue-500 group-hover:to-blue-300 transition-colors opacity-80"
                   >
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-bold py-1 px-2 rounded">
-                      {height}%
-                    </div>
                   </motion.div>
-                  <span className="text-xs font-bold text-slate-400">
+                  <span className="text-xs font-bold text-slate-500">
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]}
                   </span>
                 </div>
               ))}
             </div>
-          </GlassPanel>
+          </div>
 
-          <GlassPanel className="p-6 md:p-8 relative overflow-hidden flex flex-col justify-between">
-            <div className="absolute -bottom-10 -right-10 opacity-10">
+          {/* Events Today Card */}
+          <div className="p-6 md:p-8 relative overflow-hidden flex flex-col rounded-3xl bg-[#0B0F19] border border-slate-800 shadow-2xl">
+            <div className="absolute -bottom-10 -right-10 opacity-5">
               <Sparkles className="w-40 h-40" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-                <Bell className="w-6 h-6 text-purple-500" /> Events Today
+              <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 relative z-10">
+                <Bell className="w-6 h-6 text-purple-400" /> Events Today
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-4 relative z-10">
                 {[
                   { title: "Database Systems", time: "10:00 AM", type: "Class" },
                   { title: "Team Meeting", time: "02:30 PM", type: "Sync" },
                   { title: "Assignment Due", time: "11:59 PM", type: "Deadline", urgent: true }
                 ].map((event, i) => (
-                  <div key={i} className={`p-4 rounded-2xl flex justify-between items-center ${event.urgent ? 'bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20' : 'bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50'}`}>
+                  <div key={i} className={`p-4 rounded-2xl flex justify-between items-center ${event.urgent ? 'bg-rose-900/20 border border-rose-500/20' : 'bg-slate-800/50 border border-slate-700/50'}`}>
                     <div>
-                      <h4 className={`font-bold ${event.urgent ? 'text-red-700 dark:text-red-400' : 'text-slate-800 dark:text-slate-200'}`}>{event.title}</h4>
-                      <p className={`text-sm font-medium ${event.urgent ? 'text-red-600/80 dark:text-red-400/80' : 'text-slate-500 dark:text-slate-400'}`}>{event.time}</p>
+                      <h4 className={`font-bold ${event.urgent ? 'text-rose-400' : 'text-white'}`}>{event.title}</h4>
+                      <p className={`text-sm font-medium ${event.urgent ? 'text-rose-500/80' : 'text-slate-400'}`}>{event.time}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          </GlassPanel>
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -661,7 +659,7 @@ export default function LandingHelo() {
   const bgColors = useTransform(smoothProgress, 
     [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1], 
     [
-      'linear-gradient(135deg, #f8fbff 0%, #EEF4FB 100%)', // Eco
+      'linear-gradient(135deg, #0f172a 0%, #020617 100%)', // Eco (Forced Dark for aesthetic)
       'linear-gradient(135deg, #e0f2fe 0%, #e0e7ff 100%)', // Waterfall
       'linear-gradient(135deg, #f3e8ff 0%, #e0e7ff 100%)', // Alerts
       'linear-gradient(135deg, #f3e8ff 0%, #fae8ff 100%)', // Chat
