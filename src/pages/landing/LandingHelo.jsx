@@ -348,8 +348,8 @@ const MatrixScene = ({ progress }) => {
   ]
 
   return (
-    <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none px-4 pt-16" style={{ opacity }}>
-      <div className="text-center mb-6 md:mb-10">
+    <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none px-4 pb-12" style={{ opacity }}>
+      <div className="text-center mb-10 md:mb-16">
         <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight drop-shadow-lg leading-tight">
           Crush Every <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500 drop-shadow-xl">Deadline.</span>
         </h2>
