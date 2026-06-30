@@ -15,7 +15,6 @@ const EcosystemScene = ({ progress }) => {
   const scale = useTransform(progress, [0, 0.06], [1, 2.5])
   const rotateCore = useTransform(progress, [0, 0.06], [0, 90])
   const counterRotateCore = useTransform(rotateCore, v => -v)
-  const solarY = useTransform(progress, [0, 0.06], [80, -40])
   
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none overflow-hidden will-change-transform" style={{ opacity }}>
@@ -30,7 +29,7 @@ const EcosystemScene = ({ progress }) => {
       </motion.div>
 
       {/* The 3D Solar System */}
-      <motion.div className="relative w-full h-full flex items-center justify-center will-change-transform" style={{ scale, y: solarY }}>
+      <motion.div className="relative w-full h-full flex items-center justify-center pt-32 md:pt-48 will-change-transform" style={{ scale }}>
         
         {/* Core Frame (provides isometric tilt) */}
         <div className="relative w-[800px] h-[800px] flex items-center justify-center perspective-[2000px]">
@@ -589,7 +588,7 @@ const FocusScene = ({ progress }) => {
 // --- Scene 10: Knowledge Base (0.68 - 0.76) ---
 const KnowledgeScene = ({ progress }) => {
   const opacity = useTransform(progress, [0.68, 0.70, 0.74, 0.76], [0, 1, 1, 0])
-  const spread = useTransform(progress, [0.68, 0.76], [1, 3])
+  const spread = useTransform(progress, [0.68, 0.76], [1, 1.8])
   const coreScale = useTransform(progress, [0.68, 0.76], [1, 5])
   
   const nodes = [
