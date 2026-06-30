@@ -546,10 +546,10 @@ const KnowledgeScene = ({ progress }) => {
           
           return (
             <motion.div key={i} className="absolute flex flex-col items-center" style={{ x: moveX, y: moveY }}>
-              <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-900/50 border border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.8)] backdrop-blur-md flex items-center justify-center">
-                <BookOpen className="w-3 h-3 md:w-4 md:h-4 text-purple-300" />
+              <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-slate-900/50 border border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.8)] backdrop-blur-md flex items-center justify-center">
+                <BookOpen className="w-5 h-5 md:w-8 md:h-8 text-purple-300" />
               </div>
-              <span className="text-[10px] md:text-xs text-white font-bold mt-2 bg-slate-900/80 px-2 py-0.5 rounded-full border border-purple-500/30 whitespace-nowrap">{node.label}</span>
+              <span className="text-xs md:text-sm text-white font-bold mt-2 bg-slate-900/80 px-3 py-1 rounded-full border border-purple-500/30 whitespace-nowrap">{node.label}</span>
             </motion.div>
           )
         })}
@@ -559,7 +559,7 @@ const KnowledgeScene = ({ progress }) => {
             const x2 = useTransform(spread, s => `calc(50% + ${node.x * s}px)`)
             const y2 = useTransform(spread, s => `calc(50% + ${node.y * s}px)`)
             return (
-              <motion.line key={i} x1="50%" y1="50%" x2={x2} y2={y2} stroke="rgba(168,85,247,0.5)" strokeWidth="2" strokeDasharray="4" />
+              <motion.line key={i} x1="50%" y1="50%" x2={x2} y2={y2} stroke="rgba(168,85,247,0.2)" strokeWidth="1" strokeDasharray="4" />
             )
           })}
         </svg>
