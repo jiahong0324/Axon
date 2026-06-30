@@ -50,13 +50,13 @@ export default function App() {
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/update-password" element={<UpdatePasswordPage />} />
               <Route path="/terms" element={<TermsPage />} />
+              <Route path="/helo" element={<LandingHelo />} />
               <Route path="/" element={<LandingLayout />}>
                 <Route index element={<LandingHome />} />
                 <Route path="blog" element={<LandingBlog />} />
                 <Route path="blog/:slug" element={<LandingArticle />} />
                 <Route path="faq" element={<LandingFAQ />} />
                 <Route path="contact" element={<LandingContact />} />
-                <Route path="helo" element={<LandingHelo />} />
               </Route>
               <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
               <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />

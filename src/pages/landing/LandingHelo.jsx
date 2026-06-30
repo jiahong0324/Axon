@@ -1,346 +1,333 @@
-import { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
-import { Calendar, CheckSquare, Clock, BookOpen, Settings, LayoutDashboard, ChevronRight, User, Bell } from 'lucide-react'
+import { useRef, useEffect } from 'react'
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
+import { Calendar, CheckSquare, Clock, BookOpen, Settings, LayoutDashboard, ChevronRight, User, Bell, ChevronLeft } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
-// --- Mock Data ---
-const MOCK_DATA = {
-  timetable: [
-    { time: '09:00 AM', subject: 'Software Engineering', room: 'Block A, 204' },
-    { time: '11:00 AM', subject: 'Database Systems', room: 'Lab 3' },
-    { time: '02:00 PM', subject: 'Web Development', room: 'Block B, 102' }
-  ],
-  exams: [
-    { subject: 'Artificial Intelligence', date: 'Jul 15, 2026', time: '10:00 AM', daysLeft: 15 },
-    { subject: 'Data Structures', date: 'Jul 20, 2026', time: '02:00 PM', daysLeft: 20 },
-  ],
-  assignments: [
-    { title: 'React UI Implementation', subject: 'Web Development', status: 'In Progress', due: 'Tomorrow' },
-    { title: 'Database Normalization', subject: 'Database Systems', status: 'Pending', due: 'In 3 days' },
-  ],
-  settings: {
-    name: 'Student',
-    email: 'student@example.com',
-    notifications: true,
-    theme: 'Dark Mode'
-  }
+// --- Massive Immersive UI Components ---
+
+const IntroSequence = ({ progress }) => {
+  const scale = useTransform(progress, [0, 0.15], [1, 20])
+  const opacity = useTransform(progress, [0, 0.1, 0.15], [1, 1, 0])
+  const filter = useTransform(progress, [0, 0.15], ['blur(0px)', 'blur(20px)'])
+  const y = useTransform(progress, [0, 0.15], ['0%', '100%'])
+
+  return (
+    <motion.div 
+      className="absolute inset-0 flex flex-col items-center justify-center z-50 pointer-events-none"
+      style={{ opacity, filter, scale }}
+    >
+      <h1 className="text-[15vw] font-black text-white tracking-tighter leading-none bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-2xl">
+        AXON
+      </h1>
+      <motion.p 
+        className="text-2xl md:text-4xl text-slate-300 font-medium tracking-widest uppercase mt-4"
+        style={{ y, opacity: useTransform(progress, [0, 0.05], [1, 0]) }}
+      >
+        The Future of Learning
+      </motion.p>
+    </motion.div>
+  )
 }
 
-// --- Feature Mockups ---
-const HomeMockup = () => (
-  <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 rounded-b-[2rem] overflow-hidden p-6 gap-6">
-    <div className="flex justify-between items-center">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Welcome back 👋</h2>
-        <p className="text-slate-500 dark:text-slate-400">Here's an overview of your day.</p>
-      </div>
-      <div className="h-12 w-12 rounded-full bg-theme-100 dark:bg-theme-900 flex items-center justify-center text-theme-600 dark:text-theme-400">
-        <User className="w-6 h-6" />
-      </div>
-    </div>
-    <div className="grid grid-cols-2 gap-4">
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col gap-2">
-        <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-          <Calendar className="w-5 h-5" />
-        </div>
-        <span className="font-semibold text-slate-700 dark:text-slate-200">3 Classes Today</span>
-      </div>
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col gap-2">
-        <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
-          <Clock className="w-5 h-5" />
-        </div>
-        <span className="font-semibold text-slate-700 dark:text-slate-200">2 Exams Soon</span>
-      </div>
-    </div>
-    <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 p-4">
-      <h3 className="font-bold text-slate-800 dark:text-white mb-4">Recent Activity</h3>
-      <div className="flex flex-col gap-3">
-        <div className="h-16 rounded-xl bg-slate-100 dark:bg-slate-700/50 animate-pulse"></div>
-        <div className="h-16 rounded-xl bg-slate-100 dark:bg-slate-700/50 animate-pulse"></div>
-      </div>
-    </div>
-  </div>
-)
+const DashboardSequence = ({ progress }) => {
+  // Enters 0.1, peaks 0.2, leaves 0.35
+  const oMain = useTransform(progress, [0.1, 0.2, 0.3, 0.35], [0, 1, 1, 0])
+  const sMain = useTransform(progress, [0.1, 0.2, 0.3, 0.35], [0.8, 1, 1, 1.2])
+  
+  // Parallax elements
+  const card1Y = useTransform(progress, [0.1, 0.35], ['100%', '-100%'])
+  const card2Y = useTransform(progress, [0.1, 0.35], ['150%', '-50%'])
+  const card3X = useTransform(progress, [0.1, 0.35], ['-100%', '100%'])
+  
+  return (
+    <motion.div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none" style={{ opacity: oMain }}>
+      <motion.div className="relative w-full max-w-[1400px] aspect-video" style={{ scale: sMain }}>
+        {/* Giant Welcome Header */}
+        <motion.div 
+          className="absolute top-10 left-10 md:top-20 md:left-20"
+          style={{ x: card3X }}
+        >
+          <h2 className="text-6xl md:text-8xl font-bold text-white tracking-tight drop-shadow-2xl">
+            Command<br/>Center
+          </h2>
+          <p className="text-2xl md:text-4xl text-slate-400 mt-6 max-w-xl">
+            Your entire academic life, beautifully organized in one panoramic view.
+          </p>
+        </motion.div>
 
-const TimetableMockup = () => (
-  <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 rounded-b-[2rem] overflow-hidden p-6 gap-4">
-    <div className="flex items-center gap-3 mb-2">
-      <div className="p-2 rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
-        <Calendar className="w-5 h-5" />
-      </div>
-      <h2 className="text-xl font-bold text-slate-800 dark:text-white">Today's Schedule</h2>
-    </div>
-    <div className="flex flex-col gap-4">
-      {MOCK_DATA.timetable.map((item, i) => (
-        <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700/50">
-          <div className="flex flex-col items-center justify-center pr-4 border-r border-slate-100 dark:border-slate-700">
-            <span className="text-sm font-bold text-theme-600 dark:text-theme-400">{item.time.split(' ')[0]}</span>
-            <span className="text-xs text-slate-400">{item.time.split(' ')[1]}</span>
+        {/* Floating Giant Cards */}
+        <motion.div 
+          className="absolute right-10 bottom-20 md:right-32 md:bottom-32 w-80 md:w-[450px] p-8 md:p-12 rounded-[3rem] bg-white/5 border border-white/10 backdrop-blur-3xl shadow-2xl"
+          style={{ y: card1Y }}
+        >
+          <div className="w-20 h-20 rounded-3xl bg-blue-500/20 flex items-center justify-center text-blue-400 mb-8">
+            <Calendar className="w-10 h-10" />
           </div>
-          <div className="flex flex-col justify-center">
-            <h4 className="font-bold text-slate-800 dark:text-slate-100">{item.subject}</h4>
-            <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
-              <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
-              {item.room}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)
+          <h3 className="text-4xl md:text-5xl font-bold text-white mb-4">3 Classes</h3>
+          <p className="text-xl text-slate-400">Scheduled for today. Next up: Engineering at 10:00 AM.</p>
+        </motion.div>
 
-const ExamMockup = () => (
-  <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 rounded-b-[2rem] overflow-hidden p-6 gap-4">
-    <div className="flex items-center gap-3 mb-2">
-      <div className="p-2 rounded-lg bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400">
-        <Clock className="w-5 h-5" />
-      </div>
-      <h2 className="text-xl font-bold text-slate-800 dark:text-white">Upcoming Exams</h2>
-    </div>
-    <div className="grid gap-4">
-      {MOCK_DATA.exams.map((exam, i) => (
-        <div key={i} className="relative p-5 rounded-2xl bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-800/80 shadow-md border border-slate-200/50 dark:border-slate-700 overflow-hidden">
-          <div className="absolute top-0 right-0 p-3 bg-rose-500 text-white rounded-bl-2xl font-bold text-sm shadow-sm">
-            {exam.daysLeft} days left
+        <motion.div 
+          className="absolute left-10 bottom-10 md:left-40 md:-bottom-10 w-72 md:w-[400px] p-8 md:p-10 rounded-[3rem] bg-theme-600/20 border border-theme-500/30 backdrop-blur-3xl shadow-2xl"
+          style={{ y: card2Y }}
+        >
+          <div className="w-16 h-16 rounded-2xl bg-theme-500/30 flex items-center justify-center text-theme-300 mb-6">
+            <Clock className="w-8 h-8" />
           </div>
-          <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-2 pr-20">{exam.subject}</h3>
-          <div className="flex items-center gap-4 text-sm font-medium text-slate-600 dark:text-slate-400">
-            <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> {exam.date}</span>
-            <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {exam.time}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)
+          <h3 className="text-3xl md:text-4xl font-bold text-white mb-2">2 Exams</h3>
+          <p className="text-lg text-theme-200/70">Approaching this week. Keep up the pace.</p>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  )
+}
 
-const AssignmentMockup = () => (
-  <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 rounded-b-[2rem] overflow-hidden p-6 gap-4">
-    <div className="flex items-center gap-3 mb-2">
-      <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400">
-        <CheckSquare className="w-5 h-5" />
-      </div>
-      <h2 className="text-xl font-bold text-slate-800 dark:text-white">Assignments</h2>
-    </div>
-    <div className="flex flex-col gap-3">
-      {MOCK_DATA.assignments.map((task, i) => (
-        <div key={i} className="p-4 rounded-xl bg-white dark:bg-slate-800 shadow-sm border-l-4 border-emerald-500 flex items-center justify-between group">
-          <div className="flex flex-col">
-            <h4 className="font-bold text-slate-800 dark:text-slate-100">{task.title}</h4>
-            <span className="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wide">{task.subject}</span>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className="text-xs px-2 py-1 rounded-md bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 font-bold">
-              {task.due}
-            </span>
-            <span className="text-xs text-slate-400">{task.status}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)
+const TimetableSequence = ({ progress }) => {
+  // Enters 0.3, peaks 0.45, leaves 0.55
+  const opacity = useTransform(progress, [0.3, 0.4, 0.5, 0.55], [0, 1, 1, 0])
+  const scale = useTransform(progress, [0.3, 0.4, 0.5, 0.55], [0.8, 1, 1, 1.5])
+  
+  const row1X = useTransform(progress, [0.3, 0.55], ['-100vw', '100vw'])
+  const row2X = useTransform(progress, [0.3, 0.55], ['100vw', '-100vw'])
+  const row3X = useTransform(progress, [0.3, 0.55], ['-50vw', '50vw'])
 
-const SettingsMockup = () => (
-  <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 rounded-b-[2rem] overflow-hidden p-6 gap-6">
-    <div className="flex items-center gap-3 mb-2">
-      <div className="p-2 rounded-lg bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-        <Settings className="w-5 h-5" />
-      </div>
-      <h2 className="text-xl font-bold text-slate-800 dark:text-white">Settings</h2>
-    </div>
-    <div className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-slate-800 shadow-sm">
-      <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-theme-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
-        {MOCK_DATA.settings.name[0]}
-      </div>
-      <div>
-        <h3 className="font-bold text-lg text-slate-800 dark:text-white">{MOCK_DATA.settings.name}</h3>
-        <p className="text-sm text-slate-500">{MOCK_DATA.settings.email}</p>
-      </div>
-    </div>
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-700/50">
-      <div className="p-4 flex items-center justify-between">
-        <span className="font-medium flex items-center gap-2 dark:text-slate-200"><Bell className="w-4 h-4 text-slate-400" /> Notifications</span>
-        <div className="w-10 h-6 bg-theme-500 rounded-full relative">
-          <div className="absolute right-1 top-1 bg-white w-4 h-4 rounded-full shadow-sm"></div>
+  return (
+    <motion.div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none" style={{ opacity }}>
+      <motion.div className="w-full max-w-7xl px-8 flex flex-col gap-8 md:gap-12" style={{ scale }}>
+        
+        <div className="text-center mb-10">
+          <h2 className="text-5xl md:text-7xl font-bold text-white mb-4">Master Your Time</h2>
+          <p className="text-2xl text-indigo-300">A timetable that flows with your day.</p>
         </div>
+
+        <motion.div className="w-full p-8 md:p-10 rounded-[2.5rem] bg-indigo-900/40 border border-indigo-500/30 backdrop-blur-2xl flex items-center gap-10 shadow-2xl" style={{ x: row1X }}>
+          <div className="text-4xl md:text-6xl font-black text-indigo-400 w-48 text-right shrink-0">09:00</div>
+          <div className="w-2 h-32 rounded-full bg-indigo-500 hidden md:block"></div>
+          <div>
+            <h3 className="text-3xl md:text-5xl font-bold text-white">Software Engineering</h3>
+            <p className="text-xl md:text-2xl text-indigo-200 mt-2 flex items-center gap-2"><Calendar className="w-6 h-6"/> Block A, Room 204</p>
+          </div>
+        </motion.div>
+
+        <motion.div className="w-full p-8 md:p-10 rounded-[2.5rem] bg-purple-900/40 border border-purple-500/30 backdrop-blur-2xl flex items-center gap-10 shadow-2xl" style={{ x: row2X }}>
+          <div className="text-4xl md:text-6xl font-black text-purple-400 w-48 text-right shrink-0">11:30</div>
+          <div className="w-2 h-32 rounded-full bg-purple-500 hidden md:block"></div>
+          <div>
+            <h3 className="text-3xl md:text-5xl font-bold text-white">Database Systems</h3>
+            <p className="text-xl md:text-2xl text-purple-200 mt-2 flex items-center gap-2"><Calendar className="w-6 h-6"/> Computer Lab 3</p>
+          </div>
+        </motion.div>
+
+        <motion.div className="w-full p-8 md:p-10 rounded-[2.5rem] bg-rose-900/40 border border-rose-500/30 backdrop-blur-2xl flex items-center gap-10 shadow-2xl" style={{ x: row3X }}>
+          <div className="text-4xl md:text-6xl font-black text-rose-400 w-48 text-right shrink-0">14:00</div>
+          <div className="w-2 h-32 rounded-full bg-rose-500 hidden md:block"></div>
+          <div>
+            <h3 className="text-3xl md:text-5xl font-bold text-white">Artificial Intelligence</h3>
+            <p className="text-xl md:text-2xl text-rose-200 mt-2 flex items-center gap-2"><Calendar className="w-6 h-6"/> Lecture Hall B</p>
+          </div>
+        </motion.div>
+
+      </motion.div>
+    </motion.div>
+  )
+}
+
+const ExamSequence = ({ progress }) => {
+  // Enters 0.5, peaks 0.65, leaves 0.75
+  const opacity = useTransform(progress, [0.5, 0.6, 0.7, 0.75], [0, 1, 1, 0])
+  const blur = useTransform(progress, [0.5, 0.6], ['blur(20px)', 'blur(0px)'])
+  
+  const ringScale = useTransform(progress, [0.5, 0.65, 0.75], [0.1, 1, 3])
+  const contentY = useTransform(progress, [0.5, 0.65, 0.75], ['50%', '0%', '-50%'])
+
+  return (
+    <motion.div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none" style={{ opacity, filter: blur }}>
+      
+      {/* Giant Background Ring */}
+      <motion.div 
+        className="absolute w-[800px] h-[800px] rounded-full border-[40px] border-rose-500/20 shadow-[0_0_100px_rgba(244,63,94,0.3)]"
+        style={{ scale: ringScale }}
+      />
+      
+      <motion.div className="text-center relative z-10 max-w-4xl px-6" style={{ y: contentY }}>
+        <div className="inline-flex items-center justify-center p-6 rounded-3xl bg-rose-500/20 text-rose-400 mb-8 border border-rose-500/30 backdrop-blur-xl">
+          <Clock className="w-16 h-16" />
+        </div>
+        <h2 className="text-6xl md:text-8xl font-black text-white mb-6 drop-shadow-2xl tracking-tight">15 Days Left</h2>
+        <h3 className="text-3xl md:text-5xl font-bold text-rose-200 mb-12">Data Structures Final Exam</h3>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {[
+            { label: 'Date', val: 'Jul 20' },
+            { label: 'Time', val: '09:00' },
+            { label: 'Venue', val: 'Hall A' },
+            { label: 'Weight', val: '40%' }
+          ].map((stat, i) => (
+            <div key={i} className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-lg flex flex-col items-center">
+              <span className="text-lg text-slate-400 mb-2 uppercase tracking-widest">{stat.label}</span>
+              <span className="text-3xl font-bold text-white">{stat.val}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+const AssignmentSequence = ({ progress }) => {
+  // Enters 0.7, peaks 0.85, leaves 0.95
+  const opacity = useTransform(progress, [0.7, 0.8, 0.9, 0.95], [0, 1, 1, 0])
+  const x = useTransform(progress, [0.7, 0.95], ['50%', '-50%'])
+
+  const cards = [
+    { title: "React Architecture", course: "Web Dev", status: "In Progress", due: "Tomorrow", color: "from-blue-500 to-cyan-500" },
+    { title: "Database Normalization", course: "Data Systems", status: "To Do", due: "In 3 Days", color: "from-emerald-500 to-teal-500" },
+    { title: "ML Algorithm Analysis", course: "AI", status: "Review", due: "Next Week", color: "from-orange-500 to-rose-500" },
+    { title: "Ethics Essay", course: "Philosophy", status: "Done", due: "Last Week", color: "from-purple-500 to-indigo-500" },
+  ]
+
+  return (
+    <motion.div className="absolute inset-0 flex items-center z-40 pointer-events-none overflow-hidden" style={{ opacity }}>
+      
+      <div className="absolute top-20 left-20 md:top-32 md:left-32 z-50">
+        <h2 className="text-5xl md:text-7xl font-bold text-white drop-shadow-2xl">Assignments,<br/>Visualized.</h2>
       </div>
-      <div className="p-4 flex items-center justify-between">
-        <span className="font-medium flex items-center gap-2 dark:text-slate-200"><Settings className="w-4 h-4 text-slate-400" /> Theme</span>
-        <span className="text-sm text-slate-500">{MOCK_DATA.settings.theme}</span>
-      </div>
-    </div>
-  </div>
-)
+
+      <motion.div className="flex gap-8 md:gap-16 px-[20vw] pt-32" style={{ x }}>
+        {cards.map((card, i) => (
+          <div key={i} className="w-[80vw] md:w-[600px] shrink-0 h-[500px] md:h-[600px] rounded-[3rem] bg-slate-900/80 border border-slate-700 backdrop-blur-3xl p-10 md:p-14 flex flex-col shadow-2xl relative overflow-hidden group">
+            <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${card.color}`}></div>
+            
+            <div className="relative z-10 flex flex-col h-full">
+              <div className="flex justify-between items-start mb-auto">
+                <span className="px-6 py-2 rounded-full bg-white/10 text-white font-semibold text-lg tracking-wide">
+                  {card.course}
+                </span>
+                <span className="text-xl font-bold text-slate-300 bg-black/30 px-6 py-2 rounded-2xl">
+                  {card.status}
+                </span>
+              </div>
+              
+              <div>
+                <h3 className="text-5xl md:text-6xl font-bold text-white leading-tight mb-6">{card.title}</h3>
+                <div className="inline-flex items-center gap-4 px-6 py-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/5">
+                  <CheckSquare className="w-8 h-8 text-slate-300" />
+                  <span className="text-2xl font-semibold text-white">Due {card.due}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </motion.div>
+    </motion.div>
+  )
+}
+
+const FinaleSequence = ({ progress }) => {
+  // Enters 0.9, peaks 1.0
+  const opacity = useTransform(progress, [0.9, 0.95, 1], [0, 1, 1])
+  const y = useTransform(progress, [0.9, 1], ['50px', '0px'])
+  const scale = useTransform(progress, [0.9, 1], [0.9, 1])
+
+  return (
+    <motion.div className="absolute inset-0 flex items-center justify-center z-50 bg-slate-950/80 backdrop-blur-md" style={{ opacity }}>
+      <motion.div className="text-center px-6" style={{ y, scale }}>
+        <h2 className="text-6xl md:text-8xl font-black text-white mb-8 tracking-tighter">Ready to Begin?</h2>
+        <p className="text-2xl md:text-3xl text-slate-400 mb-12 max-w-2xl mx-auto">
+          Join thousands of students organizing their academic lives with Axon.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+          <Link to="/register" className="pointer-events-auto px-10 py-5 rounded-full bg-theme-600 hover:bg-theme-500 text-white text-xl font-bold transition-all shadow-[0_0_40px_rgba(var(--theme-600),0.4)] hover:shadow-[0_0_60px_rgba(var(--theme-500),0.6)] hover:scale-105 active:scale-95">
+            Get Started Free
+          </Link>
+          <Link to="/" className="pointer-events-auto px-10 py-5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xl font-bold transition-all backdrop-blur-md hover:scale-105 active:scale-95">
+            Back to Home
+          </Link>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
 
 export default function LandingHelo() {
   const containerRef = useRef(null)
   
-  // Create a scroll sequence over a 500vh container
+  // Use a massive 800vh container for a very long, smooth scroll experience
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
   })
 
-  // Feature Title Transformations
-  // 0-0.2: Home, 0.2-0.4: Timetable, 0.4-0.6: Exam, 0.6-0.8: Assignment, 0.8-1.0: Setting
-  
-  const titleText = useTransform(scrollYProgress, 
-    [0, 0.15, 0.2, 0.35, 0.4, 0.55, 0.6, 0.75, 0.8, 1],
-    [
-      "Your intelligent dashboard.", "Your intelligent dashboard.",
-      "Never miss a class.", "Never miss a class.",
-      "Ace your exams.", "Ace your exams.",
-      "Stay on top of assignments.", "Stay on top of assignments.",
-      "Personalize your experience.", "Personalize your experience."
-    ]
+  // Smooth out the scroll progress for buttery animations
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  })
+
+  // Dynamic Mesh Background Colors based on scroll progress
+  const bg1 = useTransform(smoothProgress, 
+    [0, 0.25, 0.5, 0.75, 1], 
+    ['#0f172a', '#1e1b4b', '#4c1d95', '#064e3b', '#0f172a'] // Slate -> Indigo -> Purple -> Emerald -> Slate
   )
-
-  const titleDescription = useTransform(scrollYProgress,
-    [0, 0.15, 0.2, 0.35, 0.4, 0.55, 0.6, 0.75, 0.8, 1],
-    [
-      "Get a quick overview of your day, all in one place.", "Get a quick overview of your day, all in one place.",
-      "Beautiful, easy-to-read timetable management.", "Beautiful, easy-to-read timetable management.",
-      "Track your upcoming exams with integrated countdowns.", "Track your upcoming exams with integrated countdowns.",
-      "Organize tasks and deadlines effortlessly.", "Organize tasks and deadlines effortlessly.",
-      "Customize Axon to work exactly how you want it to.", "Customize Axon to work exactly how you want it to."
-    ]
-  )
-
-  // Opacity controls for cross-fading mockups
-  const oHome = useTransform(scrollYProgress, [0, 0.18, 0.22], [1, 1, 0])
-  const oTimetable = useTransform(scrollYProgress, [0.18, 0.22, 0.38, 0.42], [0, 1, 1, 0])
-  const oExam = useTransform(scrollYProgress, [0.38, 0.42, 0.58, 0.62], [0, 1, 1, 0])
-  const oAssignment = useTransform(scrollYProgress, [0.58, 0.62, 0.78, 0.82], [0, 1, 1, 0])
-  const oSetting = useTransform(scrollYProgress, [0.78, 0.82, 1], [0, 1, 1])
-
-  // Scale and Y translation for a slight pop-in effect on scroll
-  const scaleEffect = useTransform(scrollYProgress, 
-    [0, 0.18, 0.2, 0.22, 0.38, 0.4, 0.42, 0.58, 0.6, 0.62, 0.78, 0.8, 0.82, 1],
-    [1, 1, 0.95, 1, 1, 0.95, 1, 1, 0.95, 1, 1, 0.95, 1, 1]
+  const bg2 = useTransform(smoothProgress, 
+    [0, 0.25, 0.5, 0.75, 1], 
+    ['#020617', '#312e81', '#881337', '#0f766e', '#020617']
   )
 
   return (
-    <div ref={containerRef} className="h-[500vh] relative bg-slate-900">
-      
-      {/* Sticky Container - this stays on screen while user scrolls through 500vh */}
-      <div className="sticky top-0 h-[100dvh] w-full flex flex-col items-center justify-center overflow-hidden">
+    <div className="bg-slate-950">
+      {/* Floating Navigation overlay for escape hatch */}
+      <div className="fixed top-0 inset-x-0 p-6 z-[100] flex justify-between items-center pointer-events-none">
+        <Link to="/" className="pointer-events-auto flex items-center gap-3 group bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 hover:bg-white/10 transition-colors">
+          <div className="w-8 h-8 rounded-lg bg-theme-600 flex items-center justify-center">
+            <span className="text-white text-sm font-bold font-heading">A</span>
+          </div>
+          <span className="font-heading font-bold text-white tracking-tight hidden sm:block">Axon</span>
+        </Link>
+        <Link to="/register" className="pointer-events-auto bg-white text-black px-6 py-2 rounded-full font-bold hover:bg-slate-200 transition-colors">
+          Sign Up
+        </Link>
+      </div>
+
+      <div ref={containerRef} className="h-[800vh] relative">
         
-        {/* Animated Background Gradients */}
-        <div className="absolute inset-0 bg-slate-950 pointer-events-none z-0">
-          <motion.div 
-            className="absolute -top-1/2 -left-1/2 w-full h-full bg-theme-600/20 blur-[120px] rounded-full"
-            style={{ 
-              x: useTransform(scrollYProgress, [0, 1], ['0%', '50%']),
-              y: useTransform(scrollYProgress, [0, 1], ['0%', '20%'])
-            }}
-          />
-          <motion.div 
-            className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-indigo-600/20 blur-[120px] rounded-full"
-            style={{ 
-              x: useTransform(scrollYProgress, [0, 1], ['0%', '-50%']),
-              y: useTransform(scrollYProgress, [0, 1], ['0%', '-20%'])
-            }}
-          />
-        </div>
-
-        {/* Content Wrapper */}
-        <div className="relative z-10 max-w-6xl w-full px-6 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24 h-full py-20">
+        {/* Sticky viewport that stays on screen */}
+        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden flex flex-col items-center justify-center">
           
-          {/* Text Side */}
-          <div className="flex-1 text-center lg:text-left space-y-6 lg:max-w-md">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mb-4 min-h-[140px] lg:min-h-[180px] flex items-end pb-2">
-                <motion.span>{titleText}</motion.span>
-              </h1>
-              <motion.p className="text-lg text-slate-400 font-medium leading-relaxed min-h-[80px]">
-                {titleDescription}
-              </motion.p>
-            </motion.div>
-            
+          {/* Animated Mesh Gradient Background */}
+          <motion.div 
+            className="absolute inset-0 z-0 opacity-50"
+            style={{ 
+              background: useTransform(
+                [bg1, bg2], 
+                ([c1, c2]) => `radial-gradient(circle at 50% 50%, ${c1} 0%, ${c2} 100%)`
+              )
+            }}
+          />
+          <div className="absolute inset-0 z-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay"></div>
+
+          {/* Sequences */}
+          <IntroSequence progress={smoothProgress} />
+          <DashboardSequence progress={smoothProgress} />
+          <TimetableSequence progress={smoothProgress} />
+          <ExamSequence progress={smoothProgress} />
+          <AssignmentSequence progress={smoothProgress} />
+          <FinaleSequence progress={smoothProgress} />
+
+          {/* Global Scroll Indicator (fades out at end) */}
+          <motion.div 
+            className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 text-white/50 z-50 pointer-events-none"
+            style={{ opacity: useTransform(smoothProgress, [0.8, 0.9], [1, 0]) }}
+          >
+            <span className="text-xs font-bold uppercase tracking-[0.3em]">Scroll</span>
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 1 }}
-              className="hidden lg:flex items-center gap-2 text-theme-400 text-sm font-bold uppercase tracking-widest mt-12"
-            >
-              <div className="w-8 h-[2px] bg-theme-500"></div>
-              Keep scrolling to explore
-            </motion.div>
-          </div>
+              className="w-[2px] h-12 bg-gradient-to-b from-white/50 to-transparent"
+              animate={{ y: [0, 10, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+            />
+          </motion.div>
 
-          {/* Device Mockup Side */}
-          <div className="flex-1 w-full max-w-[320px] sm:max-w-[380px] lg:max-w-[420px] mx-auto relative lg:perspective-[1000px]">
-            <motion.div 
-              className="relative w-full aspect-[9/19] max-h-[75vh] lg:max-h-none rounded-[2.5rem] border-[8px] border-slate-800 bg-black shadow-2xl overflow-hidden flex flex-col"
-              style={{ scale: scaleEffect, rotateY: -5, rotateX: 5 }}
-            >
-              {/* Fake Device Notch */}
-              <div className="absolute top-0 inset-x-0 h-6 flex justify-center z-50 pointer-events-none">
-                <div className="w-[120px] h-full bg-slate-800 rounded-b-[1rem]"></div>
-              </div>
-
-              {/* App Header (Shared) */}
-              <div className="pt-8 pb-4 px-6 bg-white dark:bg-slate-950 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 relative z-20 shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-theme-600 flex items-center justify-center">
-                    <span className="text-white text-xs font-bold font-heading">A</span>
-                  </div>
-                  <span className="font-heading font-bold text-slate-900 dark:text-white tracking-tight">Axon</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700"></div>
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700"></div>
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700"></div>
-                </div>
-              </div>
-
-              {/* Dynamic Content Layers inside device */}
-              <div className="relative flex-1 w-full bg-slate-950 rounded-b-[2rem] overflow-hidden">
-                
-                {/* 1. Home Mockup */}
-                <motion.div className="absolute inset-0 z-10" style={{ opacity: oHome }}>
-                  <HomeMockup />
-                </motion.div>
-
-                {/* 2. Timetable Mockup */}
-                <motion.div className="absolute inset-0 z-10" style={{ opacity: oTimetable }}>
-                  <TimetableMockup />
-                </motion.div>
-
-                {/* 3. Exam Mockup */}
-                <motion.div className="absolute inset-0 z-10" style={{ opacity: oExam }}>
-                  <ExamMockup />
-                </motion.div>
-
-                {/* 4. Assignment Mockup */}
-                <motion.div className="absolute inset-0 z-10" style={{ opacity: oAssignment }}>
-                  <AssignmentMockup />
-                </motion.div>
-
-                {/* 5. Setting Mockup */}
-                <motion.div className="absolute inset-0 z-10" style={{ opacity: oSetting }}>
-                  <SettingsMockup />
-                </motion.div>
-                
-              </div>
-            </motion.div>
-            
-            {/* Scroll Indicator Mobile */}
-            <motion.div 
-              className="lg:hidden absolute -bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-400"
-              animate={{ y: [0, 5, 0] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-            >
-              <span className="text-xs font-bold uppercase tracking-widest">Scroll</span>
-              <div className="w-[1px] h-8 bg-gradient-to-b from-slate-400 to-transparent"></div>
-            </motion.div>
-
-          </div>
         </div>
       </div>
     </div>
