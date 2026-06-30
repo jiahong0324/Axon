@@ -37,8 +37,8 @@ const EcosystemScene = ({ progress }) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 perspective-1000">
           {/* Activity Overview Card */}
           <div className="p-6 md:p-8 col-span-1 md:col-span-2 relative overflow-hidden group rounded-3xl bg-[#0B0F19] border border-slate-800 shadow-2xl">
-            {/* Background Curve */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-900/20 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3 pointer-events-none" />
+            {/* Background Crisp Circle Corner */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-500/20 to-transparent rounded-bl-full pointer-events-none" />
             
             <div className="flex items-center justify-between mb-8 relative z-10">
               <h3 className="text-2xl font-bold text-white flex items-center gap-3">
