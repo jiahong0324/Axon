@@ -12,76 +12,86 @@ const GlassPanel = ({ children, className = "" }) => (
 // --- Scene 1: The Ecosystem (0 - 0.07) ---
 const EcosystemScene = ({ progress }) => {
   const opacity = useTransform(progress, [0, 0.05, 0.07], [1, 1, 0])
-  const scale = useTransform(progress, [0, 0.07], [1, 6])
-  const rotateCore = useTransform(progress, [0, 0.07], [0, 90])
+  const scale = useTransform(progress, [0, 0.07], [1, 1.1])
   
   // Floating parallax background elements
   const float1 = useTransform(progress, [0, 0.07], [0, -150])
   const float2 = useTransform(progress, [0, 0.07], [0, 100])
 
   return (
-    <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none overflow-hidden" style={{ opacity }}>
+    <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none" style={{ opacity }}>
       {/* 3D Background Parallax */}
       <motion.div className="absolute top-20 left-20 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]" style={{ y: float1 }} />
       <motion.div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]" style={{ y: float2 }} />
 
-      <motion.div className="absolute top-12 md:top-24 z-50 text-center px-4" style={{ opacity: useTransform(progress, [0, 0.03], [1, 0]) }}>
-         <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[1.1] drop-shadow-2xl mb-4">
+      <motion.div className="w-full max-w-6xl relative z-10 px-4" style={{ scale }}>
+        <div className="text-center mb-12">
+          <h1 className="text-6xl md:text-[5.5rem] font-black text-white tracking-tighter leading-[1.1] drop-shadow-2xl mb-4">
             The Ultimate <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg">Ecosystem.</span>
           </h1>
-          <p className="text-lg md:text-xl text-slate-300 font-medium max-w-2xl mx-auto">
-            A universe of intelligent tools, orbiting around your success.
+          <p className="text-xl md:text-2xl text-slate-300 font-medium max-w-3xl mx-auto">
+            Everything you need to dominate your academic life, seamlessly integrated into one intelligent platform.
           </p>
-      </motion.div>
+        </div>
 
-      {/* The 3D Solar System */}
-      <motion.div className="relative w-full h-full flex items-center justify-center mt-32 md:mt-0" style={{ scale }}>
-        
-        {/* Core Frame (provides isometric tilt) */}
-        <div className="relative w-[800px] h-[800px] flex items-center justify-center perspective-[2000px]">
-          
-          {/* Tilted System */}
-          <motion.div 
-            className="relative w-full h-full flex items-center justify-center" 
-            style={{ rotateX: 60, rotateZ: rotateCore, transformStyle: "preserve-3d" }}
-          >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 perspective-1000">
+          <GlassPanel className="p-6 md:p-8 col-span-1 md:col-span-2 relative overflow-hidden group pointer-events-auto">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-theme-500/20 to-transparent rounded-bl-full pointer-events-none" />
+            <div className="flex items-center justify-between mb-8 relative z-10">
+              <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Activity className="w-6 h-6 text-theme-400" /> Activity Overview
+              </h3>
+              <span className="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-sm font-bold border border-emerald-500/30 shadow-sm flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                +24% Productivity
+              </span>
+            </div>
             
-            {/* Inner Orbit (Spinning Fast) */}
-            <div className="absolute w-[300px] h-[300px] rounded-full border-2 border-blue-500/30 border-dashed animate-[spin_15s_linear_infinite]" style={{ transformStyle: "preserve-3d" }}>
-              {/* Timetable Planet */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-blue-600 shadow-[0_0_40px_rgba(37,99,235,0.8)] flex items-center justify-center border border-white/20 animate-[spin_15s_linear_infinite_reverse]" style={{ transform: "rotateX(-60deg)" }}>
-                <Calendar className="w-8 h-8 text-white" />
-              </div>
-              {/* Assignments Planet */}
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-16 h-16 rounded-full bg-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.8)] flex items-center justify-center border border-white/20 animate-[spin_15s_linear_infinite_reverse]" style={{ transform: "rotateX(-60deg)" }}>
-                <CheckSquare className="w-8 h-8 text-white" />
+            <div className="h-48 w-full flex items-end justify-between gap-2 px-2 relative z-10">
+              {[40, 70, 45, 90, 65, 85, 100].map((height, i) => (
+                <div key={i} className="w-full flex flex-col items-center gap-3">
+                  <motion.div 
+                    initial={{ height: 0 }}
+                    whileInView={{ height: `${height}%` }}
+                    transition={{ type: "spring", bounce: 0.4, duration: 1.5, delay: i * 0.1 }}
+                    className="w-full bg-gradient-to-t from-theme-600 to-theme-400 rounded-t-lg shadow-lg relative group-hover:from-theme-500 group-hover:to-theme-300 transition-colors"
+                  >
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-bold py-1 px-2 rounded">
+                      {height}%
+                    </div>
+                  </motion.div>
+                  <span className="text-xs font-bold text-slate-300">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </GlassPanel>
+
+          <GlassPanel className="p-6 md:p-8 relative overflow-hidden flex flex-col justify-between pointer-events-auto">
+            <div className="absolute -bottom-10 -right-10 opacity-10">
+              <Sparkles className="w-40 h-40 text-white" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                <Bell className="w-6 h-6 text-purple-400" /> Events Today
+              </h3>
+              <div className="space-y-4">
+                {[
+                  { title: "Database Systems", time: "10:00 AM", type: "Class" },
+                  { title: "Team Meeting", time: "02:30 PM", type: "Sync" },
+                  { title: "Assignment Due", time: "11:59 PM", type: "Deadline", urgent: true }
+                ].map((event, i) => (
+                  <div key={i} className={`p-4 rounded-2xl flex justify-between items-center ${event.urgent ? 'bg-rose-500/10 border border-rose-500/20' : 'bg-slate-800/50 border border-slate-700/50'}`}>
+                    <div>
+                      <h4 className={`font-bold ${event.urgent ? 'text-rose-400' : 'text-slate-200'}`}>{event.title}</h4>
+                      <p className={`text-sm font-medium ${event.urgent ? 'text-rose-400/80' : 'text-slate-400'}`}>{event.time}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-
-            {/* Outer Orbit (Spinning Slow, Reverse) */}
-            <div className="absolute w-[500px] h-[500px] rounded-full border border-purple-500/30 animate-[spin_25s_linear_infinite_reverse]" style={{ transformStyle: "preserve-3d" }}>
-              {/* AI Chat Planet */}
-              <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-purple-600 shadow-[0_0_50px_rgba(147,51,234,0.8)] flex items-center justify-center border border-white/20 animate-[spin_25s_linear_infinite]" style={{ transform: "rotateX(-60deg)" }}>
-                <Brain className="w-10 h-10 text-white" />
-              </div>
-              {/* Exams Planet */}
-              <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-rose-500 shadow-[0_0_50px_rgba(244,63,94,0.8)] flex items-center justify-center border border-white/20 animate-[spin_25s_linear_infinite]" style={{ transform: "rotateX(-60deg)" }}>
-                <GraduationCap className="w-10 h-10 text-white" />
-              </div>
-            </div>
-
-            {/* Central Axon Core (Pulsing, Counter-rotating to stay upright relative to tilt) */}
-            <motion.div 
-              className="absolute w-32 h-32 rounded-full bg-gradient-to-tr from-theme-500 to-purple-600 shadow-[0_0_100px_rgba(168,85,247,0.8)] flex flex-col items-center justify-center border-4 border-white/20"
-              style={{ rotateX: -60, rotateZ: useTransform(rotateCore, v => -v) }}
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-            >
-              <img src="/icons/logo.png" className="w-12 h-12 rounded-xl mb-1 shadow-md" alt="Axon" />
-              <span className="text-white font-black text-xl tracking-tight leading-none">Axon</span>
-            </motion.div>
-
-          </motion.div>
+          </GlassPanel>
         </div>
       </motion.div>
     </motion.div>
