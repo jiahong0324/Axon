@@ -435,12 +435,12 @@ const RemindersScene = ({ progress }) => {
   const textScale = useTransform(progress, [0.50, 0.58], [0.8, 1])
 
   const reminders = Array.from({ length: 15 }).map((_, i) => ({
-    x: (Math.random() - 0.5) * 100,
-    delay: Math.random() * 0.05,
-    rotate: (Math.random() - 0.5) * 40,
-    depth: Math.random() * 2 + 0.5,
-    color: ['bg-amber-300 text-amber-900', 'bg-rose-300 text-rose-900', 'bg-emerald-300 text-emerald-900', 'bg-cyan-300 text-cyan-900'][i % 4],
-    text: ['Buy groceries', 'Email professor', 'Pay rent', 'Call mom', 'Read chapter 3', 'Submit form'][i % 6]
+    x: (Math.random() - 0.5) * 80, // spread across width
+    yCenter: -30 - Math.random() * 50, // distribute vertically in the middle
+    rotate: (Math.random() - 0.5) * 60,
+    depth: Math.random() * 1.5 + 0.8, 
+    color: ['bg-amber-300 text-amber-900', 'bg-rose-300 text-rose-900', 'bg-emerald-300 text-emerald-900', 'bg-cyan-300 text-cyan-900', 'bg-fuchsia-300 text-fuchsia-900'][i % 5],
+    text: ['Buy groceries', 'Email professor', 'Pay rent', 'Call mom', 'Read chapter 3', 'Submit form', 'Gym @ 6PM', 'Doctor appt'][i % 8]
   }))
 
   return (
@@ -452,21 +452,27 @@ const RemindersScene = ({ progress }) => {
       </motion.div>
 
       {reminders.map((rem, i) => {
-        const y = useTransform(progress, [0.50, 0.58], ['150vh', `${-120 * rem.depth}vh`])
+        // Dramatic 3D flight path: fly from far away, float in center, zip past camera
+        const y = useTransform(progress, [0.50, 0.53, 0.55, 0.58], ['120vh', `${rem.yCenter}vh`, `${rem.yCenter - 15}vh`, '-150vh'])
+        const rotate = useTransform(progress, [0.50, 0.54, 0.58], [rem.rotate - 60, rem.rotate, rem.rotate + 60])
+        const scale = useTransform(progress, [0.50, 0.54, 0.58], [rem.depth * 0.2, rem.depth, rem.depth * 3])
+        const noteOpacity = useTransform(progress, [0.50, 0.52, 0.56, 0.58], [0, 1, 1, 0])
+
         return (
           <motion.div
             key={i}
-            className={`absolute bottom-0 w-32 md:w-56 aspect-square ${rem.color} p-4 md:p-6 shadow-2xl flex flex-col justify-between`}
+            className={`absolute bottom-0 w-32 md:w-56 aspect-square ${rem.color} p-4 md:p-6 shadow-2xl flex flex-col justify-between rounded-bl-xl rounded-tr-md`}
             style={{ 
               left: `${50 + rem.x}%`, 
               y, 
-              rotate: rem.rotate,
-              scale: rem.depth,
+              rotate,
+              scale,
+              opacity: noteOpacity,
               zIndex: Math.round(rem.depth * 10)
             }}
           >
             <div className="w-full h-4 bg-black/10 absolute top-0 left-0" />
-            <p className="font-bold text-base md:text-2xl mt-4 leading-tight">{rem.text}</p>
+            <p className="font-bold text-base md:text-3xl mt-4 leading-tight">{rem.text}</p>
             <div className="w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-current opacity-30 self-end" />
           </motion.div>
         )
