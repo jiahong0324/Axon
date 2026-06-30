@@ -141,15 +141,15 @@ const WaterfallScene = ({ progress }) => {
   ]
 
   return (
-    <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none pt-24" style={{ opacity }}>
-      <div className="absolute top-8 md:top-12 inset-x-0 text-center z-50">
-        <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight mb-3 drop-shadow-lg">
+    <motion.div className="absolute inset-0 flex flex-col items-center z-40 pointer-events-none pt-8 md:pt-16 pb-8 overflow-hidden" style={{ opacity }}>
+      <div className="text-center z-50 shrink-0 mb-4 md:mb-8">
+        <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight mb-2 md:mb-3 drop-shadow-lg">
           The <span className="text-transparent bg-clip-text bg-gradient-to-r from-theme-500 to-purple-600">Perfect Flow.</span>
         </h2>
-        <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 font-medium px-4">Your schedule, cascading seamlessly through your day.</p>
+        <p className="text-base md:text-xl text-slate-600 dark:text-slate-400 font-medium px-4">Your schedule, cascading seamlessly through your day.</p>
       </div>
 
-      <motion.div className="w-full max-w-5xl flex flex-col gap-4 md:gap-6 px-4 perspective-1000 mt-20 md:mt-32">
+      <motion.div className="w-full max-w-5xl flex flex-col justify-center gap-3 md:gap-5 px-4 perspective-1000 flex-1">
         {classes.map((cls, i) => {
           // Adjust timing so the last item finishes moving by progress 0.25 
           // (well before the scene fades out at 0.27)
@@ -163,19 +163,19 @@ const WaterfallScene = ({ progress }) => {
               className={`p-6 md:p-8 rounded-3xl bg-gradient-to-r ${cls.color} text-white shadow-[0_20px_40px_rgba(0,0,0,0.2)] flex items-center justify-between border border-white/20`}
               style={{ y: itemY, opacity: itemOpacity, rotateX: itemRotateX }}
             >
-              <div className="flex items-center gap-4 md:gap-6">
-                <div className="px-4 md:px-6 py-2 md:py-3 rounded-2xl bg-black/20 backdrop-blur-md text-xl md:text-2xl font-black w-32 md:w-40 text-center shadow-inner">
+              <div className="flex items-center gap-3 md:gap-6">
+                <div className="px-3 md:px-6 py-2 md:py-3 rounded-2xl bg-black/20 backdrop-blur-md text-lg md:text-2xl font-black w-24 md:w-40 text-center shadow-inner">
                   {cls.time}
                 </div>
                 <div>
-                  <h3 className="text-xl md:text-3xl font-bold drop-shadow-md">{cls.name}</h3>
-                  <p className="text-white/90 font-medium text-base md:text-lg mt-1 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 md:w-5 md:h-5" /> {cls.room}
+                  <h3 className="text-lg md:text-3xl font-bold drop-shadow-md leading-tight">{cls.name}</h3>
+                  <p className="text-white/90 font-medium text-sm md:text-lg mt-1 flex items-center gap-1 md:gap-2">
+                    <Calendar className="w-3 h-3 md:w-5 md:h-5" /> {cls.room}
                   </p>
                 </div>
               </div>
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md shadow-lg border border-white/30 shrink-0 ml-4">
-                <ChevronRight className="w-6 h-6 md:w-8 md:h-8 text-white" />
+              <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md shadow-lg border border-white/30 shrink-0 ml-2 md:ml-4">
+                <ChevronRight className="w-5 h-5 md:w-8 md:h-8 text-white" />
               </div>
             </motion.div>
           )
@@ -293,11 +293,11 @@ const MatrixScene = ({ progress }) => {
           return (
             <motion.div 
               key={i} 
-              className={`h-40 rounded-3xl bg-gradient-to-br ${item.color} p-6 flex flex-col justify-between text-white shadow-2xl border border-white/30`}
+              className={`h-32 md:h-40 rounded-3xl bg-gradient-to-br ${item.color} p-4 md:p-6 flex flex-col justify-between text-white shadow-2xl border border-white/30`}
               style={{ rotateX: flip, transformStyle: "preserve-3d" }}
             >
               <div className="flex justify-between items-start">
-                <span className="px-4 py-1 rounded-full bg-black/20 backdrop-blur-md text-sm font-bold tracking-wide shadow-inner">
+                <span className="px-3 md:px-4 py-1 rounded-full bg-black/20 backdrop-blur-md text-xs md:text-sm font-bold tracking-wide shadow-inner">
                   {item.stat}
                 </span>
                 <CheckSquare className="w-6 h-6 text-white/70" />
