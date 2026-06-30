@@ -140,15 +140,15 @@ const WaterfallScene = ({ progress }) => {
   ]
 
   return (
-    <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none" style={{ opacity }}>
-      <div className="absolute top-10 text-center">
-        <h2 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tight mb-4 drop-shadow-lg">
+    <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none pt-24" style={{ opacity }}>
+      <div className="absolute top-8 md:top-12 inset-x-0 text-center z-50">
+        <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight mb-3 drop-shadow-lg">
           The <span className="text-transparent bg-clip-text bg-gradient-to-r from-theme-500 to-purple-600">Perfect Flow.</span>
         </h2>
-        <p className="text-xl text-slate-600 dark:text-slate-400 font-medium">Your schedule, cascading seamlessly through your day.</p>
+        <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 font-medium px-4">Your schedule, cascading seamlessly through your day.</p>
       </div>
 
-      <motion.div className="w-full max-w-5xl flex flex-col gap-6 px-4 perspective-1000" style={{ y }}>
+      <motion.div className="w-full max-w-5xl flex flex-col gap-4 md:gap-6 px-4 perspective-1000 mt-20 md:mt-32" style={{ y }}>
         {classes.map((cls, i) => {
           const itemY = useTransform(progress, [0.15 + cls.delay, 0.25 + cls.delay], ['100vh', '0vh'])
           const itemOpacity = useTransform(progress, [0.15 + cls.delay, 0.2 + cls.delay], [0, 1])
@@ -160,19 +160,19 @@ const WaterfallScene = ({ progress }) => {
               className={`p-6 md:p-8 rounded-3xl bg-gradient-to-r ${cls.color} text-white shadow-[0_20px_40px_rgba(0,0,0,0.2)] flex items-center justify-between border border-white/20`}
               style={{ y: itemY, opacity: itemOpacity, rotateX: itemRotateX }}
             >
-              <div className="flex items-center gap-6">
-                <div className="px-6 py-3 rounded-2xl bg-black/20 backdrop-blur-md text-2xl font-black w-40 text-center shadow-inner">
+              <div className="flex items-center gap-4 md:gap-6">
+                <div className="px-4 md:px-6 py-2 md:py-3 rounded-2xl bg-black/20 backdrop-blur-md text-xl md:text-2xl font-black w-32 md:w-40 text-center shadow-inner">
                   {cls.time}
                 </div>
                 <div>
-                  <h3 className="text-3xl font-bold drop-shadow-md">{cls.name}</h3>
-                  <p className="text-white/90 font-medium text-lg mt-1 flex items-center gap-2">
-                    <Calendar className="w-5 h-5" /> {cls.room}
+                  <h3 className="text-xl md:text-3xl font-bold drop-shadow-md">{cls.name}</h3>
+                  <p className="text-white/90 font-medium text-base md:text-lg mt-1 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 md:w-5 md:h-5" /> {cls.room}
                   </p>
                 </div>
               </div>
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md shadow-lg border border-white/30">
-                <ChevronRight className="w-8 h-8 text-white" />
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md shadow-lg border border-white/30 shrink-0 ml-4">
+                <ChevronRight className="w-6 h-6 md:w-8 md:h-8 text-white" />
               </div>
             </motion.div>
           )
@@ -202,30 +202,30 @@ const ChatScene = ({ progress }) => {
     <motion.div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none" style={{ opacity }}>
       <div className="absolute w-[800px] h-[800px] bg-gradient-to-r from-theme-600 to-purple-600 rounded-full blur-[120px] opacity-20"></div>
 
-      <div className="w-full max-w-4xl flex flex-col gap-8 relative z-10 px-4">
-        <div className="text-center mb-4">
-           <div className="inline-flex items-center justify-center p-4 rounded-3xl bg-theme-500/20 text-theme-600 dark:text-theme-400 mb-6 border border-theme-500/30 backdrop-blur-xl shadow-2xl">
-            <Sparkles className="w-12 h-12" />
+      <div className="w-full max-w-4xl flex flex-col gap-6 relative z-10 px-4">
+        <div className="text-center mb-2">
+           <div className="inline-flex items-center justify-center p-3 md:p-4 rounded-3xl bg-theme-500/20 text-theme-600 dark:text-theme-400 mb-4 md:mb-6 border border-theme-500/30 backdrop-blur-xl shadow-2xl">
+            <Sparkles className="w-8 h-8 md:w-12 md:h-12" />
           </div>
-          <h2 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tight drop-shadow-lg">
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight drop-shadow-lg">
             Your Personal <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-theme-500 to-purple-600 drop-shadow-xl">Genius.</span>
           </h2>
         </div>
 
         <GlassPanel className="w-full bg-slate-900/90 border-slate-700 shadow-[0_0_80px_rgba(37,99,235,0.2)]">
-          <div className="p-6 border-b border-slate-800 flex items-center gap-4 bg-black/20">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-theme-500 to-purple-600 flex items-center justify-center shadow-lg shadow-theme-500/30 border border-white/20">
-              <Brain className="w-6 h-6 text-white" />
+          <div className="p-4 md:p-6 border-b border-slate-800 flex items-center gap-4 bg-black/20">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-tr from-theme-500 to-purple-600 flex items-center justify-center shadow-lg shadow-theme-500/30 border border-white/20 shrink-0">
+              <Brain className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white">Axon AI</h3>
-              <p className="text-theme-400 text-sm font-medium">Always online, always helping.</p>
+              <h3 className="text-lg md:text-xl font-bold text-white">Axon AI</h3>
+              <p className="text-theme-400 text-xs md:text-sm font-medium">Always online, always helping.</p>
             </div>
           </div>
           
-          <div className="p-8 h-80 flex flex-col gap-6">
+          <div className="p-6 md:p-8 h-64 md:h-80 flex flex-col gap-4 md:gap-6">
             <motion.div 
-              className="self-end max-w-[80%] bg-theme-600 text-white p-5 rounded-3xl rounded-tr-sm text-lg shadow-xl border border-white/10"
+              className="self-end max-w-[85%] md:max-w-[80%] bg-theme-600 text-white p-4 md:p-5 rounded-3xl rounded-tr-sm text-base md:text-lg shadow-xl border border-white/10"
               style={{ 
                 opacity: useTransform(progress, [0.32, 0.34], [0, 1]),
                 y: useTransform(progress, [0.32, 0.34], [20, 0]),
@@ -275,14 +275,14 @@ const MatrixScene = ({ progress }) => {
   ]
 
   return (
-    <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none px-4" style={{ opacity }}>
-      <div className="text-center mb-8 mt-12">
-        <h2 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tight drop-shadow-lg">
+    <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none px-4 pt-16" style={{ opacity }}>
+      <div className="text-center mb-6 md:mb-10">
+        <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight drop-shadow-lg leading-tight">
           Crush Every <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500 drop-shadow-xl">Deadline.</span>
         </h2>
       </div>
 
-      <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl" style={{ scale, rotateX, perspective: 1200 }}>
+      <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full max-w-6xl" style={{ scale, rotateX, perspective: 1200 }}>
         {assignments.map((item, i) => {
           const flip = useTransform(progress, [0.45 + (i * 0.015), 0.5 + (i * 0.015)], [90, 0])
           return (
@@ -380,8 +380,8 @@ const ReminderScene = ({ progress }) => {
 
   return (
     <motion.div className="absolute inset-0 z-40 pointer-events-none overflow-hidden" style={{ opacity }}>
-      <motion.div className="absolute top-20 inset-x-0 text-center z-50" style={{ scale: textScale }}>
-        <h2 className="text-6xl md:text-[7rem] font-black text-slate-900 dark:text-white tracking-tight drop-shadow-2xl leading-[1.1]">
+      <motion.div className="absolute top-12 md:top-20 inset-x-0 text-center z-50 px-4" style={{ scale: textScale }}>
+        <h2 className="text-5xl md:text-7xl lg:text-[7rem] font-black text-slate-900 dark:text-white tracking-tight drop-shadow-2xl leading-[1.1]">
           Never Forget <br/>A Single <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-rose-500">Detail.</span>
         </h2>
       </motion.div>
