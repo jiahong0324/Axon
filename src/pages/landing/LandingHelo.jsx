@@ -156,37 +156,41 @@ const SmartAlertsScene = ({ progress }) => {
   const scale = useTransform(progress, [0.14, 0.21], [0.8, 1.1])
 
   const notifs = [
-    { title: "Upcoming Class", desc: "Software Engineering in 15 mins", icon: Clock, color: "text-blue-500", bg: "bg-blue-500/20", delay: 0 },
-    { title: "Exam Reminder", desc: "Database Systems midterm tomorrow", icon: AlertTriangle, color: "text-amber-500", bg: "bg-amber-500/20", delay: 0.02 },
-    { title: "Attendance Required!", desc: "Enter code: AX-8921 to mark presence", icon: ShieldCheck, color: "text-rose-500", bg: "bg-rose-500/20", delay: 0.04 },
+    { title: "Upcoming Class", desc: "Software Engineering in 15 mins", icon: Clock, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", delay: 0 },
+    { title: "Exam Reminder", desc: "Database Systems midterm tomorrow", icon: AlertTriangle, color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", delay: 0.02 },
+    { title: "Attendance Required!", desc: "Enter code: AX-8921 to mark presence", icon: ShieldCheck, color: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/20", delay: 0.04 },
   ]
 
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none px-4" style={{ opacity }}>
-      <div className="text-center mb-8">
+      <div className="text-center mb-12">
         <h2 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white drop-shadow-lg">
           Never Miss a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-rose-500">Beat.</span>
         </h2>
       </div>
 
-      <motion.div className="w-full max-w-sm h-[500px] md:h-[600px] bg-slate-900 rounded-[3rem] border-[8px] border-slate-800 shadow-[0_0_100px_rgba(0,0,0,0.5)] relative overflow-hidden flex flex-col p-6 pt-12 perspective-1000" style={{ scale, rotateX: 10 }}>
-        {/* Mobile Notch */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 md:w-32 h-6 bg-slate-800 rounded-b-2xl" />
+      <motion.div className="w-full max-w-sm h-[500px] md:h-[600px] bg-gradient-to-b from-slate-800 to-slate-950 rounded-[3.5rem] border-[12px] border-slate-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden flex flex-col p-6 pt-16 perspective-1000 ring-1 ring-white/10" style={{ scale, rotateX: 5 }}>
+        
+        {/* Dynamic Island Notch */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-7 bg-black rounded-full flex items-center justify-end px-3">
+           <div className="w-2.5 h-2.5 rounded-full bg-slate-800/80 mr-1" />
+           <div className="w-2.5 h-2.5 rounded-full bg-slate-800/80" />
+        </div>
 
-        <div className="flex-1 flex flex-col gap-4 mt-8">
+        <div className="flex-1 flex flex-col gap-5 mt-4">
           {notifs.map((n, i) => {
             const slideIn = useTransform(progress, [0.14 + n.delay, 0.16 + n.delay], [-200, 0])
             const op = useTransform(progress, [0.14 + n.delay, 0.16 + n.delay], [0, 1])
             const pop = useTransform(progress, [0.16 + n.delay, 0.17 + n.delay], [1, 1.05])
             const Icon = n.icon
             return (
-              <motion.div key={i} className="w-full bg-white/10 backdrop-blur-xl p-4 rounded-2xl border border-white/20 shadow-xl flex gap-4 items-center" style={{ x: slideIn, opacity: op, scale: pop }}>
+              <motion.div key={i} className={`w-full bg-slate-900/80 backdrop-blur-md p-4 rounded-2xl border ${n.border} shadow-lg flex gap-4 items-center`} style={{ x: slideIn, opacity: op, scale: pop }}>
                 <div className={`w-12 h-12 rounded-full ${n.bg} flex items-center justify-center shrink-0`}>
                   <Icon className={`w-6 h-6 ${n.color}`} />
                 </div>
                 <div>
-                  <h4 className="text-white font-bold text-sm">{n.title}</h4>
-                  <p className="text-slate-300 text-xs font-medium">{n.desc}</p>
+                  <h4 className="text-white font-semibold text-sm tracking-wide">{n.title}</h4>
+                  <p className="text-slate-400 text-xs mt-0.5">{n.desc}</p>
                 </div>
               </motion.div>
             )
