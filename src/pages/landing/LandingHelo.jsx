@@ -12,14 +12,14 @@ const GlassPanel = ({ children, className = "" }) => (
 // --- Scene 1: The Ecosystem (0 - 0.07) ---
 const EcosystemScene = ({ progress }) => {
   const opacity = useTransform(progress, [0, 0.04, 0.06], [1, 1, 0])
-  const scale = useTransform(progress, [0, 0.06], [1, 2.5])
+  const scale = useTransform(progress, [0, 0.06], [0.7, 2.5])
   const rotateCore = useTransform(progress, [0, 0.06], [0, 90])
   const counterRotateCore = useTransform(rotateCore, v => -v)
   
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none overflow-hidden will-change-transform" style={{ opacity }}>
       
-      <motion.div className="absolute top-12 md:top-24 z-50 text-center px-4" style={{ opacity: useTransform(progress, [0, 0.03], [1, 0]) }}>
+      <motion.div className="absolute top-6 md:top-12 z-50 text-center px-4" style={{ opacity: useTransform(progress, [0, 0.03], [1, 0]) }}>
          <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[1.1] drop-shadow-2xl mb-4">
             The Ultimate <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg">Ecosystem.</span>
           </h1>
