@@ -32,7 +32,8 @@ const EcosystemScene = ({ progress }) => {
       <motion.div className="relative w-full h-full flex items-center justify-center will-change-transform" style={{ scale }}>
         
         {/* Core Frame (provides isometric tilt) */}
-        <div className="relative w-[800px] h-[800px] flex items-center justify-center perspective-[2000px]">
+        <div className="relative flex items-center justify-center w-0 h-0 transform scale-[0.35] sm:scale-[0.5] md:scale-100">
+          <div className="relative w-[800px] h-[800px] flex items-center justify-center perspective-[2000px]">
           
           {/* Tilted System */}
           <motion.div 
@@ -98,6 +99,7 @@ const EcosystemScene = ({ progress }) => {
             </motion.div>
 
           </motion.div>
+        </div>
         </div>
       </motion.div>
     </motion.div>
@@ -224,7 +226,7 @@ const ChatScene = ({ progress }) => {
   
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-50 pointer-events-none perspective-1000 px-4" style={{ opacity }}>
-      <div className="absolute w-[800px] h-[800px] bg-gradient-to-r from-theme-600 to-purple-600 rounded-full blur-[120px] opacity-20" />
+      <div className="absolute w-[320px] md:w-[800px] h-[320px] md:h-[800px] bg-gradient-to-r from-theme-600 to-purple-600 rounded-full blur-[80px] md:blur-[120px] opacity-20" />
 
       <motion.div className="w-full max-w-4xl flex flex-col gap-6 relative z-10" style={{ rotateY, rotateX, z: zShift, transformStyle: "preserve-3d" }}>
         <div className="text-center mb-2" style={{ transform: "translateZ(50px)" }}>
@@ -282,8 +284,8 @@ const StudyPlanScene = ({ progress }) => {
   
   // Chaotic nodes morphing into a structured grid
   const chaosOp = useTransform(progress, [0.28, 0.31], [1, 0])
-  const nodeY1 = useTransform(progress, [0.28, 0.31], [200, 0])
-  const nodeX1 = useTransform(progress, [0.28, 0.31], [-200, 0])
+  const nodeY1 = useTransform(progress, [0.28, 0.31], [150, 0])
+  const nodeX1 = useTransform(progress, [0.28, 0.31], [-120, 0])
   
   const scannerY = useTransform(progress, [0.30, 0.32], ['-20%', '120%'])
   const scannerOpacity = useTransform(progress, [0.30, 0.31, 0.32], [0, 1, 0])
@@ -317,7 +319,7 @@ const StudyPlanScene = ({ progress }) => {
         {/* Chaotic Background State */}
         <motion.div className="absolute inset-0 flex items-center justify-center" style={{ opacity: chaosOp }}>
           <motion.div className="absolute p-4 bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold rounded-2xl blur-[2px]" style={{ x: nodeX1, y: nodeY1, rotate: -15 }}>Unorganized Tasks...</motion.div>
-          <motion.div className="absolute p-4 bg-purple-500/10 border border-purple-500/30 text-purple-400 font-bold rounded-2xl blur-[3px]" style={{ x: useTransform(progress, [0.28, 0.31], [250, 0]), y: useTransform(progress, [0.28, 0.31], [-150, 0]), rotate: 20 }}>Overlapping Deadlines</motion.div>
+          <motion.div className="absolute p-4 bg-purple-500/10 border border-purple-500/30 text-purple-400 font-bold rounded-2xl blur-[3px]" style={{ x: useTransform(progress, [0.28, 0.31], [150, 0]), y: useTransform(progress, [0.28, 0.31], [-150, 0]), rotate: 20 }}>Overlapping Deadlines</motion.div>
           <motion.div className="absolute p-4 bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold rounded-2xl blur-[4px]" style={{ x: useTransform(progress, [0.28, 0.31], [0, -100]), y: useTransform(progress, [0.28, 0.31], [150, 0]) }}>Exam Anxiety</motion.div>
         </motion.div>
 
@@ -445,7 +447,7 @@ const ExamsScene = ({ progress }) => {
     <motion.div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none overflow-hidden" style={{ opacity }}>
       {/* Massive Glowing Ring */}
       <motion.div 
-        className="absolute w-[600px] md:w-[800px] h-[600px] md:h-[800px] rounded-full border-[10px] md:border-[20px] border-rose-500/30 shadow-[0_0_150px_rgba(244,63,94,0.4)] flex items-center justify-center"
+        className="absolute w-[320px] sm:w-[400px] md:w-[800px] h-[320px] sm:h-[400px] md:h-[800px] rounded-full border-[10px] md:border-[20px] border-rose-500/30 shadow-[0_0_150px_rgba(244,63,94,0.4)] flex items-center justify-center"
         style={{ scale: ringScale }}
       >
         <div className="w-[90%] h-[90%] rounded-full border-[2px] border-rose-400/50 border-dashed animate-[spin_20s_linear_infinite]" />
@@ -703,14 +705,14 @@ const SettingsScene = ({ progress }) => {
         </motion.div>
 
         {/* Floating Toggles */}
-        <motion.div className="absolute top-10 md:top-20 left-10 md:left-20 bg-white dark:bg-slate-900 p-3 md:p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 shadow-xl" style={{ x: useTransform(explode, [0,100], [0, -40]), y: useTransform(explode, [0,100], [0, -80]), z: useTransform(explode, [0,100], [0, 50]) }}>
+        <motion.div className="absolute top-4 md:top-20 left-2 md:left-20 bg-white dark:bg-slate-900 p-3 md:p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 shadow-xl" style={{ x: useTransform(explode, [0,100], [0, -20]), y: useTransform(explode, [0,100], [0, -40]), z: useTransform(explode, [0,100], [0, 50]) }}>
           <Settings className="text-cyan-500 w-5 h-5 md:w-6 md:h-6" />
           <span className="text-slate-800 dark:text-white font-bold text-sm md:text-base">Auto-Sync</span>
           <div className="w-10 md:w-12 h-5 md:h-6 bg-cyan-500 rounded-full relative ml-2 md:ml-4 shadow-[0_0_10px_rgba(6,182,212,0.5)]"><div className="absolute right-1 top-1 w-3 md:w-4 h-3 md:h-4 bg-white rounded-full" /></div>
         </motion.div>
 
         {/* Floating Color Picker */}
-        <motion.div className="absolute bottom-10 md:bottom-20 right-10 md:right-20 bg-white dark:bg-slate-900 p-3 md:p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col gap-2 shadow-xl" style={{ x: useTransform(explode, [0,100], [0, 40]), y: useTransform(explode, [0,100], [0, 80]), z: useTransform(explode, [0,100], [0, 80]) }}>
+        <motion.div className="absolute bottom-4 md:bottom-20 right-2 md:right-20 bg-white dark:bg-slate-900 p-3 md:p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col gap-2 shadow-xl" style={{ x: useTransform(explode, [0,100], [0, 20]), y: useTransform(explode, [0,100], [0, 40]), z: useTransform(explode, [0,100], [0, 80]) }}>
           <span className="text-slate-800 dark:text-white font-bold mb-1 text-xs md:text-sm">Theme Engine</span>
           <div className="flex gap-2">
             {['bg-rose-500', 'bg-cyan-500', 'bg-emerald-500', 'bg-purple-500'].map((c,i) => (
