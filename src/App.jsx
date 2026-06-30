@@ -35,6 +35,7 @@ import LandingBlog from './pages/landing/LandingBlog'
 import LandingArticle from './pages/landing/LandingArticle'
 import LandingFAQ from './pages/landing/LandingFAQ'
 import LandingContact from './pages/landing/LandingContact'
+import LandingHelo from './pages/landing/LandingHelo'
 
 export default function App() {
   return (
@@ -55,6 +56,7 @@ export default function App() {
                 <Route path="blog/:slug" element={<LandingArticle />} />
                 <Route path="faq" element={<LandingFAQ />} />
                 <Route path="contact" element={<LandingContact />} />
+                <Route path="helo" element={<LandingHelo />} />
               </Route>
               <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
               <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />

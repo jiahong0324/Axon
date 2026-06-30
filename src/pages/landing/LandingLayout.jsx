@@ -100,6 +100,7 @@ export default function LandingLayout() {
 
   const navLinks = [
     ['Home', '/'],
+    ['Helo', '/helo'],
     ['Blog', '/blog'],
     ['FAQ', '/faq'],
     ['Contact', '/contact']
