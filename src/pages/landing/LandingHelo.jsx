@@ -15,6 +15,7 @@ const EcosystemScene = ({ progress }) => {
   const scale = useTransform(progress, [0, 0.06], [1, 2.5])
   const rotateCore = useTransform(progress, [0, 0.06], [0, 90])
   const counterRotateCore = useTransform(rotateCore, v => -v)
+  const solarY = useTransform(progress, [0, 0.06], ['25vh', '0vh'])
   
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none overflow-hidden will-change-transform" style={{ opacity }}>
@@ -29,7 +30,7 @@ const EcosystemScene = ({ progress }) => {
       </motion.div>
 
       {/* The 3D Solar System */}
-      <motion.div className="relative w-full h-full flex items-center justify-center mt-64 md:mt-56 lg:mt-64 will-change-transform" style={{ scale }}>
+      <motion.div className="relative w-full h-full flex items-center justify-center will-change-transform" style={{ scale, y: solarY }}>
         
         {/* Core Frame (provides isometric tilt) */}
         <div className="relative w-[800px] h-[800px] flex items-center justify-center perspective-[2000px]">
@@ -292,6 +293,15 @@ const StudyPlanScene = ({ progress }) => {
   const calendarOp = useTransform(progress, [0.32, 0.33], [0, 1])
   const chaosOp = useTransform(progress, [0.32, 0.33], [1, 0])
 
+  const planData = [
+    { time: "09:00 AM", subject: "Database Sys", topic: "Normalization", color: "bg-cyan-500", shadow: "shadow-cyan-500/50", width: "w-[100%]" },
+    { time: "11:00 AM", subject: "Mathematics", topic: "Linear Algebra", color: "bg-purple-500", shadow: "shadow-purple-500/50", width: "w-[80%]" },
+    { time: "01:30 PM", subject: "Programming", topic: "React Hooks", color: "bg-emerald-500", shadow: "shadow-emerald-500/50", width: "w-[60%]" },
+    { time: "04:00 PM", subject: "Physics Lab", topic: "Quantum Mech", color: "bg-rose-500", shadow: "shadow-rose-500/50", width: "w-[40%]" },
+    { time: "05:30 PM", subject: "Quick Review", topic: "Flashcards", color: "bg-amber-500", shadow: "shadow-amber-500/50", width: "w-[20%]" },
+    { time: "08:00 PM", subject: "Mock Exam", topic: "Database Sys", color: "bg-blue-500", shadow: "shadow-blue-500/50", width: "w-[0%]" },
+  ];
+
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none px-4" style={{ opacity }}>
       <div className="text-center mb-12">
@@ -313,13 +323,19 @@ const StudyPlanScene = ({ progress }) => {
         <motion.div className="absolute left-0 right-0 h-4 bg-gradient-to-b from-transparent via-cyan-400 to-transparent blur-sm z-50 rounded-full" style={{ top: scannerY, opacity: scannerOpacity, boxShadow: '0 0 50px rgba(34,211,238,0.8)' }} />
 
         {/* Structured Calendar State */}
-        <motion.div className="w-full h-full grid grid-cols-2 md:grid-cols-3 gap-4" style={{ opacity: calendarOp, rotateX: 10 }}>
-          {[1,2,3,4,5,6].map((i) => (
-            <div key={i} className="bg-slate-100 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200 dark:border-cyan-500/30 rounded-2xl p-4 flex flex-col gap-2 shadow-[0_0_30px_rgba(34,211,238,0.1)]">
-              <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-cyan-500 dark:bg-cyan-400 w-full animate-pulse" />
+        <motion.div className="w-full h-full grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4" style={{ opacity: calendarOp, rotateX: 10 }}>
+          {planData.map((plan, i) => (
+            <div key={i} className="bg-slate-100 dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-xl p-3 md:p-4 flex flex-col gap-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(34,211,238,0.05)] transition-all">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700/60 px-2 py-0.5 rounded-md">{plan.time}</span>
+                <span className={`w-2 h-2 rounded-full ${plan.color} shadow-[0_0_8px] ${plan.shadow}`} />
               </div>
-              <div className="flex-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg p-2 text-cyan-700 dark:text-cyan-200 text-sm font-medium flex items-center justify-center">Study Block {i}</div>
+              <h4 className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100 leading-tight text-left">{plan.subject}</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 text-left truncate">{plan.topic}</p>
+              
+              <div className="w-full h-1.5 mt-auto bg-slate-200 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                <div className={`h-full ${plan.color} ${plan.width} opacity-80 rounded-full`} />
+              </div>
             </div>
           ))}
           
