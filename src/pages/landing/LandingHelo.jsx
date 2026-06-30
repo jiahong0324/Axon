@@ -129,7 +129,8 @@ const EcosystemScene = ({ progress }) => {
 // --- Scene 2: Timetable Waterfall (0.15 - 0.3) ---
 const WaterfallScene = ({ progress }) => {
   const opacity = useTransform(progress, [0.15, 0.18, 0.27, 0.3], [0, 1, 1, 0])
-  const y = useTransform(progress, [0.15, 0.3], ['-50%', '50%'])
+  // We remove the container 'y' movement so the flex container stays perfectly centered
+  // and the items don't get pushed off the bottom of the screen.
 
   const classes = [
     { time: "08:00 AM", name: "Data Structures", room: "Block A", color: "from-blue-500 to-cyan-500", delay: 0 },
@@ -148,11 +149,13 @@ const WaterfallScene = ({ progress }) => {
         <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 font-medium px-4">Your schedule, cascading seamlessly through your day.</p>
       </div>
 
-      <motion.div className="w-full max-w-5xl flex flex-col gap-4 md:gap-6 px-4 perspective-1000 mt-20 md:mt-32" style={{ y }}>
+      <motion.div className="w-full max-w-5xl flex flex-col gap-4 md:gap-6 px-4 perspective-1000 mt-20 md:mt-32">
         {classes.map((cls, i) => {
-          const itemY = useTransform(progress, [0.15 + cls.delay, 0.25 + cls.delay], ['100vh', '0vh'])
-          const itemOpacity = useTransform(progress, [0.15 + cls.delay, 0.2 + cls.delay], [0, 1])
-          const itemRotateX = useTransform(progress, [0.15 + cls.delay, 0.25 + cls.delay], [45, 0])
+          // Adjust timing so the last item finishes moving by progress 0.25 
+          // (well before the scene fades out at 0.27)
+          const itemY = useTransform(progress, [0.15 + cls.delay, 0.20 + cls.delay], ['100vh', '0vh'])
+          const itemOpacity = useTransform(progress, [0.15 + cls.delay, 0.18 + cls.delay], [0, 1])
+          const itemRotateX = useTransform(progress, [0.15 + cls.delay, 0.20 + cls.delay], [45, 0])
           
           return (
             <motion.div 
@@ -284,7 +287,9 @@ const MatrixScene = ({ progress }) => {
 
       <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full max-w-6xl" style={{ scale, rotateX, perspective: 1200 }}>
         {assignments.map((item, i) => {
-          const flip = useTransform(progress, [0.45 + (i * 0.015), 0.5 + (i * 0.015)], [90, 0])
+          // Use a smaller delay multiplier (0.01) so the last item (8 * 0.01 = 0.08)
+          // finishes at 0.45 + 0.08 = 0.53, safely before fade out starts at 0.57.
+          const flip = useTransform(progress, [0.45 + (i * 0.01), 0.48 + (i * 0.01)], [90, 0])
           return (
             <motion.div 
               key={i} 
