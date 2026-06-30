@@ -740,9 +740,9 @@ const FinaleScene = ({ progress }) => {
           Unleash Your <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-theme-500 to-purple-500">Potential.</span>
         </h2>
         
-        <button className="px-8 md:px-10 py-4 md:py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-black text-lg md:text-2xl hover:scale-105 transition-transform shadow-[0_0_40px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_rgba(255,255,255,0.4)] flex items-center gap-3 mx-auto">
-          Try UniMind Now <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-        </button>
+        <a href="https://axon-com.vercel.app/login" className="px-8 md:px-10 py-4 md:py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-black text-lg md:text-2xl hover:scale-105 transition-transform shadow-[0_0_40px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_rgba(255,255,255,0.4)] flex items-center gap-3 mx-auto">
+          Try Axon Now <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+        </a>
       </motion.div>
     </motion.div>
   )
