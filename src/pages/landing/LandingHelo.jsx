@@ -15,7 +15,7 @@ const EcosystemScene = ({ progress }) => {
   const scale = useTransform(progress, [0, 0.06], [1, 2.5])
   const rotateCore = useTransform(progress, [0, 0.06], [0, 90])
   const counterRotateCore = useTransform(rotateCore, v => -v)
-  const solarY = useTransform(progress, [0, 0.06], ['25vh', '0vh'])
+  const solarY = useTransform(progress, [0, 0.06], ['10vh', '-5vh'])
   
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none overflow-hidden will-change-transform" style={{ opacity }}>
@@ -486,21 +486,22 @@ const RemindersScene = ({ progress }) => {
       {reminders.map((rem, i) => {
         // Enhanced Dramatic 3D flight path with parallax
         // Notes further back (lower depth) move slower
-        const yStart = 80 + rem.depth * 10; 
-        const yEnd = -100 - rem.depth * 20;
-        const y = useTransform(progress, [0.50, 0.53, 0.55, 0.58], [`${yStart}vh`, `${rem.yCenter}vh`, `${rem.yCenter - 10}vh`, `${yEnd}vh`])
+        // Reduced distances to ensure scroll feels extremely smooth and un-rushed
+        const yStart = 40 + rem.depth * 5; 
+        const yEnd = -60 - rem.depth * 10;
+        const y = useTransform(progress, [0.50, 0.53, 0.55, 0.58], [`${yStart}vh`, `${rem.yCenter}vh`, `${rem.yCenter - 5}vh`, `${yEnd}vh`])
         
         // Horizontal drift for a natural floating feel
-        const swayAmount = (i % 2 === 0 ? 30 : -30) * rem.depth;
+        const swayAmount = (i % 2 === 0 ? 15 : -15) * rem.depth;
         const x = useTransform(progress, [0.50, 0.54, 0.58], [0, swayAmount, swayAmount * -1.5])
 
-        const rotate = useTransform(progress, [0.50, 0.54, 0.58], [rem.rotate - 45, rem.rotate, rem.rotate + 90])
+        const rotate = useTransform(progress, [0.50, 0.54, 0.58], [rem.rotate - 20, rem.rotate, rem.rotate + 45])
         const noteOpacity = useTransform(progress, [0.50, 0.51, 0.56, 0.58], [0, 1, 1, 0])
 
         return (
           <motion.div
             key={i}
-            className={`absolute bottom-0 w-24 md:w-40 aspect-square ${rem.color} p-3 md:p-5 shadow-2xl flex flex-col justify-between rounded-bl-xl rounded-tr-md`}
+            className={`absolute bottom-0 w-24 md:w-40 aspect-square ${rem.color} p-3 md:p-5 shadow-lg flex flex-col justify-between rounded-bl-xl rounded-tr-md will-change-transform`}
             style={{ 
               left: `${rem.left}%`, 
               x,
