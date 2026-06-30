@@ -596,6 +596,23 @@ const SettingsScene = ({ progress }) => {
         {/* Main Base Plate */}
         <motion.div className="absolute inset-0 bg-slate-100 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-300 dark:border-slate-600 rounded-3xl shadow-2xl" style={{ rotateX: 45, rotateZ: -20 }} />
 
+        {/* Central Core */}
+        <motion.div 
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          style={{ 
+            rotateX: 45, rotateZ: -20,
+            z: useTransform(explode, [0, 100], [0, 20])
+          }}
+        >
+          <div className="w-32 h-32 md:w-48 md:h-48 rounded-full border-4 border-cyan-500/20 flex items-center justify-center relative">
+            <div className="absolute inset-0 rounded-full border-t-4 border-cyan-500 animate-[spin_4s_linear_infinite]" />
+            <div className="absolute inset-4 rounded-full border-b-4 border-blue-500 animate-[spin_3s_linear_infinite_reverse]" />
+            <div className="w-16 h-16 md:w-24 md:h-24 bg-gradient-to-tr from-cyan-600 to-blue-600 rounded-full shadow-[0_0_50px_rgba(6,182,212,0.6)] animate-pulse flex items-center justify-center">
+              <Zap className="text-white w-8 h-8 md:w-10 md:h-10" />
+            </div>
+          </div>
+        </motion.div>
+
         {/* Floating Toggles */}
         <motion.div className="absolute top-10 md:top-20 left-10 md:left-20 bg-white dark:bg-slate-900 p-3 md:p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 shadow-xl" style={{ x: useTransform(explode, [0,100], [0, -40]), y: useTransform(explode, [0,100], [0, -80]), z: useTransform(explode, [0,100], [0, 50]) }}>
           <Settings className="text-cyan-500 w-5 h-5 md:w-6 md:h-6" />
