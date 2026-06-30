@@ -68,15 +68,47 @@ const EcosystemScene = ({ progress }) => {
         </div>
         
         <div className="grid grid-cols-3 gap-6 h-64">
-          <div className="col-span-2 bg-slate-100 dark:bg-slate-800 rounded-2xl p-6 relative overflow-hidden group border border-slate-200 dark:border-slate-700 shadow-inner">
-            <div className="absolute inset-0 bg-gradient-to-br from-theme-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Activity Overview</h3>
-            <div className="w-full h-32 bg-gradient-to-r from-theme-400 to-purple-500 rounded-xl rounded-b-none clip-path-chart mt-auto absolute bottom-0 inset-x-0 opacity-50 blur-[2px]"></div>
+          <div className="col-span-2 bg-white dark:bg-slate-800/80 rounded-2xl p-6 relative overflow-hidden group border border-slate-200 dark:border-slate-700 shadow-lg flex flex-col justify-between">
+            <div className="absolute inset-0 bg-gradient-to-br from-theme-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            
+            <div className="relative z-10 flex justify-between items-start">
+              <div>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Activity Overview</h3>
+                <p className="text-sm font-medium text-emerald-500 flex items-center gap-1 mt-1">
+                  <Activity className="w-4 h-4" /> +24% this week
+                </p>
+              </div>
+              <div className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-700/50 text-xs font-bold text-slate-500 dark:text-slate-400">
+                Weekly
+              </div>
+            </div>
+
+            {/* Mock Bar Chart */}
+            <div className="relative z-10 flex items-end justify-between h-24 mt-4 gap-2 px-2">
+              {[40, 70, 45, 90, 65, 80, 50].map((height, i) => (
+                <div key={i} className="w-full bg-slate-100 dark:bg-slate-700/50 rounded-t-md relative group/bar">
+                  <motion.div 
+                    initial={{ height: 0 }}
+                    whileInView={{ height: `${height}%` }}
+                    transition={{ delay: i * 0.1, duration: 1, type: 'spring' }}
+                    className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-theme-600 to-theme-400 rounded-t-md opacity-80 group-hover/bar:opacity-100 transition-opacity"
+                  />
+                </div>
+              ))}
+            </div>
+            
+            <div className="relative z-10 flex justify-between px-2 mt-2 text-[10px] font-bold text-slate-400">
+              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
           </div>
-          <div className="bg-gradient-to-br from-theme-500 to-blue-600 rounded-2xl p-6 text-white flex flex-col justify-center items-center shadow-2xl shadow-theme-500/40 border border-white/20">
-             <Calendar className="w-12 h-12 mb-4 animate-bounce" style={{ animationDuration: '3s' }} />
-             <span className="text-5xl font-black drop-shadow-md">5</span>
-             <span className="font-medium text-lg mt-1">Events Today</span>
+          
+          <div className="bg-gradient-to-br from-theme-500 to-purple-600 rounded-2xl p-6 text-white flex flex-col justify-center items-center shadow-xl shadow-theme-500/30 border border-white/20 relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform">
+               <Star className="w-24 h-24" />
+             </div>
+             <Calendar className="w-12 h-12 mb-4 relative z-10" />
+             <span className="text-5xl font-black drop-shadow-md relative z-10">5</span>
+             <span className="font-bold text-sm mt-2 text-white/90 relative z-10 uppercase tracking-widest">Events Today</span>
           </div>
         </div>
       </GlassPanel>
