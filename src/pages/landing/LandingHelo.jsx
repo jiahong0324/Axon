@@ -471,12 +471,12 @@ function HeloContent({ containerRef }) {
   const bgColors = useTransform(smoothProgress, 
     [0, 0.2, 0.4, 0.6, 0.8, 1], 
     [
-      'linear-gradient(135deg, #f8fbff 0%, #EEF4FB 100%)', // 1, 2: Light/Theme base
-      'linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%)', // 3: Indigo/Purple (Chat)
-      'linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%)', // 4: Emerald/Cyan (Matrix)
-      'linear-gradient(135deg, #fff1f2 0%, #ffedd5 100%)', // 5, 6: Rose/Amber (Exams, Reminders)
-      'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)', // 7: Dark explosion finale
-      'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)', // Cap
+      'linear-gradient(135deg, #f8fbff 0%, #EEF4FB 100%)', 
+      'linear-gradient(135deg, #f3e8ff 0%, #e0e7ff 100%)', 
+      'linear-gradient(135deg, #e0f2fe 0%, #e0e7ff 100%)', 
+      'linear-gradient(135deg, #fae8ff 0%, #f3e8ff 100%)', 
+      'linear-gradient(135deg, #0f172a 0%, #020617 100%)', 
+      'linear-gradient(135deg, #0f172a 0%, #020617 100%)', 
     ]
   )
 
@@ -485,8 +485,8 @@ function HeloContent({ containerRef }) {
     [
       'linear-gradient(135deg, #0f172a 0%, #020617 100%)', 
       'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)', 
-      'linear-gradient(135deg, #064e3b 0%, #022c22 100%)', 
-      'linear-gradient(135deg, #4c0519 0%, #2a0410 100%)', 
+      'linear-gradient(135deg, #172554 0%, #0f172a 100%)', 
+      'linear-gradient(135deg, #2e1065 0%, #0f172a 100%)', 
       'linear-gradient(135deg, #020617 0%, #000000 100%)', 
       'linear-gradient(135deg, #020617 0%, #000000 100%)', 
     ]
