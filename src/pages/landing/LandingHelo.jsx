@@ -495,8 +495,16 @@ const FocusScene = ({ progress }) => {
 // --- Scene 10: Knowledge Base (0.68 - 0.76) ---
 const KnowledgeScene = ({ progress }) => {
   const opacity = useTransform(progress, [0.68, 0.70, 0.74, 0.76], [0, 1, 1, 0])
-  const scale = useTransform(progress, [0.68, 0.76], [1, 4]) 
+  const spread = useTransform(progress, [0.68, 0.76], [1, 3])
+  const coreScale = useTransform(progress, [0.68, 0.76], [1, 5])
   
+  const nodes = [
+    {x: -120, y: -80, label: "Physics Notes"},
+    {x: 120, y: -60, label: "Blog"},
+    {x: -80, y: 120, label: "Code Snippets"},
+    {x: 100, y: 100, label: "Materials"}
+  ]
+
   return (
     <motion.div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none overflow-hidden" style={{ opacity }}>
       <div className="absolute top-12 md:top-20 text-center z-50 px-4">
@@ -506,30 +514,33 @@ const KnowledgeScene = ({ progress }) => {
         <p className="text-slate-600 dark:text-slate-400 mt-2 font-medium">Your notes, perfectly linked together.</p>
       </div>
 
-      <motion.div className="relative w-full h-full flex items-center justify-center perspective-1000" style={{ scale }}>
-        <div className="absolute w-24 h-24 md:w-32 md:h-32 bg-purple-600 rounded-full blur-[40px] md:blur-[50px] shadow-[0_0_100px_rgba(147,51,234,1)] animate-pulse" />
+      <div className="relative w-full h-full flex items-center justify-center perspective-1000">
+        <motion.div className="absolute w-24 h-24 md:w-32 md:h-32 bg-purple-600 rounded-full blur-[40px] md:blur-[50px] shadow-[0_0_100px_rgba(147,51,234,1)] animate-pulse" style={{ scale: coreScale }} />
         
-        {[
-          {x: -120, y: -80, label: "Physics Notes"},
-          {x: 120, y: -60, label: "Blog"},
-          {x: -80, y: 120, label: "Code Snippets"},
-          {x: 100, y: 100, label: "Materials"}
-        ].map((node, i) => (
-          <div key={i} className="absolute flex flex-col items-center" style={{ transform: `translate(${node.x}px, ${node.y}px)` }}>
-            <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-900/50 border border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.8)] backdrop-blur-md flex items-center justify-center">
-              <BookOpen className="w-3 h-3 md:w-4 md:h-4 text-purple-300" />
-            </div>
-            <span className="text-[10px] md:text-xs text-white font-bold mt-2 bg-slate-900/80 px-2 py-0.5 rounded-full border border-purple-500/30">{node.label}</span>
-          </div>
-        ))}
+        {nodes.map((node, i) => {
+          const moveX = useTransform(spread, s => node.x * s)
+          const moveY = useTransform(spread, s => node.y * s)
+          
+          return (
+            <motion.div key={i} className="absolute flex flex-col items-center" style={{ x: moveX, y: moveY }}>
+              <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-900/50 border border-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.8)] backdrop-blur-md flex items-center justify-center">
+                <BookOpen className="w-3 h-3 md:w-4 md:h-4 text-purple-300" />
+              </div>
+              <span className="text-[10px] md:text-xs text-white font-bold mt-2 bg-slate-900/80 px-2 py-0.5 rounded-full border border-purple-500/30 whitespace-nowrap">{node.label}</span>
+            </motion.div>
+          )
+        })}
 
         <svg className="absolute inset-0 w-full h-full" style={{ zIndex: -1 }}>
-          <line x1="50%" y1="50%" x2="calc(50% - 120px)" y2="calc(50% - 80px)" stroke="rgba(168,85,247,0.5)" strokeWidth="2" strokeDasharray="4" />
-          <line x1="50%" y1="50%" x2="calc(50% + 120px)" y2="calc(50% - 60px)" stroke="rgba(168,85,247,0.5)" strokeWidth="2" strokeDasharray="4" />
-          <line x1="50%" y1="50%" x2="calc(50% - 80px)" y2="calc(50% + 120px)" stroke="rgba(168,85,247,0.5)" strokeWidth="2" strokeDasharray="4" />
-          <line x1="50%" y1="50%" x2="calc(50% + 100px)" y2="calc(50% + 100px)" stroke="rgba(168,85,247,0.5)" strokeWidth="2" strokeDasharray="4" />
+          {nodes.map((node, i) => {
+            const x2 = useTransform(spread, s => `calc(50% + ${node.x * s}px)`)
+            const y2 = useTransform(spread, s => `calc(50% + ${node.y * s}px)`)
+            return (
+              <motion.line key={i} x1="50%" y1="50%" x2={x2} y2={y2} stroke="rgba(168,85,247,0.5)" strokeWidth="2" strokeDasharray="4" />
+            )
+          })}
         </svg>
-      </motion.div>
+      </div>
     </motion.div>
   )
 }
