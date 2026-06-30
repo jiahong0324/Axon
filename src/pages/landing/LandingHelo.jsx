@@ -335,49 +335,45 @@ const StudyPlanScene = ({ progress }) => {
 // --- Scene 6: Matrix (Assignments) (0.35 - 0.42) ---
 const MatrixScene = ({ progress }) => {
   const opacity = useTransform(progress, [0.35, 0.37, 0.41, 0.42], [0, 1, 1, 0])
-  const scale = useTransform(progress, [0.35, 0.42], [0.9, 1.05])
-  const rotateX = useTransform(progress, [0.35, 0.42], [15, -5]) 
+  const scale = useTransform(progress, [0.35, 0.42], [0.8, 1.1])
+  const rotateX = useTransform(progress, [0.35, 0.42], [20, -10]) 
 
   const assignments = [
-    { title: "React Architecture", due: "Due Today", stat: "Urgent", accent: "bg-rose-500", ring: "ring-rose-500/30", bg: "bg-rose-500/10", text: "text-rose-400" },
-    { title: "Database Systems", due: "Due Tomorrow", stat: "Pending", accent: "bg-amber-500", ring: "ring-amber-500/30", bg: "bg-amber-500/10", text: "text-amber-400" },
-    { title: "Ethics Essay", due: "Due In 3 Days", stat: "Drafting", accent: "bg-blue-500", ring: "ring-blue-500/30", bg: "bg-blue-500/10", text: "text-blue-400" },
-    { title: "ML Model", due: "Due Next Week", stat: "Testing", accent: "bg-purple-500", ring: "ring-purple-500/30", bg: "bg-purple-500/10", text: "text-purple-400" },
-    { title: "UI Design", due: "Due Next Week", stat: "Completed", accent: "bg-emerald-500", ring: "ring-emerald-500/30", bg: "bg-emerald-500/10", text: "text-emerald-400" },
-    { title: "Physics Lab", due: "Due Next Month", stat: "Not Started", accent: "bg-slate-400", ring: "ring-slate-400/30", bg: "bg-slate-400/10", text: "text-slate-400" },
+    { title: "React Architecture", due: "Due Today", stat: "Urgent", color: "from-rose-500 to-red-600" },
+    { title: "Database Systems", due: "Due Tomorrow", stat: "Pending", color: "from-amber-400 to-orange-500" },
+    { title: "Ethics Essay", due: "Due In 3 Days", stat: "Drafting", color: "from-blue-400 to-indigo-500" },
+    { title: "ML Model", due: "Due Next Week", stat: "Testing", color: "from-fuchsia-500 to-purple-600" },
+    { title: "UI Design", due: "Due Next Week", stat: "Completed", color: "from-emerald-400 to-teal-500" },
+    { title: "Physics Lab", due: "Due Next Month", stat: "Not Started", color: "from-slate-400 to-slate-600" },
   ]
 
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none px-4 pt-16" style={{ opacity }}>
-      <div className="text-center mb-10 md:mb-16">
+      <div className="text-center mb-6 md:mb-10">
         <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight drop-shadow-lg leading-tight">
           Crush Every <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500 drop-shadow-xl">Deadline.</span>
         </h2>
       </div>
 
-      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full max-w-4xl" style={{ scale, rotateX, perspective: 1200 }}>
+      <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full max-w-6xl" style={{ scale, rotateX, perspective: 1200 }}>
         {assignments.map((item, i) => {
-          const slideY = useTransform(progress, [0.35 + (i * 0.005), 0.38 + (i * 0.005)], [50, 0])
-          const fade = useTransform(progress, [0.35 + (i * 0.005), 0.38 + (i * 0.005)], [0, 1])
+          const flip = useTransform(progress, [0.35 + (i * 0.008), 0.38 + (i * 0.008)], [90, 0])
 
           return (
             <motion.div 
               key={i} 
-              className="p-5 md:p-6 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-slate-700/50 shadow-xl flex flex-col justify-between relative overflow-hidden group"
-              style={{ y: slideY, opacity: fade }}
+              className={`h-32 md:h-40 rounded-3xl bg-gradient-to-br ${item.color} p-4 md:p-6 flex flex-col justify-between text-white shadow-2xl border border-white/30`}
+              style={{ rotateX: flip, transformStyle: "preserve-3d" }}
             >
-              {/* Left Accent Line */}
-              <div className={`absolute top-0 left-0 w-1.5 h-full ${item.accent} shadow-[0_0_15px_currentColor]`} style={{ color: 'inherit' }} />
-              
-              <div className="flex justify-between items-start mb-6 pl-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wide ${item.bg} ${item.text} ring-1 ${item.ring}`}>
+              <div className="flex justify-between items-start">
+                <span className="px-3 md:px-4 py-1 rounded-full bg-black/20 backdrop-blur-md text-xs md:text-sm font-bold tracking-wide shadow-inner">
                   {item.stat}
                 </span>
-                <CheckSquare className={`w-5 h-5 ${item.text} opacity-50`} />
+                <CheckSquare className="w-5 h-5 md:w-6 md:h-6 text-white/70" />
               </div>
-              <div className="pl-2">
-                <h3 className="text-xl font-bold text-white tracking-wide">{item.title}</h3>
-                <p className="text-slate-400 text-sm mt-1">{item.due}</p>
+              <div>
+                <h3 className="text-xl md:text-2xl font-bold drop-shadow-md">{item.title}</h3>
+                <p className="text-white/80 font-medium text-xs md:text-sm mt-1">{item.due}</p>
               </div>
             </motion.div>
           )
