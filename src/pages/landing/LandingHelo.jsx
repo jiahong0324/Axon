@@ -141,7 +141,7 @@ const WaterfallScene = ({ progress }) => {
 
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none" style={{ opacity }}>
-      <div className="absolute top-20 text-center">
+      <div className="absolute top-10 text-center">
         <h2 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tight mb-4 drop-shadow-lg">
           The <span className="text-transparent bg-clip-text bg-gradient-to-r from-theme-500 to-purple-600">Perfect Flow.</span>
         </h2>
@@ -276,7 +276,7 @@ const MatrixScene = ({ progress }) => {
 
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none px-4" style={{ opacity }}>
-      <div className="text-center mb-12">
+      <div className="text-center mb-8 mt-12">
         <h2 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tight drop-shadow-lg">
           Crush Every <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500 drop-shadow-xl">Deadline.</span>
         </h2>
@@ -380,7 +380,7 @@ const ReminderScene = ({ progress }) => {
 
   return (
     <motion.div className="absolute inset-0 z-40 pointer-events-none overflow-hidden" style={{ opacity }}>
-      <motion.div className="absolute top-1/4 inset-x-0 text-center z-50" style={{ scale: textScale }}>
+      <motion.div className="absolute top-20 inset-x-0 text-center z-50" style={{ scale: textScale }}>
         <h2 className="text-6xl md:text-[7rem] font-black text-slate-900 dark:text-white tracking-tight drop-shadow-2xl leading-[1.1]">
           Never Forget <br/>A Single <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-rose-500">Detail.</span>
         </h2>
@@ -492,7 +492,7 @@ function HeloContent({ containerRef }) {
       {/* 1400vh Container for 7 distinct scenes */}
       <div className="h-[1400vh] relative">
         <motion.div 
-          className="sticky top-0 h-[100dvh] w-full overflow-hidden flex flex-col items-center justify-center dark:hidden"
+          className="sticky top-[73px] h-[calc(100dvh-73px)] w-full overflow-hidden flex flex-col items-center justify-center dark:hidden"
           style={{ background: bgColors }}
         >
           {/* Animated Background Mesh - Light Mode */}
@@ -526,7 +526,7 @@ function HeloContent({ containerRef }) {
         </motion.div>
 
         <motion.div 
-          className="sticky top-0 h-[100dvh] w-full overflow-hidden hidden dark:flex flex-col items-center justify-center"
+          className="sticky top-[73px] h-[calc(100dvh-73px)] w-full overflow-hidden hidden dark:flex flex-col items-center justify-center"
           style={{ background: darkBgColors }}
         >
           {/* Animated Background Mesh - Dark Mode */}
