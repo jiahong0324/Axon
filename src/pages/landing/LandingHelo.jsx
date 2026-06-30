@@ -519,10 +519,12 @@ const RemindersScene = ({ progress }) => {
       </motion.div>
 
       {reminders.map((rem, i) => {
-        // Just move upward animation
-        const yStart = 40 + rem.depth * 5; 
-        const yEnd = -60 - rem.depth * 10;
-        const y = useTransform(progress, [0.50, 0.53, 0.55, 0.58], [`${yStart}vh`, `${rem.yCenter}vh`, `${rem.yCenter - 5}vh`, `${yEnd}vh`])
+        // Smooth continuous linear scroll upward with varying start positions
+        const verticalOffset = rem.yCenter * 15;
+        const parallaxSpeed = rem.depth * 400;
+        const yStart = 1500 + verticalOffset + parallaxSpeed;
+        const yEnd = -1500 + verticalOffset - parallaxSpeed;
+        const y = useTransform(progress, [0.50, 0.58], [yStart, yEnd]);
         
         const noteOpacity = useTransform(progress, [0.50, 0.51, 0.56, 0.58], [0, 1, 1, 0])
 
