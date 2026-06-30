@@ -12,7 +12,7 @@ const GlassPanel = ({ children, className = "" }) => (
 // --- Scene 1: The Ecosystem (0 - 0.07) ---
 const EcosystemScene = ({ progress }) => {
   const opacity = useTransform(progress, [0, 0.04, 0.06], [1, 1, 0])
-  const scale = useTransform(progress, [0, 0.06], [0.7, 2.5])
+  const scale = useTransform(progress, [0, 0.06], [0.7, 4.0])
   const rotateCore = useTransform(progress, [0, 0.06], [0, 90])
   const counterRotateCore = useTransform(rotateCore, v => -v)
   
@@ -763,7 +763,7 @@ export default function LandingHelo() {
   const { scrollYProgress } = useScroll({
     target: containerRef,
     container: scrollContainer ? { current: scrollContainer } : undefined,
-    offset: ["start 73px", "end end"]
+    offset: ["start start", "end end"]
   })
 
   const smoothProgress = useSpring(scrollYProgress, {
@@ -809,12 +809,12 @@ export default function LandingHelo() {
   )
 
   return (
-    <div className="w-full bg-white dark:bg-slate-900 selection:bg-theme-500/30">
+    <div className="w-full bg-white dark:bg-slate-900 selection:bg-theme-500/30 -mt-[73px]">
       
       {/* 2600vh Container for 13 distinct scenes */}
       <div ref={containerRef} className="h-[2600vh] relative">
         <motion.div 
-          className="sticky top-[73px] h-[calc(100dvh-73px)] w-full overflow-hidden flex flex-col items-center justify-center will-change-transform"
+          className="sticky top-0 h-[100dvh] w-full overflow-hidden flex flex-col items-center justify-center will-change-transform"
           style={{ background: isDark ? darkBgColors : bgColors }}
         >
           {/* Animated Background Mesh */}
@@ -823,19 +823,21 @@ export default function LandingHelo() {
             <div className={`absolute w-[600px] h-[600px] -bottom-[300px] -left-[300px] rounded-full blur-[100px] md:blur-[120px] animate-[pulse_10s_ease-in-out_infinite_reverse] ${isDark ? 'bg-purple-600/20' : 'bg-purple-300/30'}`} />
           </div>
 
-          <EcosystemScene progress={smoothProgress} />
-          <WaterfallScene progress={smoothProgress} />
-          <SmartAlertsScene progress={smoothProgress} />
-          <ChatScene progress={smoothProgress} />
-          <StudyPlanScene progress={smoothProgress} />
-          <MatrixScene progress={smoothProgress} />
-          <ExamsScene progress={smoothProgress} />
-          <RemindersScene progress={smoothProgress} />
-          <FocusScene progress={smoothProgress} />
-          <KnowledgeScene progress={smoothProgress} />
-          <AnalyticsScene progress={smoothProgress} />
-          <SettingsScene progress={smoothProgress} />
-          <FinaleScene progress={smoothProgress} />
+          <div className="absolute inset-0 top-[73px]">
+            <EcosystemScene progress={smoothProgress} />
+            <WaterfallScene progress={smoothProgress} />
+            <SmartAlertsScene progress={smoothProgress} />
+            <ChatScene progress={smoothProgress} />
+            <StudyPlanScene progress={smoothProgress} />
+            <MatrixScene progress={smoothProgress} />
+            <ExamsScene progress={smoothProgress} />
+            <RemindersScene progress={smoothProgress} />
+            <FocusScene progress={smoothProgress} />
+            <KnowledgeScene progress={smoothProgress} />
+            <AnalyticsScene progress={smoothProgress} />
+            <SettingsScene progress={smoothProgress} />
+            <FinaleScene progress={smoothProgress} />
+          </div>
         </motion.div>
       </div>
 
