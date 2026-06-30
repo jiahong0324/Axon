@@ -574,13 +574,13 @@ const AnalyticsScene = ({ progress }) => {
         </h2>
       </div>
 
-      <div className="w-full h-1/2 md:h-1/3 max-w-4xl relative perspective-1000 flex items-end justify-center gap-2 md:gap-8 px-4 pb-12 border-b-2 border-emerald-500/30" style={{ transform: 'rotateX(30deg)' }}>
-        {[15, 25, 40, 50, 65, 80, 100].map((h, i) => {
-          const height = useTransform(progress, [0.76 + (i * 0.003), 0.78 + (i * 0.003)], ['0%', `${h}%`])
+      <div className="w-full h-[50vh] md:h-[60vh] max-w-5xl relative perspective-1000 flex items-end justify-center gap-2 md:gap-8 px-4 pb-12 border-b-4 border-emerald-500/30" style={{ transform: 'rotateX(20deg)' }}>
+        {[10, 20, 35, 50, 65, 80, 100].map((h, i) => {
+          const height = useTransform(progress, [0.76 + (i * 0.004), 0.79 + (i * 0.004)], ['0%', `${h}%`])
           return (
-            <motion.div key={i} className="w-10 md:w-20 bg-gradient-to-t from-emerald-900 to-emerald-400 rounded-t-xl border-t-2 border-l-2 border-emerald-300 shadow-[0_0_30px_rgba(16,185,129,0.3)] relative" style={{ height }}>
+            <motion.div key={i} className="w-10 md:w-24 bg-gradient-to-t from-emerald-900 via-emerald-600 to-emerald-400 rounded-t-xl border-t-4 border-l-4 border-emerald-300 shadow-[0_0_40px_rgba(16,185,129,0.4)] relative" style={{ height }}>
               {h === 100 && (
-                <div className="absolute -top-10 md:-top-12 left-1/2 -translate-x-1/2 bg-emerald-500 text-white font-black text-lg md:text-xl px-3 md:px-4 py-1 rounded-full shadow-[0_0_20px_rgba(16,185,129,1)]">
+                <div className="absolute -top-12 md:-top-16 left-1/2 -translate-x-1/2 bg-emerald-500 text-white font-black text-xl md:text-3xl px-4 md:px-6 py-2 rounded-full shadow-[0_0_40px_rgba(16,185,129,1)] border-2 border-emerald-300">
                   A+
                 </div>
               )}
