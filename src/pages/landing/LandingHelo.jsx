@@ -763,7 +763,7 @@ export default function LandingHelo() {
   const { scrollYProgress } = useScroll({
     target: containerRef,
     container: scrollContainer ? { current: scrollContainer } : undefined,
-    offset: ["start start", "end end"]
+    offset: ["start 73px", "end end"]
   })
 
   const smoothProgress = useSpring(scrollYProgress, {
