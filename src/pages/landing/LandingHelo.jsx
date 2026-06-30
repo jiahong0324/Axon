@@ -469,7 +469,7 @@ const RemindersScene = ({ progress }) => {
 
       {reminders.map((rem, i) => {
         // Enhanced Dramatic 3D flight path with parallax
-        // Notes further back (lower depth) move slower and don't scale as much
+        // Notes further back (lower depth) move slower
         const yStart = 100 + rem.depth * 20; 
         const yEnd = -150 - rem.depth * 50;
         const y = useTransform(progress, [0.50, 0.53, 0.55, 0.58], [`${yStart}vh`, `${rem.yCenter}vh`, `${rem.yCenter - 10}vh`, `${yEnd}vh`])
@@ -479,7 +479,6 @@ const RemindersScene = ({ progress }) => {
         const x = useTransform(progress, [0.50, 0.54, 0.58], [0, swayAmount, swayAmount * -1.5])
 
         const rotate = useTransform(progress, [0.50, 0.54, 0.58], [rem.rotate - 45, rem.rotate, rem.rotate + 90])
-        const scale = useTransform(progress, [0.50, 0.54, 0.58], [rem.depth * 0.2, rem.depth, rem.depth * 3.5])
         const noteOpacity = useTransform(progress, [0.50, 0.51, 0.56, 0.58], [0, 1, 1, 0])
 
         return (
@@ -491,7 +490,7 @@ const RemindersScene = ({ progress }) => {
               x,
               y, 
               rotate,
-              scale,
+              scale: rem.depth,
               opacity: noteOpacity,
               zIndex: Math.round(rem.depth * 10)
             }}
