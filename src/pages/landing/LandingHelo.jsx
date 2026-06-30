@@ -282,66 +282,101 @@ const StudyPlanScene = ({ progress }) => {
   const opacity = useTransform(progress, [0.28, 0.30, 0.34, 0.35], [0, 1, 1, 0])
   
   // Chaotic nodes morphing into a structured grid
-  const nodeY1 = useTransform(progress, [0.28, 0.32], [200, 0])
-  const nodeX1 = useTransform(progress, [0.28, 0.32], [-200, 0])
-  const nodeY2 = useTransform(progress, [0.28, 0.32], [-150, 0])
-  const nodeX2 = useTransform(progress, [0.28, 0.32], [250, 0])
+  const chaosOp = useTransform(progress, [0.28, 0.31], [1, 0])
+  const nodeY1 = useTransform(progress, [0.28, 0.31], [200, 0])
+  const nodeX1 = useTransform(progress, [0.28, 0.31], [-200, 0])
   
-  const scannerY = useTransform(progress, [0.31, 0.33], ['-10%', '110%'])
-  const scannerOpacity = useTransform(progress, [0.31, 0.32, 0.33], [0, 1, 0])
+  const scannerY = useTransform(progress, [0.30, 0.32], ['-20%', '120%'])
+  const scannerOpacity = useTransform(progress, [0.30, 0.31, 0.32], [0, 1, 0])
 
-  const calendarOp = useTransform(progress, [0.32, 0.33], [0, 1])
-  const chaosOp = useTransform(progress, [0.32, 0.33], [1, 0])
+  const planOp = useTransform(progress, [0.31, 0.32], [0, 1])
+  const planY = useTransform(progress, [0.31, 0.33], [40, 0])
+
+  // Individual card staggers based on scroll progress
+  const card1Op = useTransform(progress, [0.315, 0.32], [0, 1])
+  const card2Op = useTransform(progress, [0.32, 0.325], [0, 1])
+  const card3Op = useTransform(progress, [0.325, 0.33], [0, 1])
 
   const planData = [
-    { time: "09:00 AM", subject: "Database Sys", topic: "Normalization", color: "bg-cyan-500", shadow: "shadow-cyan-500/50", width: "w-[100%]" },
-    { time: "11:00 AM", subject: "Mathematics", topic: "Linear Algebra", color: "bg-purple-500", shadow: "shadow-purple-500/50", width: "w-[80%]" },
-    { time: "01:30 PM", subject: "Programming", topic: "React Hooks", color: "bg-emerald-500", shadow: "shadow-emerald-500/50", width: "w-[60%]" },
-    { time: "04:00 PM", subject: "Physics Lab", topic: "Quantum Mech", color: "bg-rose-500", shadow: "shadow-rose-500/50", width: "w-[40%]" },
-    { time: "05:30 PM", subject: "Quick Review", topic: "Flashcards", color: "bg-amber-500", shadow: "shadow-amber-500/50", width: "w-[20%]" },
-    { time: "08:00 PM", subject: "Mock Exam", topic: "Database Sys", color: "bg-blue-500", shadow: "shadow-blue-500/50", width: "w-[0%]" },
+    { time: "09:00 AM", subject: "Database Systems", topic: "Normalization Practice", duration: "2h", icon: <Brain className="w-5 h-5 text-cyan-400" />, color: "from-cyan-500 to-blue-500", shadow: "shadow-cyan-500/30", op: card1Op },
+    { time: "11:30 AM", subject: "Advanced Math", topic: "Linear Algebra Vectors", duration: "1.5h", icon: <BarChart className="w-5 h-5 text-purple-400" />, color: "from-purple-500 to-fuchsia-500", shadow: "shadow-purple-500/30", op: card2Op },
+    { time: "02:00 PM", subject: "Web Development", topic: "React Architecture", duration: "3h", icon: <LayoutDashboard className="w-5 h-5 text-emerald-400" />, color: "from-emerald-500 to-teal-500", shadow: "shadow-emerald-500/30", op: card3Op },
   ];
 
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none px-4" style={{ opacity }}>
-      <div className="text-center mb-12">
-        <h2 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white drop-shadow-lg">
-          The <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-cyan-500">Architect.</span>
+      <div className="text-center mb-10 md:mb-16">
+        <h2 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tight drop-shadow-2xl">
+          The <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500">Architect.</span>
         </h2>
-        <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mt-2 font-medium">Generate perfect study plans instantly.</p>
+        <p className="text-lg md:text-2xl text-slate-600 dark:text-slate-300 mt-4 font-medium max-w-2xl mx-auto">
+          Generates <span className="text-cyan-500 font-bold">perfect</span> study plans instantly.
+        </p>
       </div>
 
-      <div className="relative w-full max-w-4xl h-64 md:h-96 flex items-center justify-center perspective-1000">
-        {/* Chaotic State */}
+      <div className="relative w-full max-w-5xl h-[450px] md:h-[500px] flex items-center justify-center perspective-[1200px]">
+        {/* Chaotic Background State */}
         <motion.div className="absolute inset-0 flex items-center justify-center" style={{ opacity: chaosOp }}>
-          <motion.div className="absolute p-3 bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold rounded-xl blur-[1px] md:blur-[2px]" style={{ x: nodeX1, y: nodeY1 }}>Database Prep</motion.div>
-          <motion.div className="absolute p-3 bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold rounded-xl blur-[1px]" style={{ x: nodeX2, y: nodeY2 }}>Read Chapter 4</motion.div>
-          <motion.div className="absolute p-3 bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold rounded-xl blur-[2px] md:blur-[3px]" style={{ x: useTransform(progress, [0.28, 0.32], [0, -100]), y: useTransform(progress, [0.28, 0.32], [100, -50]) }}>Mock Exam</motion.div>
+          <motion.div className="absolute p-4 bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold rounded-2xl blur-[2px]" style={{ x: nodeX1, y: nodeY1, rotate: -15 }}>Unorganized Tasks...</motion.div>
+          <motion.div className="absolute p-4 bg-purple-500/10 border border-purple-500/30 text-purple-400 font-bold rounded-2xl blur-[3px]" style={{ x: useTransform(progress, [0.28, 0.31], [250, 0]), y: useTransform(progress, [0.28, 0.31], [-150, 0]), rotate: 20 }}>Overlapping Deadlines</motion.div>
+          <motion.div className="absolute p-4 bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold rounded-2xl blur-[4px]" style={{ x: useTransform(progress, [0.28, 0.31], [0, -100]), y: useTransform(progress, [0.28, 0.31], [150, 0]) }}>Exam Anxiety</motion.div>
         </motion.div>
 
         {/* The AI Scanner Beam */}
-        <motion.div className="absolute left-0 right-0 h-4 bg-gradient-to-b from-transparent via-cyan-400 to-transparent blur-sm z-50 rounded-full" style={{ top: scannerY, opacity: scannerOpacity, boxShadow: '0 0 50px rgba(34,211,238,0.8)' }} />
+        <motion.div className="absolute left-0 right-0 h-8 md:h-12 bg-gradient-to-b from-transparent via-cyan-400/80 to-transparent blur-md z-50 rounded-[100%]" style={{ top: scannerY, opacity: scannerOpacity, boxShadow: '0 0 80px 20px rgba(34,211,238,0.5)' }} />
 
-        {/* Structured Calendar State */}
-        <motion.div className="w-full h-full grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4" style={{ opacity: calendarOp, rotateX: 10 }}>
-          {planData.map((plan, i) => (
-            <div key={i} className="bg-slate-100 dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-xl p-3 md:p-4 flex flex-col gap-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(34,211,238,0.05)] transition-all">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700/60 px-2 py-0.5 rounded-md">{plan.time}</span>
-                <span className={`w-2 h-2 rounded-full ${plan.color} shadow-[0_0_8px] ${plan.shadow}`} />
+        {/* Structured Timeline State */}
+        <motion.div 
+          className="relative w-full max-w-3xl flex flex-col gap-6 bg-slate-900/40 dark:bg-black/40 backdrop-blur-2xl border border-white/20 dark:border-cyan-500/30 rounded-3xl p-6 md:p-8 shadow-[0_0_100px_rgba(34,211,238,0.1)]" 
+          style={{ opacity: planOp, y: planY, rotateX: 5 }}
+        >
+          {/* Glowing Ambient Backgrounds */}
+          <div className="absolute -top-20 -right-20 w-64 h-64 bg-cyan-500/20 rounded-full blur-[80px] pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-purple-500/20 rounded-full blur-[80px] pointer-events-none" />
+
+          {/* Header */}
+          <div className="flex justify-between items-center border-b border-white/10 dark:border-slate-700/50 pb-4 mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <h4 className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100 leading-tight text-left">{plan.subject}</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 text-left truncate">{plan.topic}</p>
-              
-              <div className="w-full h-1.5 mt-auto bg-slate-200 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                <div className={`h-full ${plan.color} ${plan.width} opacity-80 rounded-full`} />
+              <div>
+                <h3 className="text-xl font-bold text-white">Today's Blueprint</h3>
+                <p className="text-sm text-cyan-400 font-medium">Optimized for retention</p>
               </div>
             </div>
-          ))}
-          
-          <motion.div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-cyan-500 text-white px-4 py-2 rounded-full font-bold shadow-[0_0_20px_rgba(34,211,238,0.5)] border border-cyan-300 flex items-center gap-2 text-sm md:text-base">
-            <CheckSquare className="w-4 h-4 md:w-5 md:h-5" /> Plan Generated
-          </motion.div>
+            <motion.div className="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full font-bold border border-emerald-500/30 flex items-center gap-2 text-sm shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+              <CheckSquare className="w-4 h-4" /> Ready
+            </motion.div>
+          </div>
+
+          {/* Timeline */}
+          <div className="relative flex flex-col gap-5 pl-4 md:pl-8">
+            {/* Vertical Line */}
+            <div className="absolute left-6 md:left-10 top-4 bottom-4 w-0.5 bg-gradient-to-b from-cyan-500 via-purple-500 to-emerald-500 opacity-30" />
+
+            {planData.map((plan, i) => (
+              <motion.div key={i} className="relative flex items-stretch gap-4 md:gap-6 group" style={{ opacity: plan.op }}>
+                {/* Timeline Dot */}
+                <div className="relative z-10 flex flex-col items-center mt-3">
+                  <div className={`w-4 h-4 rounded-full bg-gradient-to-r ${plan.color} shadow-lg ${plan.shadow} ring-4 ring-slate-900 dark:ring-black`} />
+                </div>
+                
+                {/* Card */}
+                <div className="flex-1 bg-white/5 dark:bg-slate-800/50 hover:bg-white/10 dark:hover:bg-slate-800/80 backdrop-blur-md border border-white/10 dark:border-slate-700 rounded-2xl p-4 md:p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-white/20 dark:hover:border-slate-600 group">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      {plan.icon}
+                      <span className="text-sm font-bold text-slate-400 dark:text-slate-400">{plan.time}</span>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-500 bg-slate-200/50 dark:bg-slate-700/50 px-2 py-1 rounded-md">{plan.duration}</span>
+                  </div>
+                  <h4 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white leading-tight mb-1">{plan.subject}</h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{plan.topic}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       </div>
     </motion.div>
@@ -484,18 +519,11 @@ const RemindersScene = ({ progress }) => {
       </motion.div>
 
       {reminders.map((rem, i) => {
-        // Enhanced Dramatic 3D flight path with parallax
-        // Notes further back (lower depth) move slower
-        // Reduced distances to ensure scroll feels extremely smooth and un-rushed
+        // Just move upward animation
         const yStart = 40 + rem.depth * 5; 
         const yEnd = -60 - rem.depth * 10;
         const y = useTransform(progress, [0.50, 0.53, 0.55, 0.58], [`${yStart}vh`, `${rem.yCenter}vh`, `${rem.yCenter - 5}vh`, `${yEnd}vh`])
         
-        // Horizontal drift for a natural floating feel
-        const swayAmount = (i % 2 === 0 ? 15 : -15) * rem.depth;
-        const x = useTransform(progress, [0.50, 0.54, 0.58], [0, swayAmount, swayAmount * -1.5])
-
-        const rotate = useTransform(progress, [0.50, 0.54, 0.58], [rem.rotate - 20, rem.rotate, rem.rotate + 45])
         const noteOpacity = useTransform(progress, [0.50, 0.51, 0.56, 0.58], [0, 1, 1, 0])
 
         return (
@@ -504,9 +532,8 @@ const RemindersScene = ({ progress }) => {
             className={`absolute bottom-0 w-24 md:w-40 aspect-square ${rem.color} p-3 md:p-5 shadow-lg flex flex-col justify-between rounded-bl-xl rounded-tr-md will-change-transform`}
             style={{ 
               left: `${rem.left}%`, 
-              x,
               y, 
-              rotate,
+              rotate: rem.rotate,
               scale: rem.depth,
               opacity: noteOpacity,
               zIndex: Math.round(rem.depth * 10)
