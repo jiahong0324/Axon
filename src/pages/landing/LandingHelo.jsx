@@ -15,7 +15,7 @@ const EcosystemScene = ({ progress }) => {
   const scale = useTransform(progress, [0, 0.06], [1, 2.5])
   const rotateCore = useTransform(progress, [0, 0.06], [0, 90])
   const counterRotateCore = useTransform(rotateCore, v => -v)
-  const solarY = useTransform(progress, [0, 0.06], ['10vh', '-5vh'])
+  const solarY = useTransform(progress, [0, 0.06], [80, -40])
   
   return (
     <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none overflow-hidden will-change-transform" style={{ opacity }}>
