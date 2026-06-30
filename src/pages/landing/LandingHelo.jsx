@@ -434,14 +434,30 @@ const RemindersScene = ({ progress }) => {
   const opacity = useTransform(progress, [0.50, 0.52, 0.56, 0.58], [0, 1, 1, 0])
   const textScale = useTransform(progress, [0.50, 0.58], [0.8, 1])
 
-  const reminders = Array.from({ length: 15 }).map((_, i) => ({
-    x: (Math.random() - 0.5) * 80, // spread across width
-    yCenter: -30 - Math.random() * 50, // distribute vertically in the middle
-    rotate: (Math.random() - 0.5) * 60,
-    depth: Math.random() * 1.5 + 0.8, 
-    color: ['bg-amber-300 text-amber-900', 'bg-rose-300 text-rose-900', 'bg-emerald-300 text-emerald-900', 'bg-cyan-300 text-cyan-900', 'bg-fuchsia-300 text-fuchsia-900'][i % 5],
-    text: ['Buy groceries', 'Email professor', 'Pay rent', 'Call mom', 'Read chapter 3', 'Submit form', 'Gym @ 6PM', 'Doctor appt'][i % 8]
-  }))
+  // Increase the number of reminders for a denser storm
+  const reminders = Array.from({ length: 24 }).map((_, i) => {
+    // Use index for deterministic pseudo-random distribution
+    const rand1 = Math.abs(Math.sin(i * 12.9898)) % 1;
+    const rand2 = Math.abs(Math.cos(i * 78.233)) % 1;
+    const rand3 = Math.abs(Math.sin(i * 45.123)) % 1;
+    const rand4 = Math.abs(Math.cos(i * 93.412)) % 1;
+
+    // Distribute evenly across 3 horizontal columns: left, center, right to fill the screen
+    const col = i % 3;
+    let baseLeft;
+    if (col === 0) baseLeft = 5 + rand1 * 25; // 5% to 30% (Left)
+    else if (col === 1) baseLeft = 35 + rand1 * 30; // 35% to 65% (Center)
+    else baseLeft = 70 + rand1 * 25; // 70% to 95% (Right)
+
+    return {
+      left: baseLeft, 
+      yCenter: -10 - rand2 * 70, // Float higher or lower: -10vh to -80vh
+      rotate: (rand3 - 0.5) * 100, // Varied rotations
+      depth: rand4 * 1.5 + 0.5, // 0.5 to 2.0 depth for parallax effect
+      color: ['bg-amber-300 text-amber-900', 'bg-rose-300 text-rose-900', 'bg-emerald-300 text-emerald-900', 'bg-cyan-300 text-cyan-900', 'bg-fuchsia-300 text-fuchsia-900', 'bg-indigo-300 text-indigo-900'][i % 6],
+      text: ['Buy groceries', 'Email professor', 'Pay rent', 'Call mom', 'Read chapter 3', 'Submit form', 'Gym @ 6PM', 'Doctor appt', 'Project due', 'Water plants'][i % 10]
+    }
+  })
 
   return (
     <motion.div className="absolute inset-0 z-40 pointer-events-none overflow-hidden" style={{ opacity }}>
@@ -452,18 +468,27 @@ const RemindersScene = ({ progress }) => {
       </motion.div>
 
       {reminders.map((rem, i) => {
-        // Dramatic 3D flight path: fly from far away, float in center, zip past camera
-        const y = useTransform(progress, [0.50, 0.53, 0.55, 0.58], ['120vh', `${rem.yCenter}vh`, `${rem.yCenter - 15}vh`, '-150vh'])
-        const rotate = useTransform(progress, [0.50, 0.54, 0.58], [rem.rotate - 60, rem.rotate, rem.rotate + 60])
-        const scale = useTransform(progress, [0.50, 0.54, 0.58], [rem.depth * 0.2, rem.depth, rem.depth * 3])
-        const noteOpacity = useTransform(progress, [0.50, 0.52, 0.56, 0.58], [0, 1, 1, 0])
+        // Enhanced Dramatic 3D flight path with parallax
+        // Notes further back (lower depth) move slower and don't scale as much
+        const yStart = 100 + rem.depth * 20; 
+        const yEnd = -150 - rem.depth * 50;
+        const y = useTransform(progress, [0.50, 0.53, 0.55, 0.58], [`${yStart}vh`, `${rem.yCenter}vh`, `${rem.yCenter - 10}vh`, `${yEnd}vh`])
+        
+        // Horizontal drift for a natural floating feel
+        const swayAmount = (i % 2 === 0 ? 30 : -30) * rem.depth;
+        const x = useTransform(progress, [0.50, 0.54, 0.58], [0, swayAmount, swayAmount * -1.5])
+
+        const rotate = useTransform(progress, [0.50, 0.54, 0.58], [rem.rotate - 45, rem.rotate, rem.rotate + 90])
+        const scale = useTransform(progress, [0.50, 0.54, 0.58], [rem.depth * 0.2, rem.depth, rem.depth * 3.5])
+        const noteOpacity = useTransform(progress, [0.50, 0.51, 0.56, 0.58], [0, 1, 1, 0])
 
         return (
           <motion.div
             key={i}
             className={`absolute bottom-0 w-32 md:w-56 aspect-square ${rem.color} p-4 md:p-6 shadow-2xl flex flex-col justify-between rounded-bl-xl rounded-tr-md`}
             style={{ 
-              left: `${50 + rem.x}%`, 
+              left: `${rem.left}%`, 
+              x,
               y, 
               rotate,
               scale,
@@ -480,6 +505,7 @@ const RemindersScene = ({ progress }) => {
     </motion.div>
   )
 }
+
 
 // --- Scene 9: Focus Mode (0.58 - 0.68) ---
 const FocusScene = ({ progress }) => {
