@@ -644,9 +644,14 @@ const FinaleScene = ({ progress }) => {
 export default function LandingHelo() {
   const containerRef = useRef(null)
   const [scrollContainer, setScrollContainer] = useState(null)
+  const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
     setScrollContainer(document.getElementById('main-scroll-container'))
+    setIsDark(document.documentElement.classList.contains('dark'))
+    const observer = new MutationObserver(() => setIsDark(document.documentElement.classList.contains('dark')))
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
   }, [])
   
   const { scrollYProgress } = useScroll({
@@ -703,38 +708,13 @@ export default function LandingHelo() {
       {/* 2600vh Container for 13 distinct scenes */}
       <div ref={containerRef} className="h-[2600vh] relative">
         <motion.div 
-          className="sticky top-[73px] h-[calc(100dvh-73px)] w-full overflow-hidden flex flex-col items-center justify-center dark:hidden"
-          style={{ background: bgColors }}
+          className="sticky top-[73px] h-[calc(100dvh-73px)] w-full overflow-hidden flex flex-col items-center justify-center will-change-transform"
+          style={{ background: isDark ? darkBgColors : bgColors }}
         >
-          {/* Animated Background Mesh - Light Mode */}
+          {/* Animated Background Mesh */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute w-[800px] h-[800px] -top-[400px] -right-[400px] bg-theme-300/30 rounded-full blur-[100px] animate-[pulse_8s_ease-in-out_infinite]" />
-            <div className="absolute w-[600px] h-[600px] -bottom-[300px] -left-[300px] bg-purple-300/30 rounded-full blur-[100px] animate-[pulse_10s_ease-in-out_infinite_reverse]" />
-          </div>
-
-          <EcosystemScene progress={smoothProgress} />
-          <WaterfallScene progress={smoothProgress} />
-          <SmartAlertsScene progress={smoothProgress} />
-          <ChatScene progress={smoothProgress} />
-          <StudyPlanScene progress={smoothProgress} />
-          <MatrixScene progress={smoothProgress} />
-          <ExamsScene progress={smoothProgress} />
-          <RemindersScene progress={smoothProgress} />
-          <FocusScene progress={smoothProgress} />
-          <KnowledgeScene progress={smoothProgress} />
-          <AnalyticsScene progress={smoothProgress} />
-          <SettingsScene progress={smoothProgress} />
-          <FinaleScene progress={smoothProgress} />
-        </motion.div>
-
-        <motion.div 
-          className="sticky top-[73px] h-[calc(100dvh-73px)] w-full overflow-hidden hidden dark:flex flex-col items-center justify-center"
-          style={{ background: darkBgColors }}
-        >
-          {/* Animated Background Mesh - Dark Mode */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute w-[800px] h-[800px] -top-[400px] -right-[400px] bg-theme-600/20 rounded-full blur-[120px] animate-[pulse_8s_ease-in-out_infinite]" />
-            <div className="absolute w-[600px] h-[600px] -bottom-[300px] -left-[300px] bg-purple-600/20 rounded-full blur-[120px] animate-[pulse_10s_ease-in-out_infinite_reverse]" />
+            <div className={`absolute w-[800px] h-[800px] -top-[400px] -right-[400px] rounded-full blur-[100px] md:blur-[120px] animate-[pulse_8s_ease-in-out_infinite] ${isDark ? 'bg-theme-600/20' : 'bg-theme-300/30'}`} />
+            <div className={`absolute w-[600px] h-[600px] -bottom-[300px] -left-[300px] rounded-full blur-[100px] md:blur-[120px] animate-[pulse_10s_ease-in-out_infinite_reverse] ${isDark ? 'bg-purple-600/20' : 'bg-purple-300/30'}`} />
           </div>
 
           <EcosystemScene progress={smoothProgress} />
