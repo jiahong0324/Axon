@@ -29,7 +29,7 @@ const EcosystemScene = ({ progress }) => {
       </motion.div>
 
       {/* The 3D Solar System */}
-      <motion.div className="relative w-full h-full flex items-center justify-center mt-32 md:mt-0 will-change-transform" style={{ scale }}>
+      <motion.div className="relative w-full h-full flex items-center justify-center mt-64 md:mt-56 lg:mt-64 will-change-transform" style={{ scale }}>
         
         {/* Core Frame (provides isometric tilt) */}
         <div className="relative w-[800px] h-[800px] flex items-center justify-center perspective-[2000px]">
@@ -470,8 +470,8 @@ const RemindersScene = ({ progress }) => {
       {reminders.map((rem, i) => {
         // Enhanced Dramatic 3D flight path with parallax
         // Notes further back (lower depth) move slower
-        const yStart = 100 + rem.depth * 20; 
-        const yEnd = -150 - rem.depth * 50;
+        const yStart = 80 + rem.depth * 10; 
+        const yEnd = -100 - rem.depth * 20;
         const y = useTransform(progress, [0.50, 0.53, 0.55, 0.58], [`${yStart}vh`, `${rem.yCenter}vh`, `${rem.yCenter - 10}vh`, `${yEnd}vh`])
         
         // Horizontal drift for a natural floating feel
@@ -484,7 +484,7 @@ const RemindersScene = ({ progress }) => {
         return (
           <motion.div
             key={i}
-            className={`absolute bottom-0 w-32 md:w-56 aspect-square ${rem.color} p-4 md:p-6 shadow-2xl flex flex-col justify-between rounded-bl-xl rounded-tr-md`}
+            className={`absolute bottom-0 w-24 md:w-40 aspect-square ${rem.color} p-3 md:p-5 shadow-2xl flex flex-col justify-between rounded-bl-xl rounded-tr-md`}
             style={{ 
               left: `${rem.left}%`, 
               x,
@@ -495,9 +495,9 @@ const RemindersScene = ({ progress }) => {
               zIndex: Math.round(rem.depth * 10)
             }}
           >
-            <div className="w-full h-4 bg-black/10 absolute top-0 left-0" />
-            <p className="font-bold text-base md:text-3xl mt-4 leading-tight">{rem.text}</p>
-            <div className="w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-current opacity-30 self-end" />
+            <div className="w-full h-3 md:h-4 bg-black/10 absolute top-0 left-0" />
+            <p className="font-bold text-sm md:text-xl mt-3 md:mt-4 leading-tight">{rem.text}</p>
+            <div className="w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-current opacity-30 self-end" />
           </motion.div>
         )
       })}
