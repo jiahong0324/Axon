@@ -639,9 +639,15 @@ const FinaleScene = ({ progress }) => {
 
 export default function LandingHelo() {
   const containerRef = useRef(null)
+  const [scrollContainer, setScrollContainer] = useState(null)
+
+  useEffect(() => {
+    setScrollContainer(document.getElementById('main-scroll-container'))
+  }, [])
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
+    container: scrollContainer ? { current: scrollContainer } : undefined,
     offset: ["start start", "end end"]
   })
 
