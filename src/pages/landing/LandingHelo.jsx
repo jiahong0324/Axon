@@ -576,7 +576,7 @@ const AnalyticsScene = ({ progress }) => {
 
       <div className="w-full h-1/2 md:h-1/3 max-w-4xl relative perspective-1000 flex items-end justify-center gap-2 md:gap-8 px-4 pb-12 border-b-2 border-emerald-500/30" style={{ transform: 'rotateX(30deg)' }}>
         {[15, 25, 40, 50, 65, 80, 100].map((h, i) => {
-          const height = useTransform(progress, [0.76 + (i * 0.01), 0.80 + (i * 0.01)], ['0%', `${h}%`])
+          const height = useTransform(progress, [0.76 + (i * 0.003), 0.78 + (i * 0.003)], ['0%', `${h}%`])
           return (
             <motion.div key={i} className="w-10 md:w-20 bg-gradient-to-t from-emerald-900 to-emerald-400 rounded-t-xl border-t-2 border-l-2 border-emerald-300 shadow-[0_0_30px_rgba(16,185,129,0.3)] relative" style={{ height }}>
               {h === 100 && (
