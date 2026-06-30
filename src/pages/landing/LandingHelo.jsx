@@ -250,11 +250,14 @@ const FinaleSequence = ({ progress }) => {
 }
 
 export default function LandingHelo() {
+  const wrapperRef = useRef(null)
   const containerRef = useRef(null)
   
   // Use a massive 800vh container for a very long, smooth scroll experience
+  // Track scroll inside the wrapper since global body scroll is hidden
   const { scrollYProgress } = useScroll({
     target: containerRef,
+    container: wrapperRef,
     offset: ["start start", "end end"]
   })
 
@@ -276,7 +279,7 @@ export default function LandingHelo() {
   )
 
   return (
-    <div className="bg-slate-950">
+    <div ref={wrapperRef} className="h-screen w-full overflow-y-auto overflow-x-hidden bg-slate-950 scroll-smooth">
       {/* Floating Navigation overlay for escape hatch */}
       <div className="fixed top-0 inset-x-0 p-6 z-[100] flex justify-between items-center pointer-events-none">
         <Link to="/" className="pointer-events-auto flex items-center gap-3 group bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 hover:bg-white/10 transition-colors">
