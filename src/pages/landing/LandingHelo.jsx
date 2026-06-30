@@ -1,247 +1,241 @@
-import { useRef, useEffect } from 'react'
+import { useRef } from 'react'
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
-import { Calendar, CheckSquare, Clock, BookOpen, Settings, LayoutDashboard, ChevronRight, User, Bell, ChevronLeft } from 'lucide-react'
+import { Calendar, CheckSquare, Clock, LayoutDashboard, ChevronRight, User, Bell, Activity } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-// --- Massive Immersive UI Components ---
+// --- Ultra-Premium Apple-Style Cinematic Components ---
 
-const IntroSequence = ({ progress }) => {
-  const scale = useTransform(progress, [0, 0.15], [1, 20])
-  const opacity = useTransform(progress, [0, 0.1, 0.15], [1, 1, 0])
-  const filter = useTransform(progress, [0, 0.15], ['blur(0px)', 'blur(20px)'])
-  const y = useTransform(progress, [0, 0.15], ['0%', '100%'])
+const GlassCard = ({ children, className = "", style = {} }) => (
+  <motion.div 
+    className={`bg-[#0a0a0a]/60 backdrop-blur-[40px] rounded-3xl border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden ${className}`}
+    style={style}
+  >
+    {children}
+  </motion.div>
+)
+
+const IntroScene = ({ progress }) => {
+  // 0 - 0.2: Fade in, scale massively to fly "through" the O
+  const opacity = useTransform(progress, [0, 0.05, 0.15, 0.2], [0, 1, 1, 0])
+  const scale = useTransform(progress, [0, 0.2], [0.8, 60])
+  const blur = useTransform(progress, [0.1, 0.2], ['blur(0px)', 'blur(30px)'])
 
   return (
     <motion.div 
-      className="absolute inset-0 flex flex-col items-center justify-center z-50 pointer-events-none"
-      style={{ opacity, filter, scale }}
+      className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 origin-center"
+      style={{ opacity, scale, filter: blur }}
     >
-      <h1 className="text-[15vw] font-black text-white tracking-tighter leading-none bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 drop-shadow-2xl">
+      <h1 className="text-[12vw] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 pb-2">
         AXON
       </h1>
-      <motion.p 
-        className="text-2xl md:text-4xl text-slate-300 font-medium tracking-widest uppercase mt-4"
-        style={{ y, opacity: useTransform(progress, [0, 0.05], [1, 0]) }}
-      >
-        The Future of Learning
-      </motion.p>
     </motion.div>
   )
 }
 
-const DashboardSequence = ({ progress }) => {
-  // Enters 0.1, peaks 0.2, leaves 0.35
-  const oMain = useTransform(progress, [0.1, 0.2, 0.3, 0.35], [0, 1, 1, 0])
-  const sMain = useTransform(progress, [0.1, 0.2, 0.3, 0.35], [0.8, 1, 1, 1.2])
+const DashboardScene = ({ progress }) => {
+  // Enters from darkness at 0.15, peaks at 0.3, rotates away and fades at 0.45
+  const opacity = useTransform(progress, [0.15, 0.25, 0.35, 0.45], [0, 1, 1, 0])
   
-  // Parallax elements
-  const card1Y = useTransform(progress, [0.1, 0.35], ['100%', '-100%'])
-  const card2Y = useTransform(progress, [0.1, 0.35], ['150%', '-50%'])
-  const card3X = useTransform(progress, [0.1, 0.35], ['-100%', '100%'])
+  // 3D rotations for the cinematic "hero" shot of the dashboard
+  const rotateX = useTransform(progress, [0.15, 0.45], [30, -30])
+  const rotateY = useTransform(progress, [0.15, 0.45], [-20, 20])
+  const z = useTransform(progress, [0.15, 0.3, 0.45], [-1000, 0, -500])
   
-  return (
-    <motion.div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none" style={{ opacity: oMain }}>
-      <motion.div className="relative w-full max-w-[1400px] aspect-video" style={{ scale: sMain }}>
-        {/* Giant Welcome Header */}
-        <motion.div 
-          className="absolute top-10 left-10 md:top-20 md:left-20"
-          style={{ x: card3X }}
-        >
-          <h2 className="text-6xl md:text-8xl font-bold text-white tracking-tight drop-shadow-2xl">
-            Command<br/>Center
-          </h2>
-          <p className="text-2xl md:text-4xl text-slate-400 mt-6 max-w-xl">
-            Your entire academic life, beautifully organized in one panoramic view.
-          </p>
-        </motion.div>
-
-        {/* Floating Giant Cards */}
-        <motion.div 
-          className="absolute right-10 bottom-20 md:right-32 md:bottom-32 w-80 md:w-[450px] p-8 md:p-12 rounded-[3rem] bg-white/5 border border-white/10 backdrop-blur-3xl shadow-2xl"
-          style={{ y: card1Y }}
-        >
-          <div className="w-20 h-20 rounded-3xl bg-blue-500/20 flex items-center justify-center text-blue-400 mb-8">
-            <Calendar className="w-10 h-10" />
-          </div>
-          <h3 className="text-4xl md:text-5xl font-bold text-white mb-4">3 Classes</h3>
-          <p className="text-xl text-slate-400">Scheduled for today. Next up: Engineering at 10:00 AM.</p>
-        </motion.div>
-
-        <motion.div 
-          className="absolute left-10 bottom-10 md:left-40 md:-bottom-10 w-72 md:w-[400px] p-8 md:p-10 rounded-[3rem] bg-theme-600/20 border border-theme-500/30 backdrop-blur-3xl shadow-2xl"
-          style={{ y: card2Y }}
-        >
-          <div className="w-16 h-16 rounded-2xl bg-theme-500/30 flex items-center justify-center text-theme-300 mb-6">
-            <Clock className="w-8 h-8" />
-          </div>
-          <h3 className="text-3xl md:text-4xl font-bold text-white mb-2">2 Exams</h3>
-          <p className="text-lg text-theme-200/70">Approaching this week. Keep up the pace.</p>
-        </motion.div>
-      </motion.div>
-    </motion.div>
-  )
-}
-
-const TimetableSequence = ({ progress }) => {
-  // Enters 0.3, peaks 0.45, leaves 0.55
-  const opacity = useTransform(progress, [0.3, 0.4, 0.5, 0.55], [0, 1, 1, 0])
-  const scale = useTransform(progress, [0.3, 0.4, 0.5, 0.55], [0.8, 1, 1, 1.5])
-  
-  const row1X = useTransform(progress, [0.3, 0.55], ['-100vw', '100vw'])
-  const row2X = useTransform(progress, [0.3, 0.55], ['100vw', '-100vw'])
-  const row3X = useTransform(progress, [0.3, 0.55], ['-50vw', '50vw'])
+  // Parallax elements flying out
+  const titleY = useTransform(progress, [0.15, 0.45], ['50%', '-150%'])
+  const card1Z = useTransform(progress, [0.15, 0.45], [200, 600])
+  const card2Z = useTransform(progress, [0.15, 0.45], [100, 400])
 
   return (
-    <motion.div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none" style={{ opacity }}>
-      <motion.div className="w-full max-w-7xl px-8 flex flex-col gap-8 md:gap-12" style={{ scale }}>
-        
-        <div className="text-center mb-10">
-          <h2 className="text-5xl md:text-7xl font-bold text-white mb-4">Master Your Time</h2>
-          <p className="text-2xl text-indigo-300">A timetable that flows with your day.</p>
-        </div>
-
-        <motion.div className="w-full p-8 md:p-10 rounded-[2.5rem] bg-indigo-900/40 border border-indigo-500/30 backdrop-blur-2xl flex items-center gap-10 shadow-2xl" style={{ x: row1X }}>
-          <div className="text-4xl md:text-6xl font-black text-indigo-400 w-48 text-right shrink-0">09:00</div>
-          <div className="w-2 h-32 rounded-full bg-indigo-500 hidden md:block"></div>
-          <div>
-            <h3 className="text-3xl md:text-5xl font-bold text-white">Software Engineering</h3>
-            <p className="text-xl md:text-2xl text-indigo-200 mt-2 flex items-center gap-2"><Calendar className="w-6 h-6"/> Block A, Room 204</p>
-          </div>
-        </motion.div>
-
-        <motion.div className="w-full p-8 md:p-10 rounded-[2.5rem] bg-purple-900/40 border border-purple-500/30 backdrop-blur-2xl flex items-center gap-10 shadow-2xl" style={{ x: row2X }}>
-          <div className="text-4xl md:text-6xl font-black text-purple-400 w-48 text-right shrink-0">11:30</div>
-          <div className="w-2 h-32 rounded-full bg-purple-500 hidden md:block"></div>
-          <div>
-            <h3 className="text-3xl md:text-5xl font-bold text-white">Database Systems</h3>
-            <p className="text-xl md:text-2xl text-purple-200 mt-2 flex items-center gap-2"><Calendar className="w-6 h-6"/> Computer Lab 3</p>
-          </div>
-        </motion.div>
-
-        <motion.div className="w-full p-8 md:p-10 rounded-[2.5rem] bg-rose-900/40 border border-rose-500/30 backdrop-blur-2xl flex items-center gap-10 shadow-2xl" style={{ x: row3X }}>
-          <div className="text-4xl md:text-6xl font-black text-rose-400 w-48 text-right shrink-0">14:00</div>
-          <div className="w-2 h-32 rounded-full bg-rose-500 hidden md:block"></div>
-          <div>
-            <h3 className="text-3xl md:text-5xl font-bold text-white">Artificial Intelligence</h3>
-            <p className="text-xl md:text-2xl text-rose-200 mt-2 flex items-center gap-2"><Calendar className="w-6 h-6"/> Lecture Hall B</p>
-          </div>
-        </motion.div>
-
-      </motion.div>
-    </motion.div>
-  )
-}
-
-const ExamSequence = ({ progress }) => {
-  // Enters 0.5, peaks 0.65, leaves 0.75
-  const opacity = useTransform(progress, [0.5, 0.6, 0.7, 0.75], [0, 1, 1, 0])
-  const blur = useTransform(progress, [0.5, 0.6], ['blur(20px)', 'blur(0px)'])
-  
-  const ringScale = useTransform(progress, [0.5, 0.65, 0.75], [0.1, 1, 3])
-  const contentY = useTransform(progress, [0.5, 0.65, 0.75], ['50%', '0%', '-50%'])
-
-  return (
-    <motion.div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none" style={{ opacity, filter: blur }}>
-      
-      {/* Giant Background Ring */}
+    <motion.div 
+      className="absolute inset-0 flex items-center justify-center pointer-events-none z-40" 
+      style={{ opacity, perspective: 1200 }}
+    >
       <motion.div 
-        className="absolute w-[800px] h-[800px] rounded-full border-[40px] border-rose-500/20 shadow-[0_0_100px_rgba(244,63,94,0.3)]"
-        style={{ scale: ringScale }}
-      />
-      
-      <motion.div className="text-center relative z-10 max-w-4xl px-6" style={{ y: contentY }}>
-        <div className="inline-flex items-center justify-center p-6 rounded-3xl bg-rose-500/20 text-rose-400 mb-8 border border-rose-500/30 backdrop-blur-xl">
-          <Clock className="w-16 h-16" />
-        </div>
-        <h2 className="text-6xl md:text-8xl font-black text-white mb-6 drop-shadow-2xl tracking-tight">15 Days Left</h2>
-        <h3 className="text-3xl md:text-5xl font-bold text-rose-200 mb-12">Data Structures Final Exam</h3>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {[
-            { label: 'Date', val: 'Jul 20' },
-            { label: 'Time', val: '09:00' },
-            { label: 'Venue', val: 'Hall A' },
-            { label: 'Weight', val: '40%' }
-          ].map((stat, i) => (
-            <div key={i} className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-lg flex flex-col items-center">
-              <span className="text-lg text-slate-400 mb-2 uppercase tracking-widest">{stat.label}</span>
-              <span className="text-3xl font-bold text-white">{stat.val}</span>
+        className="w-full max-w-[1200px] h-[700px] relative transform-style-3d"
+        style={{ rotateX, rotateY, z }}
+      >
+        <motion.div className="absolute -top-20 left-0 md:left-20" style={{ y: titleY, translateZ: 300 }}>
+          <h2 className="text-5xl md:text-8xl font-medium tracking-tight text-white mb-4 drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">Pro.</h2>
+          <h2 className="text-5xl md:text-8xl font-medium tracking-tight text-neutral-500">Found.</h2>
+        </motion.div>
+
+        <GlassCard className="absolute inset-x-4 md:inset-x-20 top-32 bottom-0 p-8 flex flex-col gap-6" style={{ translateZ: 0 }}>
+          <div className="flex justify-between items-center pb-6 border-b border-white/5">
+            <div className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center">
+              <User className="w-6 h-6 text-white" />
             </div>
-          ))}
-        </div>
+            <div className="flex gap-4">
+              <div className="w-32 h-3 rounded-full bg-neutral-800"></div>
+              <div className="w-16 h-3 rounded-full bg-neutral-800"></div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-6 flex-1">
+            <div className="col-span-2 rounded-2xl bg-gradient-to-br from-neutral-900 to-black border border-white/5 p-6 flex flex-col justify-end relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15),transparent_50%)]"></div>
+              <Activity className="w-10 h-10 text-blue-500 mb-4" />
+              <div className="w-1/2 h-4 rounded-full bg-neutral-800 mb-2"></div>
+              <div className="w-3/4 h-4 rounded-full bg-neutral-800"></div>
+            </div>
+            <div className="rounded-2xl bg-neutral-900 border border-white/5"></div>
+          </div>
+        </GlassCard>
+
+        {/* Floating Accent Cards */}
+        <GlassCard className="absolute -right-10 top-40 w-80 p-8 flex flex-col gap-4 bg-[#050505]/80" style={{ translateZ: card1Z }}>
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+            <Calendar className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-3xl font-medium text-white tracking-tight">Syncs Instantly.</h3>
+          <p className="text-neutral-400">Your timetable perfectly aligned across the universe.</p>
+        </GlassCard>
+
+        <GlassCard className="absolute -left-10 bottom-10 w-72 p-6 flex flex-col gap-4 bg-[#050505]/80" style={{ translateZ: card2Z }}>
+           <div className="w-12 h-12 rounded-2xl bg-neutral-800 flex items-center justify-center">
+            <Bell className="w-6 h-6 text-white" />
+          </div>
+          <h3 className="text-xl font-medium text-white tracking-tight">Smart Alerts.</h3>
+        </GlassCard>
+
       </motion.div>
     </motion.div>
   )
 }
 
-const AssignmentSequence = ({ progress }) => {
-  // Enters 0.7, peaks 0.85, leaves 0.95
-  const opacity = useTransform(progress, [0.7, 0.8, 0.9, 0.95], [0, 1, 1, 0])
-  const x = useTransform(progress, [0.7, 0.95], ['50%', '-50%'])
-
-  const cards = [
-    { title: "React Architecture", course: "Web Dev", status: "In Progress", due: "Tomorrow", color: "from-blue-500 to-cyan-500" },
-    { title: "Database Normalization", course: "Data Systems", status: "To Do", due: "In 3 Days", color: "from-emerald-500 to-teal-500" },
-    { title: "ML Algorithm Analysis", course: "AI", status: "Review", due: "Next Week", color: "from-orange-500 to-rose-500" },
-    { title: "Ethics Essay", course: "Philosophy", status: "Done", due: "Last Week", color: "from-purple-500 to-indigo-500" },
-  ]
+const TimetableScene = ({ progress }) => {
+  // Enters 0.35, peaks 0.5, leaves 0.6
+  const opacity = useTransform(progress, [0.35, 0.45, 0.55, 0.6], [0, 1, 1, 0])
+  const z = useTransform(progress, [0.35, 0.6], [500, -1000]) // Drops backward into the abyss
+  const y1 = useTransform(progress, [0.35, 0.5], ['-150%', '0%'])
+  const y2 = useTransform(progress, [0.35, 0.5], ['-200%', '0%'])
+  const y3 = useTransform(progress, [0.35, 0.5], ['-250%', '0%'])
 
   return (
-    <motion.div className="absolute inset-0 flex items-center z-40 pointer-events-none overflow-hidden" style={{ opacity }}>
+    <motion.div 
+      className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-30 perspective-1000" 
+      style={{ opacity }}
+    >
+      <motion.div className="w-full max-w-5xl px-6 flex flex-col gap-4" style={{ z, rotateX: 10 }}>
+        
+        <div className="mb-12 text-center">
+          <h2 className="text-4xl md:text-6xl font-medium tracking-tight text-white mb-2">Time. <span className="text-neutral-600">Redefined.</span></h2>
+        </div>
+
+        {[
+          { time: "09:00", subject: "Software Engineering", y: y1 },
+          { time: "11:30", subject: "Database Architecture", y: y2 },
+          { time: "14:00", subject: "Machine Learning", y: y3 }
+        ].map((item, i) => (
+          <motion.div key={i} style={{ y: item.y }}>
+            <GlassCard className="w-full p-6 md:p-8 flex items-center gap-8 bg-[#0a0a0a]/80">
+              <div className="text-3xl md:text-5xl font-medium text-neutral-500 tracking-tighter w-32 text-right">{item.time}</div>
+              <div className="w-px h-16 bg-gradient-to-b from-transparent via-neutral-500 to-transparent"></div>
+              <h3 className="text-2xl md:text-4xl font-medium text-white tracking-tight">{item.subject}</h3>
+            </GlassCard>
+          </motion.div>
+        ))}
+
+      </motion.div>
+    </motion.div>
+  )
+}
+
+const PulseScene = ({ progress }) => {
+  // Enters 0.55, peaks 0.7, leaves 0.8
+  const opacity = useTransform(progress, [0.55, 0.6, 0.75, 0.8], [0, 1, 1, 0])
+  const dotScale = useTransform(progress, [0.55, 0.6], [0, 1])
+  const ringScale = useTransform(progress, [0.6, 0.7], [0.1, 4])
+  const ringOpacity = useTransform(progress, [0.6, 0.65, 0.75], [1, 0.5, 0])
+
+  return (
+    <motion.div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20" style={{ opacity }}>
       
-      <div className="absolute top-20 left-20 md:top-32 md:left-32 z-50">
-        <h2 className="text-5xl md:text-7xl font-bold text-white drop-shadow-2xl">Assignments,<br/>Visualized.</h2>
+      {/* The cinematic heartbeat explosion */}
+      <motion.div className="absolute w-4 h-4 rounded-full bg-red-500 shadow-[0_0_30px_rgba(239,68,68,1)]" style={{ scale: dotScale }} />
+      <motion.div 
+        className="absolute w-[600px] h-[600px] rounded-full border-[2px] border-red-500/50 shadow-[inset_0_0_100px_rgba(239,68,68,0.2),0_0_100px_rgba(239,68,68,0.5)]" 
+        style={{ scale: ringScale, opacity: ringOpacity }} 
+      />
+
+      <motion.div 
+        className="relative z-10 text-center"
+        style={{ 
+          opacity: useTransform(progress, [0.6, 0.65], [0, 1]),
+          y: useTransform(progress, [0.6, 0.75], [50, -50])
+        }}
+      >
+        <h2 className="text-2xl font-medium text-red-500 tracking-widest uppercase mb-6">Exams</h2>
+        <div className="text-[10vw] font-black tracking-tighter text-white leading-none drop-shadow-[0_0_40px_rgba(239,68,68,0.3)]">
+          15 DAYS
+        </div>
+        <p className="text-3xl text-neutral-400 mt-6 tracking-tight">Until Data Structures Final.</p>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+const KanbanScene = ({ progress }) => {
+  // Enters 0.75, peaks 0.85, leaves 0.95
+  const opacity = useTransform(progress, [0.75, 0.8, 0.9, 0.95], [0, 1, 1, 0])
+  
+  // Cinema pan effect from right to left
+  const panX = useTransform(progress, [0.75, 0.95], ['50vw', '-50vw'])
+  // Spotlight tracking
+  const spotlightX = useTransform(progress, [0.75, 0.95], ['-100%', '200%'])
+
+  return (
+    <motion.div className="absolute inset-0 flex items-center pointer-events-none z-30 overflow-hidden" style={{ opacity }}>
+      
+      {/* Background ambient light */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.03),transparent_70%)]"></div>
+
+      <div className="absolute top-20 md:top-32 left-10 md:left-32">
+        <h2 className="text-5xl md:text-7xl font-medium tracking-tight text-white">Focus.</h2>
+        <p className="text-2xl text-neutral-500 mt-4">One assignment at a time.</p>
       </div>
 
-      <motion.div className="flex gap-8 md:gap-16 px-[20vw] pt-32" style={{ x }}>
-        {cards.map((card, i) => (
-          <div key={i} className="w-[80vw] md:w-[600px] shrink-0 h-[500px] md:h-[600px] rounded-[3rem] bg-slate-900/80 border border-slate-700 backdrop-blur-3xl p-10 md:p-14 flex flex-col shadow-2xl relative overflow-hidden group">
-            <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${card.color}`}></div>
+      <motion.div className="flex gap-8 px-[10vw] mt-20" style={{ x: panX }}>
+        {[
+          { title: "React Architecture", due: "Tomorrow" },
+          { title: "Database Normalization", due: "In 3 Days" },
+          { title: "Ethics Essay", due: "Next Week" }
+        ].map((item, i) => (
+          <GlassCard key={i} className="w-[85vw] md:w-[500px] h-[600px] shrink-0 p-12 relative overflow-hidden bg-[#050505]">
+            {/* Spotlight reflection */}
+            <motion.div 
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent w-[200%] h-full skew-x-[-20deg]"
+              style={{ x: spotlightX }}
+            />
             
-            <div className="relative z-10 flex flex-col h-full">
-              <div className="flex justify-between items-start mb-auto">
-                <span className="px-6 py-2 rounded-full bg-white/10 text-white font-semibold text-lg tracking-wide">
-                  {card.course}
-                </span>
-                <span className="text-xl font-bold text-slate-300 bg-black/30 px-6 py-2 rounded-2xl">
-                  {card.status}
-                </span>
-              </div>
-              
-              <div>
-                <h3 className="text-5xl md:text-6xl font-bold text-white leading-tight mb-6">{card.title}</h3>
-                <div className="inline-flex items-center gap-4 px-6 py-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/5">
-                  <CheckSquare className="w-8 h-8 text-slate-300" />
-                  <span className="text-2xl font-semibold text-white">Due {card.due}</span>
-                </div>
-              </div>
+            <div className="w-16 h-16 rounded-full bg-neutral-900 border border-white/10 flex items-center justify-center mb-8">
+              <CheckSquare className="w-6 h-6 text-white" />
             </div>
-          </div>
+            <h3 className="text-4xl md:text-5xl font-medium text-white tracking-tight leading-tight mb-4">{item.title}</h3>
+            <p className="text-xl text-neutral-500">Due {item.due}</p>
+          </GlassCard>
         ))}
       </motion.div>
     </motion.div>
   )
 }
 
-const FinaleSequence = ({ progress }) => {
-  // Enters 0.9, peaks 1.0
-  const opacity = useTransform(progress, [0.9, 0.95, 1], [0, 1, 1])
-  const y = useTransform(progress, [0.9, 1], ['50px', '0px'])
-  const scale = useTransform(progress, [0.9, 1], [0.9, 1])
+const FinaleScene = ({ progress }) => {
+  // Enters 0.9, stays till 1
+  const opacity = useTransform(progress, [0.9, 0.95], [0, 1])
+  const y = useTransform(progress, [0.9, 1], [100, 0])
 
   return (
-    <motion.div className="absolute inset-0 flex items-center justify-center z-50 bg-slate-950/80 backdrop-blur-md" style={{ opacity }}>
-      <motion.div className="text-center px-6" style={{ y, scale }}>
-        <h2 className="text-6xl md:text-8xl font-black text-white mb-8 tracking-tighter">Ready to Begin?</h2>
-        <p className="text-2xl md:text-3xl text-slate-400 mb-12 max-w-2xl mx-auto">
-          Join thousands of students organizing their academic lives with Axon.
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-          <Link to="/register" className="pointer-events-auto px-10 py-5 rounded-full bg-theme-600 hover:bg-theme-500 text-white text-xl font-bold transition-all shadow-[0_0_40px_rgba(var(--theme-600),0.4)] hover:shadow-[0_0_60px_rgba(var(--theme-500),0.6)] hover:scale-105 active:scale-95">
-            Get Started Free
+    <motion.div className="absolute inset-0 flex items-center justify-center pointer-events-auto z-50 bg-black" style={{ opacity }}>
+      <motion.div className="text-center px-6" style={{ y }}>
+        <h2 className="text-6xl md:text-9xl font-medium tracking-tight text-white mb-6">Axon.</h2>
+        <p className="text-2xl md:text-3xl text-neutral-400 mb-12">The ultimate academic companion.</p>
+        
+        <div className="flex flex-col sm:flex-row justify-center gap-6">
+          <Link to="/register" className="px-10 py-5 rounded-full bg-white text-black text-xl font-medium transition-transform hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.2)]">
+            Create an Account
           </Link>
-          <Link to="/" className="pointer-events-auto px-10 py-5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xl font-bold transition-all backdrop-blur-md hover:scale-105 active:scale-95">
-            Back to Home
+          <Link to="/" className="px-10 py-5 rounded-full bg-neutral-900 border border-white/10 text-white text-xl font-medium transition-transform hover:bg-neutral-800 hover:scale-105 active:scale-95">
+            Back to Reality
           </Link>
         </div>
       </motion.div>
@@ -251,84 +245,60 @@ const FinaleSequence = ({ progress }) => {
 
 export default function LandingHelo() {
   const wrapperRef = useRef(null)
-  const containerRef = useRef(null)
   
-  // Use a massive 800vh container for a very long, smooth scroll experience
-  // Track scroll inside the wrapper since global body scroll is hidden
+  // Massive 1000vh container for ultimate cinematic pacing
   const { scrollYProgress } = useScroll({
-    target: containerRef,
     container: wrapperRef,
     offset: ["start start", "end end"]
   })
 
-  // Smooth out the scroll progress for buttery animations
+  // Spring smoothing for that heavy, deliberate Apple feel
   const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 100,
+    stiffness: 70,
     damping: 30,
     restDelta: 0.001
   })
 
-  // Dynamic Mesh Background Colors based on scroll progress
-  const bg1 = useTransform(smoothProgress, 
-    [0, 0.25, 0.5, 0.75, 1], 
-    ['#0f172a', '#1e1b4b', '#4c1d95', '#064e3b', '#0f172a'] // Slate -> Indigo -> Purple -> Emerald -> Slate
-  )
-  const bg2 = useTransform(smoothProgress, 
-    [0, 0.25, 0.5, 0.75, 1], 
-    ['#020617', '#312e81', '#881337', '#0f766e', '#020617']
-  )
-
   return (
-    <div ref={wrapperRef} className="h-screen w-full overflow-y-auto overflow-x-hidden bg-slate-950 scroll-smooth">
-      {/* Floating Navigation overlay for escape hatch */}
-      <div className="fixed top-0 inset-x-0 p-6 z-[100] flex justify-between items-center pointer-events-none">
-        <Link to="/" className="pointer-events-auto flex items-center gap-3 group bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 hover:bg-white/10 transition-colors">
-          <div className="w-8 h-8 rounded-lg bg-theme-600 flex items-center justify-center">
-            <span className="text-white text-sm font-bold font-heading">A</span>
-          </div>
-          <span className="font-heading font-bold text-white tracking-tight hidden sm:block">Axon</span>
+    <div ref={wrapperRef} className="h-screen w-full overflow-y-auto overflow-x-hidden bg-black scroll-smooth">
+      
+      {/* Minimal Top Nav */}
+      <div className="fixed top-0 inset-x-0 px-8 py-6 z-[100] flex justify-between items-center pointer-events-none">
+        <Link to="/" className="pointer-events-auto flex items-center gap-2 group mix-blend-difference text-white">
+          <span className="font-medium tracking-tight text-xl">Axon</span>
         </Link>
-        <Link to="/register" className="pointer-events-auto bg-white text-black px-6 py-2 rounded-full font-bold hover:bg-slate-200 transition-colors">
+        <Link to="/register" className="pointer-events-auto text-sm font-medium text-white px-4 py-2 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors">
           Sign Up
         </Link>
       </div>
 
-      <div ref={containerRef} className="h-[800vh] relative">
-        
-        {/* Sticky viewport that stays on screen */}
-        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden flex flex-col items-center justify-center">
+      <div className="h-[1000vh] relative">
+        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden flex flex-col items-center justify-center bg-black perspective-1000">
           
-          {/* Animated Mesh Gradient Background */}
-          <motion.div 
-            className="absolute inset-0 z-0 opacity-50"
-            style={{ 
-              background: useTransform(
-                [bg1, bg2], 
-                ([c1, c2]) => `radial-gradient(circle at 50% 50%, ${c1} 0%, ${c2} 100%)`
-              )
-            }}
-          />
-          <div className="absolute inset-0 z-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay"></div>
+          {/* Subtle global noise overlay to reduce banding in gradients */}
+          <div className="absolute inset-0 z-0 bg-[url('/noise.png')] opacity-[0.04] mix-blend-screen pointer-events-none"></div>
 
           {/* Sequences */}
-          <IntroSequence progress={smoothProgress} />
-          <DashboardSequence progress={smoothProgress} />
-          <TimetableSequence progress={smoothProgress} />
-          <ExamSequence progress={smoothProgress} />
-          <AssignmentSequence progress={smoothProgress} />
-          <FinaleSequence progress={smoothProgress} />
+          <IntroScene progress={smoothProgress} />
+          <DashboardScene progress={smoothProgress} />
+          <TimetableScene progress={smoothProgress} />
+          <PulseScene progress={smoothProgress} />
+          <KanbanScene progress={smoothProgress} />
+          <FinaleScene progress={smoothProgress} />
 
-          {/* Global Scroll Indicator (fades out at end) */}
+          {/* Minimal Scroll Indicator */}
           <motion.div 
-            className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 text-white/50 z-50 pointer-events-none"
-            style={{ opacity: useTransform(smoothProgress, [0.8, 0.9], [1, 0]) }}
+            className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 text-white/40 z-50 pointer-events-none"
+            style={{ opacity: useTransform(smoothProgress, [0, 0.05, 0.8, 0.9], [1, 0, 0, 0]) }}
           >
-            <span className="text-xs font-bold uppercase tracking-[0.3em]">Scroll</span>
-            <motion.div 
-              className="w-[2px] h-12 bg-gradient-to-b from-white/50 to-transparent"
-              animate={{ y: [0, 10, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-            />
+            <span className="text-[10px] font-medium tracking-[0.4em] uppercase">Scroll</span>
+            <div className="w-[1px] h-12 bg-white/20 overflow-hidden relative">
+              <motion.div 
+                className="w-full h-1/2 bg-white absolute top-0"
+                animate={{ y: [-24, 48] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+              />
+            </div>
           </motion.div>
 
         </div>
