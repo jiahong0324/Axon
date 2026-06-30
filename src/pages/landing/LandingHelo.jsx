@@ -11,22 +11,14 @@ const GlassPanel = ({ children, className = "" }) => (
 
 // --- Scene 1: The Ecosystem (0 - 0.07) ---
 const EcosystemScene = ({ progress }) => {
-  // Fade out quicker and smoother to hand over to the second animation earlier
   const opacity = useTransform(progress, [0, 0.04, 0.06], [1, 1, 0])
-  // Reduce massive zoom scale so it doesn't get overly chaotic/messy
   const scale = useTransform(progress, [0, 0.06], [1, 2.5])
   const rotateCore = useTransform(progress, [0, 0.06], [0, 90])
+  const counterRotateCore = useTransform(rotateCore, v => -v)
   
-  // Floating parallax background elements
-  const float1 = useTransform(progress, [0, 0.07], [0, -150])
-  const float2 = useTransform(progress, [0, 0.07], [0, 100])
-
   return (
-    <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none overflow-hidden" style={{ opacity }}>
-      {/* 3D Background Parallax */}
-      <motion.div className="absolute top-20 left-20 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]" style={{ y: float1 }} />
-      <motion.div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]" style={{ y: float2 }} />
-
+    <motion.div className="absolute inset-0 flex flex-col items-center justify-center z-40 pointer-events-none overflow-hidden will-change-transform" style={{ opacity }}>
+      
       <motion.div className="absolute top-12 md:top-24 z-50 text-center px-4" style={{ opacity: useTransform(progress, [0, 0.03], [1, 0]) }}>
          <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[1.1] drop-shadow-2xl mb-4">
             The Ultimate <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg">Ecosystem.</span>
@@ -37,46 +29,68 @@ const EcosystemScene = ({ progress }) => {
       </motion.div>
 
       {/* The 3D Solar System */}
-      <motion.div className="relative w-full h-full flex items-center justify-center mt-32 md:mt-0" style={{ scale }}>
+      <motion.div className="relative w-full h-full flex items-center justify-center mt-32 md:mt-0 will-change-transform" style={{ scale }}>
         
         {/* Core Frame (provides isometric tilt) */}
         <div className="relative w-[800px] h-[800px] flex items-center justify-center perspective-[2000px]">
           
           {/* Tilted System */}
           <motion.div 
-            className="relative w-full h-full flex items-center justify-center" 
+            className="relative w-full h-full flex items-center justify-center will-change-transform" 
             style={{ rotateX: 60, rotateZ: rotateCore, transformStyle: "preserve-3d" }}
           >
             
-            {/* Inner Orbit (Spinning Fast) */}
+            {/* Inner Orbit */}
             <div className="absolute w-[300px] h-[300px] rounded-full border-2 border-blue-500/30 border-dashed animate-[spin_15s_linear_infinite]" style={{ transformStyle: "preserve-3d" }}>
+              
               {/* Timetable Planet */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-blue-600 shadow-[0_0_40px_rgba(37,99,235,0.8)] flex items-center justify-center border border-white/20 animate-[spin_15s_linear_infinite_reverse]" style={{ transform: "rotateX(-60deg)" }}>
-                <Calendar className="w-8 h-8 text-white" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div className="animate-[spin_15s_linear_infinite_reverse]">
+                  <motion.div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center border border-white/20 shadow-xl" style={{ rotateX: -60, rotateZ: counterRotateCore }}>
+                    <Calendar className="w-8 h-8 text-white" />
+                  </motion.div>
+                </div>
               </div>
+              
               {/* Assignments Planet */}
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-16 h-16 rounded-full bg-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.8)] flex items-center justify-center border border-white/20 animate-[spin_15s_linear_infinite_reverse]" style={{ transform: "rotateX(-60deg)" }}>
-                <CheckSquare className="w-8 h-8 text-white" />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+                <div className="animate-[spin_15s_linear_infinite_reverse]">
+                  <motion.div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center border border-white/20 shadow-xl" style={{ rotateX: -60, rotateZ: counterRotateCore }}>
+                    <CheckSquare className="w-8 h-8 text-white" />
+                  </motion.div>
+                </div>
               </div>
+
             </div>
 
-            {/* Outer Orbit (Spinning Slow, Reverse) */}
+            {/* Outer Orbit */}
             <div className="absolute w-[500px] h-[500px] rounded-full border border-purple-500/30 animate-[spin_25s_linear_infinite_reverse]" style={{ transformStyle: "preserve-3d" }}>
+              
               {/* AI Chat Planet */}
-              <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-purple-600 shadow-[0_0_50px_rgba(147,51,234,0.8)] flex items-center justify-center border border-white/20 animate-[spin_25s_linear_infinite]" style={{ transform: "rotateX(-60deg)" }}>
-                <Brain className="w-10 h-10 text-white" />
+              <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div className="animate-[spin_25s_linear_infinite]">
+                  <motion.div className="w-20 h-20 rounded-full bg-purple-600 flex items-center justify-center border border-white/20 shadow-xl" style={{ rotateX: -60, rotateZ: counterRotateCore }}>
+                    <Brain className="w-10 h-10 text-white" />
+                  </motion.div>
+                </div>
               </div>
+              
               {/* Exams Planet */}
-              <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-rose-500 shadow-[0_0_50px_rgba(244,63,94,0.8)] flex items-center justify-center border border-white/20 animate-[spin_25s_linear_infinite]" style={{ transform: "rotateX(-60deg)" }}>
-                <GraduationCap className="w-10 h-10 text-white" />
+              <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2">
+                <div className="animate-[spin_25s_linear_infinite]">
+                  <motion.div className="w-20 h-20 rounded-full bg-rose-500 flex items-center justify-center border border-white/20 shadow-xl" style={{ rotateX: -60, rotateZ: counterRotateCore }}>
+                    <GraduationCap className="w-10 h-10 text-white" />
+                  </motion.div>
+                </div>
               </div>
+
             </div>
 
-            {/* Central Axon Core (Pulsing, Counter-rotating to stay upright relative to tilt) */}
+            {/* Central Axon Core */}
             <motion.div 
-              className="absolute w-32 h-32 rounded-full bg-gradient-to-tr from-theme-500 to-purple-600 shadow-[0_0_100px_rgba(168,85,247,0.8)] flex flex-col items-center justify-center border-4 border-white/20"
-              style={{ rotateX: -60, rotateZ: useTransform(rotateCore, v => -v) }}
-              animate={{ scale: [1, 1.1, 1] }}
+              className="absolute w-32 h-32 rounded-full bg-gradient-to-tr from-theme-500 to-purple-600 shadow-2xl flex flex-col items-center justify-center border-4 border-white/20"
+              style={{ rotateX: -60, rotateZ: counterRotateCore }}
+              animate={{ scale: [1, 1.05, 1] }}
               transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
             >
               <img src="/icons/logo.png" className="w-12 h-12 rounded-xl mb-1 shadow-md" alt="Axon" />
