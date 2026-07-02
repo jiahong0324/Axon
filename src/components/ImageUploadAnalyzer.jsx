@@ -131,16 +131,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
           const prompt = type === 'exam' ? EXAM_PROMPT : type === 'assignment' ? ASSIGNMENT_PROMPT : TIMETABLE_PROMPT
           const raw = await analyzeImageWithGroq(base64, 'image/jpeg', prompt)
           
-          let jsonString = raw
-          const match = raw.match(/\[\s*\{[\s\S]*\}\s*\]/)
-          if (match) {
-            jsonString = match[0]
-          } else {
-            jsonString = raw.replace(/```json|```/g, '').trim()
-          }
-          
-          const parsed = JSON.parse(jsonString)
-          if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Empty result')
+          const parsed = parseAIResponse(raw)
           
           setItems(parsed.map((item, index) => normalizeItem(item, type, index)))
           setStep('results')
@@ -501,4 +492,57 @@ function toBase64(file) {
     reader.onerror = reject
     reader.readAsDataURL(file)
   })
+}
+
+function parseAIResponse(raw) {
+  if (!raw || typeof raw !== 'string') {
+    throw new Error('Empty response received from AI')
+  }
+
+  let cleaned = raw.replace(/```json|```/g, '').trim()
+
+  const match = cleaned.match(/\[\s*\{[\s\S]*\}\s*\]/)
+  if (match) {
+    cleaned = match[0]
+  } else {
+    const openIndex = cleaned.indexOf('[')
+    if (openIndex !== -1) {
+      cleaned = cleaned.substring(openIndex)
+    }
+  }
+
+  try {
+    const parsed = JSON.parse(cleaned)
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed
+  } catch (e) {
+    // Continue to repair attempts
+  }
+
+  try {
+    let repaired = cleaned
+      .replace(/,\s*([\]}])/g, '$1')
+      .replace(/[\u0000-\u001F]+/g, ' ')
+    const parsed = JSON.parse(repaired)
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed
+  } catch (e) {
+    // Continue to truncation recovery
+  }
+
+  let str = cleaned
+  while (str.lastIndexOf('}') !== -1) {
+    const lastBrace = str.lastIndexOf('}')
+    str = str.substring(0, lastBrace + 1)
+    try {
+      const candidate = str.replace(/,\s*$/, '') + ']'
+      const parsed = JSON.parse(candidate)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        console.warn(`Recovered ${parsed.length} items from truncated JSON response.`)
+        return parsed
+      }
+    } catch (e) {
+      str = str.substring(0, lastBrace)
+    }
+  }
+
+  throw new Error("AI response format was invalid or incomplete. Please try again with a clearer image.")
 }

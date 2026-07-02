@@ -34,7 +34,7 @@ export default async function handler(req, res) {
               ]
             }
           ],
-          max_tokens: 4096,
+          max_tokens: 8192,
           temperature: 0.0
         }
 
@@ -78,7 +78,7 @@ export default async function handler(req, res) {
           { role: 'system', content: systemContext || '' },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 1000,
+        max_tokens: 4096,
         temperature: 0.7
       }
 
