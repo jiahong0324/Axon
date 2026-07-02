@@ -77,7 +77,7 @@ export default function AIHelperPage({ role = 'student' }) {
         const canvas = document.createElement('canvas')
         let width = img.width
         let height = img.height
-        const maxDim = 800
+        const maxDim = 2048
         
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -94,7 +94,7 @@ export default function AIHelperPage({ role = 'student' }) {
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, width, height)
         
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9)
         setSelectedImage({
           url: dataUrl,
           base64: dataUrl.split(',')[1],

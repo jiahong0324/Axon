@@ -22,44 +22,52 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Missing GITHUB_TOKEN environment variable' })
       }
 
-      const body = {
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: 'Provide the final answer directly. DO NOT output internal reasoning. DO NOT use <think> tags. Be extremely concise.\n\n' + prompt },
-              { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } }
-            ]
-          }
-        ],
-        max_tokens: 1500,
-        temperature: 0.2
+      const makeRequest = async (modelName) => {
+        const body = {
+          model: modelName,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids.\n\n' + prompt },
+                { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } }
+              ]
+            }
+          ],
+          max_tokens: 4096,
+          temperature: 0.0
+        }
+
+        const res = await fetch('https://models.github.ai/inference/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${githubToken}`
+          },
+          body: JSON.stringify(body)
+        })
+
+        const text = await res.text()
+        let parsed = {}
+        try {
+          parsed = JSON.parse(text)
+        } catch (e) {
+          parsed = { error: { message: text || `HTTP ${res.status}` } }
+        }
+        return { ok: res.ok, status: res.status, data: parsed }
       }
 
-      const githubRes = await fetch('https://models.github.ai/inference/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${githubToken}`
-        },
-        body: JSON.stringify(body)
-      })
-
-      const responseText = await githubRes.text()
-      let data = {}
-      try {
-        data = JSON.parse(responseText)
-      } catch (e) {
-        // If the response is not valid JSON (e.g. plain text "Unauthorized")
-        data = { error: { message: responseText || `HTTP ${githubRes.status}` } }
+      let result = await makeRequest('gpt-4o')
+      if (!result.ok) {
+        // Fallback to gpt-4o-mini if gpt-4o is rate-limited or unavailable
+        result = await makeRequest('gpt-4o-mini')
       }
 
-      if (!githubRes.ok) {
-        return res.status(githubRes.status).json({ error: data.error?.message || 'GitHub Models API error' })
+      if (!result.ok) {
+        return res.status(result.status).json({ error: result.data.error?.message || 'GitHub Models API error' })
       }
 
-      let content = data.choices?.[0]?.message?.content || ''
+      let content = result.data.choices?.[0]?.message?.content || ''
       content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
 
       return res.status(200).json({ content })

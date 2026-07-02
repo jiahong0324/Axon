@@ -13,13 +13,14 @@ CRITICAL RULES:
 5. If no label found → class_type: "L" (default to Lecture)
 6. DO NOT use the cell background color to determine class type
 7. Convert all times to 24-hour HH:MM format (e.g. "10:30 AM" → "10:30", "2:30 PM" → "14:30")
-8. Day names must be exactly: "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"
+8. Day names must be exactly: "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
 9. For the "subject" field, if the full subject name is available (e.g., "SYSTEMS ANALYSIS AND DESIGN"), extract ONLY the full name without the subject code. If only the subject code is available, extract the code.
+10. Scan the timetable grid exhaustively row by row and column by column (from Monday to Sunday). Do NOT skip, combine, or omit any class session. Even if a subject or room appears multiple times across different days or times, extract EVERY single instance as a separate JSON object in the array. Ensure 100% of the class sessions are captured.
 
 Each object in the array must have exactly these fields:
 {
   "subject": "Full subject name if available (without code), otherwise subject code",
-  "day": "Monday|Tuesday|Wednesday|Thursday|Friday",
+  "day": "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday",
   "start_time": "HH:MM",
   "end_time": "HH:MM",
   "lecturer": "lecturer name or empty string",
@@ -30,7 +31,8 @@ Each object in the array must have exactly these fields:
 Return ONLY the JSON array. No other text.`
 
 const EXAM_PROMPT = `
-Analyze this university exam timetable image. Extract ALL exams and return as a JSON array only, no other text.
+Analyze this university exam timetable image. Extract ALL exams exhaustively and return as a JSON array only, no other text.
+Do NOT skip or omit any items. Scan every row carefully. Ensure 100% of the entries shown are extracted.
 Each object must have:
 {
   "subject": "Full subject name if available (without code), otherwise subject code",
@@ -44,7 +46,8 @@ Each object must have:
 Return ONLY valid JSON array. No markdown, no explanation.`
 
 const ASSIGNMENT_PROMPT = `
-Analyze this university assignment or coursework screenshot. Extract ALL assignments and return as a JSON array only, no other text.
+Analyze this university assignment or coursework screenshot. Extract ALL assignments exhaustively and return as a JSON array only, no other text.
+Do NOT skip or omit any items. Ensure 100% of the entries shown are extracted.
 Each object must have: { "title": "string", "subject": "Full subject name if available (without code), otherwise subject code", "deadline": "YYYY-MM-DD", "priority": "High|Medium|Low", "notes": "string or empty string", "status": "Pending" }
 Return ONLY valid JSON array. No markdown, no explanation.`
 
@@ -104,7 +107,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
         const canvas = document.createElement('canvas')
         let width = img.width
         let height = img.height
-        const maxDim = 800
+        const maxDim = 2048
         
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -121,7 +124,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, width, height)
         
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9)
         const base64 = dataUrl.split(',')[1]
         
         try {
