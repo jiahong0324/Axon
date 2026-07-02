@@ -6,14 +6,15 @@ export function getPreferenceContext() {
   return `\n\nAI response preferences:\n- Language: ${language}\n- Style: ${style}`
 }
 
-export async function askGroq(prompt, systemContext = '') {
+export async function askGroq(prompt, systemContext = '', history = []) {
   const response = await fetch('/api/groq', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       mode: 'chat',
       prompt,
-      systemContext: `${STUDY_SYSTEM_PROMPT}\n\n${systemContext || ''}${getPreferenceContext()}`
+      systemContext: `${STUDY_SYSTEM_PROMPT}\n\n${systemContext || ''}${getPreferenceContext()}`,
+      history
     })
   })
   const data = await response.json()
@@ -21,7 +22,7 @@ export async function askGroq(prompt, systemContext = '') {
   return data.content || 'AI is unavailable right now.'
 }
 
-export async function analyzeImageWithGroq(base64Image, mimeType, prompt) {
+export async function analyzeImageWithGroq(base64Image, mimeType, prompt, history = []) {
   const response = await fetch('/api/groq', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -29,7 +30,8 @@ export async function analyzeImageWithGroq(base64Image, mimeType, prompt) {
       mode: 'vision',
       base64Image,
       mimeType,
-      prompt
+      prompt,
+      history
     })
   })
   if (!response.ok) {

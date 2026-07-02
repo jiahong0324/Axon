@@ -12,10 +12,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { mode, prompt, systemContext, base64Image, mimeType } = req.body || {}
+    const { mode, prompt, systemContext, base64Image, mimeType, history = [] } = req.body || {}
     const safeMimeType = mimeType || 'image/jpeg'
     const cleanBase64 = base64Image ? base64Image.replace(/\s+/g, '') : ''
     
+    const cleanHistory = (Array.isArray(history) ? history : [])
+      .filter(msg => (msg.role === 'user' || msg.role === 'assistant') && msg.content && typeof msg.content === 'string')
+      .filter(msg => !msg.content.includes('Selamat datang!') && !msg.content.includes('Welcome to the Manager AI Control Center'))
+      .slice(-12)
+      .map(msg => ({ role: msg.role, content: msg.content }))
+
     if (mode === 'vision') {
       const githubToken = process.env.GITHUB_TOKEN
       if (!githubToken) {
@@ -26,6 +32,7 @@ export default async function handler(req, res) {
         const body = {
           model: modelName,
           messages: [
+            ...cleanHistory,
             {
               role: 'user',
               content: [
@@ -76,6 +83,7 @@ export default async function handler(req, res) {
         model: CHAT_MODEL,
         messages: [
           { role: 'system', content: systemContext || '' },
+          ...cleanHistory,
           { role: 'user', content: prompt }
         ],
         max_tokens: 4096,

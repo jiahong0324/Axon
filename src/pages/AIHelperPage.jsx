@@ -155,10 +155,10 @@ export default function AIHelperPage({ role = 'student' }) {
     try {
       let answer = ''
       if (imgData) {
-        answer = await analyzeImageWithGroq(imgData.base64, imgData.mimeType, userText || 'Describe this image')
+        answer = await analyzeImageWithGroq(imgData.base64, imgData.mimeType, userText || 'Describe this image', messages)
       } else {
         const context = await buildUserContext()
-        answer = await askGroq(userText, context)
+        answer = await askGroq(userText, context, messages)
       }
       setMessages(prev => [...prev, { role: 'assistant', content: answer, timestamp: new Date() }])
     } catch (err) {
