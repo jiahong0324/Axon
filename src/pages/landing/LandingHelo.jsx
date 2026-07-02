@@ -611,6 +611,19 @@ const KnowledgeScene = ({ progress }) => {
 
       <div className="relative w-full h-full flex items-center justify-center perspective-1000">
         <motion.div className="absolute w-24 h-24 md:w-32 md:h-32 bg-purple-600 rounded-full blur-[40px] md:blur-[50px] shadow-[0_0_100px_rgba(147,51,234,1)] animate-pulse" style={{ scale: coreScale }} />
+
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          {nodes.map((node, i) => {
+            const x2 = useTransform(spread, s => `calc(50% + ${node.x * s}px)`)
+            const y2 = useTransform(spread, s => `calc(50% + ${node.y * s}px)`)
+            return (
+              <g key={i}>
+                <motion.line x1="50%" y1="50%" x2={x2} y2={y2} stroke="rgba(168,85,247,0.6)" strokeWidth="4" strokeDasharray="6 6" className="blur-[2px]" />
+                <motion.line x1="50%" y1="50%" x2={x2} y2={y2} stroke="rgba(216,180,254,0.9)" strokeWidth="2" strokeDasharray="6 6" />
+              </g>
+            )
+          })}
+        </svg>
         
         {nodes.map((node, i) => {
           const moveX = useTransform(spread, s => node.x * s)
@@ -625,16 +638,6 @@ const KnowledgeScene = ({ progress }) => {
             </motion.div>
           )
         })}
-
-        <svg className="absolute inset-0 w-full h-full" style={{ zIndex: -1 }}>
-          {nodes.map((node, i) => {
-            const x2 = useTransform(spread, s => `calc(50% + ${node.x * s}px)`)
-            const y2 = useTransform(spread, s => `calc(50% + ${node.y * s}px)`)
-            return (
-              <motion.line key={i} x1="50%" y1="50%" x2={x2} y2={y2} stroke="rgba(168,85,247,0.2)" strokeWidth="1" strokeDasharray="4" />
-            )
-          })}
-        </svg>
       </div>
     </motion.div>
   )
