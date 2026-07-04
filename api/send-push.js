@@ -38,7 +38,7 @@ export default async function handler(req, res) {
   try {
     // 1. Get current time in Malaysia timezone (GMT+8)
     const options = { timeZone: 'Asia/Kuala_Lumpur', hour12: false }
-    const formatter = new Intl.DateTimeFormat('en-US', { ...options, year: 'numeric', month: '2-digit', day: '2-digit' })
+    const formatter = new Intl.DateTimeFormat('en-US', { ...options, weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' })
     const timeFormatter = new Intl.DateTimeFormat('en-US', { ...options, hour: '2-digit', minute: '2-digit' })
 
     const parts = formatter.formatToParts(new Date())
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
 
     const todayDate = `${year}-${month}-${day}` // YYYY-MM-DD
     const currentTime = timeFormatter.format(new Date()) // HH:MM
-    const todayDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()]
+    const todayDay = parts.find(p => p.type === 'weekday').value // Evaluated in Asia/Kuala_Lumpur timezone
 
     // 2. Fetch all active push subscriptions
     const { data: subscriptions, error: subErr } = await supabase
