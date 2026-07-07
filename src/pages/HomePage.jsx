@@ -60,14 +60,14 @@ export default function HomePage() {
           const profiles = JSON.parse(localStorage.getItem(`axon_linked_timetables_${user.id}`) || '[]')
           const activeProfile = profiles.find(p => p.id === savedActive)
           if (activeProfile && activeProfile.classes) {
-            activeClasses = activeProfile.classes
+            activeClasses = activeProfile.classes.filter(c => !c.profile_id || c.profile_id === savedActive)
           }
         } catch (e) {
           console.error('Failed to load linked timetable', e)
         }
       } else {
         const replacements = user.user_metadata?.replacement_classes || []
-        const validReplacements = replacements.filter(r => !r.date || r.date >= today)
+        const validReplacements = replacements.filter(r => (!r.date || r.date >= today) && (!r.profile_id || r.profile_id === 'account' || r.profile_id === 'live'))
         activeClasses = [...activeClasses, ...validReplacements]
       }
 

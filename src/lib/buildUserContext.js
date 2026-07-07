@@ -52,7 +52,7 @@ ${announcements.length === 0 ? 'No announcements.' : announcements.slice(0, 5).m
 
   let classes = classesRes.data || []
   const replacements = user.user_metadata?.replacement_classes || []
-  const validReplacements = replacements.filter(r => !r.date || r.date >= todayStr)
+  const validReplacements = replacements.filter(r => (!r.date || r.date >= todayStr) && (!r.profile_id || r.profile_id === 'account' || r.profile_id === 'live'))
   
   if (typeof window !== 'undefined' && window.localStorage) {
     const savedActive = localStorage.getItem(`axon_active_timetable_${user.id}`) || 'account'
@@ -61,7 +61,7 @@ ${announcements.length === 0 ? 'No announcements.' : announcements.slice(0, 5).m
         const profiles = JSON.parse(localStorage.getItem(`axon_linked_timetables_${user.id}`) || '[]')
         const activeProfile = profiles.find(p => p.id === savedActive)
         if (activeProfile && activeProfile.classes) {
-          classes = activeProfile.classes
+          classes = activeProfile.classes.filter(c => !c.profile_id || c.profile_id === savedActive)
         }
       } catch (e) {
         console.error('Failed to load linked timetable in AI context', e)

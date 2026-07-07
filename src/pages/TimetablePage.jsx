@@ -95,7 +95,10 @@ export default function TimetablePage() {
 
     if (!isLiveProfile) {
       let linkedClasses = activeProfile?.classes || []
-      const validLinkedClasses = linkedClasses.filter(c => !c.is_replacement || !c.date || c.date >= todayString)
+      const validLinkedClasses = linkedClasses.filter(c => 
+        (!c.is_replacement || !c.date || c.date >= todayString) &&
+        (!c.profile_id || c.profile_id === activeProfileId)
+      )
       
       if (linkedClasses.length !== validLinkedClasses.length) {
         updateActiveLinkedClasses(validLinkedClasses)
@@ -115,7 +118,10 @@ export default function TimetablePage() {
 
     const cached = readCache(classesCacheKey(activeUser.id), 10 * 60 * 1000)
     if (cached) {
-      const validCached = cached.filter(c => !c.is_replacement || !c.date || c.date >= todayString)
+      const validCached = cached.filter(c => 
+        (!c.is_replacement || !c.date || c.date >= todayString) &&
+        (!c.profile_id || c.profile_id === 'account' || c.profile_id === LIVE_PROFILE_ID)
+      )
       setClasses(validCached)
       setLoading(false)
     } else {
@@ -123,19 +129,20 @@ export default function TimetablePage() {
     }
 
     const { data } = await supabase.from('classes').select('*').eq('user_id', activeUser.id)
-    let replacements = activeUser.user_metadata?.replacement_classes || []
-    const validReplacements = replacements.filter(r => !r.date || r.date >= todayString)
+    let allReplacements = activeUser.user_metadata?.replacement_classes || []
+    const validAllReplacements = allReplacements.filter(r => !r.date || r.date >= todayString)
+    const validReplacements = validAllReplacements.filter(r => !r.profile_id || r.profile_id === 'account' || r.profile_id === LIVE_PROFILE_ID)
     
-    if (replacements.length !== validReplacements.length) {
-      const { data: updatedAuth } = await supabase.auth.updateUser({ data: { replacement_classes: validReplacements } })
+    if (allReplacements.length !== validAllReplacements.length) {
+      const { data: updatedAuth } = await supabase.auth.updateUser({ data: { replacement_classes: validAllReplacements } })
       if (updatedAuth?.user) {
         activeUser = updatedAuth.user
         setUser(updatedAuth.user)
       }
-      replacements = validReplacements
+      allReplacements = validAllReplacements
     }
 
-    const combined = [...(data || []), ...replacements]
+    const combined = [...(data || []), ...validReplacements]
     writeCache(classesCacheKey(activeUser.id), combined)
     setClasses(combined)
     setLoading(false)
@@ -143,6 +150,8 @@ export default function TimetablePage() {
 
   function switchProfile(profileId) {
     if (!user) return
+    setLoading(true)
+    setClasses([])
     localStorage.setItem(activeKey(user.id), profileId)
     setActiveProfileId(profileId)
   }
@@ -181,7 +190,11 @@ export default function TimetablePage() {
     if (!await confirm({ title: t('timetable.deleteProfileTitle'), message: t('timetable.deleteProfileMessage'), confirmText: t('common.delete') })) return
     const nextProfiles = linkedProfiles.filter(profile => profile.id !== profileId)
     persistLinkedProfiles(nextProfiles)
-    if (activeProfileId === profileId) switchProfile(LIVE_PROFILE_ID)
+    if (activeProfileId === profileId) {
+      setLoading(true)
+      setClasses([])
+      switchProfile(LIVE_PROFILE_ID)
+    }
     showToast(t('timetable.profileDeleted'), 'success')
   }
 
@@ -202,7 +215,7 @@ export default function TimetablePage() {
     }
 
     if (!isLiveProfile) {
-      updateActiveLinkedClasses([...classes, { ...finalForm, id: `local-${Date.now()}` }])
+      updateActiveLinkedClasses([...classes, { ...finalForm, id: `local-${Date.now()}`, profile_id: activeProfileId }])
       showToast(t('timetable.added'), 'success')
       setForm(initialForm)
       setShowForm(false)
@@ -214,7 +227,7 @@ export default function TimetablePage() {
       const { data: authData } = await supabase.auth.getUser()
       const activeUser = authData?.user || user
       if (authData?.user) setUser(authData.user)
-      const newReplacement = { ...finalForm, id: `rep-${Date.now()}` }
+      const newReplacement = { ...finalForm, id: `rep-${Date.now()}`, profile_id: LIVE_PROFILE_ID }
       const replacements = activeUser.user_metadata?.replacement_classes || []
       const { data, error } = await supabase.auth.updateUser({ data: { replacement_classes: [...replacements, newReplacement] } })
       if (error) {
@@ -241,7 +254,7 @@ export default function TimetablePage() {
   }
 
   async function saveAll(items) {
-    const rows = items.map((item, index) => ({ ...item, id: item.id || `local-${Date.now()}-${index}`, color: item.color || classColors[item.class_type] || 'blue' }))
+    const rows = items.map((item, index) => ({ ...item, id: item.id || `local-${Date.now()}-${index}`, color: item.color || classColors[item.class_type] || 'blue', profile_id: isLiveProfile ? LIVE_PROFILE_ID : activeProfileId }))
     if (!isLiveProfile) {
       updateActiveLinkedClasses([...classes, ...rows])
       showToast(t('timetable.savedExtracted'), 'success')
@@ -287,7 +300,9 @@ export default function TimetablePage() {
     if (isLiveProfile) {
       const { error } = await supabase.from('classes').delete().eq('user_id', user.id)
       if (error) return showToast(t('timetable.saveExtractedFailed'), 'error')
-      const { data: updatedAuth } = await supabase.auth.updateUser({ data: { replacement_classes: [] } })
+      const replacements = user.user_metadata?.replacement_classes || []
+      const remainingReplacements = replacements.filter(r => r.profile_id && r.profile_id !== 'account' && r.profile_id !== LIVE_PROFILE_ID)
+      const { data: updatedAuth } = await supabase.auth.updateUser({ data: { replacement_classes: remainingReplacements } })
       if (updatedAuth?.user) setUser(updatedAuth.user)
       clearCache(classesCacheKey(user.id))
     } else {
