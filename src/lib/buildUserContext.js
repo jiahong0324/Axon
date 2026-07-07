@@ -51,6 +51,8 @@ ${announcements.length === 0 ? 'No announcements.' : announcements.slice(0, 5).m
   ])
 
   let classes = classesRes.data || []
+  const replacements = user.user_metadata?.replacement_classes || []
+  const validReplacements = replacements.filter(r => !r.date || r.date >= todayStr)
   
   if (typeof window !== 'undefined' && window.localStorage) {
     const savedActive = localStorage.getItem(`axon_active_timetable_${user.id}`) || 'account'
@@ -64,12 +66,16 @@ ${announcements.length === 0 ? 'No announcements.' : announcements.slice(0, 5).m
       } catch (e) {
         console.error('Failed to load linked timetable in AI context', e)
       }
+    } else {
+      classes = [...classes, ...validReplacements]
     }
+  } else {
+    classes = [...classes, ...validReplacements]
   }
   const assignments = assignmentsRes.data || []
   const exams = examsRes.data || []
   const reminders = remindersRes.data || []
-  const todayClasses = classes.filter(c => c.day === dayName)
+  const todayClasses = classes.filter(c => c.is_replacement ? c.date === todayStr : c.day === dayName)
 
   return `
 === STUDENT PROFILE ===

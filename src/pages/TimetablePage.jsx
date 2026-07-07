@@ -106,7 +106,14 @@ export default function TimetablePage() {
       return
     }
 
-    const cached = readCache(classesCacheKey(user.id), 10 * 60 * 1000)
+    let activeUser = user
+    const { data: authData } = await supabase.auth.getUser()
+    if (authData?.user) {
+      activeUser = authData.user
+      setUser(authData.user)
+    }
+
+    const cached = readCache(classesCacheKey(activeUser.id), 10 * 60 * 1000)
     if (cached) {
       const validCached = cached.filter(c => !c.is_replacement || !c.date || c.date >= todayString)
       setClasses(validCached)
@@ -115,17 +122,21 @@ export default function TimetablePage() {
       setLoading(true)
     }
 
-    const { data } = await supabase.from('classes').select('*').eq('user_id', user.id)
-    let replacements = user.user_metadata?.replacement_classes || []
+    const { data } = await supabase.from('classes').select('*').eq('user_id', activeUser.id)
+    let replacements = activeUser.user_metadata?.replacement_classes || []
     const validReplacements = replacements.filter(r => !r.date || r.date >= todayString)
     
     if (replacements.length !== validReplacements.length) {
-      await supabase.auth.updateUser({ data: { replacement_classes: validReplacements } })
+      const { data: updatedAuth } = await supabase.auth.updateUser({ data: { replacement_classes: validReplacements } })
+      if (updatedAuth?.user) {
+        activeUser = updatedAuth.user
+        setUser(updatedAuth.user)
+      }
       replacements = validReplacements
     }
 
     const combined = [...(data || []), ...replacements]
-    writeCache(classesCacheKey(user.id), combined)
+    writeCache(classesCacheKey(activeUser.id), combined)
     setClasses(combined)
     setLoading(false)
   }
@@ -184,7 +195,8 @@ export default function TimetablePage() {
         setIsSubmitting(false)
         return showToast('Please select a date', 'error')
       }
-      const dayIndex = new Date(form.date).getDay()
+      const [year, month, day] = form.date.split('-').map(Number)
+      const dayIndex = new Date(year, month - 1, day).getDay()
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
       finalForm.day = dayNames[dayIndex]
     }
@@ -199,13 +211,17 @@ export default function TimetablePage() {
     }
     
     if (finalForm.is_replacement) {
+      const { data: authData } = await supabase.auth.getUser()
+      const activeUser = authData?.user || user
+      if (authData?.user) setUser(authData.user)
       const newReplacement = { ...finalForm, id: `rep-${Date.now()}` }
-      const replacements = user.user_metadata?.replacement_classes || []
-      const { error } = await supabase.auth.updateUser({ data: { replacement_classes: [...replacements, newReplacement] } })
+      const replacements = activeUser.user_metadata?.replacement_classes || []
+      const { data, error } = await supabase.auth.updateUser({ data: { replacement_classes: [...replacements, newReplacement] } })
       if (error) {
         setIsSubmitting(false)
         return showToast(t('timetable.addFailed'), 'error')
       }
+      if (data?.user) setUser(data.user)
     } else {
       const { is_replacement, date, ...dbForm } = finalForm
       const { error } = await supabase.from('classes').insert({ ...dbForm, user_id: user.id })
@@ -247,9 +263,13 @@ export default function TimetablePage() {
     const deleted = classes.find(c => c.id === id)
     if (isLiveProfile) {
       if (deleted?.is_replacement) {
-         const replacements = user.user_metadata?.replacement_classes || []
+         const { data: authData } = await supabase.auth.getUser()
+         const activeUser = authData?.user || user
+         if (authData?.user) setUser(authData.user)
+         const replacements = activeUser.user_metadata?.replacement_classes || []
          const nextReplacements = replacements.filter(r => r.id !== id)
-         await supabase.auth.updateUser({ data: { replacement_classes: nextReplacements } })
+         const { data } = await supabase.auth.updateUser({ data: { replacement_classes: nextReplacements } })
+         if (data?.user) setUser(data.user)
       } else {
          await supabase.from('classes').delete().eq('id', id)
       }
@@ -267,7 +287,8 @@ export default function TimetablePage() {
     if (isLiveProfile) {
       const { error } = await supabase.from('classes').delete().eq('user_id', user.id)
       if (error) return showToast(t('timetable.saveExtractedFailed'), 'error')
-      await supabase.auth.updateUser({ data: { replacement_classes: [] } })
+      const { data: updatedAuth } = await supabase.auth.updateUser({ data: { replacement_classes: [] } })
+      if (updatedAuth?.user) setUser(updatedAuth.user)
       clearCache(classesCacheKey(user.id))
     } else {
       updateActiveLinkedClasses([])

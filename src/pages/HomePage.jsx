@@ -65,6 +65,10 @@ export default function HomePage() {
         } catch (e) {
           console.error('Failed to load linked timetable', e)
         }
+      } else {
+        const replacements = user.user_metadata?.replacement_classes || []
+        const validReplacements = replacements.filter(r => !r.date || r.date >= today)
+        activeClasses = [...activeClasses, ...validReplacements]
       }
 
       setClasses(activeClasses)
@@ -90,7 +94,13 @@ export default function HomePage() {
     }
   }
 
-  const todayClasses = useMemo(() => classes.filter(c => c.day === todayName).sort((a, b) => a.start_time.localeCompare(b.start_time)), [classes, todayName])
+  const todayStr = format(currentTime, 'yyyy-MM-dd')
+  const todayClasses = useMemo(() => classes.filter(c => {
+    if (c.is_replacement) {
+      return c.date === todayStr
+    }
+    return c.day === todayName
+  }).sort((a, b) => a.start_time.localeCompare(b.start_time)), [classes, todayName, todayStr])
   const dueSoon = assignments.filter(a => a.status !== 'Done' && daysFromToday(a.deadline) <= 3).slice(0, 3)
   const nextExamDays = exams[0] ? daysFromToday(exams[0].exam_date) : null
   const nextExamValue = nextExamDays === null ? '-' : nextExamDays === 0 ? 'Today!' : nextExamDays
