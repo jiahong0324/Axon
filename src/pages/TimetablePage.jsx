@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronsUpDown, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ClassTypeBadge from '../components/ClassTypeBadge'
 import { useConfirmDialog } from '../components/ConfirmModal'
 import EmptyState from '../components/EmptyState'
@@ -50,6 +50,7 @@ export default function TimetablePage() {
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const fetchGenRef = useRef(0)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { t } = useLanguage()
@@ -89,6 +90,7 @@ export default function TimetablePage() {
 
   async function fetchClasses() {
     if (!user) return
+    const gen = ++fetchGenRef.current
     
     const today = new Date()
     const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
@@ -102,6 +104,7 @@ export default function TimetablePage() {
         (!c.profile_id || c.profile_id === activeProfileId)
       )
       
+      if (fetchGenRef.current !== gen) return
       if (linkedClasses.length !== validLinkedClasses.length) {
         updateActiveLinkedClasses(validLinkedClasses)
       } else {
@@ -113,6 +116,7 @@ export default function TimetablePage() {
 
     let activeUser = user
     const { data: authData } = await supabase.auth.getUser()
+    if (fetchGenRef.current !== gen) return
     if (authData?.user) {
       activeUser = authData.user
       setUser(authData.user)
@@ -124,6 +128,7 @@ export default function TimetablePage() {
         (!c.is_replacement || !c.date || c.date >= todayString) &&
         (!c.profile_id || c.profile_id === 'account' || c.profile_id === LIVE_PROFILE_ID)
       )
+      if (fetchGenRef.current !== gen) return
       setClasses(validCached)
       setLoading(false)
     } else {
@@ -131,12 +136,14 @@ export default function TimetablePage() {
     }
 
     const { data } = await supabase.from('classes').select('*').eq('user_id', activeUser.id)
+    if (fetchGenRef.current !== gen) return
     let allReplacements = activeUser.user_metadata?.replacement_classes || []
     const validAllReplacements = allReplacements.filter(r => !r.date || r.date >= todayString)
     const validReplacements = validAllReplacements.filter(r => !r.profile_id || r.profile_id === 'account' || r.profile_id === LIVE_PROFILE_ID)
     
     if (allReplacements.length !== validAllReplacements.length) {
       const { data: updatedAuth } = await supabase.auth.updateUser({ data: { replacement_classes: validAllReplacements } })
+      if (fetchGenRef.current !== gen) return
       if (updatedAuth?.user) {
         activeUser = updatedAuth.user
         setUser(updatedAuth.user)
@@ -144,6 +151,7 @@ export default function TimetablePage() {
       allReplacements = validAllReplacements
     }
 
+    if (fetchGenRef.current !== gen) return
     const combined = [...(data || []), ...validReplacements]
     writeCache(classesCacheKey(activeUser.id), combined)
     setClasses(combined)
