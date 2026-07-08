@@ -94,7 +94,9 @@ export default function TimetablePage() {
     const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
     if (!isLiveProfile) {
-      let linkedClasses = activeProfile?.classes || []
+      const freshProfiles = readLinkedProfiles(user.id)
+      const freshProfile = freshProfiles.find(p => p.id === activeProfileId)
+      let linkedClasses = freshProfile?.classes || []
       const validLinkedClasses = linkedClasses.filter(c => 
         (!c.is_replacement || !c.date || c.date >= todayString) &&
         (!c.profile_id || c.profile_id === activeProfileId)
@@ -164,7 +166,8 @@ export default function TimetablePage() {
   }
 
   function updateActiveLinkedClasses(nextClasses) {
-    const nextProfiles = linkedProfiles.map(profile =>
+    const freshProfiles = readLinkedProfiles(user.id)
+    const nextProfiles = freshProfiles.map(profile =>
       profile.id === activeProfileId ? { ...profile, classes: nextClasses } : profile
     )
     persistLinkedProfiles(nextProfiles)
@@ -215,7 +218,10 @@ export default function TimetablePage() {
     }
 
     if (!isLiveProfile) {
-      updateActiveLinkedClasses([...classes, { ...finalForm, id: `local-${Date.now()}`, profile_id: activeProfileId }])
+      const freshProfiles = readLinkedProfiles(user.id)
+      const freshProfile = freshProfiles.find(p => p.id === activeProfileId)
+      const currentClasses = freshProfile?.classes || []
+      updateActiveLinkedClasses([...currentClasses, { ...finalForm, id: `local-${Date.now()}`, profile_id: activeProfileId }])
       showToast(t('timetable.added'), 'success')
       setForm(initialForm)
       setShowForm(false)
@@ -256,7 +262,10 @@ export default function TimetablePage() {
   async function saveAll(items) {
     const rows = items.map((item, index) => ({ ...item, id: item.id || `local-${Date.now()}-${index}`, color: item.color || classColors[item.class_type] || 'blue', profile_id: isLiveProfile ? LIVE_PROFILE_ID : activeProfileId }))
     if (!isLiveProfile) {
-      updateActiveLinkedClasses([...classes, ...rows])
+      const freshProfiles = readLinkedProfiles(user.id)
+      const freshProfile = freshProfiles.find(p => p.id === activeProfileId)
+      const currentClasses = freshProfile?.classes || []
+      updateActiveLinkedClasses([...currentClasses, ...rows])
       showToast(t('timetable.savedExtracted'), 'success')
       setAnalyzerOpen(false)
       return
@@ -290,7 +299,10 @@ export default function TimetablePage() {
       clearCache(classesCacheKey(user.id))
       setClasses(prev => prev.filter(c => c.id !== id))
     } else {
-      updateActiveLinkedClasses(classes.filter(c => c.id !== id))
+      const freshProfiles = readLinkedProfiles(user.id)
+      const freshProfile = freshProfiles.find(p => p.id === activeProfileId)
+      const currentClasses = freshProfile?.classes || []
+      updateActiveLinkedClasses(currentClasses.filter(c => c.id !== id))
     }
     showToast(t('timetable.deleted'), 'success')
   }
