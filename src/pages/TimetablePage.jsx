@@ -72,19 +72,32 @@ export default function TimetablePage() {
   }, [])
 
   async function initializeTimetables() {
-    setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-    
-    const remoteProfiles = user.user_metadata?.linked_timetables
-    const localProfiles = readLinkedProfiles(user.id)
+    const { data: { session } } = await supabase.auth.getSession()
+    const currentUser = session?.user
+    if (!currentUser) {
+      setLoading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+      setupProfiles(user)
+      return
+    }
+    setupProfiles(currentUser)
+  }
+
+  function setupProfiles(currentUser) {
+    setUser(currentUser)
+    const remoteProfiles = currentUser.user_metadata?.linked_timetables
+    const localProfiles = readLinkedProfiles(currentUser.id)
     
     // If remoteProfiles exists in metadata (even if empty []), use it. Otherwise, use local.
     let profiles = remoteProfiles !== undefined ? remoteProfiles : localProfiles
     
-    saveLinkedProfiles(user.id, profiles)
+    saveLinkedProfiles(currentUser.id, profiles)
     setLinkedProfiles(profiles)
-    const savedActive = localStorage.getItem(activeKey(user.id)) || LIVE_PROFILE_ID
+    const savedActive = localStorage.getItem(activeKey(currentUser.id)) || LIVE_PROFILE_ID
     setActiveProfileId(savedActive === LIVE_PROFILE_ID || profiles.some(profile => profile.id === savedActive) ? savedActive : LIVE_PROFILE_ID)
   }
 
@@ -115,13 +128,6 @@ export default function TimetablePage() {
     }
 
     let activeUser = user
-    const { data: authData } = await supabase.auth.getUser()
-    if (fetchGenRef.current !== gen) return
-    if (authData?.user) {
-      activeUser = authData.user
-      setUser(authData.user)
-    }
-
     const cached = readCache(classesCacheKey(activeUser.id), 10 * 60 * 1000)
     if (cached) {
       const validCached = cached.filter(c => 
@@ -135,8 +141,17 @@ export default function TimetablePage() {
       setLoading(true)
     }
 
-    const { data } = await supabase.from('classes').select('*').eq('user_id', activeUser.id)
+    const [{ data: authData }, { data }] = await Promise.all([
+      supabase.auth.getUser(),
+      supabase.from('classes').select('*').eq('user_id', activeUser.id)
+    ])
+
     if (fetchGenRef.current !== gen) return
+    if (authData?.user) {
+      activeUser = authData.user
+      setUser(authData.user)
+    }
+
     let allReplacements = activeUser.user_metadata?.replacement_classes || []
     const validAllReplacements = allReplacements.filter(r => !r.date || r.date >= todayString)
     const validReplacements = validAllReplacements.filter(r => !r.profile_id || r.profile_id === 'account' || r.profile_id === LIVE_PROFILE_ID)

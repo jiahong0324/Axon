@@ -13,6 +13,7 @@ import { SkeletonStats, SkeletonList } from '../components/SkeletonLoader'
 import { supabase } from '../lib/supabase'
 import { daysFromToday, dateLabel, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
+import { readCache, writeCache } from '../lib/cache'
 
 export default function HomePage() {
   const [user, setUser] = useState(null)
@@ -40,24 +41,36 @@ export default function HomePage() {
 
   async function fetchDashboard() {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+      const { data: { session } } = await supabase.auth.getSession()
+      const activeUser = session?.user || (await supabase.auth.getUser()).data.user
+      if (!activeUser) {
+        setLoading(false)
+        return
+      }
+      setUser(activeUser)
+
+      const cachedDashboard = readCache(`axon_home_dashboard_${activeUser.id}`, 10 * 60 * 1000)
+      if (cachedDashboard) {
+        setClasses(cachedDashboard.classes || [])
+        setAssignments(cachedDashboard.assignments || [])
+        setExams(cachedDashboard.exams || [])
+        setAnnouncements(cachedDashboard.announcements || [])
+        setLoading(false)
+      }
+
       const today = format(new Date(), 'yyyy-MM-dd')
-      const [classesRes, assignmentsRes, examsRes] = await Promise.all([
-        supabase.from('classes').select('*').eq('user_id', user.id),
-        supabase.from('assignments').select('*').eq('user_id', user.id).neq('status', 'Done').order('deadline'),
-        supabase.from('exams').select('*').eq('user_id', user.id).gte('exam_date', today).order('exam_date')
+      const [classesRes, assignmentsRes, examsRes, announcementRowsRes] = await Promise.all([
+        supabase.from('classes').select('*').eq('user_id', activeUser.id),
+        supabase.from('assignments').select('*').eq('user_id', activeUser.id).neq('status', 'Done').order('deadline'),
+        supabase.from('exams').select('*').eq('user_id', activeUser.id).gte('exam_date', today).order('exam_date'),
+        supabase.from('announcements').select('*').or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).order('created_at', { ascending: false })
       ])
-      const { data: announcementRows } = await supabase
-        .from('announcements')
-        .select('*')
-        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
-        .order('created_at', { ascending: false })
+
       let activeClasses = classesRes.data || []
-      const savedActive = localStorage.getItem(`axon_active_timetable_${user.id}`) || 'account'
+      const savedActive = localStorage.getItem(`axon_active_timetable_${activeUser.id}`) || 'account'
       if (savedActive !== 'account') {
         try {
-          const profiles = JSON.parse(localStorage.getItem(`axon_linked_timetables_${user.id}`) || '[]')
+          const profiles = JSON.parse(localStorage.getItem(`axon_linked_timetables_${activeUser.id}`) || '[]')
           const activeProfile = profiles.find(p => p.id === savedActive)
           if (activeProfile && activeProfile.classes) {
             activeClasses = activeProfile.classes.filter(c => !c.profile_id || c.profile_id === savedActive)
@@ -66,15 +79,24 @@ export default function HomePage() {
           console.error('Failed to load linked timetable', e)
         }
       } else {
-        const replacements = user.user_metadata?.replacement_classes || []
+        const replacements = activeUser.user_metadata?.replacement_classes || []
         const validReplacements = replacements.filter(r => (!r.date || r.date >= today) && (!r.profile_id || r.profile_id === 'account' || r.profile_id === 'live'))
         activeClasses = [...activeClasses, ...validReplacements]
       }
 
+      const validAnnouncements = (announcementRowsRes.data || []).filter(a => !sessionStorage.getItem(`axon_ann_dismissed_${a.id}`))
+
       setClasses(activeClasses)
       setAssignments(assignmentsRes.data || [])
       setExams(examsRes.data || [])
-      setAnnouncements((announcementRows || []).filter(a => !sessionStorage.getItem(`axon_ann_dismissed_${a.id}`)))
+      setAnnouncements(validAnnouncements)
+
+      writeCache(`axon_home_dashboard_${activeUser.id}`, {
+        classes: activeClasses,
+        assignments: assignmentsRes.data || [],
+        exams: examsRes.data || [],
+        announcements: validAnnouncements
+      })
     } catch {
       showToast('Failed to load dashboard.', 'error')
     } finally {
