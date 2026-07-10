@@ -371,8 +371,8 @@ export default function ExamResultsPage() {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="grid grid-cols-12 gap-2 px-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-12 gap-3 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-white/10">
                 <span className="col-span-6">Course Name</span>
                 <span className="col-span-3">Credits</span>
                 <span className="col-span-2">Grade</span>
@@ -380,10 +380,13 @@ export default function ExamResultsPage() {
               </div>
 
               {calcRows.map((row) => (
-                <div key={row.id} className="grid grid-cols-12 items-center gap-2 rounded-xl border border-white/5 bg-black/20 p-2.5">
+                <div
+                  key={row.id}
+                  className="group grid grid-cols-12 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2 hover:border-white/20 hover:bg-white/[0.06] transition-all"
+                >
                   <div className="col-span-6">
                     <input
-                      className="input py-1.5 text-sm"
+                      className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:border-amber-400 focus:bg-slate-900 focus:outline-none transition-colors"
                       value={row.name}
                       onChange={e => {
                         const val = e.target.value
@@ -394,7 +397,7 @@ export default function ExamResultsPage() {
                   </div>
                   <div className="col-span-3">
                     <select
-                      className="input py-1.5 text-sm"
+                      className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white focus:border-amber-400 focus:outline-none transition-colors"
                       value={row.credits}
                       onChange={e => {
                         const val = e.target.value
@@ -407,7 +410,7 @@ export default function ExamResultsPage() {
                   </div>
                   <div className="col-span-2">
                     <select
-                      className="input py-1.5 text-sm font-bold"
+                      className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm font-bold text-amber-300 focus:border-amber-400 focus:outline-none transition-colors"
                       value={row.grade}
                       onChange={e => {
                         const val = e.target.value
@@ -418,10 +421,10 @@ export default function ExamResultsPage() {
                       {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade} ({g.point})</option>)}
                     </select>
                   </div>
-                  <div className="col-span-1 text-right">
+                  <div className="col-span-1 flex justify-end">
                     <button
                       onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
-                      className="p-1.5 text-slate-500 hover:text-red-400"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-500/20 hover:text-red-400 transition-colors"
                       title="Remove row"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -432,7 +435,7 @@ export default function ExamResultsPage() {
 
               <button
                 onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 py-3 text-sm font-semibold text-slate-400 hover:border-white/20 hover:text-white"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.01] py-3 text-sm font-semibold text-slate-300 hover:border-amber-400/40 hover:bg-amber-400/10 hover:text-amber-300 transition-all shadow-sm"
               >
                 <Plus className="h-4 w-4" /> Add Row
               </button>
@@ -516,31 +519,31 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 shadow-xl">
       {/* Semester Card Header */}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
-          <h3 className="text-lg font-bold text-white">{semester.name}</h3>
-          <p className="text-xs text-slate-400">
-            {semester.courses?.length || 0} Courses · {semStat.totalCredits} Credit Hours
+          <h3 className="text-xl font-bold text-white tracking-tight">{semester.name}</h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {semester.courses?.length || 0} Courses · <span className="text-slate-300 font-semibold">{semStat.totalCredits}</span> Credit Hours
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-emerald-500/10 px-3.5 py-1.5 border border-emerald-500/20">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 shadow-sm">
             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">GPA</span>
-            <span className="ml-2 font-mono text-base font-black text-emerald-300">{semStat.gpa}</span>
+            <span className="font-mono text-base font-black text-emerald-300">{semStat.gpa}</span>
           </div>
 
           <button
             onClick={onAIImport}
-            className="rounded-xl bg-white/5 p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300 hover:border-amber-400/30 hover:bg-amber-400/10 hover:text-amber-300 transition-all"
             title="Import from screenshot"
           >
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-3.5 w-3.5 text-amber-400" /> AI Import
           </button>
 
           <button
             onClick={() => onDeleteSemester(semester.id)}
-            className="rounded-xl bg-white/5 p-2 text-slate-400 hover:bg-red-500/10 hover:text-red-400"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 hover:border-red-500/30 hover:bg-red-500/15 hover:text-red-400 transition-all"
             title="Delete Semester"
           >
             <Trash2 className="h-4 w-4" />
@@ -549,8 +552,8 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
       </div>
 
       {/* Courses List as Calculator-style Rows */}
-      <div className="space-y-2">
-        <div className="grid grid-cols-12 gap-2 px-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-12 gap-3 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-white/10">
           <span className="col-span-3 sm:col-span-2">Code (opt)</span>
           <span className="col-span-4 sm:col-span-5">Course Name</span>
           <span className="col-span-2">Credits</span>
@@ -561,11 +564,11 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
         {(semester.courses || []).map(course => (
           <div
             key={course.id}
-            className="grid grid-cols-12 items-center gap-2 rounded-xl border border-white/5 bg-black/20 p-2.5"
+            className="group grid grid-cols-12 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2 hover:border-white/20 hover:bg-white/[0.06] transition-all"
           >
             <div className="col-span-3 sm:col-span-2">
               <input
-                className="input py-1.5 text-sm"
+                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:border-amber-400 focus:bg-slate-900 focus:outline-none transition-colors"
                 placeholder="Code"
                 value={course.course_code || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { course_code: e.target.value })}
@@ -573,7 +576,7 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
             </div>
             <div className="col-span-4 sm:col-span-5">
               <input
-                className="input py-1.5 text-sm"
+                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:border-amber-400 focus:bg-slate-900 focus:outline-none transition-colors"
                 placeholder="Course name"
                 value={course.course_name || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { course_name: e.target.value })}
@@ -581,7 +584,7 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
             </div>
             <div className="col-span-2">
               <select
-                className="input py-1.5 text-sm"
+                className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white focus:border-amber-400 focus:outline-none transition-colors"
                 value={course.credit_hours || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
               >
@@ -591,7 +594,7 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
             </div>
             <div className="col-span-2">
               <select
-                className="input py-1.5 text-sm font-bold"
+                className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm font-bold text-amber-300 focus:border-amber-400 focus:outline-none transition-colors"
                 value={course.grade || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
               >
@@ -599,10 +602,10 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
                 {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
               </select>
             </div>
-            <div className="col-span-1 text-right">
+            <div className="col-span-1 flex justify-end">
               <button
                 onClick={() => onDeleteCourse(semester.id, course.id)}
-                className="p-1.5 text-slate-500 hover:text-red-400"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-500/20 hover:text-red-400 transition-colors"
                 title="Remove course"
               >
                 <Trash2 className="h-4 w-4" />
@@ -613,7 +616,7 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
 
         <button
           onClick={() => onAddCourse(semester.id, { course_code: '', course_name: '', credit_hours: '', grade: '' })}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 py-3 text-sm font-semibold text-slate-400 hover:border-white/20 hover:text-white"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.01] py-3 text-sm font-semibold text-slate-300 hover:border-amber-400/40 hover:bg-amber-400/10 hover:text-amber-300 transition-all shadow-sm"
         >
           <Plus className="h-4 w-4" /> Add Row
         </button>
