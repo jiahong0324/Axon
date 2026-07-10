@@ -412,8 +412,8 @@ export default function ExamResultsPage() {
       {activeTab === 'calculator' && (
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Left 2 Cols: Simple Calculator Table */}
-          <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-white/[0.02] p-6">
-            <div className="mb-5 flex items-center justify-between">
+          <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-bold text-white">Quick SGPA / Target Calculator</h3>
                 <p className="text-xs text-slate-400">Simulate grades and credit hours instantly</p>
@@ -425,7 +425,7 @@ export default function ExamResultsPage() {
             </div>
 
             <div className="space-y-1">
-              <div className="grid grid-cols-12 gap-2 pb-2 text-xs font-semibold text-slate-400 border-b border-white/10">
+              <div className="grid grid-cols-12 gap-1.5 sm:gap-2 pb-2 text-[11px] sm:text-xs font-semibold text-slate-400 border-b border-white/10">
                 <span className="col-span-6">Course Name</span>
                 <span className="col-span-3">Credits</span>
                 <span className="col-span-2">Grade</span>
@@ -435,11 +435,11 @@ export default function ExamResultsPage() {
               {calcRows.map((row) => (
                 <div
                   key={row.id}
-                  className="grid grid-cols-12 items-center gap-2 py-1.5 border-b border-white/5 last:border-0"
+                  className="grid grid-cols-12 items-center gap-1.5 sm:gap-2 py-1.5 border-b border-white/5 last:border-0"
                 >
                   <div className="col-span-6">
                     <input
-                      className="input py-1.5 text-sm"
+                      className="input px-2 sm:px-3 py-1.5 text-xs sm:text-sm"
                       value={row.name}
                       onChange={e => {
                         const val = e.target.value
@@ -450,34 +450,34 @@ export default function ExamResultsPage() {
                   </div>
                   <div className="col-span-3">
                     <select
-                      className="input py-1.5 text-sm"
+                      className="input px-1.5 sm:px-3 py-1.5 text-xs sm:text-sm"
                       value={row.credits}
                       onChange={e => {
                         const val = e.target.value
                         setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
                       }}
                     >
-                      <option value="">Credits</option>
-                      {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
+                      <option value="">Cr</option>
+                      {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Cr</option>)}
                     </select>
                   </div>
                   <div className="col-span-2">
                     <select
-                      className="input py-1.5 text-sm font-semibold"
+                      className="input px-1.5 sm:px-3 py-1.5 text-xs sm:text-sm font-semibold"
                       value={row.grade}
                       onChange={e => {
                         const val = e.target.value
                         setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
                       }}
                     >
-                      <option value="">Grade</option>
-                      {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade} ({g.point})</option>)}
+                      <option value="">Gr</option>
+                      {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
                     </select>
                   </div>
                   <div className="col-span-1 text-right">
                     <button
                       onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
-                      className="p-1.5 text-slate-500 hover:text-red-400"
+                      className="p-1 text-slate-500 hover:text-red-400"
                       title="Remove row"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -570,9 +570,9 @@ export default function ExamResultsPage() {
 
 function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDeleteCourse, onDeleteSemester, onAIImport }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 shadow-xl">
+    <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-4 sm:p-6 shadow-xl">
       {/* Semester Card Header */}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 sm:gap-4 border-b border-white/10 pb-4">
         <div>
           <h3 className="text-xl font-bold text-white tracking-tight">{semester.name}</h3>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -580,15 +580,15 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 shadow-sm">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 shadow-sm">
             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">GPA</span>
-            <span className="font-mono text-base font-black text-emerald-300">{semStat.gpa}</span>
+            <span className="font-mono text-sm sm:text-base font-black text-emerald-300">{semStat.gpa}</span>
           </div>
 
           <button
             onClick={onAIImport}
-            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300 hover:border-amber-400/30 hover:bg-amber-400/10 hover:text-amber-300 transition-all"
+            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-2.5 sm:px-3 py-2 text-xs font-semibold text-slate-300 hover:border-amber-400/30 hover:bg-amber-400/10 hover:text-amber-300 transition-all"
             title="Import from screenshot"
           >
             <Sparkles className="h-3.5 w-3.5 text-amber-400" /> AI Import
@@ -606,7 +606,7 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
 
       {/* Courses List as Calculator-style Rows */}
       <div className="space-y-1">
-        <div className="grid grid-cols-12 gap-2 pb-2 text-xs font-semibold text-slate-400 border-b border-white/10">
+        <div className="grid grid-cols-12 gap-1.5 sm:gap-2 pb-2 text-[11px] sm:text-xs font-semibold text-slate-400 border-b border-white/10">
           <span className="col-span-3 sm:col-span-2">Code (opt)</span>
           <span className="col-span-4 sm:col-span-5">Course Name</span>
           <span className="col-span-2">Credits</span>
@@ -617,11 +617,11 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
         {(semester.courses || []).map(course => (
           <div
             key={course.id}
-            className="grid grid-cols-12 items-center gap-2 py-1.5 border-b border-white/5 last:border-0"
+            className="grid grid-cols-12 items-center gap-1.5 sm:gap-2 py-1.5 border-b border-white/5 last:border-0"
           >
             <div className="col-span-3 sm:col-span-2">
               <input
-                className="input py-1.5 text-sm"
+                className="input px-2 sm:px-3 py-1.5 text-xs sm:text-sm"
                 placeholder="Code"
                 value={course.course_code || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { course_code: e.target.value })}
@@ -629,7 +629,7 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
             </div>
             <div className="col-span-4 sm:col-span-5">
               <input
-                className="input py-1.5 text-sm"
+                className="input px-2 sm:px-3 py-1.5 text-xs sm:text-sm"
                 placeholder="Course name"
                 value={course.course_name || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { course_name: e.target.value })}
@@ -637,28 +637,28 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
             </div>
             <div className="col-span-2">
               <select
-                className="input py-1.5 text-sm"
+                className="input px-1.5 sm:px-3 py-1.5 text-xs sm:text-sm"
                 value={course.credit_hours || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
               >
-                <option value="">Credits</option>
-                {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
+                <option value="">Cr</option>
+                {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Cr</option>)}
               </select>
             </div>
             <div className="col-span-2">
               <select
-                className="input py-1.5 text-sm font-semibold"
+                className="input px-1.5 sm:px-3 py-1.5 text-xs sm:text-sm font-semibold"
                 value={course.grade || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
               >
-                <option value="">Grade</option>
+                <option value="">Gr</option>
                 {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
               </select>
             </div>
             <div className="col-span-1 text-right">
               <button
                 onClick={() => onDeleteCourse(semester.id, course.id)}
-                className="p-1.5 text-slate-500 hover:text-red-400"
+                className="p-1 text-slate-500 hover:text-red-400"
                 title="Remove course"
               >
                 <Trash2 className="h-4 w-4" />
