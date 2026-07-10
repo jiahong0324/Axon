@@ -16,12 +16,8 @@ export default function ExamResultsPage() {
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [targetSemesterId, setTargetSemesterId] = useState(null)
 
-  // Quick Calculator State
-  const [calcRows, setCalcRows] = useState([
-    { id: 1, name: 'Course 1', credits: 3, grade: 'A' },
-    { id: 2, name: 'Course 2', credits: 4, grade: 'A-' },
-    { id: 3, name: 'Course 3', credits: 3, grade: 'B+' }
-  ])
+  // Quick Calculator State (starts empty without default Course Name, credit or grade)
+  const [calcRows, setCalcRows] = useState([])
 
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
@@ -126,9 +122,9 @@ export default function ExamResultsPage() {
       id: `course-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       semester_id: semId,
       course_code: course.course_code || '',
-      course_name: course.course_name || 'New Subject',
-      credit_hours: Number(course.credit_hours) || 3,
-      grade: course.grade || 'A'
+      course_name: course.course_name || '',
+      credit_hours: Number(course.credit_hours) || 0,
+      grade: course.grade || ''
     }
 
     if (user && typeof semId === 'string' && !semId.startsWith('sem-')) {
@@ -185,7 +181,11 @@ export default function ExamResultsPage() {
   }
 
   const overall = calculateOverallCGPA(semesters)
-  const calcGPA = calculateSemesterGPA(calcRows.map(r => ({ credit_hours: r.credits, grade: r.grade })))
+  const calcGPA = calculateSemesterGPA(
+    calcRows
+      .filter(r => r.credits !== '' && r.grade !== '')
+      .map(r => ({ credit_hours: Number(r.credits), grade: r.grade }))
+  )
 
   return (
     <main className="main-content">
@@ -331,10 +331,11 @@ export default function ExamResultsPage() {
                       className="input py-1.5 text-sm"
                       value={row.credits}
                       onChange={e => {
-                        const val = Number(e.target.value)
+                        const val = e.target.value
                         setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
                       }}
                     >
+                      <option value="">Credits</option>
                       {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
                     </select>
                   </div>
@@ -347,6 +348,7 @@ export default function ExamResultsPage() {
                         setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
                       }}
                     >
+                      <option value="">Grade</option>
                       {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade} ({g.point})</option>)}
                     </select>
                   </div>
@@ -363,7 +365,7 @@ export default function ExamResultsPage() {
               ))}
 
               <button
-                onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: `Course ${prev.length + 1}`, credits: 3, grade: 'A' }])}
+                onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])}
                 className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 py-3 text-sm font-semibold text-slate-400 hover:border-white/20 hover:text-white"
               >
                 <Plus className="h-4 w-4" /> Add Row
@@ -447,12 +449,12 @@ export default function ExamResultsPage() {
 function SemesterCard({ semester, semStat, onAddCourse, onDeleteCourse, onDeleteSemester, onAIImport }) {
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
-  const [credits, setCredits] = useState(3)
-  const [grade, setGrade] = useState('A')
+  const [credits, setCredits] = useState('')
+  const [grade, setGrade] = useState('')
 
   function handleAdd(e) {
     e.preventDefault()
-    if (!name.trim()) return
+    if (!name.trim() || credits === '' || grade === '') return
     onAddCourse(semester.id, {
       course_code: code.trim(),
       course_name: name.trim(),
@@ -461,8 +463,8 @@ function SemesterCard({ semester, semStat, onAddCourse, onDeleteCourse, onDelete
     })
     setCode('')
     setName('')
-    setCredits(3)
-    setGrade('A')
+    setCredits('')
+    setGrade('')
   }
 
   return (
@@ -567,8 +569,10 @@ function SemesterCard({ semester, semStat, onAddCourse, onDeleteCourse, onDelete
           <select
             className="input py-2 text-xs"
             value={credits}
-            onChange={e => setCredits(Number(e.target.value))}
+            onChange={e => setCredits(e.target.value)}
+            required
           >
+            <option value="">Credits *</option>
             {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
           </select>
         </div>
@@ -577,7 +581,9 @@ function SemesterCard({ semester, semStat, onAddCourse, onDeleteCourse, onDelete
             className="input py-2 text-xs font-bold"
             value={grade}
             onChange={e => setGrade(e.target.value)}
+            required
           >
+            <option value="">Grade *</option>
             {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
           </select>
         </div>
