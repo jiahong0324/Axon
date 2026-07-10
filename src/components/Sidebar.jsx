@@ -1,4 +1,4 @@
-import { Bell, BookOpen, Bot, CalendarDays, CheckSquare, LayoutDashboard, LogOut, MoreHorizontal, Settings, X, MessageSquare, Globe } from 'lucide-react'
+import { Award, Bell, BookOpen, Bot, CalendarDays, CheckSquare, LayoutDashboard, LogOut, MoreHorizontal, Settings, X, MessageSquare, Globe } from 'lucide-react'
 import { useState } from 'react'
 import FeedbackModal from './FeedbackModal'
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -12,6 +12,7 @@ const navItems = [
   { label: 'Timetable', tKey: 'sidebar.timetable', path: '/timetable', icon: CalendarDays },
   { label: 'Assignments', tKey: 'sidebar.assignments', path: '/assignments', icon: CheckSquare },
   { label: 'Exams', tKey: 'sidebar.exams', path: '/exams', icon: BookOpen },
+  { label: 'Results', tKey: 'sidebar.results', path: '/results', icon: Award },
   { label: 'AI Helper', tKey: 'sidebar.aiHelper', path: '/ai-helper', icon: Bot },
   { label: 'Reminders', tKey: 'sidebar.reminders', path: '/reminders', icon: Bell },
   { label: 'Settings', tKey: 'sidebar.settings', path: '/settings', icon: Settings }
@@ -24,7 +25,7 @@ export default function Sidebar({ user }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const name = user?.user_metadata?.full_name || user?.email || 'Student'
   const mainMobile = navItems.filter(item => ['Home', 'Timetable', 'Assignments', 'AI Helper'].includes(item.label))
-  const moreItems = navItems.filter(item => ['Exams', 'Reminders', 'Settings'].includes(item.label))
+  const moreItems = navItems.filter(item => ['Exams', 'Results', 'Reminders', 'Settings'].includes(item.label))
 
   async function logout() {
     markExplicitLogout()

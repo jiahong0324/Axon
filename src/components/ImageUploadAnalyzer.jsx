@@ -51,6 +51,18 @@ Do NOT skip or omit any items. Ensure 100% of the entries shown are extracted.
 Each object must have: { "title": "string", "subject": "Full subject name if available (without code), otherwise subject code", "deadline": "YYYY-MM-DD", "priority": "High|Medium|Low", "notes": "string or empty string", "status": "Pending" }
 Return ONLY valid JSON array. No markdown, no explanation.`
 
+const RESULT_PROMPT = `
+Analyze this university exam result slip, academic transcript, or student portal screenshot.
+Extract ALL course results exhaustively and return ONLY a valid JSON array, no markdown, no explanation.
+Each object must have:
+{
+  "course_code": "course code string or empty string",
+  "course_name": "full course title string",
+  "credit_hours": 3,
+  "grade": "A+|A|A-|B+|B|B-|C+|C|F"
+}
+Ensure letter grades match TAR UMT standard grades (A+, A, A-, B+, B, B-, C+, C, F). Return ONLY valid JSON array.`
+
 const statusMessages = [
   'Scanning the timetable grid...',
   'Identifying subject codes...',
@@ -128,7 +140,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
         const base64 = dataUrl.split(',')[1]
         
         try {
-          const prompt = type === 'exam' ? EXAM_PROMPT : type === 'assignment' ? ASSIGNMENT_PROMPT : TIMETABLE_PROMPT
+          const prompt = type === 'exam' ? EXAM_PROMPT : type === 'assignment' ? ASSIGNMENT_PROMPT : type === 'result' ? RESULT_PROMPT : TIMETABLE_PROMPT
           const raw = await analyzeImageWithGroq(base64, 'image/jpeg', prompt)
           
           const parsed = parseAIResponse(raw)
@@ -174,7 +186,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
   }
 
   const selected = items.filter(item => item.selected)
-  const label = type === 'exam' ? 'EXAMS' : type === 'assignment' ? 'ASSIGNMENTS' : 'CLASS SESSIONS'
+  const label = type === 'exam' ? 'EXAMS' : type === 'assignment' ? 'ASSIGNMENTS' : type === 'result' ? 'COURSE RESULTS' : 'CLASS SESSIONS'
 
   return (
     <div className="flex flex-1 min-h-0 flex-col">
@@ -193,7 +205,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
               </div>
               <span className="text-xl font-bold tracking-tight text-white mb-2">Upload screenshot</span>
               <span className="text-sm text-slate-400 max-w-[280px] leading-relaxed mb-6">
-                Take a screenshot of your {type === 'exam' ? 'exam dates' : type === 'assignment' ? 'assignments list' : 'timetable'} and upload it here
+                Take a screenshot of your {type === 'exam' ? 'exam dates' : type === 'assignment' ? 'assignments list' : type === 'result' ? 'exam results slip' : 'timetable'} and upload it here
               </span>
               <span className="btn-import pointer-events-none">Browse Files</span>
             </button>
@@ -268,6 +280,8 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
               <div className="space-y-4 pr-1">
                 {items.map((item, index) => type === 'timetable'
                   ? <TimetableResult key={item.key} item={item} index={index} updateItem={updateItem} />
+                  : type === 'result'
+                  ? <ResultItemRow key={item.key} item={item} index={index} updateItem={updateItem} />
                   : <SimpleResult key={item.key} item={item} index={index} updateItem={updateItem} type={type} />)}
               </div>
             </div>
@@ -290,7 +304,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
             ) : (
               <>
                 <Check className="h-4 w-4" />
-                Import Selected {type === 'timetable' ? 'Classes' : 'Items'} ({selected.length})
+                Import Selected ({selected.length})
               </>
             )}
           </button>
@@ -476,11 +490,79 @@ function SimpleResult({ item, index, updateItem, type }) {
   )
 }
 
+function ResultItemRow({ item, index, updateItem }) {
+  const grades = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'F']
+  return (
+    <div className={`rounded-2xl border p-4 transition-all duration-300 ${
+      item.selected 
+        ? 'border-emerald-500/30 bg-emerald-500/[0.02] shadow-sm shadow-emerald-500/5' 
+        : 'border-slate-800 bg-slate-900/10 opacity-60'
+    }`}>
+      <div className="flex items-start gap-3">
+        <button 
+          className={`shrink-0 flex items-center justify-center rounded-lg transition-all duration-200 ${
+            item.selected 
+              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/20' 
+              : 'bg-slate-800 border border-slate-700 text-transparent hover:border-slate-600'
+          } h-9 w-9 mt-7`} 
+          onClick={() => updateItem(index, { selected: !item.selected })}
+        >
+          <Check className="h-5 w-5 stroke-[2.5]" />
+        </button>
+        <div className="flex-1 min-w-0 grid gap-3 md:grid-cols-4">
+          <Field label="Course Code">
+            <input 
+              className="input" 
+              value={item.course_code || ''} 
+              onChange={e => updateItem(index, { course_code: e.target.value })} 
+              placeholder="e.g. AACS1074"
+            />
+          </Field>
+          <Field label="Course Name">
+            <input 
+              className="input" 
+              value={item.course_name || ''} 
+              onChange={e => updateItem(index, { course_name: e.target.value })} 
+              placeholder="Course Title"
+            />
+          </Field>
+          <Field label="Credit Hours">
+            <select 
+              className="input" 
+              value={item.credit_hours || 3} 
+              onChange={e => updateItem(index, { credit_hours: Number(e.target.value) })}
+            >
+              {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Grade">
+            <select 
+              className="input font-bold" 
+              value={item.grade || 'A'} 
+              onChange={e => updateItem(index, { grade: e.target.value })}
+            >
+              {grades.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          </Field>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 function getColorFromType(classType) { return classType === 'T' ? 'green' : classType === 'P' ? 'purple' : 'blue' }
 function normalizeItem(item, type, index) {
   const class_type = ['L', 'T', 'P'].includes(item.class_type) ? item.class_type : 'L'
-  return { ...item, key: `${index}-${item.subject || item.title}`, selected: true, class_type, color: getColorFromType(class_type) }
+  return { 
+    ...item, 
+    key: `${index}-${item.subject || item.title || item.course_name}`, 
+    selected: true, 
+    class_type, 
+    color: getColorFromType(class_type),
+    credit_hours: Number(item.credit_hours) || 3,
+    grade: item.grade || 'A'
+  }
 }
 function cleanItem({ key, selected, class_type, color, ...item }, type) {
   return type === 'timetable' ? { ...item, class_type, color } : item

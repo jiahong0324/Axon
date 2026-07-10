@@ -341,10 +341,12 @@ Deno.serve(async req => {
         const includeClasses = data?.classes ?? true
         const includeAssignments = data?.assignments ?? true
         const includeExams = data?.exams ?? true
+        const includeResults = data?.results ?? true
 
         let classesData: any[] = []
         let assignmentsData: any[] = []
         let examsData: any[] = []
+        let semestersData: any[] = []
 
         if (includeClasses) {
           const { data: classes } = await adminClient.from('classes').select('*').eq('user_id', studentId)
@@ -361,6 +363,15 @@ Deno.serve(async req => {
           examsData = exams || []
         }
 
+        if (includeResults) {
+          const { data: sems } = await adminClient.from('student_semesters').select('*').eq('user_id', studentId).order('created_at')
+          const { data: courses } = await adminClient.from('student_semester_courses').select('*').eq('user_id', studentId).order('created_at')
+          semestersData = (sems || []).map(s => ({
+            ...s,
+            courses: (courses || []).filter(c => c.semester_id === s.id)
+          }))
+        }
+
         const htmlContent = buildAcademicDigestHtml({
           fullName: studentProfile.full_name || 'Student',
           email: studentProfile.email,
@@ -371,7 +382,9 @@ Deno.serve(async req => {
           includeAssignments,
           assignments: assignmentsData,
           includeExams,
-          exams: examsData
+          exams: examsData,
+          includeResults,
+          semesters: semestersData
         })
 
         const res = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -480,10 +493,12 @@ interface AcademicDigestParams {
   assignments: any[]
   includeExams: boolean
   exams: any[]
+  includeResults?: boolean
+  semesters?: any[]
 }
 
 function buildAcademicDigestHtml(params: AcademicDigestParams): string {
-  const { fullName, university, course, includeClasses, classes, includeAssignments, assignments, includeExams, exams } = params
+  const { fullName, university, course, includeClasses, classes, includeAssignments, assignments, includeExams, exams, includeResults, semesters = [] } = params
   const dateStr = new Date().toLocaleDateString('en-US', { dateStyle: 'long' })
   
   let classesHtml = ''
@@ -636,6 +651,34 @@ function buildAcademicDigestHtml(params: AcademicDigestParams): string {
     }
   }
 
+  let resultsHtml = ''
+  if (includeResults && semesters.length > 0) {
+    let semRows = ''
+    semesters.forEach(sem => {
+      let coursesList = ''
+      ;(sem.courses || []).forEach((c: any) => {
+        coursesList += `
+          <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #334155; font-size: 12px;">
+            <span style="color: #e2e8f0;">${c.course_code ? c.course_code + ' - ' : ''}${c.course_name}</span>
+            <span style="color: #38bdf8; font-weight: bold;">Grade: ${c.grade} (${c.credit_hours} cr)</span>
+          </div>
+        `
+      })
+      semRows += `
+        <div style="margin-bottom: 14px; padding: 12px; background: #1e293b; border-radius: 8px; border: 1px solid #334155;">
+          <div style="font-weight: bold; color: #ffffff; font-size: 14px; margin-bottom: 8px;">🎓 ${sem.name}</div>
+          ${coursesList || '<div style="font-size: 11px; color: #64748b;">No courses listed</div>'}
+        </div>
+      `
+    })
+    resultsHtml = `
+      <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 24px;">
+        <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">🏆 Academic Results & Semester Records</h2>
+        ${semRows}
+      </div>
+    `
+  }
+
   return `
 <!DOCTYPE html>
 <html>
@@ -671,6 +714,7 @@ function buildAcademicDigestHtml(params: AcademicDigestParams): string {
       ${classesHtml}
       ${assignmentsHtml}
       ${examsHtml}
+      ${resultsHtml}
       
       <div style="text-align: center; margin-top: 32px; border-top: 1px solid #334155; padding-top: 20px;">
         <a href="https://axon-com.vercel.app/login" style="display: inline-block; background-color: #3b82f6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 10px; font-size: 14px;">Open Axon App</a>

@@ -12,6 +12,7 @@ import HomePage from './pages/HomePage'
 import TimetablePage from './pages/TimetablePage'
 import AssignmentPage from './pages/AssignmentPage'
 import ExamPage from './pages/ExamPage'
+import ExamResultsPage from './pages/ExamResultsPage'
 import AIHelperPage from './pages/AIHelperPage'
 import RemindersPage from './pages/RemindersPage'
 import SettingsPage from './pages/SettingsPage'
@@ -63,6 +64,8 @@ export default function App() {
               <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />
               <Route path="/assignments" element={<ProtectedRoute requireRole="student"><AssignmentPage /></ProtectedRoute>} />
               <Route path="/exams" element={<ProtectedRoute requireRole="student"><ExamPage /></ProtectedRoute>} />
+              <Route path="/results" element={<ProtectedRoute requireRole="student"><ExamResultsPage /></ProtectedRoute>} />
+              <Route path="/exam-results" element={<ProtectedRoute requireRole="student"><ExamResultsPage /></ProtectedRoute>} />
               <Route path="/ai-helper" element={<ProtectedRoute requireRole="student"><AIHelperPage /></ProtectedRoute>} />
               <Route path="/reminders" element={<ProtectedRoute requireRole="student"><RemindersPage /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute requireRole="student"><SettingsPage /></ProtectedRoute>} />

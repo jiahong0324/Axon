@@ -3,10 +3,18 @@ import autoTable from 'jspdf-autotable'
 import { format } from 'date-fns'
 import { dateLabel, formatTime } from './utils'
 
-export function createStudentReportDoc({ student, classes = [], assignments = [], exams = [], examResults = [] }) {
+export function createStudentReportDoc({ student, classes = [], assignments = [], exams = [], examResults = [], semesters = [] }) {
   const doc = new jsPDF()
   const fullName = student.full_name || student.email || 'Student'
   const resultByExam = new Map(examResults.map(result => [result.exam_id, result]))
+
+  let activeSemesters = semesters
+  if (!activeSemesters.length && typeof localStorage !== 'undefined') {
+    const cached = localStorage.getItem('axon_exam_results_semesters')
+    if (cached) {
+      try { activeSemesters = JSON.parse(cached) } catch (e) { activeSemesters = [] }
+    }
+  }
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(20)
@@ -80,13 +88,27 @@ export function createStudentReportDoc({ student, classes = [], assignments = []
   )
 
   addSection(
-    'Exams & Results',
+    'Exams & Schedules',
     ['Subject', 'Type', 'Date', 'Venue', 'Score', 'Grade', 'Remarks'],
     exams.map(e => {
       const result = resultByExam.get(e.id)
       return [e.subject, e.exam_type, dateLabel(e.exam_date), e.venue || 'TBA', result?.score ?? '-', result?.grade ?? '-', result?.remarks || '']
     }),
     'No exam records.'
+  )
+
+  // Add TAR UMT Exam Results Section
+  const semCourseRows = []
+  activeSemesters.forEach(sem => {
+    (sem.courses || []).forEach(c => {
+      semCourseRows.push([sem.name, c.course_code || '-', c.course_name, String(c.credit_hours), c.grade])
+    })
+  })
+  addSection(
+    'TAR UMT Exam Results & Semester Record',
+    ['Semester', 'Code', 'Course Name', 'Credits', 'Grade'],
+    semCourseRows,
+    'No semester exam result records.'
   )
 
   const pageCount = doc.internal.getNumberOfPages()

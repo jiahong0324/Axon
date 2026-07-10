@@ -1,0 +1,592 @@
+import { useState, useEffect } from 'react'
+import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, CheckCircle2 } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import { useToast } from '../components/Toast'
+import { useConfirmDialog } from '../components/ConfirmModal'
+import Modal from '../components/Modal'
+import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
+import { TARUMT_GRADES, getGradePoint, calculateSemesterGPA, calculateOverallCGPA } from '../lib/tarumtGrading'
+
+export default function ExamResultsPage() {
+  const [activeTab, setActiveTab] = useState('records') // 'records' | 'calculator'
+  const [semesters, setSemesters] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [newSemesterName, setNewSemesterName] = useState('')
+  const [showAddSemModal, setShowAddSemModal] = useState(false)
+  const [analyzerOpen, setAnalyzerOpen] = useState(false)
+  const [targetSemesterId, setTargetSemesterId] = useState(null)
+
+  // Quick Calculator State
+  const [calcRows, setCalcRows] = useState([
+    { id: 1, name: 'Course 1', credits: 3, grade: 'A' },
+    { id: 2, name: 'Course 2', credits: 4, grade: 'A-' },
+    { id: 3, name: 'Course 3', credits: 3, grade: 'B+' }
+  ])
+
+  const { showToast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
+
+  useEffect(() => {
+    loadSemesters()
+  }, [])
+
+  async function loadSemesters() {
+    setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      // fallback to localStorage
+      const cached = localStorage.getItem('axon_exam_results_semesters')
+      if (cached) setSemesters(JSON.parse(cached))
+      setLoading(false)
+      return
+    }
+
+    const { data: semsData } = await supabase
+      .from('student_semesters')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at')
+
+    const { data: coursesData } = await supabase
+      .from('student_semester_courses')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at')
+
+    if (semsData && coursesData) {
+      const merged = semsData.map(s => ({
+        ...s,
+        courses: coursesData.filter(c => c.semester_id === s.id)
+      }))
+      setSemesters(merged)
+      localStorage.setItem('axon_exam_results_semesters', JSON.stringify(merged))
+    } else {
+      // Use local storage fallback if tables aren't created yet
+      const cached = localStorage.getItem('axon_exam_results_semesters')
+      if (cached) {
+        setSemesters(JSON.parse(cached))
+      } else {
+        const defaultSem = [{
+          id: 'sem-1',
+          name: 'Year 1 Semester 1',
+          courses: []
+        }]
+        setSemesters(defaultSem)
+        localStorage.setItem('axon_exam_results_semesters', JSON.stringify(defaultSem))
+      }
+    }
+    setLoading(false)
+  }
+
+  function saveSemestersToLocal(list) {
+    setSemesters(list)
+    localStorage.setItem('axon_exam_results_semesters', JSON.stringify(list))
+  }
+
+  async function handleCreateSemester(e) {
+    e?.preventDefault()
+    if (!newSemesterName.trim()) return
+    const { data: { user } } = await supabase.auth.getUser()
+    const newSem = {
+      id: `sem-${Date.now()}`,
+      name: newSemesterName.trim(),
+      courses: []
+    }
+
+    if (user) {
+      const { data, error } = await supabase
+        .from('student_semesters')
+        .insert({ user_id: user.id, name: newSemesterName.trim() })
+        .select()
+        .single()
+      if (data) newSem.id = data.id
+    }
+
+    const nextList = [...semesters, newSem]
+    saveSemestersToLocal(nextList)
+    setNewSemesterName('')
+    setShowAddSemModal(false)
+    showToast('Semester added successfully.', 'success')
+  }
+
+  async function handleDeleteSemester(semId) {
+    if (!await confirm({ title: 'Delete Semester?', message: 'All courses inside this semester will be removed.' })) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('student_semesters').delete().eq('id', semId)
+    }
+    const nextList = semesters.filter(s => s.id !== semId)
+    saveSemestersToLocal(nextList)
+    showToast('Semester deleted.', 'success')
+  }
+
+  async function handleAddCourse(semId, course) {
+    const { data: { user } } = await supabase.auth.getUser()
+    const newCourse = {
+      id: `course-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      semester_id: semId,
+      course_code: course.course_code || '',
+      course_name: course.course_name || 'New Subject',
+      credit_hours: Number(course.credit_hours) || 3,
+      grade: course.grade || 'A'
+    }
+
+    if (user && typeof semId === 'string' && !semId.startsWith('sem-')) {
+      const { data } = await supabase
+        .from('student_semester_courses')
+        .insert({
+          semester_id: semId,
+          user_id: user.id,
+          course_code: newCourse.course_code,
+          course_name: newCourse.course_name,
+          credit_hours: newCourse.credit_hours,
+          grade: newCourse.grade
+        })
+        .select()
+        .single()
+      if (data) newCourse.id = data.id
+    }
+
+    const nextList = semesters.map(s => {
+      if (s.id !== semId) return s
+      return { ...s, courses: [...(s.courses || []), newCourse] }
+    })
+    saveSemestersToLocal(nextList)
+  }
+
+  async function handleDeleteCourse(semId, courseId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user && typeof courseId === 'string' && !courseId.startsWith('course-')) {
+      await supabase.from('student_semester_courses').delete().eq('id', courseId)
+    }
+    const nextList = semesters.map(s => {
+      if (s.id !== semId) return s
+      return { ...s, courses: s.courses.filter(c => c.id !== courseId) }
+    })
+    saveSemestersToLocal(nextList)
+  }
+
+  async function handleAIResultImport(extractedItems) {
+    const semId = targetSemesterId || semesters[0]?.id
+    if (!semId) {
+      showToast('Please create a semester first.', 'warning')
+      return
+    }
+    for (const item of extractedItems) {
+      await handleAddCourse(semId, {
+        course_code: item.course_code || '',
+        course_name: item.course_name || 'Imported Course',
+        credit_hours: Number(item.credit_hours) || 3,
+        grade: item.grade || 'A'
+      })
+    }
+    setAnalyzerOpen(false)
+    showToast(`Successfully imported ${extractedItems.length} courses!`, 'success')
+  }
+
+  const overall = calculateOverallCGPA(semesters)
+  const calcGPA = calculateSemesterGPA(calcRows.map(r => ({ credit_hours: r.credits, grade: r.grade })))
+
+  return (
+    <main className="main-content">
+      {/* Top Simple Header */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="page-title mb-1">Exam Results & CGPA</h1>
+          <p className="text-sm text-slate-400">
+            Based on TAR UMT 5.6 Standard Grading System
+          </p>
+        </div>
+
+        {/* Overall CGPA Badge */}
+        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 backdrop-blur-md">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-theme-500/10 text-theme-400">
+            <Award className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Overall CGPA</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-white">{overall.cgpa}</span>
+              <span className="text-xs font-semibold text-slate-400">({overall.overallCredits} Credits)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Simple 2-Tab Selector */}
+      <div className="mb-6 flex w-fit rounded-2xl border border-white/10 bg-white/[0.02] p-1">
+        <button
+          onClick={() => setActiveTab('records')}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+            activeTab === 'records'
+              ? 'bg-theme-500 text-white shadow-md shadow-theme-500/20'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <BookOpen className="h-4 w-4" />
+          My Semester Records
+        </button>
+        <button
+          onClick={() => setActiveTab('calculator')}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+            activeTab === 'calculator'
+              ? 'bg-theme-500 text-white shadow-md shadow-theme-500/20'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Calculator className="h-4 w-4" />
+          TAR UMT Calculator
+        </button>
+      </div>
+
+      {/* TAB 1: MY SEMESTER RECORDS */}
+      {activeTab === 'records' && (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <button
+              onClick={() => setShowAddSemModal(true)}
+              className="btn-add text-sm"
+            >
+              <Plus className="h-4 w-4" /> Add Semester
+            </button>
+
+            <button
+              onClick={() => {
+                setTargetSemesterId(semesters[0]?.id || null)
+                setAnalyzerOpen(true)
+              }}
+              className="btn-import text-sm"
+            >
+              <Sparkles className="h-4 w-4" /> AI Import Screenshot
+            </button>
+          </div>
+
+          {semesters.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-white/[0.02] py-16 text-center">
+              <BookOpen className="mb-3 h-12 w-12 text-slate-500" />
+              <h3 className="text-lg font-bold text-white">No Semester Records</h3>
+              <p className="mt-1 text-sm text-slate-400">Click "+ Add Semester" or upload a screenshot to start.</p>
+            </div>
+          ) : (
+            semesters.map(sem => {
+              const semStat = calculateSemesterGPA(sem.courses)
+              return (
+                <SemesterCard
+                  key={sem.id}
+                  semester={sem}
+                  semStat={semStat}
+                  onAddCourse={handleAddCourse}
+                  onDeleteCourse={handleDeleteCourse}
+                  onDeleteSemester={handleDeleteSemester}
+                  onAIImport={() => {
+                    setTargetSemesterId(sem.id)
+                    setAnalyzerOpen(true)
+                  }}
+                />
+              )
+            })
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: SIMPLE TAR UMT CALCULATOR */}
+      {activeTab === 'calculator' && (
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Left 2 Cols: Simple Calculator Table */}
+          <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-white/[0.02] p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-white">Quick SGPA / Target Calculator</h3>
+                <p className="text-xs text-slate-400">Simulate grades and credit hours instantly</p>
+              </div>
+              <div className="rounded-xl bg-theme-500/10 px-4 py-2 border border-theme-500/20 text-right">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-theme-400">Calculated GPA</span>
+                <p className="text-2xl font-black text-white">{calcGPA.gpa}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-12 gap-2 px-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                <span className="col-span-6">Course Name</span>
+                <span className="col-span-3">Credits</span>
+                <span className="col-span-2">Grade</span>
+                <span className="col-span-1 text-right">Del</span>
+              </div>
+
+              {calcRows.map((row, i) => (
+                <div key={row.id} className="grid grid-cols-12 items-center gap-2 rounded-xl border border-white/5 bg-black/20 p-2.5">
+                  <div className="col-span-6">
+                    <input
+                      className="input py-1.5 text-sm"
+                      value={row.name}
+                      onChange={e => {
+                        const val = e.target.value
+                        setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
+                      }}
+                      placeholder="Course name"
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <select
+                      className="input py-1.5 text-sm"
+                      value={row.credits}
+                      onChange={e => {
+                        const val = Number(e.target.value)
+                        setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
+                      }}
+                    >
+                      {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
+                    </select>
+                  </div>
+                  <div className="col-span-2">
+                    <select
+                      className="input py-1.5 text-sm font-bold"
+                      value={row.grade}
+                      onChange={e => {
+                        const val = e.target.value
+                        setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
+                      }}
+                    >
+                      {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade} ({g.point})</option>)}
+                    </select>
+                  </div>
+                  <div className="col-span-1 text-right">
+                    <button
+                      onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
+                      className="p-1.5 text-slate-500 hover:text-red-400"
+                      title="Remove row"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: `Course ${prev.length + 1}`, credits: 3, grade: 'A' }])}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 py-3 text-sm font-semibold text-slate-400 hover:border-white/20 hover:text-white"
+              >
+                <Plus className="h-4 w-4" /> Add Row
+              </button>
+            </div>
+          </div>
+
+          {/* Right Col: TAR UMT 5.6 Grading Reference Table */}
+          <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-3">
+              TAR UMT Grading Scale
+            </h4>
+            <p className="text-xs text-slate-400 mb-4">
+              Applicable to June 2023 intake & onwards
+            </p>
+
+            <div className="space-y-1.5">
+              {TARUMT_GRADES.map(g => (
+                <div
+                  key={g.grade}
+                  className="flex items-center justify-between rounded-xl border border-white/5 bg-black/10 px-3 py-2 text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="grid h-6 w-7 place-items-center rounded bg-theme-500/20 font-bold text-theme-400">
+                      {g.grade}
+                    </span>
+                    <span className="font-medium text-slate-300">{g.markRange}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-mono font-bold text-white">{g.point.toFixed(4)}</span>
+                    <span className="ml-2 hidden sm:inline text-[10px] text-slate-400">{g.description}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Add Semester */}
+      <Modal
+        isOpen={showAddSemModal}
+        onClose={() => setShowAddSemModal(false)}
+        title="Add Semester"
+      >
+        <form onSubmit={handleCreateSemester} className="space-y-4">
+          <div>
+            <label className="label">Semester Title</label>
+            <input
+              className="input"
+              placeholder="e.g. Year 1 Semester 1 or May 2024"
+              value={newSemesterName}
+              onChange={e => setNewSemesterName(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="btn-primary w-full">
+            Create Semester
+          </button>
+        </form>
+      </Modal>
+
+      {/* Modal: AI Screenshot Import */}
+      <Modal
+        isOpen={analyzerOpen}
+        onClose={() => setAnalyzerOpen(false)}
+        title="AI Import Exam Results Slip"
+        maxWidth="max-w-4xl"
+      >
+        <ImageUploadAnalyzer
+          type="result"
+          onResult={handleAIResultImport}
+        />
+      </Modal>
+
+      {ConfirmDialog}
+    </main>
+  )
+}
+
+function SemesterCard({ semester, semStat, onAddCourse, onDeleteCourse, onDeleteSemester, onAIImport }) {
+  const [code, setCode] = useState('')
+  const [name, setName] = useState('')
+  const [credits, setCredits] = useState(3)
+  const [grade, setGrade] = useState('A')
+
+  function handleAdd(e) {
+    e.preventDefault()
+    if (!name.trim()) return
+    onAddCourse(semester.id, {
+      course_code: code.trim(),
+      course_name: name.trim(),
+      credit_hours: Number(credits),
+      grade
+    })
+    setCode('')
+    setName('')
+    setCredits(3)
+    setGrade('A')
+  }
+
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 shadow-xl">
+      {/* Semester Card Header */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+        <div>
+          <h3 className="text-lg font-bold text-white">{semester.name}</h3>
+          <p className="text-xs text-slate-400">
+            {semester.courses?.length || 0} Courses · {semStat.totalCredits} Credit Hours
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-emerald-500/10 px-3.5 py-1.5 border border-emerald-500/20">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">GPA</span>
+            <span className="ml-2 font-mono text-base font-black text-emerald-300">{semStat.gpa}</span>
+          </div>
+
+          <button
+            onClick={onAIImport}
+            className="rounded-xl bg-white/5 p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+            title="Import from screenshot"
+          >
+            <Sparkles className="h-4 w-4" />
+          </button>
+
+          <button
+            onClick={() => onDeleteSemester(semester.id)}
+            className="rounded-xl bg-white/5 p-2 text-slate-400 hover:bg-red-500/10 hover:text-red-400"
+            title="Delete Semester"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Courses List */}
+      <div className="space-y-2 mb-4">
+        {(semester.courses || []).length === 0 ? (
+          <p className="py-4 text-center text-xs italic text-slate-500">
+            No courses recorded in this semester yet. Use the form below or AI import.
+          </p>
+        ) : (
+          semester.courses.map(course => (
+            <div
+              key={course.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/5 bg-black/20 px-4 py-3"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  {course.course_code && (
+                    <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-xs font-bold text-slate-300">
+                      {course.course_code}
+                    </span>
+                  )}
+                  <p className="truncate font-semibold text-white text-sm">{course.course_name}</p>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {course.credit_hours} Credit Hours · Grade Point: {getGradePoint(course.grade).toFixed(4)}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="grid h-8 w-10 place-items-center rounded-xl bg-theme-500/20 font-bold text-theme-300 border border-theme-500/30">
+                  {course.grade}
+                </span>
+
+                <button
+                  onClick={() => onDeleteCourse(semester.id, course.id)}
+                  className="p-1.5 text-slate-500 hover:text-red-400"
+                  title="Remove course"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Quick Add Course Row */}
+      <form onSubmit={handleAdd} className="grid grid-cols-12 gap-2 pt-2 border-t border-white/5">
+        <div className="col-span-3 sm:col-span-2">
+          <input
+            className="input py-2 text-xs"
+            placeholder="Code (opt)"
+            value={code}
+            onChange={e => setCode(e.target.value)}
+          />
+        </div>
+        <div className="col-span-9 sm:col-span-5">
+          <input
+            className="input py-2 text-xs"
+            placeholder="Course Name *"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            required
+          />
+        </div>
+        <div className="col-span-5 sm:col-span-2">
+          <select
+            className="input py-2 text-xs"
+            value={credits}
+            onChange={e => setCredits(Number(e.target.value))}
+          >
+            {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
+          </select>
+        </div>
+        <div className="col-span-4 sm:col-span-2">
+          <select
+            className="input py-2 text-xs font-bold"
+            value={grade}
+            onChange={e => setGrade(e.target.value)}
+          >
+            {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
+          </select>
+        </div>
+        <div className="col-span-3 sm:col-span-1">
+          <button type="submit" className="btn-primary w-full h-full py-2 flex items-center justify-center" title="Add Course">
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}

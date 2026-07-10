@@ -37,11 +37,11 @@ export default function SettingsPage() {
   const [sendingTest, setSendingTest] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
-  const [digestOptions, setDigestOptions] = useState({ classes: true, assignments: true, exams: true })
+  const [digestOptions, setDigestOptions] = useState({ classes: true, assignments: true, exams: true, results: true })
   const [sendingDigest, setSendingDigest] = useState(false)
 
   async function sendAcademicEmail() {
-    if (!digestOptions.classes && !digestOptions.assignments && !digestOptions.exams) {
+    if (!digestOptions.classes && !digestOptions.assignments && !digestOptions.exams && !digestOptions.results) {
       return showToast('Please select at least one planner section to include.', 'warning')
     }
     setSendingDigest(true)
@@ -281,6 +281,33 @@ export default function SettingsPage() {
         ['Title', 'Time', 'Repeat Type', 'Status'],
         remindersData,
         'No reminders found.'
+      )
+
+      // 5. TAR UMT Exam Results & CGPA
+      let semRecords = []
+      try {
+        const cachedSems = localStorage.getItem('axon_exam_results_semesters')
+        if (cachedSems) semRecords = JSON.parse(cachedSems)
+      } catch (e) {
+        semRecords = []
+      }
+      const examResultsData = []
+      semRecords.forEach(sem => {
+        (sem.courses || []).forEach(c => {
+          examResultsData.push([
+            sem.name,
+            c.course_code || '-',
+            c.course_name,
+            String(c.credit_hours),
+            c.grade
+          ])
+        })
+      })
+      addSectionTable(
+        'TAR UMT Exam Results & Semesters',
+        ['Semester', 'Code', 'Course Name', 'Credits', 'Grade'],
+        examResultsData,
+        'No semester exam results found.'
       )
 
       // Add Page Numbers/Footer dynamically on each page
@@ -557,6 +584,7 @@ export default function SettingsPage() {
             <ToggleRow label="Include Weekly Timetable" checked={digestOptions.classes} onChange={next => setDigestOptions(prev => ({ ...prev, classes: next }))} />
             <ToggleRow label="Include Pending Assignments" checked={digestOptions.assignments} onChange={next => setDigestOptions(prev => ({ ...prev, assignments: next }))} />
             <ToggleRow label="Include Exam Schedules" checked={digestOptions.exams} onChange={next => setDigestOptions(prev => ({ ...prev, exams: next }))} />
+            <ToggleRow label="Include Exam Results & CGPA" checked={digestOptions.results} onChange={next => setDigestOptions(prev => ({ ...prev, results: next }))} />
           </div>
           <button className="btn-primary w-full mt-4" onClick={sendAcademicEmail} disabled={sendingDigest}>
             <Mail className="h-4 w-4" /> {sendingDigest ? 'Sending Email...' : 'Email Academic Report'}

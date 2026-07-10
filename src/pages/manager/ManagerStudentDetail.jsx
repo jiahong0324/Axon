@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Pencil } from 'lucide-react'
+import { ArrowLeft, Download, Pencil, Award } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { Link, useParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
@@ -11,6 +11,7 @@ import { useToast } from '../../components/Toast'
 import { downloadStudentReport } from '../../lib/generateReport'
 import { supabase } from '../../lib/supabase'
 import { dateLabel, days, daysFromToday, formatTime, initials } from '../../lib/utils'
+import { calculateOverallCGPA } from '../../lib/tarumtGrading'
 
 const tabs = ['Timetable', 'Assignments', 'Exams & Results', 'Activity']
 const resultInitial = { score: '', grade: 'A', remarks: '' }
@@ -22,6 +23,7 @@ export default function ManagerStudentDetail() {
   const [assignments, setAssignments] = useState([])
   const [exams, setExams] = useState([])
   const [results, setResults] = useState([])
+  const [semesters, setSemesters] = useState([])
   const [activity, setActivity] = useState([])
   const [activeTab, setActiveTab] = useState('Timetable')
   const [editing, setEditing] = useState(false)
@@ -32,13 +34,15 @@ export default function ManagerStudentDetail() {
   useEffect(() => { loadDetail() }, [studentId])
 
   async function loadDetail() {
-    const [studentRes, classesRes, assignmentsRes, examsRes, resultsRes, activityRes] = await Promise.all([
+    const [studentRes, classesRes, assignmentsRes, examsRes, resultsRes, activityRes, semsRes, coursesRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', studentId).single(),
       supabase.from('classes').select('*').eq('user_id', studentId),
       supabase.from('assignments').select('*').eq('user_id', studentId).order('deadline'),
       supabase.from('exams').select('*').eq('user_id', studentId).order('exam_date'),
       supabase.from('exam_results').select('*').eq('student_id', studentId),
-      supabase.from('activity_log').select('*').eq('user_id', studentId).order('created_at', { ascending: false })
+      supabase.from('activity_log').select('*').eq('user_id', studentId).order('created_at', { ascending: false }),
+      supabase.from('student_semesters').select('*').eq('user_id', studentId).order('created_at'),
+      supabase.from('student_semester_courses').select('*').eq('user_id', studentId).order('created_at')
     ])
     setStudent(studentRes.data)
     setClasses(classesRes.data || [])
@@ -46,6 +50,12 @@ export default function ManagerStudentDetail() {
     setExams(examsRes.data || [])
     setResults(resultsRes.data || [])
     setActivity(activityRes.data || [])
+
+    const sems = (semsRes.data || []).map(s => ({
+      ...s,
+      courses: (coursesRes.data || []).filter(c => c.semester_id === s.id)
+    }))
+    setSemesters(sems)
   }
 
   const resultByExam = useMemo(() => new Map(results.map(result => [result.exam_id, result])), [results])
@@ -94,7 +104,7 @@ export default function ManagerStudentDetail() {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <button className="btn-ghost" onClick={() => setEditing(true)}><Pencil className="h-4 w-4" /> Edit Student</button>
-            <button className="manager-primary-btn" onClick={() => downloadStudentReport({ student, classes, assignments, exams, examResults: results })}><Download className="h-4 w-4" /> Export PDF Report</button>
+            <button className="manager-primary-btn" onClick={() => downloadStudentReport({ student, classes, assignments, exams, examResults: results, semesters })}><Download className="h-4 w-4" /> Export PDF Report</button>
           </div>
         </div>
       </header>
@@ -105,7 +115,7 @@ export default function ManagerStudentDetail() {
 
       {activeTab === 'Timetable' && <TimetableTab classes={classes} />}
       {activeTab === 'Assignments' && <AssignmentsTab assignments={assignments} />}
-      {activeTab === 'Exams & Results' && <ExamsTab exams={exams} resultByExam={resultByExam} openResult={openResult} />}
+      {activeTab === 'Exams & Results' && <ExamsTab exams={exams} resultByExam={resultByExam} openResult={openResult} semesters={semesters} />}
       {activeTab === 'Activity' && <ActivityTab activity={activity} />}
 
       {editing && <EditStudentPanel student={student} onClose={() => setEditing(false)} onSaved={loadDetail} />}
@@ -134,12 +144,59 @@ function AssignmentsTab({ assignments }) {
   return <section className="grid gap-4 xl:grid-cols-3">{statuses.map(status => <div key={status} className="card min-h-[360px]"><h2 className="mb-4 font-semibold">{status}</h2><div className="space-y-3">{assignments.filter(a => a.status === status).map(item => <article key={item.id} className="rounded-xl border border-white/10 p-3"><div className="mb-2 flex items-start justify-between gap-2"><p className="font-semibold">{item.title}</p><PriorityBadge priority={item.priority} /></div><p className="muted">{item.subject}</p><CountdownBadge deadline={item.deadline} status={item.status} /></article>)}</div></div>)}</section>
 }
 
-function ExamsTab({ exams, resultByExam, openResult }) {
-  return <section className="grid gap-4 xl:grid-cols-2">{exams.map(exam => {
-    const result = resultByExam.get(exam.id)
-    const isPast = daysFromToday(exam.exam_date) < 0
-    return <article key={exam.id} className="card"><div className="mb-3 flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-bold">{exam.subject}</h3><p className="muted">{exam.exam_type} · {dateLabel(exam.exam_date)} · {exam.venue || 'TBA'}</p></div>{isPast && <button className="manager-primary-btn px-4 py-2 text-sm" onClick={() => openResult(exam)}>{result ? 'Edit Result' : 'Add Result'}</button>}</div>{result && <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3"><span className={`mr-3 text-2xl font-bold ${Number(result.score) >= 60 ? 'text-emerald-400' : 'text-red-400'}`}>{result.score}</span><span className="rounded-full bg-theme-500/20 px-2 py-0.5 text-sm font-semibold text-theme-300">{result.grade}</span>{result.remarks && <p className="muted mt-2 italic">{result.remarks}</p>}</div>}</article>
-  })}</section>
+function ExamsTab({ exams, resultByExam, openResult, semesters = [] }) {
+  const { cgpa, totalCredits } = calculateOverallCGPA(semesters)
+  return (
+    <div className="space-y-6">
+      <div className="card border-l-4 border-l-amber-400 bg-gradient-to-r from-amber-500/10 to-transparent">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-white flex items-center gap-2"><Award className="h-5 w-5 text-amber-400" /> TAR UMT Academic Standing</h3>
+            <p className="text-sm text-slate-400">Calculated across {semesters.length} semester record(s) ({totalCredits} total credit hours)</p>
+          </div>
+          <div className="text-right">
+            <span className="text-3xl font-black text-amber-400">{cgpa}</span>
+            <span className="block text-xs text-slate-400 uppercase tracking-wider font-semibold">Cumulative CGPA</span>
+          </div>
+        </div>
+      </div>
+
+      {semesters.length > 0 && (
+        <section className="space-y-4">
+          <h3 className="text-lg font-bold text-white">Semester Academic Records</h3>
+          <div className="grid gap-4 xl:grid-cols-2">
+            {semesters.map(sem => (
+              <div key={sem.id} className="card">
+                <div className="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
+                  <h4 className="font-bold text-white">{sem.name}</h4>
+                  <span className="text-sm font-semibold text-amber-400">GPA: {sem.gpa ?? '-'}</span>
+                </div>
+                <div className="space-y-2">
+                  {(sem.courses || []).map((c, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-sm rounded-lg bg-white/5 px-3 py-2">
+                      <div>
+                        <p className="font-medium text-white">{c.course_code ? `${c.course_code} - ` : ''}{c.course_name}</p>
+                        <p className="text-xs text-slate-400">{c.credit_hours} Credits</p>
+                      </div>
+                      <span className="rounded-md bg-amber-500/20 px-2.5 py-1 text-xs font-bold text-amber-300">{c.grade}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        {exams.map(exam => {
+          const result = resultByExam.get(exam.id)
+          const isPast = daysFromToday(exam.exam_date) < 0
+          return <article key={exam.id} className="card"><div className="mb-3 flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-bold">{exam.subject}</h3><p className="muted">{exam.exam_type} · {dateLabel(exam.exam_date)} · {exam.venue || 'TBA'}</p></div>{isPast && <button className="manager-primary-btn px-4 py-2 text-sm" onClick={() => openResult(exam)}>{result ? 'Edit Result' : 'Add Result'}</button>}</div>{result && <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3"><span className={`mr-3 text-2xl font-bold ${Number(result.score) >= 60 ? 'text-emerald-400' : 'text-red-400'}`}>{result.score}</span><span className="rounded-full bg-theme-500/20 px-2 py-0.5 text-sm font-semibold text-theme-300">{result.grade}</span>{result.remarks && <p className="muted mt-2 italic">{result.remarks}</p>}</div>}</article>
+        })}
+      </section>
+    </div>
+  )
 }
 
 function ActivityTab({ activity }) {
