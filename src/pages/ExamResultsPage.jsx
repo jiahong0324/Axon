@@ -228,19 +228,72 @@ export default function ExamResultsPage() {
   }
 
   async function handleAIResultImport(extractedItems) {
+    if (!Array.isArray(extractedItems) || extractedItems.length === 0) {
+      setAnalyzerOpen(false)
+      return
+    }
+
     const semId = targetSemesterId || semesters[0]?.id
-    if (!semId) {
+    if (!semId && activeTab !== 'calculator') {
       showToast('Please create a semester first.', 'warning')
       return
     }
-    for (const item of extractedItems) {
-      await handleAddCourse(semId, {
-        course_code: item.course_code || '',
-        course_name: item.course_name || 'Imported Course',
-        credit_hours: Number(item.credit_hours) || 3,
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (activeTab === 'calculator') {
+      const importedCalcRows = extractedItems.map((item, idx) => ({
+        id: Date.now() + idx,
+        name: `${item.course_code ? item.course_code + ' - ' : ''}${item.course_name || 'Imported Course'}`,
+        credits: Number(item.credit_hours) || 3,
         grade: item.grade || 'A'
-      })
+      }))
+      const existingFilledCalc = calcRows.filter(r => r.name?.trim() !== '' || r.grade !== '')
+      setCalcRows([...existingFilledCalc, ...importedCalcRows])
     }
+
+    if (semId) {
+      const newCourses = []
+      for (let i = 0; i < extractedItems.length; i++) {
+        const item = extractedItems[i]
+        const newCourse = {
+          id: `course-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`,
+          semester_id: semId,
+          course_code: item.course_code || '',
+          course_name: item.course_name || 'Imported Course',
+          credit_hours: Number(item.credit_hours) || 3,
+          grade: item.grade || 'A'
+        }
+
+        if (user && typeof semId === 'string' && !semId.startsWith('sem-')) {
+          const { data } = await supabase
+            .from('student_semester_courses')
+            .insert({
+              semester_id: semId,
+              user_id: user.id,
+              course_code: newCourse.course_code,
+              course_name: newCourse.course_name,
+              credit_hours: newCourse.credit_hours,
+              grade: newCourse.grade
+            })
+            .select()
+            .single()
+          if (data) newCourse.id = data.id
+        }
+        newCourses.push(newCourse)
+      }
+
+      const nextList = semesters.map(s => {
+        if (s.id !== semId) return s
+        const existingFilled = (s.courses || []).filter(c => c.course_name?.trim() !== '' || c.grade !== '')
+        return {
+          ...s,
+          courses: [...existingFilled, ...newCourses]
+        }
+      })
+      saveSemestersToLocal(nextList)
+    }
+
     setAnalyzerOpen(false)
     showToast(`Successfully imported ${extractedItems.length} courses!`, 'success')
   }
