@@ -59,3 +59,94 @@ export function calculateOverallCGPA(semestersWithCourses = []) {
     overallPoints: Number(overallPoints.toFixed(4))
   }
 }
+
+export function getAcademicStanding(cgpaVal, totalCredits = 0) {
+  const num = Number(cgpaVal) || 0
+  if (totalCredits === 0) {
+    return {
+      title: 'No Recorded Credits',
+      badge: 'Getting Started',
+      color: 'from-slate-500 to-slate-700',
+      textColor: 'text-slate-300',
+      borderColor: 'border-slate-500/30',
+      bgLight: 'bg-slate-500/10',
+      description: 'Add semester records or import your slip to track CGPA standing.'
+    }
+  }
+  if (num >= 3.7500) {
+    return {
+      title: 'First Class Honours',
+      badge: "President's List Potential",
+      color: 'from-amber-400 via-yellow-400 to-orange-500',
+      textColor: 'text-amber-400',
+      borderColor: 'border-amber-500/40',
+      bgLight: 'bg-amber-500/15',
+      description: 'Exceptional academic excellence exceeding 3.7500 TAR UMT CGPA threshold.'
+    }
+  }
+  if (num >= 3.0000) {
+    return {
+      title: 'Second Class Upper Honours',
+      badge: "Dean's List Standing",
+      color: 'from-emerald-400 to-teal-500',
+      textColor: 'text-emerald-400',
+      borderColor: 'border-emerald-500/40',
+      bgLight: 'bg-emerald-500/15',
+      description: 'Strong merit standing across semester coursework.'
+    }
+  }
+  if (num >= 2.5000) {
+    return {
+      title: 'Second Class Lower Honours',
+      badge: 'Good Standing',
+      color: 'from-blue-400 to-cyan-500',
+      textColor: 'text-blue-400',
+      borderColor: 'border-blue-500/40',
+      bgLight: 'bg-blue-500/15',
+      description: 'Satisfactory progress toward TAR UMT degree completion.'
+    }
+  }
+  if (num >= 2.0000) {
+    return {
+      title: 'Third Class Honours / Pass',
+      badge: 'Passing Standing',
+      color: 'from-purple-400 to-indigo-500',
+      textColor: 'text-purple-400',
+      borderColor: 'border-purple-500/40',
+      bgLight: 'bg-purple-500/15',
+      description: 'Meeting minimum graduation CGPA requirement (2.0000).'
+    }
+  }
+  return {
+    title: 'Academic Probation Risk',
+    badge: 'Action Required',
+    color: 'from-red-400 to-rose-600',
+    textColor: 'text-red-400',
+    borderColor: 'border-red-500/40',
+    bgLight: 'bg-red-500/15',
+    description: 'CGPA below 2.0000 graduation threshold.'
+  }
+}
+
+export function getGradeBadgeStyle(gradeStr) {
+  const g = String(gradeStr || '').trim().toUpperCase()
+  switch (g) {
+    case 'A+':
+    case 'A':
+      return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+    case 'A-':
+      return 'bg-teal-500/15 text-teal-300 border-teal-500/30'
+    case 'B+':
+    case 'B':
+      return 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+    case 'B-':
+      return 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30'
+    case 'C+':
+    case 'C':
+      return 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+    case 'F':
+      return 'bg-red-500/15 text-red-300 border-red-500/30'
+    default:
+      return 'bg-white/5 text-slate-400 border-white/10'
+  }
+}
