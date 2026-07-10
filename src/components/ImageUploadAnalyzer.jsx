@@ -54,8 +54,10 @@ Return ONLY valid JSON array. No markdown, no explanation.`
 const RESULT_PROMPT = `
 Analyze this university exam result slip, academic transcript, or student portal screenshot.
 Extract ALL course results exhaustively and return ONLY a valid JSON array, no markdown, no explanation.
+IMPORTANT: If the screenshot shows multiple semesters (e.g. "Year 1 Semester 1", "Year 1 Semester 2", "Semester 1 2023/2024", etc.), identify which semester each course belongs to and put it in "semester_name". If only one semester is shown or no semester name is visible, use the visible semester title or default to "Year 1 Semester 1".
 Each object must have:
 {
+  "semester_name": "semester name e.g. Year 1 Semester 1",
   "course_code": "course code string or empty string",
   "course_name": "full course title string",
   "credit_hours": 3,

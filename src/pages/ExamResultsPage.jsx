@@ -233,12 +233,6 @@ export default function ExamResultsPage() {
       return
     }
 
-    const semId = targetSemesterId || semesters[0]?.id
-    if (!semId && activeTab !== 'calculator') {
-      showToast('Please create a semester first.', 'warning')
-      return
-    }
-
     const { data: { user } } = await supabase.auth.getUser()
 
     if (activeTab === 'calculator') {
@@ -252,7 +246,9 @@ export default function ExamResultsPage() {
       setCalcRows([...existingFilledCalc, ...importedCalcRows])
     }
 
-    if (semId) {
+    // CASE 1: Specific Semester Import (User clicked "AI Import" inside a specific Semester Card)
+    if (targetSemesterId) {
+      const semId = targetSemesterId
       const newCourses = []
       for (let i = 0; i < extractedItems.length; i++) {
         const item = extractedItems[i]
@@ -291,6 +287,79 @@ export default function ExamResultsPage() {
           courses: [...existingFilled, ...newCourses]
         }
       })
+      saveSemestersToLocal(nextList)
+    } else {
+      // CASE 2: Global AI Import Screenshot (User clicked top-right "AI Import Screenshot")
+      // Automatically separate courses into multiple semesters if detected!
+      const grouped = {}
+      const defaultSemName = semesters[0]?.name || 'Year 1 Semester 1'
+      extractedItems.forEach(item => {
+        const semName = item.semester_name?.trim() || defaultSemName
+        if (!grouped[semName]) grouped[semName] = []
+        grouped[semName].push(item)
+      })
+
+      let nextList = [...semesters]
+      for (const [semName, items] of Object.entries(grouped)) {
+        let targetSem = nextList.find(s => s.name.trim().toLowerCase() === semName.toLowerCase())
+        if (!targetSem) {
+          // Create new semester if it doesn't exist
+          const newSemId = `sem-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`
+          targetSem = {
+            id: newSemId,
+            name: semName,
+            user_id: user?.id,
+            courses: []
+          }
+          if (user) {
+            const { data } = await supabase
+              .from('student_semesters')
+              .insert({ user_id: user.id, name: semName })
+              .select()
+              .single()
+            if (data) targetSem.id = data.id
+          }
+          nextList.push(targetSem)
+        }
+
+        const newCourses = []
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i]
+          const newCourse = {
+            id: `course-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`,
+            semester_id: targetSem.id,
+            course_code: item.course_code || '',
+            course_name: item.course_name || 'Imported Course',
+            credit_hours: Number(item.credit_hours) || 3,
+            grade: item.grade || 'A'
+          }
+          if (user && typeof targetSem.id === 'string' && !targetSem.id.startsWith('sem-')) {
+            const { data } = await supabase
+              .from('student_semester_courses')
+              .insert({
+                semester_id: targetSem.id,
+                user_id: user.id,
+                course_code: newCourse.course_code,
+                course_name: newCourse.course_name,
+                credit_hours: newCourse.credit_hours,
+                grade: newCourse.grade
+              })
+              .select()
+              .single()
+            if (data) newCourse.id = data.id
+          }
+          newCourses.push(newCourse)
+        }
+
+        nextList = nextList.map(s => {
+          if (s.id !== targetSem.id) return s
+          const existingFilled = (s.courses || []).filter(c => c.course_name?.trim() !== '' || c.grade !== '')
+          return {
+            ...s,
+            courses: [...existingFilled, ...newCourses]
+          }
+        })
+      }
       saveSemestersToLocal(nextList)
     }
 
@@ -360,7 +429,7 @@ export default function ExamResultsPage() {
       {/* TAB 1: MY SEMESTER RECORDS */}
       {activeTab === 'records' && (
         <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 w-full">
             <button
               onClick={() => setShowAddSemModal(true)}
               className="btn-add text-sm"
@@ -370,7 +439,7 @@ export default function ExamResultsPage() {
 
             <button
               onClick={() => {
-                setTargetSemesterId(semesters[0]?.id || null)
+                setTargetSemesterId(null)
                 setAnalyzerOpen(true)
               }}
               className="btn-import text-sm"
