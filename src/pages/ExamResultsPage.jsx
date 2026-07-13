@@ -66,7 +66,7 @@ export default function ExamResultsPage() {
   async function syncAllToSupabase(localList) {
     if (isSyncingRef.current) return localList
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user || !Array.isArray(localList) || localList.length === 0) return localList
+    if (!user || !Array.isArray(localList)) return localList
 
     isSyncingRef.current = true
     try {
@@ -192,19 +192,10 @@ export default function ExamResultsPage() {
     }
 
     // 2. Read user_metadata from Supabase Auth
-    const metaList = Array.isArray(user?.user_metadata?.axon_exam_results_semesters)
-      ? user.user_metadata.axon_exam_results_semesters
-      : []
+    const hasCloudMeta = Array.isArray(user?.user_metadata?.axon_exam_results_semesters)
+    const metaList = hasCloudMeta ? user.user_metadata.axon_exam_results_semesters : []
 
-    // 3. Preserve lock/submitted states explicitly
-    const lockMap = {}
-    for (const sem of [...localList, ...metaList]) {
-      if (sem && sem.name && sem.is_submitted !== undefined) {
-        lockMap[sem.name.trim().toLowerCase()] = Boolean(sem.is_submitted)
-      }
-    }
-
-    // 4. Read SQL tables
+    // 3. Read SQL tables
     const { data: semsData } = await supabase
       .from('student_semesters')
       .select('*')
@@ -221,41 +212,25 @@ export default function ExamResultsPage() {
     if (semsData && semsData.length > 0) {
       tableList = semsData.map(s => {
         const semCourses = (coursesData || []).filter(c => c.semester_id === s.id)
-        const key = (s.name || '').trim().toLowerCase()
-        const hasGradedCourses = semCourses.some(c => c.grade && c.grade !== '')
         return {
           ...s,
-          is_submitted: lockMap[key] !== undefined ? lockMap[key] : hasGradedCourses,
-          courses: semCourses.length > 0 ? semCourses : createDefaultThreeCourses(s.id)
+          is_submitted: Boolean(s.is_submitted || semCourses.some(c => c.grade && c.grade !== '')),
+          courses: semCourses
         }
       })
     }
 
-    // 5. Merge all lists by semester name or id so no laptop/mobile data is ever lost
-    const mergedMap = new Map()
-    for (const sem of [...localList, ...metaList, ...tableList]) {
-      if (!sem || !sem.name) continue
-      const key = sem.name.trim().toLowerCase()
-      if (!mergedMap.has(key)) {
-        mergedMap.set(key, {
-          ...sem,
-          courses: (sem.courses && sem.courses.length > 0) ? sem.courses : createDefaultThreeCourses(sem.id)
-        })
-      } else {
-        const existing = mergedMap.get(key)
-        // If the incoming semester has courses with grades or is submitted, prefer/merge it
-        const existingHasGrades = (existing.courses || []).some(c => c.grade && c.grade !== '')
-        const incomingHasGrades = (sem.courses || []).some(c => c.grade && c.grade !== '')
-        if (incomingHasGrades && !existingHasGrades) {
-          mergedMap.set(key, {
-            ...sem,
-            is_submitted: lockMap[key] !== undefined ? lockMap[key] : sem.is_submitted
-          })
-        }
-      }
+    // 4. Source of truth resolution:
+    // When logged in, cloud metadata (or SQL tables) is the authoritative list across devices so deleted semesters stay deleted on all devices
+    let merged = []
+    if (hasCloudMeta) {
+      merged = metaList
+    } else if (tableList.length > 0) {
+      merged = tableList
+    } else {
+      merged = localList
     }
 
-    let merged = Array.from(mergedMap.values())
     const hasRealSemester = merged.some(s => s.name !== 'Year 1 Semester 1' || (s.courses || []).some(c => c.grade && c.grade !== ''))
     if (hasRealSemester) {
       merged = merged.filter(s => !(s.name === 'Year 1 Semester 1' && (s.courses || []).every(c => !c.grade || c.grade === '')))
@@ -296,14 +271,18 @@ export default function ExamResultsPage() {
     })
     if (!ok) return
 
+    const targetSem = semesters.find(s => s.id === id)
     const nextList = semesters.filter(s => s.id !== id)
     saveAndAutoSync(nextList)
     showToast('Semester deleted.', 'info')
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (user && typeof id === 'string' && !id.startsWith('sem-')) {
+    if (user) {
       await supabase.from('student_semester_courses').delete().eq('semester_id', id)
       await supabase.from('student_semesters').delete().eq('id', id)
+      if (targetSem && targetSem.name) {
+        await supabase.from('student_semesters').delete().eq('name', targetSem.name).eq('user_id', user.id)
+      }
     }
   }
 
