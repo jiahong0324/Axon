@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { logActivity } from './logActivity'
 
-export const ACTIVITY_TYPES = ['Gym', 'Run', 'Sports', 'Yoga', 'Swim', 'Walk', 'Other']
+export const ACTIVITY_TYPES = ['Gym', 'Yoga', 'Run', 'Other']
 
 export const ACTIVITY_ICONS = {
   Gym: '🏋️',

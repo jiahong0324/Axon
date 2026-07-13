@@ -430,6 +430,18 @@ export default function ExamResultsPage() {
           return { ...s, is_submitted: true, courses: [...existingFilled, ...newCourses] }
         })
       }
+
+      // Automatically remove default/empty semesters (like an empty Year 1 Semester 1) once real semester results are imported
+      const hasFilledSem = nextList.some(s => (s.courses || []).some(c => c.grade && c.grade !== ''))
+      if (hasFilledSem) {
+        const toRemove = nextList.filter(s => (s.courses || []).length === 0 || (s.courses || []).every(c => !c.grade && !c.course_name?.trim()))
+        for (const rem of toRemove) {
+          if (typeof rem.id === 'string' && !rem.id.startsWith('sem-')) {
+            supabase.from('student_semesters').delete().eq('id', rem.id)
+          }
+        }
+        nextList = nextList.filter(s => (s.courses || []).some(c => (c.grade && c.grade !== '') || c.course_name?.trim() !== ''))
+      }
     }
 
     saveAndAutoSync(nextList)
@@ -877,20 +889,23 @@ function SemesterCard({
             (semester.courses || []).map((course, idx) => (
               <div
                 key={course.id || idx}
-                className="flex items-center justify-between py-3.5 text-sm sm:text-base"
+                className="flex items-center justify-between py-3.5 text-sm sm:text-base gap-3"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0 max-w-[65%]">
                   {course.course_code && (
-                    <span className="font-mono text-xs font-bold uppercase rounded bg-white/5 px-2 py-1 text-slate-400">
+                    <span className="font-mono text-xs font-bold uppercase rounded bg-white/5 px-2.5 py-1 text-slate-400 shrink-0">
                       {course.course_code}
                     </span>
                   )}
-                  <span className="font-semibold text-white">
+                  <span className="font-semibold text-white truncate">
                     {course.course_name || 'Course'}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-4">
+                {/* Subtle dotted connector line filling the center space */}
+                <div className="hidden sm:block flex-1 border-b border-dotted border-white/10 mx-4 my-auto"></div>
+
+                <div className="flex items-center gap-4 shrink-0">
                   <span className="text-xs sm:text-sm font-medium text-slate-400">
                     {course.credit_hours || 0} Credits
                   </span>
@@ -925,6 +940,9 @@ function SemesterCard({
                     onChange={e => onUpdateCourse(semester.id, course.id, { course_name: e.target.value })}
                   />
                 </div>
+
+                {/* Subtle dotted connector line in edit mode too */}
+                <div className="hidden sm:block flex-1 border-b border-dotted border-white/10 mx-4 my-auto"></div>
 
                 <div className="flex items-center gap-2.5 shrink-0">
                   <select

@@ -322,7 +322,7 @@ export default function ExercisePage() {
                 Level & Rank Status
               </p>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-white tracking-tight">
+                <span className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
                   {levelInfo.title}
                 </span>
               </div>
@@ -444,26 +444,28 @@ export default function ExercisePage() {
             </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="max-h-[238px] sm:max-h-none overflow-y-auto pr-1 sm:pr-0 grid gap-3 sm:grid-cols-2 scrollbar-thin">
             {stats.badgeStatuses.map(b => (
               <button
                 key={b.id}
                 onClick={() => setSelectedBadge(b)}
                 className={`w-full flex items-center justify-between rounded-xl px-4 py-3.5 text-left transition-all border ${
                   b.unlocked
-                    ? 'bg-amber-500/[0.07] border-amber-500/35 hover:bg-amber-500/15 shadow-md'
-                    : 'bg-[#0e1626] border-white/5 hover:border-white/10'
+                    ? 'bg-[#0e1626] border-white/10 hover:border-white/20 shadow-md'
+                    : 'bg-[#0a101d]/60 border-white/[0.04] opacity-45 grayscale hover:opacity-75'
                 }`}
               >
                 <div className="flex items-center gap-3.5">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500/15 text-xl shrink-0">
+                  <span className={`grid h-10 w-10 place-items-center rounded-xl text-xl shrink-0 ${
+                    b.unlocked ? 'bg-amber-500/15' : 'bg-white/5'
+                  }`}>
                     {b.icon}
                   </span>
                   <div>
-                    <p className="font-bold text-sm text-slate-200">
+                    <p className={`font-bold text-sm ${b.unlocked ? 'text-white' : 'text-slate-400'}`}>
                       {t(b.titleKey)}
                     </p>
-                    <p className={`text-xs mt-0.5 ${b.unlocked ? 'font-bold text-amber-400' : 'text-slate-400'}`}>
+                    <p className={`text-xs mt-0.5 ${b.unlocked ? 'font-bold text-amber-400' : 'text-slate-500'}`}>
                       {b.unlocked ? 'Unlocked ✨' : 'Locked'}
                     </p>
                   </div>
@@ -563,6 +565,9 @@ export default function ExercisePage() {
             </div>
           )}
         </section>
+
+        {/* Explicit bottom spacer ensuring full scroll clearance on mobile above floating check-in bar */}
+        <div className="h-56 sm:h-32 w-full shrink-0 pointer-events-none" />
       </div>
 
       {/* STICKY BOTTOM CHECK-IN BAR (bottom-24 on mobile to clear bottom tab bar, md:left-60 md:right-0 centered on laptop) */}
