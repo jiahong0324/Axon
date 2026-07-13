@@ -598,42 +598,40 @@ export default function ExamResultsPage() {
         </div>
 
         {/* Overall CGPA Badge */}
-        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-theme-500/10 text-theme-400">
-            <Award className="h-6 w-6" />
-          </div>
+        <div className="flex items-center gap-4 rounded-2xl border-l-4 border-l-theme-500 bg-[#131b2e] px-5 py-4">
+          <Award className="h-7 w-7 text-theme-400 shrink-0" />
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Overall CGPA</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-white">{overall.cgpa}</span>
-              <span className="text-xs font-semibold text-slate-400">({overall.overallCredits} Credits)</span>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Overall CGPA</p>
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span className="text-3xl font-bold text-white">{overall.cgpa}</span>
+              <span className="text-xs font-medium text-slate-400">({overall.overallCredits} Credits)</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Simple 2-Tab Switcher */}
-      <div className="mb-6 flex w-full sm:w-fit rounded-2xl border border-white/10 bg-white/[0.02] p-1">
+      <div className="mb-6 flex flex-wrap gap-3">
         <button
           onClick={() => setActiveTab('records')}
-          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all ${
             activeTab === 'records'
-              ? 'bg-theme-500 text-white shadow-md'
-              : 'text-slate-400 hover:text-white'
+              ? 'border-l-4 border-l-theme-500 bg-[#131b2e] text-white shadow-md'
+              : 'border-l-4 border-l-transparent bg-[#111827] text-slate-400 hover:text-white'
           }`}
         >
-          <BookOpen className="h-4 w-4 shrink-0" />
+          <BookOpen className={`h-4 w-4 shrink-0 ${activeTab === 'records' ? 'text-theme-400' : 'text-slate-400'}`} />
           <span>My Semesters</span>
         </button>
         <button
           onClick={() => setActiveTab('calculator')}
-          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all ${
             activeTab === 'calculator'
-              ? 'bg-theme-500 text-white shadow-md'
-              : 'text-slate-400 hover:text-white'
+              ? 'border-l-4 border-l-purple-500 bg-[#131b2e] text-white shadow-md'
+              : 'border-l-4 border-l-transparent bg-[#111827] text-slate-400 hover:text-white'
           }`}
         >
-          <Calculator className="h-4 w-4 shrink-0" />
+          <Calculator className={`h-4 w-4 shrink-0 ${activeTab === 'calculator' ? 'text-purple-400' : 'text-slate-400'}`} />
           <span>Quick Calculator</span>
         </button>
       </div>
@@ -644,9 +642,10 @@ export default function ExamResultsPage() {
           <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:justify-between">
             <button
               onClick={() => setShowAddSemModal(true)}
-              className="btn-add flex items-center justify-center gap-1.5 py-3 text-xs sm:text-sm font-semibold shadow-md"
+              className="flex items-center justify-center gap-2 rounded-xl border-l-4 border-l-theme-500 bg-[#131b2e] px-5 py-3 text-xs sm:text-sm font-semibold text-white hover:bg-[#18233c] transition-all shadow-md"
             >
-              <Plus className="h-4 w-4 shrink-0" /> <span>Add Semester</span>
+              <Plus className="h-4 w-4 text-theme-400 shrink-0" />
+              <span>Add Semester</span>
             </button>
 
             <button
@@ -654,14 +653,15 @@ export default function ExamResultsPage() {
                 setTargetSemesterId(null)
                 setAnalyzerOpen(true)
               }}
-              className="btn-import flex items-center justify-center gap-1.5 py-3 text-xs sm:text-sm font-semibold shadow-md"
+              className="flex items-center justify-center gap-2 rounded-xl border-l-4 border-l-purple-500 bg-[#131b2e] px-5 py-3 text-xs sm:text-sm font-semibold text-white hover:bg-[#18233c] transition-all shadow-md"
             >
-              <Sparkles className="h-4 w-4 shrink-0" /> <span>AI Import Screenshot</span>
+              <Sparkles className="h-4 w-4 text-purple-400 shrink-0" />
+              <span>AI Import Screenshot</span>
             </button>
           </div>
 
           {semesters.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-white/[0.02] py-16 text-center">
+            <div className="flex flex-col items-center justify-center rounded-2xl border-l-4 border-l-theme-500 bg-[#131b2e] py-16 text-center">
               <BookOpen className="mb-3 h-12 w-12 text-slate-500" />
               <h3 className="text-lg font-bold text-white">No Semester Records</h3>
               <p className="mt-1 text-sm text-slate-400">Click "+ Add Semester" or upload a screenshot to start.</p>
@@ -693,28 +693,29 @@ export default function ExamResultsPage() {
       {activeTab === 'calculator' && (
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Left 2 Cols: Simple Calculator Table */}
-          <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
+          <div className="lg:col-span-2 rounded-2xl border-l-4 border-l-purple-500 bg-[#131b2e] p-5 sm:p-6">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-white">Quick SGPA Calculator</h3>
                 <p className="text-xs text-slate-400">Simulate grades and credit hours instantly</p>
               </div>
-              <div className="rounded-xl bg-theme-500/10 px-4 py-2 border border-theme-500/20 text-right">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-theme-400">Calculated SGPA</span>
-                <p className="text-2xl font-black text-white">{calcGPA.gpa}</p>
+              <div className="flex items-center gap-3 rounded-xl border-l-4 border-l-purple-500 bg-[#0e1626] px-4 py-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Calculated SGPA</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-white mt-0.5">{calcGPA.gpa}</p>
+                </div>
               </div>
             </div>
 
             <div className="space-y-3">
-              {/* ULTRA-CLEAN APPLE/LINEAR MOBILE LIST (< md) */}
-              <div className="md:hidden divide-y divide-white/10 rounded-2xl border border-white/10 bg-black/20 overflow-hidden">
-                {calcRows.map((row, idx) => (
-                  <div
-                    key={row.id}
-                    className="p-3 flex items-center justify-between gap-2 hover:bg-white/[0.02] transition-colors"
-                  >
+              {calcRows.map((row, idx) => (
+                <div
+                  key={row.id}
+                  className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 rounded-xl border-l-4 border-l-purple-400 bg-[#0e1626] p-3 sm:p-3.5"
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-[180px]">
                     <input
-                      className="bg-transparent flex-1 text-sm font-medium text-white placeholder:text-slate-500 focus:outline-none min-w-0"
+                      className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0"
                       placeholder={`Course #${idx + 1}`}
                       value={row.name}
                       onChange={e => {
@@ -722,119 +723,56 @@ export default function ExamResultsPage() {
                         setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
                       }}
                     />
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <select
-                        className="bg-white/10 border-0 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-200 focus:ring-1 focus:ring-theme-500"
-                        value={row.credits}
-                        onChange={e => {
-                          const val = e.target.value
-                          setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
-                        }}
-                      >
-                        <option value="">Cr</option>
-                        {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Cr</option>)}
-                      </select>
-
-                      <select
-                        className="bg-theme-500/15 border border-theme-500/30 rounded-lg px-2 py-1.5 text-xs font-bold text-emerald-400 focus:ring-1 focus:ring-theme-500"
-                        value={row.grade}
-                        onChange={e => {
-                          const val = e.target.value
-                          setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
-                        }}
-                      >
-                        <option value="">Grd</option>
-                        {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
-                      </select>
-
-                      <button
-                        onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
-                        className="p-1 text-slate-500 hover:text-red-400"
-                        title="Remove row"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
                   </div>
-                ))}
-              </div>
 
-              {/* DESKTOP TABLE VIEW (>= md) */}
-              <div className="hidden md:block space-y-1">
-                <div className="grid grid-cols-12 gap-2 pb-2 text-xs font-semibold text-slate-400 border-b border-white/10">
-                  <span className="col-span-6">Course Name</span>
-                  <span className="col-span-3">Credit</span>
-                  <span className="col-span-2">Grade</span>
-                  <span className="col-span-1 text-right">Del</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <select
+                      className="bg-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                      value={row.credits}
+                      onChange={e => {
+                        const val = e.target.value
+                        setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
+                      }}
+                    >
+                      <option value="">Cr</option>
+                      {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Cr</option>)}
+                    </select>
+
+                    <select
+                      className="bg-emerald-500/15 text-emerald-400 font-bold rounded-lg px-2.5 py-1.5 text-xs sm:text-sm border-0 focus:outline-none"
+                      value={row.grade}
+                      onChange={e => {
+                        const val = e.target.value
+                        setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
+                      }}
+                    >
+                      <option value="">Grd</option>
+                      {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
+                    </select>
+
+                    <button
+                      onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
+                      className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
+                      title="Remove row"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-
-                {calcRows.map((row) => (
-                  <div
-                    key={row.id}
-                    className="grid grid-cols-12 items-center gap-2 py-1.5 border-b border-white/5 last:border-0"
-                  >
-                    <div className="col-span-6">
-                      <input
-                        className="input px-3 py-1.5 text-sm"
-                        value={row.name}
-                        onChange={e => {
-                          const val = e.target.value
-                          setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
-                        }}
-                        placeholder="Course name"
-                      />
-                    </div>
-                    <div className="col-span-3">
-                      <select
-                        className="input px-3 py-1.5 text-sm"
-                        value={row.credits}
-                        onChange={e => {
-                          const val = e.target.value
-                          setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
-                        }}
-                      >
-                        <option value="">Credit</option>
-                        {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
-                    <div className="col-span-2">
-                      <select
-                        className="input px-3 py-1.5 text-sm font-semibold"
-                        value={row.grade}
-                        onChange={e => {
-                          const val = e.target.value
-                          setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
-                        }}
-                      >
-                        <option value="">Grade</option>
-                        {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
-                      </select>
-                    </div>
-                    <div className="col-span-1 text-right">
-                      <button
-                        onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
-                        className="p-1.5 text-slate-500 hover:text-red-400"
-                        title="Remove row"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              ))}
 
               <button
                 onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 py-3 text-xs sm:text-sm font-semibold text-slate-400 hover:border-white/30 hover:text-white transition-all"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-l-4 border-l-purple-500 bg-[#0e1626] py-3 text-xs sm:text-sm font-semibold text-white hover:bg-[#152036] transition-all"
               >
-                <Plus className="h-4 w-4" /> Add Row
+                <Plus className="h-4 w-4 text-purple-400" />
+                <span>Add Row</span>
               </button>
             </div>
           </div>
 
           {/* Right Col: TAR UMT 5.6 Grading Reference Table */}
-          <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-5 sm:p-6">
+          <div className="rounded-2xl border-l-4 border-l-theme-500 bg-[#131b2e] p-5 sm:p-6">
             <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-2">
               TAR UMT Grading Scale
             </h4>
@@ -842,14 +780,14 @@ export default function ExamResultsPage() {
               Applicable to June 2023 intake & onwards
             </p>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {TARUMT_GRADES.map(g => (
                 <div
                   key={g.grade}
-                  className="flex items-center justify-between rounded-xl border border-white/5 bg-black/15 px-3 py-2 text-xs"
+                  className="flex items-center justify-between rounded-xl bg-[#0e1626] px-3 py-2 text-xs"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="grid h-6 w-7 place-items-center rounded bg-theme-500/20 font-bold text-theme-400">
+                    <span className="grid h-6 w-7 place-items-center rounded bg-theme-500/15 font-bold text-theme-400">
                       {g.grade}
                     </span>
                     <span className="font-medium text-slate-300">{g.markRange}</span>
@@ -908,7 +846,7 @@ export default function ExamResultsPage() {
 
 function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDeleteCourse, onDeleteSemester, onAIImport }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-4 sm:p-6 shadow-xl">
+    <div className="rounded-2xl border-l-4 border-l-theme-500 bg-[#131b2e] p-5 sm:p-6 shadow-xl">
       {/* Semester Card Header */}
       <div className="mb-4 sm:mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
         <div>
@@ -919,23 +857,23 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5">
+          <div className="flex items-center gap-1.5 rounded-xl bg-emerald-500/15 px-3 py-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">GPA</span>
-            <span className="font-mono text-sm sm:text-base font-black text-emerald-300">{semStat.gpa}</span>
+            <span className="font-mono text-sm sm:text-base font-bold text-emerald-400">{semStat.gpa}</span>
           </div>
 
           <button
             onClick={onAIImport}
-            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:border-amber-400/30 hover:bg-amber-400/10 hover:text-amber-300 transition-all"
+            className="flex items-center gap-1.5 rounded-xl border-l-4 border-l-purple-500 bg-[#111827] px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-[#18243c] transition-all"
             title="Import from screenshot"
           >
-            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+            <Sparkles className="h-3.5 w-3.5 text-purple-400" />
             <span className="hidden sm:inline">AI Import</span>
           </button>
 
           <button
             onClick={() => onDeleteSemester(semester.id)}
-            className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 hover:border-red-500/30 hover:bg-red-500/15 hover:text-red-400 transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:bg-red-500/15 hover:text-red-400 transition-all"
             title="Delete Semester"
           >
             <Trash2 className="h-4 w-4" />
@@ -944,121 +882,63 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
       </div>
 
       {/* Courses List */}
-      <div className="space-y-2">
-        {/* ULTRA-CLEAN APPLE/LINEAR MOBILE LIST (< md) */}
-        <div className="md:hidden divide-y divide-white/10 rounded-2xl border border-white/10 bg-black/20 overflow-hidden">
-          {(semester.courses || []).map((course, idx) => (
-            <div
-              key={course.id}
-              className="p-3 flex items-center justify-between gap-2 hover:bg-white/[0.02] transition-colors"
-            >
+      <div className="space-y-3">
+        {(semester.courses || []).map((course, idx) => (
+          <div
+            key={course.id}
+            className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 rounded-xl border-l-4 border-l-theme-400 bg-[#0e1626] p-3 sm:p-3.5"
+          >
+            <div className="flex items-center gap-2 flex-1 min-w-[180px]">
               <input
-                className="bg-transparent flex-1 text-sm font-medium text-white placeholder:text-slate-500 focus:outline-none min-w-0"
+                className="w-20 sm:w-24 bg-transparent text-xs sm:text-sm font-medium text-slate-400 placeholder:text-slate-500 focus:outline-none"
+                placeholder="Code (opt)"
+                value={course.course_code || ''}
+                onChange={e => onUpdateCourse(semester.id, course.id, { course_code: e.target.value })}
+              />
+              <input
+                className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0"
                 placeholder={`Course #${idx + 1}`}
                 value={course.course_name || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { course_name: e.target.value })}
               />
-
-              <div className="flex items-center gap-1.5 shrink-0">
-                <select
-                  className="bg-white/10 border-0 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-200 focus:ring-1 focus:ring-theme-500"
-                  value={course.credit_hours || ''}
-                  onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
-                >
-                  <option value="">Cr</option>
-                  {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Cr</option>)}
-                </select>
-
-                <select
-                  className="bg-theme-500/15 border border-theme-500/30 rounded-lg px-2 py-1.5 text-xs font-bold text-emerald-400 focus:ring-1 focus:ring-theme-500"
-                  value={course.grade || ''}
-                  onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
-                >
-                  <option value="">Grd</option>
-                  {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
-                </select>
-
-                <button
-                  onClick={() => onDeleteCourse(semester.id, course.id)}
-                  className="p-1 text-slate-500 hover:text-red-400"
-                  title="Remove course"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
             </div>
-          ))}
-        </div>
 
-        {/* DESKTOP TABLE VIEW (>= md) */}
-        <div className="hidden md:block space-y-1">
-          <div className="grid grid-cols-12 gap-2 pb-2 text-xs font-semibold text-slate-400 border-b border-white/10">
-            <span className="col-span-2">Code (opt)</span>
-            <span className="col-span-5">Course Name</span>
-            <span className="col-span-2">Credit</span>
-            <span className="col-span-2">Grade</span>
-            <span className="col-span-1 text-right">Del</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <select
+                className="bg-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                value={course.credit_hours || ''}
+                onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
+              >
+                <option value="">Cr</option>
+                {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Cr</option>)}
+              </select>
+
+              <select
+                className="bg-emerald-500/15 text-emerald-400 font-bold rounded-lg px-2.5 py-1.5 text-xs sm:text-sm border-0 focus:outline-none"
+                value={course.grade || ''}
+                onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
+              >
+                <option value="">Grd</option>
+                {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
+              </select>
+
+              <button
+                onClick={() => onDeleteCourse(semester.id, course.id)}
+                className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
+                title="Remove course"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-
-          {(semester.courses || []).map(course => (
-            <div
-              key={course.id}
-              className="grid grid-cols-12 items-center gap-2 py-1.5 border-b border-white/5 last:border-0"
-            >
-              <div className="col-span-2">
-                <input
-                  className="input px-3 py-1.5 text-sm"
-                  placeholder="Code"
-                  value={course.course_code || ''}
-                  onChange={e => onUpdateCourse(semester.id, course.id, { course_code: e.target.value })}
-                />
-              </div>
-              <div className="col-span-5">
-                <input
-                  className="input px-3 py-1.5 text-sm"
-                  placeholder="Course name"
-                  value={course.course_name || ''}
-                  onChange={e => onUpdateCourse(semester.id, course.id, { course_name: e.target.value })}
-                />
-              </div>
-              <div className="col-span-2">
-                <select
-                  className="input px-3 py-1.5 text-sm"
-                  value={course.credit_hours || ''}
-                  onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
-                >
-                  <option value="">Credit</option>
-                  {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="col-span-2">
-                <select
-                  className="input px-3 py-1.5 text-sm font-semibold"
-                  value={course.grade || ''}
-                  onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
-                >
-                  <option value="">Grade</option>
-                  {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
-                </select>
-              </div>
-              <div className="col-span-1 text-right">
-                <button
-                  onClick={() => onDeleteCourse(semester.id, course.id)}
-                  className="p-1.5 text-slate-500 hover:text-red-400"
-                  title="Remove course"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+        ))}
 
         <button
           onClick={() => onAddCourse(semester.id, { course_code: '', course_name: '', credit_hours: '', grade: '' })}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 py-3 text-xs sm:text-sm font-semibold text-slate-400 hover:border-white/30 hover:text-white transition-all"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-l-4 border-l-theme-500 bg-[#0e1626] py-3 text-xs sm:text-sm font-semibold text-white hover:bg-[#152036] transition-all"
         >
-          <Plus className="h-4 w-4" /> Add Course
+          <Plus className="h-4 w-4 text-theme-400" />
+          <span>Add Course</span>
         </button>
       </div>
     </div>

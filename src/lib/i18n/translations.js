@@ -103,6 +103,7 @@ export const translations = {
 
     'sidebar.home': 'Home',
     'sidebar.timetable': 'Timetable',
+    'sidebar.exercise': 'Exercise',
     'sidebar.assignments': 'Assignments',
     'sidebar.exams': 'Exams',
     'sidebar.results': 'Results',
@@ -475,6 +476,7 @@ export const translations = {
 
     'sidebar.home': '首页',
     'sidebar.timetable': '课表',
+    'sidebar.exercise': '运动打卡',
     'sidebar.assignments': '作业',
     'sidebar.exams': '考试',
     'sidebar.results': '成绩',
