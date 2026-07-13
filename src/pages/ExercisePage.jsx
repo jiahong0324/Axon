@@ -1,4 +1,4 @@
-import { Award, Bot, Calendar, Check, Dumbbell, Flame, Info, Pencil, Plus, RefreshCw, Shield, Trash2, Trophy, X, Zap } from 'lucide-react'
+import { Award, Bot, Calendar, Check, Dumbbell, Flame, Info, Pencil, RefreshCw, Shield, Trash2, Trophy, Zap } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useConfirmDialog } from '../components/ConfirmModal'
 import EmptyState from '../components/EmptyState'
@@ -117,7 +117,7 @@ export default function ExercisePage() {
 
       showToast(t('exercise.checkedInToday'), 'success')
 
-      // Open celebration toast/modal
+      // Open celebration modal
       setCelebrationModal({
         xpEarned: result.xpEarned,
         message: dailyMsg,
@@ -166,7 +166,7 @@ export default function ExercisePage() {
     localStorage.removeItem('axon_exercise_ai_plan_date')
   }
 
-  // Build GitHub-style 30-day heatmap grid
+  // Build 30-day heatmap grid
   const heatmapDays = useMemo(() => {
     const daysArr = []
     const loggedSet = new Set(logs.map(l => l.log_date))
@@ -191,111 +191,129 @@ export default function ExercisePage() {
 
   if (loading) {
     return (
-      <main className="main-content">
-        <h1 className="page-title flex items-center gap-2"><Dumbbell className="h-7 w-7 text-theme-500" /> {t('exercise.title')}</h1>
-        <div className="skeleton h-48 rounded-2xl mb-6" />
-        <div className="skeleton h-36 rounded-2xl" />
+      <main className="main-content !bg-[#0A0E1A] min-h-screen text-slate-100">
+        <header className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2.5">
+            <Dumbbell className="h-6 w-6 text-slate-400 stroke-[1.5]" />
+            {t('exercise.title')}
+          </h1>
+        </header>
+        <div className="bg-[#131826] rounded-[20px] h-48 border border-white/[0.06] mb-6 animate-pulse" />
+        <div className="bg-[#131826] rounded-[20px] h-36 border border-white/[0.06] animate-pulse" />
       </main>
     )
   }
 
   return (
-    <main className="main-content pb-32">
-      <header className="mb-6">
-        <h1 className="page-title flex items-center gap-2 mb-1">
-          <Dumbbell className="h-7 w-7 text-theme-500" />
-          {t('exercise.title')}
-        </h1>
-        <p className="muted">{t('exercise.subtitle')}</p>
+    <main className="main-content !bg-[#0A0E1A] min-h-screen text-slate-100 pb-36">
+      {/* Calm minimal page header */}
+      <header className="mb-8">
+        <div className="flex items-center gap-2.5 mb-1.5">
+          <Dumbbell className="h-6 w-6 text-slate-300 stroke-[1.5]" />
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+            {t('exercise.title')}
+          </h1>
+        </div>
+        <p className="text-sm text-[#8E9BAE]">{t('exercise.subtitle')}</p>
       </header>
 
-      {/* Top Hero Cards: Streak & XP / Level */}
-      <section className="grid gap-4 md:grid-cols-2 mb-6">
-        {/* Habit Tracker & Streak Card */}
-        <div className="card border-l-4 border-l-orange-500 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-orange-500/20 text-orange-400">
-                <Flame className="h-7 w-7 animate-pulse" />
-              </span>
-              <div>
-                <p className="text-xs uppercase tracking-wider font-semibold text-orange-400">{t('exercise.currentStreak')}</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-slate-900 dark:text-white">{stats.currentStreak}</span>
-                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('common.days')}</span>
-                </div>
+      {/* Top Hero Cards: Habit Tracker / Streak + Level & XP */}
+      <section className="grid gap-6 md:grid-cols-2 mb-6">
+        {/* Habit Tracker & Streak Card (Orange accent 4px left border strip) */}
+        <div className="bg-[#131826] rounded-[20px] p-5 md:p-6 border border-white/[0.06] border-l-4 border-l-[#F97316] flex flex-col justify-between">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Flame className="h-4 w-4 text-[#F97316] stroke-[1.5]" />
+                <span className="text-xs uppercase tracking-wider font-semibold text-[#8E9BAE]">
+                  {t('exercise.currentStreak')}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl md:text-4xl font-bold tracking-tight text-white">
+                  {stats.currentStreak}
+                </span>
+                <span className="text-sm text-[#8E9BAE]">{t('common.days')}</span>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('exercise.longestStreak')}</p>
-              <p className="text-xl font-bold text-slate-900 dark:text-white">{stats.longestStreak} <span className="text-xs font-normal">{t('common.days')}</span></p>
+              <p className="text-xs font-medium text-[#8E9BAE] mb-0.5">{t('exercise.longestStreak')}</p>
+              <p className="text-lg font-semibold text-white">
+                {stats.longestStreak} <span className="text-xs font-normal text-[#8E9BAE]">{t('common.days')}</span>
+              </p>
             </div>
           </div>
 
           {/* Weekly Goal Progress Bar */}
-          <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-slate-600 dark:text-slate-300">{t('exercise.weeklyProgress')}</span>
+          <div className="space-y-2 pt-4 border-t border-white/[0.06]">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium text-[#8E9BAE]">{t('exercise.weeklyProgress')}</span>
               <div className="flex items-center gap-2">
-                <span className="text-theme-500 dark:text-theme-400 font-bold">
+                <span className="font-semibold text-white">
                   {stats.weeklyCount} / {weeklyGoal} {t('common.days')}
                 </span>
                 <button
                   onClick={() => { setTempGoal(weeklyGoal); setShowGoalSheet(true) }}
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  className="rounded-full p-1 text-[#8E9BAE] hover:bg-white/[0.06] hover:text-white transition-colors"
                   title={t('exercise.editGoal')}
                 >
-                  <Pencil className="h-3.5 w-3.5" />
+                  <Pencil className="h-3.5 w-3.5 stroke-[1.5]" />
                 </button>
               </div>
             </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-[#192032]">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-500"
+                className="h-full rounded-full bg-[#3B82F6] transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.round((stats.weeklyCount / weeklyGoal) * 100))}%` }}
               />
             </div>
           </div>
 
-          {/* Freeze Notice / Status */}
-          <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-100/80 dark:bg-white/5 px-3 py-2 text-xs">
-            <div className="flex items-center gap-1.5 font-medium text-cyan-600 dark:text-cyan-400">
-              <Shield className="h-4 w-4 shrink-0" />
-              <span>{t('exercise.streakFreezes')}: {stats.freezesAvailable} {t('exercise.freezesAvailable', { count: stats.freezesAvailable }).replace(/^\d+\s*/, '')}</span>
+          {/* Streak Freezes indicator */}
+          <div className="mt-4 flex items-center justify-between text-xs text-[#8E9BAE]">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-cyan-400 stroke-[1.5]" />
+              <span>
+                {t('exercise.streakFreezes')}: {stats.freezesAvailable}
+              </span>
             </div>
             {stats.freezeUsedThisStreak && (
-              <span className="text-amber-500 font-semibold">{t('exercise.freezeUsedNotice', { count: stats.freezesAvailable })}</span>
+              <span className="text-amber-400 font-medium">
+                {t('exercise.freezeUsedNotice', { count: stats.freezesAvailable })}
+              </span>
             )}
           </div>
         </div>
 
-        {/* XP & Level Card */}
-        <div className="card border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-500/10 via-transparent to-transparent flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-purple-500/20 text-purple-400">
-                <Trophy className="h-7 w-7" />
-              </span>
-              <div>
-                <p className="text-xs uppercase tracking-wider font-semibold text-purple-400">{t('exercise.level', { level: levelInfo.level })}</p>
-                <p className="text-xl font-bold text-slate-900 dark:text-white">{levelInfo.title}</p>
+        {/* Level / XP Card (Purple accent 4px left border strip) */}
+        <div className="bg-[#131826] rounded-[20px] p-5 md:p-6 border border-white/[0.06] border-l-4 border-l-[#A855F7] flex flex-col justify-between">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Trophy className="h-4 w-4 text-[#A855F7] stroke-[1.5]" />
+                <span className="text-xs uppercase tracking-wider font-semibold text-[#8E9BAE]">
+                  {t('exercise.level', { level: levelInfo.level })}
+                </span>
               </div>
+              <p className="text-2xl md:text-3xl font-bold tracking-tight text-white">{levelInfo.title}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('exercise.xpTotal')}</p>
-              <p className="text-2xl font-black text-purple-400">{xpTotal} <span className="text-xs font-semibold text-slate-400">XP</span></p>
+              <p className="text-xs font-medium text-[#8E9BAE] mb-0.5">{t('exercise.xpTotal')}</p>
+              <p className="text-xl font-bold text-white">
+                {xpTotal} <span className="text-xs font-normal text-[#8E9BAE]">XP</span>
+              </p>
             </div>
           </div>
 
           {/* Level Progress Bar */}
-          <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-slate-600 dark:text-slate-300">Level Progress</span>
-              <span className="text-purple-400 font-semibold">{levelInfo.xpNeeded} XP to next level</span>
+          <div className="space-y-2 pt-4 border-t border-white/[0.06]">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium text-[#8E9BAE]">Level Progress</span>
+              <span className="font-medium text-[#8E9BAE]">{levelInfo.xpNeeded} XP to next level</span>
             </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-[#192032]">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-500"
+                className="h-full rounded-full bg-[#A855F7] transition-all duration-500"
                 style={{ width: `${levelInfo.progressPercent}%` }}
               />
             </div>
@@ -303,29 +321,32 @@ export default function ExercisePage() {
         </div>
       </section>
 
-      {/* 7-Day Current Week Chip Strip (horizontally scrollable on small screens) */}
-      <section className="card mb-6">
-        <h2 className="section-header">{t('exercise.thisWeekStrip')}</h2>
+      {/* This Week Day Selector Strip Card (Blue accent 4px left border strip) */}
+      <section className="bg-[#131826] rounded-[20px] p-5 md:p-6 border border-white/[0.06] border-l-4 border-l-[#3B82F6] mb-6">
+        <h2 className="text-base font-bold text-white flex items-center gap-2 mb-4">
+          <Calendar className="h-4 w-4 text-[#3B82F6] stroke-[1.5]" />
+          {t('exercise.thisWeekStrip')}
+        </h2>
         <div className="overflow-x-auto scrollbar-hide">
-          <div className="flex items-center justify-between gap-2 min-w-[340px]">
+          <div className="flex items-center justify-between gap-2.5 min-w-[340px]">
             {stats.currentWeekDays.map(day => {
               const isToday = day.dateStr === todayStr
               return (
                 <div
                   key={day.dateStr}
-                  className={`flex-1 flex flex-col items-center justify-center rounded-xl p-2.5 transition-all min-h-[64px] border ${
+                  className={`flex-1 flex flex-col items-center justify-center rounded-xl p-3 transition-all min-h-[64px] border ${
                     day.logged
-                      ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400 shadow-sm'
+                      ? 'bg-[#10B981]/15 border-[#10B981]/25 text-[#34D399]'
                       : isToday
-                      ? 'bg-theme-500/10 border-theme-500/40 text-theme-400'
-                      : 'bg-slate-100/50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400'
+                      ? 'bg-[#3B82F6]/15 border-[#3B82F6]/25 text-[#60A5FA]'
+                      : 'bg-[#192032] border-white/[0.04] text-[#8E9BAE]'
                   }`}
                 >
-                  <span className="text-xs font-semibold">{day.dayName}</span>
+                  <span className="text-xs font-medium">{day.dayName}</span>
                   {day.logged ? (
-                    <span className="mt-1 text-base">{ACTIVITY_ICONS[day.activityType] || '✅'}</span>
+                    <span className="mt-1.5 text-base">{ACTIVITY_ICONS[day.activityType] || '✅'}</span>
                   ) : (
-                    <span className="mt-1.5 h-3.5 w-3.5 rounded-full border border-current opacity-40" />
+                    <span className="mt-2 h-3 w-3 rounded-full border border-current opacity-30" />
                   )}
                 </div>
               )
@@ -334,9 +355,12 @@ export default function ExercisePage() {
         </div>
       </section>
 
-      {/* Monthly Check-in Heatmap */}
-      <section className="card mb-6">
-        <h2 className="section-header">{t('exercise.monthlyHeatmap')}</h2>
+      {/* Check-in Heatmap Card (Emerald accent 4px left border strip) */}
+      <section className="bg-[#131826] rounded-[20px] p-5 md:p-6 border border-white/[0.06] border-l-4 border-l-[#10B981] mb-6">
+        <h2 className="text-base font-bold text-white flex items-center gap-2 mb-4">
+          <Calendar className="h-4 w-4 text-[#10B981] stroke-[1.5]" />
+          {t('exercise.monthlyHeatmap')}
+        </h2>
         <div className="overflow-x-auto scrollbar-hide">
           <div className="grid grid-cols-7 gap-2 min-w-[340px]">
             {heatmapDays.map(day => (
@@ -345,8 +369,8 @@ export default function ExercisePage() {
                 title={`${day.dateStr} (${day.activity || 'No workout'})`}
                 className={`flex flex-col items-center justify-center rounded-lg p-2 min-h-[44px] border transition-colors ${
                   day.logged
-                    ? 'bg-emerald-500/25 border-emerald-500/50 text-emerald-300 font-semibold'
-                    : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-400 dark:text-slate-500'
+                    ? 'bg-[#10B981]/20 border-[#10B981]/35 text-[#34D399] font-medium'
+                    : 'bg-[#192032] border-white/[0.04] text-[#64748B]'
                 }`}
               >
                 <span className="text-[10px]">{day.label}</span>
@@ -355,18 +379,21 @@ export default function ExercisePage() {
             ))}
           </div>
         </div>
-        <div className="mt-3 flex items-center justify-end gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <div className="mt-3 flex items-center justify-end gap-2 text-xs text-[#8E9BAE]">
           <span>{t('exercise.less')}</span>
-          <span className="h-3 w-3 rounded bg-slate-200 dark:bg-white/10" />
-          <span className="h-3 w-3 rounded bg-emerald-500/40" />
-          <span className="h-3 w-3 rounded bg-emerald-500" />
+          <span className="h-3 w-3 rounded bg-[#192032]" />
+          <span className="h-3 w-3 rounded bg-[#10B981]/30" />
+          <span className="h-3 w-3 rounded bg-[#10B981]" />
           <span>{t('exercise.more')}</span>
         </div>
       </section>
 
-      {/* Milestone Badges Section (stacked on mobile, compact card) */}
-      <section className="card mb-6">
-        <h2 className="section-header"><Award className="h-5 w-5 text-amber-400" /> {t('exercise.badgesTitle')}</h2>
+      {/* Milestone Badges Card (Amber accent 4px left border strip) */}
+      <section className="bg-[#131826] rounded-[20px] p-5 md:p-6 border border-white/[0.06] border-l-4 border-l-[#F59E0B] mb-6">
+        <h2 className="text-base font-bold text-white flex items-center gap-2 mb-4">
+          <Award className="h-4 w-4 text-[#F59E0B] stroke-[1.5]" />
+          {t('exercise.badgesTitle')}
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {stats.badgeStatuses.map(b => (
             <button
@@ -374,72 +401,89 @@ export default function ExercisePage() {
               onClick={() => setSelectedBadge(b)}
               className={`flex items-center gap-3 rounded-xl border p-3.5 text-left transition-all min-h-[64px] ${
                 b.unlocked
-                  ? 'border-amber-500/30 bg-amber-500/10 text-slate-900 dark:text-white hover:border-amber-500/50'
-                  : 'border-slate-200 dark:border-white/10 bg-slate-100/50 dark:bg-white/5 text-slate-400 opacity-75'
+                  ? 'border-[#F59E0B]/25 bg-[#F59E0B]/10 text-white'
+                  : 'border-white/[0.04] bg-[#192032]/60 text-[#8E9BAE] opacity-75'
               }`}
             >
               <span className="text-2xl shrink-0">{b.icon}</span>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-sm truncate">{t(b.titleKey)}</p>
-                <p className={`text-xs ${b.unlocked ? 'text-amber-500 dark:text-amber-400 font-medium' : 'text-slate-400'}`}>
+                <p className="font-medium text-sm truncate text-white">{t(b.titleKey)}</p>
+                <p className={`text-xs ${b.unlocked ? 'text-[#FBBF24] font-medium' : 'text-[#8E9BAE]'}`}>
                   {b.unlocked ? t('exercise.badgeUnlocked') : t('exercise.badgeLocked')}
                 </p>
               </div>
-              <Info className="h-4 w-4 shrink-0 opacity-40" />
+              <Info className="h-4 w-4 shrink-0 opacity-40 text-[#8E9BAE]" />
             </button>
           ))}
         </div>
       </section>
 
-      {/* AI Workout Suggestion Card */}
-      <section className="card mb-6 border-l-4 border-l-purple-500">
+      {/* AI Workout Suggestion Card (Indigo accent 4px left border strip) */}
+      <section className="bg-[#131826] rounded-[20px] p-5 md:p-6 border border-white/[0.06] border-l-4 border-l-[#6366F1] mb-6">
         <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-          <h2 className="section-header mb-0"><Bot className="h-5 w-5 text-purple-400" /> {t('exercise.aiTitle')}</h2>
+          <h2 className="text-base font-bold text-white flex items-center gap-2 mb-0">
+            <Bot className="h-4 w-4 text-[#818CF8] stroke-[1.5]" />
+            {t('exercise.aiTitle')}
+          </h2>
           {!aiPlan && !aiLoading && (
-            <button className="btn-plan !min-h-[44px]" onClick={generateAiSuggestion}>
+            <button
+              className="bg-[#4F46E5] hover:bg-[#4338CA] text-white rounded-full px-5 py-2 text-sm font-medium transition-colors"
+              onClick={generateAiSuggestion}
+            >
               {t('exercise.generatePlan')}
             </button>
           )}
         </div>
         {aiLoading ? (
-          <div className="skeleton h-36 rounded-xl" />
+          <div className="bg-[#192032] h-36 rounded-xl animate-pulse" />
         ) : aiPlan ? (
           <div>
-            <div className="scrollbar-hide max-h-96 overflow-y-auto text-sm leading-6 mb-4" dangerouslySetInnerHTML={{ __html: markdownToHtml(aiPlan) }} />
-            <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-slate-200 dark:border-white/10">
+            <div
+              className="scrollbar-hide max-h-96 overflow-y-auto text-sm leading-6 mb-4 text-[#CBD5E1]"
+              dangerouslySetInnerHTML={{ __html: markdownToHtml(aiPlan) }}
+            />
+            <div className="flex gap-2.5 justify-end mt-4 pt-4 border-t border-white/[0.06]">
               <button
-                className="px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2 min-h-[44px]"
+                className="px-4 py-2 text-sm font-medium text-[#F87171] hover:bg-[#EF4444]/10 rounded-full transition-colors flex items-center gap-2"
                 onClick={deleteAiSuggestion}
               >
-                <Trash2 className="h-4 w-4" /> {t('exercise.deletePlan')}
+                <Trash2 className="h-4 w-4 stroke-[1.5]" />
+                {t('exercise.deletePlan')}
               </button>
-              <button className="btn-plan !min-h-[44px] !py-2 !px-4 text-sm" onClick={generateAiSuggestion}>
-                <RefreshCw className="h-4 w-4" /> {t('exercise.regeneratePlan')}
+              <button
+                className="bg-[#4F46E5] hover:bg-[#4338CA] text-white rounded-full px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2"
+                onClick={generateAiSuggestion}
+              >
+                <RefreshCw className="h-4 w-4 stroke-[1.5]" />
+                {t('exercise.regeneratePlan')}
               </button>
             </div>
           </div>
         ) : (
-          <p className="muted">{t('exercise.aiDesc')}</p>
+          <p className="text-sm text-[#8E9BAE]">{t('exercise.aiDesc')}</p>
         )}
       </section>
 
-      {/* Recent History List */}
-      <section className="card mb-20">
-        <h2 className="section-header">{t('exercise.history')}</h2>
+      {/* Recent Activity / History Card (Sky Blue accent 4px left border strip) */}
+      <section className="bg-[#131826] rounded-[20px] p-5 md:p-6 border border-white/[0.06] border-l-4 border-l-[#38BDF8] mb-8">
+        <h2 className="text-base font-bold text-white mb-4">{t('exercise.history')}</h2>
         {logs.length === 0 ? (
           <EmptyState emoji="🏃" message={t('exercise.noHistory')} />
         ) : (
           <div className="space-y-2.5">
             {logs.slice(0, 10).map((item, idx) => (
-              <article key={item.id || idx} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-white/10 p-3.5">
+              <article
+                key={item.id || idx}
+                className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.04] bg-[#192032]/70 p-3.5"
+              >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{ACTIVITY_ICONS[item.activity_type] || '⚡'}</span>
                   <div>
-                    <p className="font-semibold text-sm text-slate-900 dark:text-white">{item.activity_type || 'Workout'}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{item.log_date}</p>
+                    <p className="font-semibold text-sm text-white">{item.activity_type || 'Workout'}</p>
+                    <p className="text-xs text-[#8E9BAE]">{item.log_date}</p>
                   </div>
                 </div>
-                <span className="rounded-full bg-purple-500/15 px-3 py-1 text-xs font-semibold text-purple-400">
+                <span className="rounded-full bg-[#38BDF8]/15 border border-[#38BDF8]/25 px-3 py-1 text-xs font-medium text-[#38BDF8]">
                   +{item.xp_earned || 20} XP
                 </span>
               </article>
@@ -448,12 +492,12 @@ export default function ExercisePage() {
         )}
       </section>
 
-      {/* STICKY MOBILE ONE-HANDED CHECK-IN BAR */}
-      <div className="fixed inset-x-0 bottom-14 md:bottom-6 z-30 px-4 pointer-events-none flex justify-center">
-        <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-navy-950/95 p-3.5 shadow-2xl backdrop-blur-xl">
-          {/* Quick optional activity tag selector */}
-          <div className="mb-2.5 flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide pb-1">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 shrink-0">{t('exercise.activityTag')}:</span>
+      {/* STICKY BOTTOM CHECK-IN BAR (Works cleanly on mobile app & laptop screen) */}
+      <div className="fixed inset-x-0 bottom-16 md:bottom-6 z-30 px-4 pointer-events-none flex justify-center">
+        <div className="w-full max-w-2xl pointer-events-auto rounded-[20px] border border-white/[0.08] bg-[#131826]/95 p-4 shadow-2xl backdrop-blur-xl">
+          {/* Activity Tag Selector */}
+          <div className="mb-3 flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide pb-1">
+            <span className="text-xs font-medium text-[#8E9BAE] shrink-0">{t('exercise.activityTag')}:</span>
             <div className="flex gap-1.5">
               {ACTIVITY_TYPES.map(type => (
                 <button
@@ -461,10 +505,10 @@ export default function ExercisePage() {
                   type="button"
                   onClick={() => setSelectedTag(type)}
                   disabled={stats.isCheckedInToday}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all min-h-[32px] ${
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all min-h-[32px] border ${
                     selectedTag === type
-                      ? 'bg-theme-500 text-white shadow-md shadow-theme-500/20'
-                      : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20'
+                      ? 'bg-[#3B82F6]/20 text-[#60A5FA] border-[#3B82F6]/40'
+                      : 'bg-[#192032] text-[#8E9BAE] border-white/[0.04] hover:text-white'
                   }`}
                 >
                   <span>{ACTIVITY_ICONS[type]}</span>
@@ -474,24 +518,24 @@ export default function ExercisePage() {
             </div>
           </div>
 
-          {/* Big Sticky Mark Today Done button */}
+          {/* Solid single flat color Mark Today Done button (pill shape) */}
           <button
             onClick={handleCheckIn}
             disabled={stats.isCheckedInToday || checkingIn}
-            className={`w-full min-h-[52px] rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg ${
+            className={`w-full min-h-[50px] rounded-full font-bold text-sm md:text-base transition-all flex items-center justify-center gap-2 ${
               stats.isCheckedInToday
-                ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
-                : 'bg-gradient-to-r from-theme-500 via-purple-500 to-indigo-600 text-white hover:brightness-110 shadow-theme-500/30'
+                ? 'bg-[#10B981] text-white cursor-default'
+                : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white'
             }`}
           >
             {stats.isCheckedInToday ? (
               <>
-                <Check className="h-5 w-5" />
+                <Check className="h-5 w-5 stroke-[1.5]" />
                 {t('exercise.checkedInToday')}
               </>
             ) : (
               <>
-                <Flame className="h-5 w-5 animate-bounce" />
+                <Flame className="h-5 w-5 stroke-[1.5]" />
                 {t('exercise.markTodayDone')} (+20 XP)
               </>
             )}
@@ -499,34 +543,33 @@ export default function ExercisePage() {
         </div>
       </div>
 
-      {/* MODAL / TOAST FOR CONGRATULATIONS & DAILY ENCOURAGEMENT MESSAGE */}
+      {/* CELEBRATION MODAL */}
       <Modal isOpen={Boolean(celebrationModal)} onClose={() => setCelebrationModal(null)} title="Check-in Complete!">
         {celebrationModal && (
           <div className="text-center py-4 space-y-4">
             <div className="relative inline-block">
-              <span className="text-6xl animate-bounce inline-block">🎉</span>
-              <span className="absolute -top-2 -right-4 text-3xl animate-pulse">✨</span>
+              <span className="text-6xl inline-block">🎉</span>
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('exercise.congratsTitle')}</h3>
-            <div className="rounded-xl bg-purple-500/10 border border-purple-500/20 p-4 text-left">
-              <p className="text-sm leading-relaxed text-purple-900 dark:text-purple-200 font-medium">
+            <h3 className="text-xl font-bold text-white">{t('exercise.congratsTitle')}</h3>
+            <div className="rounded-[16px] bg-[#A855F7]/10 border border-[#A855F7]/20 p-4 text-left">
+              <p className="text-sm leading-relaxed text-[#E9D5FF] font-medium">
                 "{celebrationModal.message}"
               </p>
             </div>
-            <div className="flex items-center justify-center gap-2 text-sm font-bold text-emerald-500">
-              <Zap className="h-5 w-5" />
+            <div className="flex items-center justify-center gap-2 text-sm font-bold text-[#34D399]">
+              <Zap className="h-5 w-5 stroke-[1.5]" />
               <span>+{celebrationModal.xpEarned} XP earned today!</span>
             </div>
             {celebrationModal.unlockedBadges.length > 0 && (
-              <div className="rounded-xl bg-amber-500/15 border border-amber-500/30 p-3 text-center">
-                <p className="text-xs font-bold text-amber-500 uppercase tracking-wider">🏆 Milestone Unlocked!</p>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white mt-1">
+              <div className="rounded-[16px] bg-[#F59E0B]/10 border border-[#F59E0B]/25 p-3 text-center">
+                <p className="text-xs font-bold text-[#FBBF24] uppercase tracking-wider">Milestone Unlocked!</p>
+                <p className="text-sm font-medium text-white mt-1">
                   You unlocked a new badge! Check your Milestone Badges section.
                 </p>
               </div>
             )}
             <button
-              className="btn-primary w-full mt-4 !min-h-[48px]"
+              className="w-full mt-4 min-h-[48px] rounded-full bg-[#2563EB] hover:bg-[#1D4ED8] font-semibold text-white transition-colors"
               onClick={() => setCelebrationModal(null)}
             >
               Continue
@@ -535,21 +578,21 @@ export default function ExercisePage() {
         )}
       </Modal>
 
-      {/* BOTTOM SHEET / MODAL FOR EDITING WEEKLY GOAL */}
+      {/* EDIT WEEKLY GOAL MODAL */}
       <Modal isOpen={showGoalSheet} onClose={() => setShowGoalSheet(false)} title={t('exercise.editGoal')}>
-        <form onSubmit={saveWeeklyGoal} className="space-y-4 py-2">
+        <form onSubmit={saveWeeklyGoal} className="space-y-5 py-2">
           <label className="block">
-            <span className="label">{t('exercise.weeklyGoalLabel')}</span>
-            <div className="grid grid-cols-7 gap-2 mt-2">
+            <span className="text-xs font-medium text-[#8E9BAE] block mb-2">{t('exercise.weeklyGoalLabel')}</span>
+            <div className="grid grid-cols-7 gap-2">
               {[1, 2, 3, 4, 5, 6, 7].map(num => (
                 <button
                   key={num}
                   type="button"
                   onClick={() => setTempGoal(num)}
-                  className={`h-12 rounded-xl font-bold text-base transition-all ${
+                  className={`h-11 rounded-full font-bold text-sm transition-all border ${
                     tempGoal === num
-                      ? 'bg-theme-500 text-white shadow-lg shadow-theme-500/25 scale-105'
-                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20'
+                      ? 'bg-[#3B82F6]/20 text-[#60A5FA] border-[#3B82F6]/40'
+                      : 'bg-[#192032] text-[#8E9BAE] border-white/[0.04] hover:text-white'
                   }`}
                 >
                   {num}
@@ -557,36 +600,42 @@ export default function ExercisePage() {
               ))}
             </div>
           </label>
-          <button type="submit" className="btn-primary w-full mt-6 !min-h-[48px]">
+          <button
+            type="submit"
+            className="w-full min-h-[48px] rounded-full bg-[#2563EB] hover:bg-[#1D4ED8] font-semibold text-white transition-colors"
+          >
             {t('exercise.saveGoal')}
           </button>
         </form>
       </Modal>
 
-      {/* BOTTOM SHEET / MODAL FOR BADGE DETAIL */}
+      {/* BADGE DETAIL MODAL */}
       <Modal isOpen={Boolean(selectedBadge)} onClose={() => setSelectedBadge(null)} title="Milestone Badge Details">
         {selectedBadge && (
           <div className="text-center py-4 space-y-4">
             <span className="text-6xl inline-block">{selectedBadge.icon}</span>
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t(selectedBadge.titleKey)}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t(selectedBadge.descKey)}</p>
+              <h3 className="text-xl font-bold text-white">{t(selectedBadge.titleKey)}</h3>
+              <p className="text-sm text-[#8E9BAE] mt-1">{t(selectedBadge.descKey)}</p>
             </div>
-            <div className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold ${
+            <div className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium border ${
               selectedBadge.unlocked
-                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10'
+                ? 'bg-[#10B981]/15 text-[#34D399] border-[#10B981]/30'
+                : 'bg-[#192032] text-[#8E9BAE] border-white/[0.04]'
             }`}>
               {selectedBadge.unlocked ? (
                 <>
-                  <Check className="h-4 w-4" />
+                  <Check className="h-4 w-4 stroke-[1.5]" />
                   <span>{t('exercise.badgeUnlocked')}</span>
                 </>
               ) : (
                 <span>{t('exercise.badgeLocked')}</span>
               )}
             </div>
-            <button className="btn-ghost w-full mt-4 !min-h-[48px]" onClick={() => setSelectedBadge(null)}>
+            <button
+              className="w-full mt-4 min-h-[48px] rounded-full bg-[#192032] hover:bg-[#242E45] font-semibold text-slate-300 border border-white/[0.06] transition-colors"
+              onClick={() => setSelectedBadge(null)}
+            >
               Close
             </button>
           </div>
@@ -596,3 +645,4 @@ export default function ExercisePage() {
     </main>
   )
 }
+
