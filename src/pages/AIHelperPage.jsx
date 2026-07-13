@@ -23,7 +23,7 @@ import { useLanguage } from '../components/LanguageProvider'
 const studentActions = [
   { icon: Brain, mobile: 'Explain', tKey: 'explain' },
   { icon: FileText, mobile: 'Summarize', tKey: 'summarize' },
-  { icon: Table, mobile: 'Show in table', tKey: 'table' },
+  { icon: Table, mobile: '📊 Table', tKey: 'table' },
   { icon: HelpCircle, mobile: 'Quiz me', tKey: 'quiz' },
   { icon: CalendarClock, mobile: 'Study plan', tKey: 'plan' },
   { icon: Languages, mobile: 'Translate', tKey: 'translate' },
