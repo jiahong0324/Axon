@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import HomePage from './pages/HomePage'
 import TimetablePage from './pages/TimetablePage'
+import ExercisePage from './pages/ExercisePage'
 import AssignmentPage from './pages/AssignmentPage'
 import ExamPage from './pages/ExamPage'
 import ExamResultsPage from './pages/ExamResultsPage'
@@ -62,6 +63,7 @@ export default function App() {
               </Route>
               <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
               <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />
+              <Route path="/exercise" element={<ProtectedRoute requireRole="student"><ExercisePage /></ProtectedRoute>} />
               <Route path="/assignments" element={<ProtectedRoute requireRole="student"><AssignmentPage /></ProtectedRoute>} />
               <Route path="/exams" element={<ProtectedRoute requireRole="student"><ExamPage /></ProtectedRoute>} />
               <Route path="/results" element={<ProtectedRoute requireRole="student"><ExamResultsPage /></ProtectedRoute>} />

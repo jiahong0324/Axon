@@ -1,4 +1,4 @@
-import { Award, Bell, BookOpen, Bot, CalendarDays, CheckSquare, LayoutDashboard, LogOut, MoreHorizontal, Settings, X, MessageSquare, Globe } from 'lucide-react'
+import { Award, Bell, BookOpen, Bot, CalendarDays, CheckSquare, Dumbbell, LayoutDashboard, LogOut, MoreHorizontal, Settings, X, MessageSquare, Globe } from 'lucide-react'
 import { useState } from 'react'
 import FeedbackModal from './FeedbackModal'
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -10,6 +10,7 @@ import { markExplicitLogout } from '../lib/authEvents'
 const navItems = [
   { label: 'Home', tKey: 'sidebar.home', path: '/home', icon: LayoutDashboard },
   { label: 'Timetable', tKey: 'sidebar.timetable', path: '/timetable', icon: CalendarDays },
+  { label: 'Exercise', tKey: 'sidebar.exercise', path: '/exercise', icon: Dumbbell },
   { label: 'Assignments', tKey: 'sidebar.assignments', path: '/assignments', icon: CheckSquare },
   { label: 'Exams', tKey: 'sidebar.exams', path: '/exams', icon: BookOpen },
   { label: 'Results', tKey: 'sidebar.results', path: '/results', icon: Award },
@@ -24,8 +25,8 @@ export default function Sidebar({ user }) {
   const [moreOpen, setMoreOpen] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const name = user?.user_metadata?.full_name || user?.email || 'Student'
-  const mainMobile = navItems.filter(item => ['Home', 'Timetable', 'Assignments', 'AI Helper'].includes(item.label))
-  const moreItems = navItems.filter(item => ['Exams', 'Results', 'Reminders', 'Settings'].includes(item.label))
+  const mainMobile = navItems.filter(item => ['Home', 'Timetable', 'Exercise', 'AI Helper'].includes(item.label))
+  const moreItems = navItems.filter(item => ['Assignments', 'Exams', 'Results', 'Reminders', 'Settings'].includes(item.label))
 
   async function logout() {
     markExplicitLogout()

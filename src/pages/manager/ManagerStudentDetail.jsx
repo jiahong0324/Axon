@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Pencil, Award } from 'lucide-react'
+import { ArrowLeft, Award, Download, Dumbbell, Flame, Pencil, Shield, Trophy } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { Link, useParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
@@ -12,8 +12,9 @@ import { downloadStudentReport } from '../../lib/generateReport'
 import { supabase } from '../../lib/supabase'
 import { dateLabel, days, daysFromToday, formatTime, initials } from '../../lib/utils'
 import { calculateOverallCGPA } from '../../lib/tarumtGrading'
+import { ACTIVITY_ICONS, calculateStreakAndStats, fetchExerciseData, getLevelInfo, getTodayStr } from '../../lib/exerciseUtils'
 
-const tabs = ['Timetable', 'Assignments', 'Exams & Results', 'Activity']
+const tabs = ['Timetable', 'Assignments', 'Exams & Results', 'Exercise', 'Activity']
 const resultInitial = { score: '', grade: 'A', remarks: '' }
 
 export default function ManagerStudentDetail() {
@@ -116,6 +117,7 @@ export default function ManagerStudentDetail() {
       {activeTab === 'Timetable' && <TimetableTab classes={classes} />}
       {activeTab === 'Assignments' && <AssignmentsTab assignments={assignments} />}
       {activeTab === 'Exams & Results' && <ExamsTab exams={exams} resultByExam={resultByExam} openResult={openResult} semesters={semesters} />}
+      {activeTab === 'Exercise' && <ExerciseManagerTab studentId={studentId} />}
       {activeTab === 'Activity' && <ActivityTab activity={activity} />}
 
       {editing && <EditStudentPanel student={student} onClose={() => setEditing(false)} onSaved={loadDetail} />}
@@ -201,6 +203,122 @@ function ExamsTab({ exams, resultByExam, openResult, semesters = [] }) {
 
 function ActivityTab({ activity }) {
   return <section className="card"><div className="space-y-3">{activity.length === 0 ? <p className="muted">No activity yet.</p> : activity.map(item => <article key={item.id} className="flex gap-3 rounded-xl border border-white/10 p-3"><span className="mt-2 h-2 w-2 rounded-full bg-amber-400" /><div><p className="text-sm">{item.action} {item.entity_name && <span className="text-slate-300">"{item.entity_name}"</span>}</p><p className="text-xs text-slate-500">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p></div></article>)}</div></section>
+}
+
+function ExerciseManagerTab({ studentId }) {
+  const [loading, setLoading] = useState(true)
+  const [logs, setLogs] = useState([])
+  const [weeklyGoal, setWeeklyGoal] = useState(4)
+  const [xpTotal, setXpTotal] = useState(0)
+  const [freezesAvailable, setFreezesAvailable] = useState(1)
+
+  useEffect(() => {
+    let active = true
+    async function loadExercise() {
+      setLoading(true)
+      const data = await fetchExerciseData(studentId)
+      if (!active) return
+      setLogs(data.logs || [])
+      setWeeklyGoal(data.weeklyGoal || 4)
+      setXpTotal(data.xpTotal || 0)
+      setFreezesAvailable(data.freezesAvailable || 1)
+      setLoading(false)
+    }
+    loadExercise()
+    return () => { active = false }
+  }, [studentId])
+
+  const stats = useMemo(
+    () => calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, getTodayStr()),
+    [logs, weeklyGoal, freezesAvailable]
+  )
+  const levelInfo = useMemo(() => getLevelInfo(xpTotal), [xpTotal])
+
+  if (loading) {
+    return <div className="card space-y-3"><div className="skeleton h-20 rounded-xl" /><div className="skeleton h-40 rounded-xl" /></div>
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="card border-l-4 border-l-orange-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase text-orange-400">Current Streak</p>
+              <p className="text-3xl font-bold text-white mt-1">{stats.currentStreak} <span className="text-sm font-normal text-slate-400">days</span></p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-semibold text-slate-400">Longest Streak</p>
+              <p className="text-xl font-bold text-white mt-1">{stats.longestStreak} days</p>
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+            <span className="text-slate-300">Weekly Goal Progress</span>
+            <span className="font-bold text-orange-400">{stats.weeklyCount} / {weeklyGoal} days</span>
+          </div>
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-cyan-400 font-medium">
+            <Shield className="h-4 w-4" />
+            <span>Streak Freezes Available: {freezesAvailable}</span>
+          </div>
+        </div>
+
+        <div className="card border-l-4 border-l-purple-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase text-purple-400">Level {levelInfo.level}</p>
+              <p className="text-xl font-bold text-white mt-1">{levelInfo.title}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-semibold text-slate-400">Total XP</p>
+              <p className="text-3xl font-black text-purple-400 mt-1">{xpTotal}</p>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 mt-4 pt-3 border-t border-white/10">Read-only student exercise summary</p>
+        </div>
+      </div>
+
+      <section className="card">
+        <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+          <Award className="h-5 w-5 text-amber-400" /> Milestone Badges
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {stats.badgeStatuses.map(b => (
+            <div
+              key={b.id}
+              className={`rounded-xl border p-3 flex items-center gap-2.5 ${
+                b.unlocked ? 'border-amber-500/40 bg-amber-500/10 text-white' : 'border-white/10 bg-white/5 text-slate-500 opacity-60'
+              }`}
+            >
+              <span className="text-xl">{b.icon}</span>
+              <div>
+                <p className="text-xs font-semibold">{b.id.replace('_', ' ').toUpperCase()}</p>
+                <p className="text-[10px]">{b.unlocked ? 'Unlocked' : 'Locked'}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card">
+        <h3 className="text-base font-bold text-white mb-4">Check-in History ({logs.length})</h3>
+        {logs.length === 0 ? (
+          <p className="muted">No exercise logs recorded by this student.</p>
+        ) : (
+          <div className="space-y-2">
+            {logs.map(l => (
+              <div key={l.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{ACTIVITY_ICONS[l.activity_type] || '⚡'}</span>
+                  <span className="font-semibold text-white">{l.activity_type || 'Workout'}</span>
+                </div>
+                <span className="text-xs text-slate-400">{l.log_date}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  )
 }
 
 function Field({ label, children }) {

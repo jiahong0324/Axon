@@ -1,14 +1,16 @@
-import { AlertCircle, BookOpen, Calendar, CheckCircle, Flame, MapPin, RefreshCw, X } from 'lucide-react'
+import { AlertCircle, BookOpen, Calendar, CheckCircle, Dumbbell, Flame, MapPin, RefreshCw, Trophy, X, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import ClassTypeBadge from '../components/ClassTypeBadge'
 import CountdownBadge from '../components/CountdownBadge'
 import EmptyState from '../components/EmptyState'
+import Modal from '../components/Modal'
 import PriorityBadge from '../components/PriorityBadge'
 import { useToast } from '../components/Toast'
 import { askGroq } from '../lib/groq'
 import { buildUserContext } from '../lib/buildUserContext'
+import { calculateStreakAndStats, fetchExerciseData, getDailyMessage, getTodayStr, logExerciseCheckIn } from '../lib/exerciseUtils'
 import { SkeletonStats, SkeletonList } from '../components/SkeletonLoader'
 import { supabase } from '../lib/supabase'
 import { daysFromToday, dateLabel, formatTime } from '../lib/utils'
@@ -29,6 +31,41 @@ export default function HomePage() {
   const { t } = useLanguage()
   const [currentTime, setCurrentTime] = useState(new Date())
   const todayName = format(currentTime, 'EEEE')
+
+  const [exerciseLogs, setExerciseLogs] = useState([])
+  const [exerciseGoal, setExerciseGoal] = useState(4)
+  const [exerciseXp, setExerciseXp] = useState(0)
+  const [exerciseFreezes, setExerciseFreezes] = useState(1)
+  const [exerciseCelebration, setExerciseCelebration] = useState(null)
+
+  const exTodayStr = getTodayStr()
+  const exStats = useMemo(() => calculateStreakAndStats(exerciseLogs, exerciseGoal, exerciseFreezes, exTodayStr), [exerciseLogs, exerciseGoal, exerciseFreezes, exTodayStr])
+  const exDailyMsg = useMemo(() => getDailyMessage(t('exercise.dailyMessages'), exTodayStr), [t, exTodayStr])
+
+  async function handleHomeCheckIn() {
+    if (exStats.isCheckedInToday || !user) return
+    const result = await logExerciseCheckIn({
+      userId: user.id,
+      logDate: exTodayStr,
+      activityType: 'Gym',
+      currentWeeklyGoal: exerciseGoal,
+      currentXpTotal: exerciseXp,
+      currentFreezes: exerciseFreezes,
+      logs: exerciseLogs
+    })
+    if (result.error) {
+      showToast(result.error, 'error')
+      return
+    }
+    setExerciseLogs(result.updatedLogs)
+    setExerciseXp(result.newXpTotal)
+    setExerciseFreezes(result.newFreezes)
+    showToast(t('exercise.checkedInToday'), 'success')
+    setExerciseCelebration({
+      xpEarned: result.xpEarned,
+      message: exDailyMsg
+    })
+  }
 
   useEffect(() => { fetchDashboard() }, [])
   useEffect(() => { if (localStorage.getItem('dailyTipEnabled') !== 'false') refreshTip() }, [])
@@ -90,6 +127,12 @@ export default function HomePage() {
       setAssignments(assignmentsRes.data || [])
       setExams(examsRes.data || [])
       setAnnouncements(validAnnouncements)
+
+      const exData = await fetchExerciseData(activeUser.id)
+      setExerciseLogs(exData.logs || [])
+      setExerciseGoal(exData.weeklyGoal || 4)
+      setExerciseXp(exData.xpTotal || 0)
+      setExerciseFreezes(exData.freezesAvailable || 1)
 
       writeCache(`axon_home_dashboard_${activeUser.id}`, {
         classes: activeClasses,
@@ -187,6 +230,46 @@ export default function HomePage() {
         <Summary icon={Calendar} label={t('home.daysToExam')} value={nextExamValue} valueClass={nextExamDays === 0 ? 'text-red-500' : ''} tone="text-violet-600 dark:text-purple-400" border="border-l-purple-500" />
       </section>
 
+      {/* Compact Exercise Card */}
+      <section className="card mb-6 border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-500/10 via-transparent to-transparent">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-500/20 text-orange-400">
+              <Dumbbell className="h-6 w-6" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white mb-0">{t('exercise.title')}</h2>
+                <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs font-semibold text-purple-400">{exerciseXp} XP</span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                🔥 {t('exercise.currentStreak')}: <strong className="text-slate-900 dark:text-white">{exStats.currentStreak} {t('common.days')}</strong> · {t('exercise.weeklyProgress')}: <strong className="text-slate-900 dark:text-white">{exStats.weeklyCount}/{exerciseGoal}</strong>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleHomeCheckIn}
+              disabled={exStats.isCheckedInToday}
+              className={`px-4 py-2 min-h-[44px] rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-md ${
+                exStats.isCheckedInToday
+                  ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
+                  : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:brightness-110 shadow-orange-500/25'
+              }`}
+            >
+              {exStats.isCheckedInToday ? `✓ ${t('exercise.checkedInToday')}` : `🔥 ${t('exercise.markTodayDone')}`}
+            </button>
+            <Link
+              to="/exercise"
+              className="btn-ghost !min-h-[44px] !py-2 !px-3.5 text-xs font-semibold text-theme-400 hover:text-theme-300 shrink-0"
+            >
+              {t('home.viewAll')}
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         <div className="flex h-full flex-col">
           <div className="home-panel card flex h-full flex-1 flex-col">
@@ -244,6 +327,27 @@ export default function HomePage() {
         </div>
         {tipLoading ? <div className="space-y-3"><div className="skeleton h-4 rounded-full" /><div className="skeleton h-4 w-4/5 rounded-full" /><div className="skeleton h-4 w-2/3 rounded-full" /></div> : <p className="text-base leading-relaxed" style={{ color: 'var(--text-secondary, #dbe4f0)' }}>{tip}</p>}
       </section>
+
+      <Modal isOpen={Boolean(exerciseCelebration)} onClose={() => setExerciseCelebration(null)} title="Check-in Complete!">
+        {exerciseCelebration && (
+          <div className="text-center py-4 space-y-4">
+            <span className="text-6xl animate-bounce inline-block">🎉</span>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('exercise.congratsTitle')}</h3>
+            <div className="rounded-xl bg-purple-500/10 border border-purple-500/20 p-4 text-left">
+              <p className="text-sm leading-relaxed text-purple-900 dark:text-purple-200 font-medium">
+                "{exerciseCelebration.message}"
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-sm font-bold text-emerald-500">
+              <Zap className="h-5 w-5" />
+              <span>+{exerciseCelebration.xpEarned} XP earned today!</span>
+            </div>
+            <button className="btn-primary w-full mt-4 !min-h-[48px]" onClick={() => setExerciseCelebration(null)}>
+              Continue
+            </button>
+          </div>
+        )}
+      </Modal>
     </main>
   )
 }
