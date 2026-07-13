@@ -205,7 +205,7 @@ export default function ExercisePage() {
   }
 
   return (
-    <main className="main-content pb-28">
+    <main className="main-content pb-36">
       {/* Calm minimal page header matching other pages */}
       <header className="mb-6">
         <div className="flex items-center gap-2.5 mb-1">
@@ -319,55 +319,6 @@ export default function ExercisePage() {
             </div>
           </div>
         </div>
-      </section>
-
-      {/* MARK TODAY DONE SECTION IN THE MIDDLE (No left accent bar) */}
-      <section className="card mb-6 p-6 flex flex-col items-center justify-center text-center">
-        {/* Activity Tag Selector */}
-        <div className="mb-4 w-full">
-          <p className="text-xs font-medium muted mb-2.5">{t('exercise.activityTag')}:</p>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {ACTIVITY_TYPES.map(type => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setSelectedTag(type)}
-                disabled={stats.isCheckedInToday}
-                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all min-h-[34px] border ${
-                  selectedTag === type
-                    ? 'bg-theme-500/20 text-theme-400 border-theme-500/40'
-                    : 'bg-slate-100 dark:bg-white/5 muted border-slate-200 dark:border-white/10 hover:text-white'
-                }`}
-              >
-                <span>{ACTIVITY_ICONS[type]}</span>
-                <span>{t(`exercise.activity.${type}`) || type}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Big Centered Mark Today Done button */}
-        <button
-          onClick={handleCheckIn}
-          disabled={stats.isCheckedInToday || checkingIn}
-          className={`w-full max-w-md mx-auto min-h-[50px] rounded-full font-bold text-sm md:text-base transition-all flex items-center justify-center gap-2 shadow-lg ${
-            stats.isCheckedInToday
-              ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
-              : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20'
-          }`}
-        >
-          {stats.isCheckedInToday ? (
-            <>
-              <Check className="h-5 w-5 stroke-[1.5]" />
-              {t('exercise.checkedInToday')}
-            </>
-          ) : (
-            <>
-              <Flame className="h-5 w-5 stroke-[1.5]" />
-              {t('exercise.markTodayDone')} (+20 XP)
-            </>
-          )}
-        </button>
       </section>
 
       {/* This Week Day Selector Strip Card (No left accent bar) */}
@@ -540,6 +491,57 @@ export default function ExercisePage() {
           </div>
         )}
       </section>
+
+      {/* STICKY BOTTOM CHECK-IN BAR */}
+      <div className="fixed inset-x-0 bottom-16 md:bottom-6 z-30 px-4 pointer-events-none flex justify-center">
+        <div className="w-full max-w-2xl pointer-events-auto rounded-[20px] border border-white/[0.08] bg-[#131826]/95 p-4 shadow-2xl backdrop-blur-xl">
+          {/* Activity Tag Selector */}
+          <div className="mb-3 flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide pb-1">
+            <span className="text-xs font-medium text-[#8E9BAE] shrink-0">{t('exercise.activityTag')}:</span>
+            <div className="flex items-center gap-1.5">
+              {ACTIVITY_TYPES.map(type => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setSelectedTag(type)}
+                  disabled={stats.isCheckedInToday}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all shrink-0 ${
+                    selectedTag === type
+                      ? 'bg-[#3B82F6]/20 text-[#38BDF8] border border-[#3B82F6]/40'
+                      : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.04] hover:text-white'
+                  }`}
+                >
+                  <span>{ACTIVITY_ICONS[type]}</span>
+                  <span>{t(`exercise.activity.${type}`) || type}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mark Today Done button */}
+          <button
+            onClick={handleCheckIn}
+            disabled={stats.isCheckedInToday || checkingIn}
+            className={`w-full min-h-[48px] rounded-full font-bold text-sm md:text-base transition-all flex items-center justify-center gap-2 ${
+              stats.isCheckedInToday
+                ? 'bg-[#10B981] text-white cursor-default'
+                : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-lg shadow-blue-600/20'
+            }`}
+          >
+            {stats.isCheckedInToday ? (
+              <>
+                <Check className="h-5 w-5 stroke-[1.5]" />
+                {t('exercise.checkedInToday')}
+              </>
+            ) : (
+              <>
+                <Flame className="h-5 w-5 stroke-[1.5]" />
+                {t('exercise.markTodayDone')} (+20 XP)
+              </>
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* CELEBRATION MODAL */}
       <Modal isOpen={Boolean(celebrationModal)} onClose={() => setCelebrationModal(null)} title="Check-in Complete!">
