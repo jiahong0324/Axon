@@ -254,7 +254,7 @@ export default function ExercisePage() {
   }
 
   return (
-    <main className="main-content pb-64 md:pb-40">
+    <main className="main-content pb-16 md:pb-12">
       {/* Page Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -567,12 +567,12 @@ export default function ExercisePage() {
         </section>
 
         {/* Explicit bottom spacer ensuring full scroll clearance on mobile above floating check-in bar */}
-        <div className="h-56 sm:h-32 w-full shrink-0 pointer-events-none" />
+        <div className="h-32 sm:h-20 w-full shrink-0 pointer-events-none" />
       </div>
 
-      {/* STICKY BOTTOM CHECK-IN BAR (bottom-24 on mobile to clear bottom tab bar, md:left-60 md:right-0 centered on laptop) */}
-      <div className="fixed inset-x-0 bottom-24 md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center">
-        <div className="w-full max-w-2xl pointer-events-auto rounded-[20px] border border-white/[0.08] bg-[#131826]/95 p-3.5 sm:p-4 shadow-2xl backdrop-blur-xl">
+      {/* STICKY BOTTOM CHECK-IN BAR (bottom-[68px] snugly on top of mobile bottom tab bar, md:left-60 md:right-0 centered on laptop) */}
+      <div className="fixed inset-x-0 bottom-[68px] md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center">
+        <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-white/10 bg-[#131b2e] p-3 shadow-2xl">
           {/* Activity Tag Selector (All options visible at once via flex-wrap, no horizontal scroll needed) */}
           <div className="mb-3.5 flex flex-wrap items-center justify-center gap-1.5 w-full">
             {ACTIVITY_TYPES.map(type => (
