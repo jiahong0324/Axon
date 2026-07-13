@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, CheckCircle2, ChevronDown, ChevronUp, Info } from 'lucide-react'
+import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, CheckCircle2, ChevronDown, ChevronUp, Info, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../components/Toast'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -23,6 +23,7 @@ export default function ExamResultsPage() {
   const [showAddSemModal, setShowAddSemModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [targetSemesterId, setTargetSemesterId] = useState(null)
+  const [syncingCloud, setSyncingCloud] = useState(false)
 
   const pendingUpdatesRef = useRef({})
   const debounceTimersRef = useRef({})
@@ -41,8 +42,95 @@ export default function ExamResultsPage() {
     loadSemesters()
   }, [])
 
-  async function loadSemesters() {
+  async function syncLocalSemestersToSupabase(user, localList) {
+    if (!user || !Array.isArray(localList) || localList.length === 0) return localList
+    const resultList = []
+
+    for (const sem of localList) {
+      if (typeof sem.id === 'string' && !sem.id.startsWith('sem-')) {
+        resultList.push(sem)
+        continue
+      }
+      const { data: newSem } = await supabase
+        .from('student_semesters')
+        .insert({ user_id: user.id, name: sem.name || 'Semester' })
+        .select()
+        .single()
+
+      if (!newSem) {
+        resultList.push(sem)
+        continue
+      }
+
+      const syncedCourses = []
+      for (const course of (sem.courses || [])) {
+        const { data: newCourse } = await supabase
+          .from('student_semester_courses')
+          .insert({
+            semester_id: newSem.id,
+            user_id: user.id,
+            course_code: course.course_code || '',
+            course_name: course.course_name || '',
+            credit_hours: Number(course.credit_hours) || 0,
+            grade: course.grade || ''
+          })
+          .select()
+          .single()
+
+        if (newCourse) {
+          syncedCourses.push(newCourse)
+        } else {
+          syncedCourses.push({ ...course, semester_id: newSem.id })
+        }
+      }
+
+      resultList.push({
+        ...newSem,
+        courses: syncedCourses.length > 0 ? syncedCourses : createDefaultThreeCourses(newSem.id)
+      })
+    }
+
+    setSemesters(resultList)
+    localStorage.setItem('axon_exam_results_semesters', JSON.stringify(resultList))
+    return resultList
+  }
+
+  async function ensureSemesterInSupabase(semId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return semId
+    if (typeof semId === 'string' && !semId.startsWith('sem-')) return semId
+
+    const targetSem = semesters.find(s => s.id === semId)
+    if (!targetSem) return semId
+
+    const { data } = await supabase
+      .from('student_semesters')
+      .insert({ user_id: user.id, name: targetSem.name || 'Semester' })
+      .select()
+      .single()
+
+    if (data && data.id) {
+      const newSemId = data.id
+      setSemesters(prev => {
+        const nextList = prev.map(s => {
+          if (s.id !== semId) return s
+          return {
+            ...s,
+            id: newSemId,
+            courses: (s.courses || []).map(c => ({ ...c, semester_id: newSemId }))
+          }
+        })
+        localStorage.setItem('axon_exam_results_semesters', JSON.stringify(nextList))
+        return nextList
+      })
+      return newSemId
+    }
+    return semId
+  }
+
+  async function loadSemesters(showToastMsg = false) {
     setLoading(true)
+    if (showToastMsg) setSyncingCloud(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       const cached = localStorage.getItem('axon_exam_results_semesters')
@@ -62,6 +150,7 @@ export default function ExamResultsPage() {
         localStorage.setItem('axon_exam_results_semesters', JSON.stringify(defaultSem))
       }
       setLoading(false)
+      if (showToastMsg) setSyncingCloud(false)
       return
     }
 
@@ -77,9 +166,9 @@ export default function ExamResultsPage() {
       .eq('user_id', user.id)
       .order('created_at')
 
-    if (semsData && coursesData) {
+    if (semsData && semsData.length > 0) {
       const merged = semsData.map(s => {
-        const semCourses = coursesData.filter(c => c.semester_id === s.id)
+        const semCourses = (coursesData || []).filter(c => c.semester_id === s.id)
         return {
           ...s,
           courses: semCourses.length > 0 ? semCourses : createDefaultThreeCourses(s.id)
@@ -88,24 +177,26 @@ export default function ExamResultsPage() {
       setSemesters(merged)
       localStorage.setItem('axon_exam_results_semesters', JSON.stringify(merged))
     } else {
+      // If Supabase is empty, check localStorage and automatically upload any cached semesters/courses
       const cached = localStorage.getItem('axon_exam_results_semesters')
       if (cached) {
         const parsed = JSON.parse(cached)
-        setSemesters(parsed.map(s => ({
-          ...s,
-          courses: (s.courses && s.courses.length > 0) ? s.courses : createDefaultThreeCourses(s.id)
-        })))
+        await syncLocalSemestersToSupabase(user, parsed)
       } else {
         const defaultSem = [{
           id: 'sem-1',
           name: 'Year 1 Semester 1',
           courses: createDefaultThreeCourses('sem-1')
         }]
-        setSemesters(defaultSem)
-        localStorage.setItem('axon_exam_results_semesters', JSON.stringify(defaultSem))
+        const synced = await syncLocalSemestersToSupabase(user, defaultSem)
+        setSemesters(synced)
       }
     }
     setLoading(false)
+    if (showToastMsg) {
+      setSyncingCloud(false)
+      showToast('Exam results synced across devices!', 'success')
+    }
   }
 
   function saveSemestersToLocal(list) {
@@ -170,7 +261,7 @@ export default function ExamResultsPage() {
     }
   }
 
-  function handleAddCourse(semId, course) {
+  async function handleAddCourse(semId, course) {
     const tempId = `course-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`
     const newCourse = {
       id: tempId,
@@ -190,36 +281,34 @@ export default function ExamResultsPage() {
       return nextList
     })
 
-    if (typeof semId === 'string' && !semId.startsWith('sem-')) {
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (!user) return
-        supabase
-          .from('student_semester_courses')
-          .insert({
-            semester_id: semId,
-            user_id: user.id,
-            course_code: newCourse.course_code,
-            course_name: newCourse.course_name,
-            credit_hours: newCourse.credit_hours,
-            grade: newCourse.grade
-          })
-          .select()
-          .single()
-          .then(({ data }) => {
-            if (data && data.id) {
-              setSemesters(prev => {
-                const nextList = prev.map(s => {
-                  if (s.id !== semId) return s
-                  return {
-                    ...s,
-                    courses: s.courses.map(c => c.id === tempId ? { ...c, id: data.id } : c)
-                  }
-                })
-                localStorage.setItem('axon_exam_results_semesters', JSON.stringify(nextList))
-                return nextList
-              })
-            }
-          })
+    const activeSemId = await ensureSemesterInSupabase(semId)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data } = await supabase
+      .from('student_semester_courses')
+      .insert({
+        semester_id: activeSemId,
+        user_id: user.id,
+        course_code: newCourse.course_code,
+        course_name: newCourse.course_name,
+        credit_hours: newCourse.credit_hours,
+        grade: newCourse.grade
+      })
+      .select()
+      .single()
+
+    if (data && data.id) {
+      setSemesters(prev => {
+        const nextList = prev.map(s => {
+          if (s.id !== activeSemId && s.id !== semId) return s
+          return {
+            ...s,
+            courses: s.courses.map(c => c.id === tempId ? { ...c, id: data.id, semester_id: activeSemId } : c)
+          }
+        })
+        localStorage.setItem('axon_exam_results_semesters', JSON.stringify(nextList))
+        return nextList
       })
     }
   }
@@ -263,11 +352,12 @@ export default function ExamResultsPage() {
           .from('student_semester_courses')
           .update(fieldsToSave)
           .eq('id', courseId)
-      } else if (typeof semId === 'string' && !semId.startsWith('sem-')) {
+      } else {
+        const activeSemId = await ensureSemesterInSupabase(semId)
         const { data } = await supabase
           .from('student_semester_courses')
           .insert({
-            semester_id: semId,
+            semester_id: activeSemId,
             user_id: user.id,
             course_code: fieldsToSave.course_code || '',
             course_name: fieldsToSave.course_name || '',
@@ -280,10 +370,10 @@ export default function ExamResultsPage() {
         if (data && data.id) {
           setSemesters(prev => {
             const nextList = prev.map(s => {
-              if (s.id !== semId) return s
+              if (s.id !== activeSemId && s.id !== semId) return s
               return {
                 ...s,
-                courses: s.courses.map(c => c.id === courseId ? { ...c, id: data.id } : c)
+                courses: s.courses.map(c => c.id === courseId ? { ...c, id: data.id, semester_id: activeSemId } : c)
               }
             })
             localStorage.setItem('axon_exam_results_semesters', JSON.stringify(nextList))
@@ -336,24 +426,24 @@ export default function ExamResultsPage() {
 
     // CASE 1: Specific Semester Import (User clicked "AI Import" inside a specific Semester Card)
     if (targetSemesterId) {
-      const semId = targetSemesterId
+      const activeSemId = await ensureSemesterInSupabase(targetSemesterId)
       const newCourses = []
       for (let i = 0; i < extractedItems.length; i++) {
         const item = extractedItems[i]
         const newCourse = {
           id: `course-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`,
-          semester_id: semId,
+          semester_id: activeSemId,
           course_code: item.course_code || '',
           course_name: item.course_name || 'Imported Course',
           credit_hours: Number(item.credit_hours) || 3,
           grade: item.grade || 'A'
         }
 
-        if (user && typeof semId === 'string' && !semId.startsWith('sem-')) {
+        if (user) {
           const { data } = await supabase
             .from('student_semester_courses')
             .insert({
-              semester_id: semId,
+              semester_id: activeSemId,
               user_id: user.id,
               course_code: newCourse.course_code,
               course_name: newCourse.course_name,
@@ -368,7 +458,7 @@ export default function ExamResultsPage() {
       }
 
       const nextList = semesters.map(s => {
-        if (s.id !== semId) return s
+        if (s.id !== activeSemId && s.id !== targetSemesterId) return s
         const existingFilled = (s.courses || []).filter(c => c.course_name?.trim() !== '' || c.grade !== '')
         return {
           ...s,
@@ -391,7 +481,6 @@ export default function ExamResultsPage() {
       for (const [semName, items] of Object.entries(grouped)) {
         let targetSem = nextList.find(s => s.name.trim().toLowerCase() === semName.toLowerCase())
         if (!targetSem) {
-          // Create new semester if it doesn't exist
           const newSemId = `sem-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`
           targetSem = {
             id: newSemId,
@@ -408,6 +497,9 @@ export default function ExamResultsPage() {
             if (data) targetSem.id = data.id
           }
           nextList.push(targetSem)
+        } else {
+          const syncedSemId = await ensureSemesterInSupabase(targetSem.id)
+          targetSem.id = syncedSemId
         }
 
         const newCourses = []
@@ -421,7 +513,7 @@ export default function ExamResultsPage() {
             credit_hours: Number(item.credit_hours) || 3,
             grade: item.grade || 'A'
           }
-          if (user && typeof targetSem.id === 'string' && !targetSem.id.startsWith('sem-')) {
+          if (user) {
             const { data } = await supabase
               .from('student_semester_courses')
               .insert({
@@ -464,80 +556,8 @@ export default function ExamResultsPage() {
 
   return (
     <main className="main-content">
-      {/* MOBILE-FIRST ACADEMIC DASHBOARD HERO CARD (< md) */}
-      <div className="md:hidden mb-6 rounded-3xl border border-white/10 bg-gradient-to-br from-theme-500/25 via-[#192436] to-purple-900/30 p-5 shadow-2xl backdrop-blur-xl relative overflow-hidden">
-        <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-theme-500/10 blur-2xl pointer-events-none" />
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Academic Progress</span>
-          <span className="rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 text-[10px] font-semibold text-white">TAR UMT 5.6 Scale</span>
-        </div>
-
-        <div className="flex items-baseline justify-between py-1">
-          <div>
-            <p className="text-xs font-medium text-slate-400 mb-0.5">Cumulative Grade Point Average</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black tracking-tight text-white">{overall.cgpa}</span>
-              <span className="text-xs font-bold text-emerald-400">CGPA</span>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="rounded-xl bg-black/25 border border-white/10 px-3 py-2">
-              <p className="text-[10px] uppercase font-bold text-slate-400">Total Credits</p>
-              <p className="text-base font-black text-white">{overall.overallCredits} <span className="text-xs font-normal text-slate-400">Cr</span></p>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Action Bar */}
-        <div className="grid grid-cols-2 gap-2.5 mt-5 pt-4 border-t border-white/10">
-          <button
-            onClick={() => setShowAddSemModal(true)}
-            className="flex items-center justify-center gap-1.5 rounded-2xl bg-theme-500 hover:bg-theme-600 active:scale-95 px-3.5 py-3 text-xs font-bold text-white shadow-lg shadow-theme-500/25 transition-all"
-          >
-            <Plus className="h-4 w-4 shrink-0" />
-            <span>New Semester</span>
-          </button>
-          <button
-            onClick={() => {
-              setTargetSemesterId(null)
-              setAnalyzerOpen(true)
-            }}
-            className="flex items-center justify-center gap-1.5 rounded-2xl border border-amber-400/30 bg-amber-400/15 hover:bg-amber-400/25 active:scale-95 px-3.5 py-3 text-xs font-bold text-amber-300 transition-all"
-          >
-            <Sparkles className="h-4 w-4 shrink-0 text-amber-400" />
-            <span>AI Scan Result</span>
-          </button>
-        </div>
-      </div>
-
-      {/* MOBILE SEGMENTED TAB SWITCHER (< md) */}
-      <div className="md:hidden mb-5 grid grid-cols-2 rounded-2xl border border-white/10 bg-white/[0.04] p-1.5">
-        <button
-          onClick={() => setActiveTab('records')}
-          className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all ${
-            activeTab === 'records'
-              ? 'bg-theme-500 text-white shadow-md shadow-theme-500/25'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <BookOpen className="h-3.5 w-3.5" />
-          <span>My Semesters ({semesters.length})</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('calculator')}
-          className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all ${
-            activeTab === 'calculator'
-              ? 'bg-theme-500 text-white shadow-md shadow-theme-500/25'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Calculator className="h-3.5 w-3.5" />
-          <span>SGPA Simulator</span>
-        </button>
-      </div>
-
-      {/* DESKTOP HEADER (>= md) */}
-      <div className="hidden md:flex mb-6 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Simple Header */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="page-title mb-1">Exam Results & CGPA</h1>
           <p className="text-sm text-slate-400">
@@ -545,54 +565,69 @@ export default function ExamResultsPage() {
           </p>
         </div>
 
-        {/* Overall CGPA Badge */}
-        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 backdrop-blur-md">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-theme-500/10 text-theme-400">
-            <Award className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Overall CGPA</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-white">{overall.cgpa}</span>
-              <span className="text-xs font-semibold text-slate-400">({overall.overallCredits} Credits)</span>
+        {/* Overall CGPA Badge & Sync Cloud */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => loadSemesters(true)}
+            disabled={syncingCloud}
+            className={`flex items-center gap-2 rounded-2xl border px-4 py-3.5 text-xs font-bold transition-all ${
+              syncingCloud
+                ? 'border-purple-500/40 bg-purple-500/15 text-purple-300'
+                : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/10 hover:text-white'
+            }`}
+            title="Sync results across devices"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncingCloud ? 'animate-spin text-purple-400' : ''}`} />
+            <span>Sync Cloud</span>
+          </button>
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-theme-500/10 text-theme-400">
+              <Award className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Overall CGPA</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black text-white">{overall.cgpa}</span>
+                <span className="text-xs font-semibold text-slate-400">({overall.overallCredits} Credits)</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* DESKTOP TAB SELECTOR (>= md) */}
-      <div className="hidden md:flex mb-6 w-fit rounded-2xl border border-white/10 bg-white/[0.02] p-1">
+      {/* Simple 2-Tab Switcher */}
+      <div className="mb-6 flex w-full sm:w-fit rounded-2xl border border-white/10 bg-white/[0.02] p-1">
         <button
           onClick={() => setActiveTab('records')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
             activeTab === 'records'
-              ? 'bg-theme-500 text-white shadow-md shadow-theme-500/20'
+              ? 'bg-theme-500 text-white shadow-md'
               : 'text-slate-400 hover:text-white'
           }`}
         >
-          <BookOpen className="h-4 w-4" />
-          My Semester Records
+          <BookOpen className="h-4 w-4 shrink-0" />
+          <span>My Semesters</span>
         </button>
         <button
           onClick={() => setActiveTab('calculator')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
             activeTab === 'calculator'
-              ? 'bg-theme-500 text-white shadow-md shadow-theme-500/20'
+              ? 'bg-theme-500 text-white shadow-md'
               : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Calculator className="h-4 w-4" />
-          TAR UMT Calculator
+          <Calculator className="h-4 w-4 shrink-0" />
+          <span>Quick Calculator</span>
         </button>
       </div>
 
       {/* TAB 1: MY SEMESTER RECORDS */}
       {activeTab === 'records' && (
-        <div className="space-y-5 md:space-y-6">
-          <div className="hidden md:flex items-center justify-between">
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:justify-between">
             <button
               onClick={() => setShowAddSemModal(true)}
-              className="btn-add flex items-center justify-center gap-1.5 py-3 text-sm font-semibold shadow-md"
+              className="btn-add flex items-center justify-center gap-1.5 py-3 text-xs sm:text-sm font-semibold shadow-md"
             >
               <Plus className="h-4 w-4 shrink-0" /> <span>Add Semester</span>
             </button>
@@ -602,7 +637,7 @@ export default function ExamResultsPage() {
                 setTargetSemesterId(null)
                 setAnalyzerOpen(true)
               }}
-              className="btn-import flex items-center justify-center gap-1.5 py-3 text-sm font-semibold shadow-md"
+              className="btn-import flex items-center justify-center gap-1.5 py-3 text-xs sm:text-sm font-semibold shadow-md"
             >
               <Sparkles className="h-4 w-4 shrink-0" /> <span>AI Import Screenshot</span>
             </button>
@@ -612,7 +647,7 @@ export default function ExamResultsPage() {
             <div className="flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-white/[0.02] py-16 text-center">
               <BookOpen className="mb-3 h-12 w-12 text-slate-500" />
               <h3 className="text-lg font-bold text-white">No Semester Records</h3>
-              <p className="mt-1 text-sm text-slate-400">Tap "+ New Semester" or scan your result slip to begin.</p>
+              <p className="mt-1 text-sm text-slate-400">Click "+ Add Semester" or upload a screenshot to start.</p>
             </div>
           ) : (
             semesters.map(sem => {
@@ -644,77 +679,66 @@ export default function ExamResultsPage() {
           <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-white">Quick SGPA Simulator</h3>
+                <h3 className="text-base sm:text-lg font-bold text-white">Quick SGPA Calculator</h3>
                 <p className="text-xs text-slate-400">Simulate grades and credit hours instantly</p>
               </div>
               <div className="rounded-xl bg-theme-500/10 px-4 py-2 border border-theme-500/20 text-right">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-theme-400">Simulated SGPA</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-theme-400">Calculated SGPA</span>
                 <p className="text-2xl font-black text-white">{calcGPA.gpa}</p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              {/* MOBILE CARDS VIEW (< md) - Ergonomic native simulation sheets */}
+            <div className="space-y-3">
+              {/* SIMPLE & CLEAN MOBILE LIST (< md) */}
               <div className="space-y-3 md:hidden">
                 {calcRows.map((row, idx) => (
                   <div
                     key={row.id}
-                    className="rounded-2xl border border-white/10 bg-black/25 p-3.5 shadow-md flex flex-col gap-2.5"
+                    className="rounded-xl border border-white/10 bg-white/[0.03] p-3 space-y-2"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex-1 flex items-center gap-2">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[11px] font-bold text-slate-300">
-                          #{idx + 1}
-                        </span>
-                        <input
-                          className="input py-2 px-3 text-sm font-semibold text-white bg-white/5 border-white/10 w-full rounded-xl"
-                          placeholder="Course name e.g. Algorithms"
-                          value={row.name}
-                          onChange={e => {
-                            const val = e.target.value
-                            setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
-                          }}
-                        />
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-400">#{idx + 1}</span>
+                      <input
+                        className="input flex-1 py-1.5 px-3 text-sm"
+                        placeholder="Course Name"
+                        value={row.name}
+                        onChange={e => {
+                          const val = e.target.value
+                          setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
+                        }}
+                      />
                       <button
                         onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
-                        className="p-2 text-slate-400 hover:text-red-400 shrink-0"
-                        title="Remove row"
+                        className="p-1.5 text-slate-400 hover:text-red-400"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <div className="flex flex-col">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Credits</label>
-                        <select
-                          className="input py-2 px-3 text-xs font-semibold text-slate-200 bg-white/5 border-white/10 w-full rounded-xl min-h-[40px]"
-                          value={row.credits}
-                          onChange={e => {
-                            const val = e.target.value
-                            setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
-                          }}
-                        >
-                          <option value="">Credit Hours</option>
-                          {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
-                        </select>
-                      </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        className="input py-1.5 px-2.5 text-xs"
+                        value={row.credits}
+                        onChange={e => {
+                          const val = e.target.value
+                          setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
+                        }}
+                      >
+                        <option value="">Credits</option>
+                        {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
+                      </select>
 
-                      <div className="flex flex-col">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Target Grade</label>
-                        <select
-                          className="input py-2 px-3 text-xs font-bold text-emerald-400 bg-white/5 border-white/10 w-full rounded-xl min-h-[40px]"
-                          value={row.grade}
-                          onChange={e => {
-                            const val = e.target.value
-                            setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
-                          }}
-                        >
-                          <option value="">Grade</option>
-                          {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade} ({g.point.toFixed(2)})</option>)}
-                        </select>
-                      </div>
+                      <select
+                        className="input py-1.5 px-2.5 text-xs font-bold text-emerald-400"
+                        value={row.grade}
+                        onChange={e => {
+                          const val = e.target.value
+                          setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
+                        }}
+                      >
+                        <option value="">Grade</option>
+                        {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
+                      </select>
                     </div>
                   </div>
                 ))}
@@ -788,7 +812,7 @@ export default function ExamResultsPage() {
                 onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])}
                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 py-3 text-xs sm:text-sm font-semibold text-slate-400 hover:border-white/30 hover:text-white transition-all"
               >
-                <Plus className="h-4 w-4" /> Add Simulation Row
+                <Plus className="h-4 w-4" /> Add Row
               </button>
             </div>
           </div>
@@ -868,25 +892,25 @@ export default function ExamResultsPage() {
 
 function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDeleteCourse, onDeleteSemester, onAIImport }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-[#141d2c]/90 md:bg-white/[0.02] p-4 sm:p-6 shadow-xl transition-all">
+    <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-4 sm:p-6 shadow-xl">
       {/* Semester Card Header */}
-      <div className="mb-4 sm:mb-5 flex flex-wrap items-center justify-between gap-3 sm:gap-4 border-b border-white/10 pb-4">
+      <div className="mb-4 sm:mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
         <div>
-          <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">{semester.name}</h3>
+          <h3 className="text-base sm:text-xl font-bold text-white tracking-tight">{semester.name}</h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            {semester.courses?.length || 0} Courses · <span className="text-slate-200 font-semibold">{semStat.totalCredits}</span> Credit Hours
+            {semester.courses?.length || 0} Courses · <span className="text-slate-300 font-semibold">{semStat.totalCredits}</span> Credits
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/15 px-3 py-1.5 shadow-sm">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">SGPA</span>
+          <div className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">GPA</span>
             <span className="font-mono text-sm sm:text-base font-black text-emerald-300">{semStat.gpa}</span>
           </div>
 
           <button
             onClick={onAIImport}
-            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-2.5 sm:px-3 py-2 text-xs font-semibold text-slate-300 hover:border-amber-400/30 hover:bg-amber-400/10 hover:text-amber-300 transition-all"
+            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:border-amber-400/30 hover:bg-amber-400/10 hover:text-amber-300 transition-all"
             title="Import from screenshot"
           >
             <Sparkles className="h-3.5 w-3.5 text-amber-400" />
@@ -895,7 +919,7 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
 
           <button
             onClick={() => onDeleteSemester(semester.id)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 hover:border-red-500/30 hover:bg-red-500/15 hover:text-red-400 transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 hover:border-red-500/30 hover:bg-red-500/15 hover:text-red-400 transition-all"
             title="Delete Semester"
           >
             <Trash2 className="h-4 w-4" />
@@ -905,44 +929,35 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
 
       {/* Courses List */}
       <div className="space-y-2">
-        {/* MOBILE-SPECIALIZED NATIVE APP COURSE SHEETS (< md) */}
-        <div className="space-y-3 md:hidden">
+        {/* VERY SIMPLE & USER-FRIENDLY MOBILE CARDS (< md) */}
+        <div className="space-y-2.5 md:hidden">
           {(semester.courses || []).map((course, idx) => (
             <div
               key={course.id}
-              className="rounded-2xl border border-white/10 bg-black/35 p-3.5 shadow-md flex flex-col gap-2.5"
+              className="rounded-xl border border-white/10 bg-white/[0.03] p-3 space-y-2"
             >
               {/* Row 1: Course Name + Delete */}
               <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[11px] font-bold text-slate-300">
-                  #{idx + 1}
-                </span>
+                <span className="text-xs font-bold text-slate-400">#{idx + 1}</span>
                 <input
-                  className="input flex-1 py-2 px-3 text-sm font-semibold text-white bg-white/5 border-white/10 rounded-xl min-h-[40px] placeholder:text-slate-500"
-                  placeholder="Course Name e.g. Web Development"
+                  className="input flex-1 py-1.5 px-3 text-sm font-semibold"
+                  placeholder="Course Name"
                   value={course.course_name || ''}
                   onChange={e => onUpdateCourse(semester.id, course.id, { course_name: e.target.value })}
                 />
                 <button
                   onClick={() => onDeleteCourse(semester.id, course.id)}
-                  className="p-2 text-slate-400 hover:text-red-400 shrink-0"
+                  className="p-1.5 text-slate-400 hover:text-red-400"
                   title="Remove course"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
 
-              {/* Row 2: Course Code, Credits, Grade tailored for mobile thumbs */}
-              <div className="flex items-center gap-2">
-                <input
-                  className="input w-28 py-2 px-2.5 text-xs font-mono text-slate-300 bg-white/5 border-white/10 rounded-xl min-h-[40px] placeholder:text-slate-500"
-                  placeholder="Code (opt)"
-                  value={course.course_code || ''}
-                  onChange={e => onUpdateCourse(semester.id, course.id, { course_code: e.target.value })}
-                />
-
+              {/* Row 2: 2 clean selects for Credits & Grade */}
+              <div className="grid grid-cols-2 gap-2">
                 <select
-                  className="input flex-1 py-2 px-2.5 text-xs font-semibold text-slate-200 bg-white/5 border-white/10 rounded-xl min-h-[40px]"
+                  className="input py-1.5 px-2.5 text-xs font-semibold"
                   value={course.credit_hours || ''}
                   onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
                 >
@@ -951,7 +966,7 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
                 </select>
 
                 <select
-                  className="input w-24 py-2 px-2 text-xs font-black text-emerald-400 bg-white/5 border-white/10 rounded-xl min-h-[40px]"
+                  className="input py-1.5 px-2.5 text-xs font-bold text-emerald-400"
                   value={course.grade || ''}
                   onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
                 >
@@ -1029,9 +1044,9 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
 
         <button
           onClick={() => onAddCourse(semester.id, { course_code: '', course_name: '', credit_hours: '', grade: '' })}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 py-3 text-xs sm:text-sm font-semibold text-slate-400 hover:border-white/30 hover:text-white transition-all min-h-[44px]"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 py-3 text-xs sm:text-sm font-semibold text-slate-400 hover:border-white/30 hover:text-white transition-all"
         >
-          <Plus className="h-4 w-4" /> Add Course Row
+          <Plus className="h-4 w-4" /> Add Course
         </button>
       </div>
     </div>

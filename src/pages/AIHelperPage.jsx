@@ -12,6 +12,7 @@ import {
   Table,
   Trash2,
   ImagePlus,
+  RefreshCw,
   X
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -19,6 +20,7 @@ import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq, analyzeImageWithGroq } from '../lib/groq'
 import { markdownToHtml } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
+import { supabase } from '../lib/supabase'
 
 const studentActions = [
   { icon: Table, mobile: 'Show in table', tKey: 'table' },
@@ -64,8 +66,86 @@ export default function AIHelperPage({ role = 'student' }) {
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState(false)
   const [selectedImage, setSelectedImage] = useState(null)
+  const [syncingCloud, setSyncingCloud] = useState(false)
   const textareaRef = useRef(null)
   const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    syncAIChatWithSupabase()
+  }, [isManager])
+
+  async function syncAIChatWithSupabase() {
+    try {
+      setSyncingCloud(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: cloudMessages, error } = await supabase
+        .from('student_ai_chats')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_manager', isManager)
+        .order('created_at', { ascending: true })
+
+      if (!error && cloudMessages && cloudMessages.length > 0) {
+        const formatted = cloudMessages.map(m => ({
+          role: m.role,
+          content: m.content,
+          image: m.image || undefined,
+          timestamp: new Date(m.created_at)
+        }))
+        setMessages(formatted)
+        localStorage.setItem(isManager ? 'aiManagerChat' : 'aiChat', JSON.stringify(formatted))
+      } else if (!error && (!cloudMessages || cloudMessages.length === 0)) {
+        // If Supabase has no messages, upload existing localStorage chat history to cloud
+        const localSaved = JSON.parse(localStorage.getItem(isManager ? 'aiManagerChat' : 'aiChat') || '[]')
+        const toUpload = localSaved.filter(m => m.content && !isWelcomeMessage(m.content)).map(m => ({
+          user_id: user.id,
+          role: m.role,
+          content: m.content,
+          image: m.image || null,
+          is_manager: isManager
+        }))
+        if (toUpload.length > 0) {
+          await supabase.from('student_ai_chats').insert(toUpload)
+        }
+      }
+    } catch (err) {
+      // Gracefully fall back to localStorage if table not created yet
+    } finally {
+      setSyncingCloud(false)
+    }
+  }
+
+  async function saveMessageToCloud(msg) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('student_ai_chats').insert({
+        user_id: user.id,
+        role: msg.role,
+        content: msg.content,
+        image: msg.image || null,
+        is_manager: isManager
+      })
+    } catch (e) {
+      // Silent catch if table not yet created
+    }
+  }
+
+  async function clearChatHistory() {
+    setMessages([welcomeMessage])
+    localStorage.setItem(isManager ? 'aiManagerChat' : 'aiChat', JSON.stringify([welcomeMessage]))
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase
+        .from('student_ai_chats')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('is_manager', isManager)
+    } catch (e) {}
+  }
 
   function handleImageSelect(e) {
     const file = e.target.files?.[0]
@@ -150,6 +230,7 @@ export default function AIHelperPage({ role = 'student' }) {
     if (imgData) newMsg.image = `data:${imgData.mimeType};base64,${imgData.base64}`
 
     setMessages(prev => [...prev, newMsg])
+    saveMessageToCloud(newMsg)
     setLoading(true)
 
     await new Promise(resolve => setTimeout(resolve, 350))
@@ -162,7 +243,9 @@ export default function AIHelperPage({ role = 'student' }) {
         const context = await buildUserContext()
         answer = await askGroq(userText, context, messages)
       }
-      setMessages(prev => [...prev, { role: 'assistant', content: answer, timestamp: new Date() }])
+      const assistantMsg = { role: 'assistant', content: answer, timestamp: new Date() }
+      setMessages(prev => [...prev, assistantMsg])
+      saveMessageToCloud(assistantMsg)
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', content: `Oops! Something went wrong: ${err.message}`, timestamp: new Date() }])
     } finally {
@@ -215,9 +298,24 @@ export default function AIHelperPage({ role = 'student' }) {
               <p className="truncate text-xs" style={{ color: 'var(--text-muted)' }}>{t('ai.subtitle')}</p>
             </div>
           </div>
-          <button className="ai-clear-button min-h-0 min-w-0 rounded-xl p-2 text-sm transition-colors hover:bg-white/5" style={{ color: 'var(--text-muted)' }} onClick={() => setMessages([welcomeMessage])} aria-label="Clear chat">
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => syncAIChatWithSupabase()}
+              disabled={syncingCloud}
+              className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                syncingCloud
+                  ? 'bg-purple-500/20 text-purple-300'
+                  : 'hover:bg-white/5 text-slate-400 hover:text-white'
+              }`}
+              title="Sync chat across devices"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${syncingCloud ? 'animate-spin text-purple-400' : ''}`} />
+              <span className="hidden sm:inline">Sync</span>
+            </button>
+            <button className="ai-clear-button min-h-0 min-w-0 rounded-xl p-2 text-sm transition-colors hover:bg-white/5" style={{ color: 'var(--text-muted)' }} onClick={clearChatHistory} aria-label="Clear chat" title="Clear chat history">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         </header>
 
         <div className="ai-message-list scrollbar-hide flex min-h-0 flex-1 flex-col-reverse gap-3 overflow-y-auto overscroll-contain px-4 py-4 md:px-5 md:py-5">
