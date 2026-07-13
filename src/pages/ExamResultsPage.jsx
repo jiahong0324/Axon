@@ -721,56 +721,55 @@ export default function ExamResultsPage() {
             </div>
 
             <div className="space-y-3">
-              {/* SIMPLE & CLEAN MOBILE LIST (< md) */}
-              <div className="space-y-3 md:hidden">
+              {/* ULTRA-CLEAN APPLE/LINEAR MOBILE LIST (< md) */}
+              <div className="md:hidden divide-y divide-white/10 rounded-2xl border border-white/10 bg-black/20 overflow-hidden">
                 {calcRows.map((row, idx) => (
                   <div
                     key={row.id}
-                    className="rounded-xl border border-white/10 bg-white/[0.03] p-3 space-y-2"
+                    className="p-3 flex items-center justify-between gap-2 hover:bg-white/[0.02] transition-colors"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-400">#{idx + 1}</span>
-                      <input
-                        className="input flex-1 py-1.5 px-3 text-sm"
-                        placeholder="Course Name"
-                        value={row.name}
-                        onChange={e => {
-                          const val = e.target.value
-                          setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
-                        }}
-                      />
-                      <button
-                        onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
-                        className="p-1.5 text-slate-400 hover:text-red-400"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <input
+                      className="bg-transparent flex-1 text-sm font-medium text-white placeholder:text-slate-500 focus:outline-none min-w-0"
+                      placeholder={`Course #${idx + 1}`}
+                      value={row.name}
+                      onChange={e => {
+                        const val = e.target.value
+                        setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
+                      }}
+                    />
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <select
-                        className="input py-1.5 px-2.5 text-xs"
+                        className="bg-white/10 border-0 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-200 focus:ring-1 focus:ring-theme-500"
                         value={row.credits}
                         onChange={e => {
                           const val = e.target.value
                           setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
                         }}
                       >
-                        <option value="">Credits</option>
-                        {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
+                        <option value="">Cr</option>
+                        {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Cr</option>)}
                       </select>
 
                       <select
-                        className="input py-1.5 px-2.5 text-xs font-bold text-emerald-400"
+                        className="bg-theme-500/15 border border-theme-500/30 rounded-lg px-2 py-1.5 text-xs font-bold text-emerald-400 focus:ring-1 focus:ring-theme-500"
                         value={row.grade}
                         onChange={e => {
                           const val = e.target.value
                           setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
                         }}
                       >
-                        <option value="">Grade</option>
+                        <option value="">Grd</option>
                         {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
                       </select>
+
+                      <button
+                        onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
+                        className="p-1 text-slate-500 hover:text-red-400"
+                        title="Remove row"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -961,50 +960,46 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
 
       {/* Courses List */}
       <div className="space-y-2">
-        {/* VERY SIMPLE & USER-FRIENDLY MOBILE CARDS (< md) */}
-        <div className="space-y-2.5 md:hidden">
+        {/* ULTRA-CLEAN APPLE/LINEAR MOBILE LIST (< md) */}
+        <div className="md:hidden divide-y divide-white/10 rounded-2xl border border-white/10 bg-black/20 overflow-hidden">
           {(semester.courses || []).map((course, idx) => (
             <div
               key={course.id}
-              className="rounded-xl border border-white/10 bg-white/[0.03] p-3 space-y-2"
+              className="p-3 flex items-center justify-between gap-2 hover:bg-white/[0.02] transition-colors"
             >
-              {/* Row 1: Course Name + Delete */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-400">#{idx + 1}</span>
-                <input
-                  className="input flex-1 py-1.5 px-3 text-sm font-semibold"
-                  placeholder="Course Name"
-                  value={course.course_name || ''}
-                  onChange={e => onUpdateCourse(semester.id, course.id, { course_name: e.target.value })}
-                />
+              <input
+                className="bg-transparent flex-1 text-sm font-medium text-white placeholder:text-slate-500 focus:outline-none min-w-0"
+                placeholder={`Course #${idx + 1}`}
+                value={course.course_name || ''}
+                onChange={e => onUpdateCourse(semester.id, course.id, { course_name: e.target.value })}
+              />
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <select
+                  className="bg-white/10 border-0 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-200 focus:ring-1 focus:ring-theme-500"
+                  value={course.credit_hours || ''}
+                  onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
+                >
+                  <option value="">Cr</option>
+                  {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Cr</option>)}
+                </select>
+
+                <select
+                  className="bg-theme-500/15 border border-theme-500/30 rounded-lg px-2 py-1.5 text-xs font-bold text-emerald-400 focus:ring-1 focus:ring-theme-500"
+                  value={course.grade || ''}
+                  onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
+                >
+                  <option value="">Grd</option>
+                  {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
+                </select>
+
                 <button
                   onClick={() => onDeleteCourse(semester.id, course.id)}
-                  className="p-1.5 text-slate-400 hover:text-red-400"
+                  className="p-1 text-slate-500 hover:text-red-400"
                   title="Remove course"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
-              </div>
-
-              {/* Row 2: 2 clean selects for Credits & Grade */}
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  className="input py-1.5 px-2.5 text-xs font-semibold"
-                  value={course.credit_hours || ''}
-                  onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
-                >
-                  <option value="">Credits</option>
-                  {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
-                </select>
-
-                <select
-                  className="input py-1.5 px-2.5 text-xs font-bold text-emerald-400"
-                  value={course.grade || ''}
-                  onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
-                >
-                  <option value="">Grade</option>
-                  {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
-                </select>
               </div>
             </div>
           ))}

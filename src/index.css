@@ -320,11 +320,16 @@ input, select, textarea { font-size: 16px; }
 
 .ai-formatted-content {
   line-height: 1.65;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .ai-table-wrapper {
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .ai-table th {
@@ -681,6 +686,15 @@ input, select, textarea { font-size: 16px; }
   .ai-user-bubble {
     font-size: 0.925rem;
     line-height: 1.55;
+    min-width: 0;
+  }
+
+  .ai-table-wrapper {
+    margin-top: 0.65rem;
+    margin-bottom: 0.65rem;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

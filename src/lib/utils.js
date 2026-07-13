@@ -130,17 +130,17 @@ export function markdownToHtml(text = '') {
       }
 
       const tableHtml = `
-        <div class="ai-table-wrapper my-4 w-full overflow-x-auto rounded-2xl border border-slate-700/70 bg-slate-900/60 shadow-xl">
-          <table class="ai-table w-full border-collapse text-left text-sm">
-            <thead class="border-b border-slate-700/80 bg-slate-800/80 text-xs font-semibold">
+        <div class="ai-table-wrapper my-3.5 w-full max-w-full overflow-x-auto rounded-xl md:rounded-2xl border border-slate-700/70 bg-slate-900/60 shadow-xl">
+          <table class="ai-table w-full min-w-full border-collapse text-left text-xs md:text-sm">
+            <thead class="border-b border-slate-700/80 bg-slate-800/80 text-[11px] md:text-xs font-semibold">
               <tr>
-                ${headers.map(h => `<th class="px-4 py-3 align-top">${formatInline(h)}</th>`).join('')}
+                ${headers.map(h => `<th class="px-2.5 py-2 md:px-4 md:py-3 align-top whitespace-nowrap">${formatInline(h)}</th>`).join('')}
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/60">
               ${rows.map(row => `
                 <tr class="transition-colors hover:bg-white/[0.03]">
-                  ${headers.map((_, colIdx) => `<td class="px-4 py-3.5 align-top leading-relaxed text-slate-200">${formatInline(row[colIdx] || '')}</td>`).join('')}
+                  ${headers.map((_, colIdx) => `<td class="px-2.5 py-2.5 md:px-4 md:py-3.5 align-top leading-relaxed text-slate-200 break-words">${formatInline(row[colIdx] || '')}</td>`).join('')}
                 </tr>
               `).join('')}
             </tbody>
