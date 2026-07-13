@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, CheckCircle2, ChevronDown, ChevronUp, Info, Edit2, Check, RotateCcw, RefreshCw, Cloud, ShieldCheck } from 'lucide-react'
+import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, Edit2, Check, RotateCcw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../components/Toast'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -18,12 +18,10 @@ function createDefaultThreeCourses(semId) {
 export default function ExamResultsPage() {
   const [activeTab, setActiveTab] = useState('records') // 'records' | 'calculator'
   const [semesters, setSemesters] = useState([])
-  const [loading, setLoading] = useState(true)
   const [newSemesterName, setNewSemesterName] = useState('')
   const [showAddSemModal, setShowAddSemModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [targetSemesterId, setTargetSemesterId] = useState(null)
-  const [syncingCloud, setSyncingCloud] = useState(false)
 
   // Quick Calculator State
   const [calcRows, setCalcRows] = useState([
@@ -33,6 +31,8 @@ export default function ExamResultsPage() {
   ])
   const [showCalcResult, setShowCalcResult] = useState(false)
 
+  const syncTimerRef = useRef(null)
+  const isSyncingRef = useRef(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
 
@@ -54,116 +54,115 @@ export default function ExamResultsPage() {
     window.addEventListener('visibilitychange', handleAutoRefresh)
     window.addEventListener('focus', handleAutoRefresh)
 
-    const channel = supabase
-      .channel('exam-results-auto-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'student_semesters' }, () => {
-        loadSemesters()
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'student_semester_courses' }, () => {
-        loadSemesters()
-      })
-      .subscribe()
-
     return () => {
       authSub?.subscription?.unsubscribe()
       window.removeEventListener('visibilitychange', handleAutoRefresh)
       window.removeEventListener('focus', handleAutoRefresh)
-      supabase.removeChannel(channel)
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
     }
   }, [])
 
-  // Robust universal sync: ensures all semesters & courses typed on laptop are persisted to Supabase UUIDs
-  async function syncAllToSupabase(localList, silent = true) {
-    if (!silent) setSyncingCloud(true)
+  // 100% Automatic background cloud sync without any manual buttons
+  async function syncAllToSupabase(localList) {
+    if (isSyncingRef.current) return localList
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user || !Array.isArray(localList) || localList.length === 0) {
-      if (!silent) setSyncingCloud(false)
-      return localList
-    }
+    if (!user || !Array.isArray(localList) || localList.length === 0) return localList
 
-    const updatedList = []
-    for (const sem of localList) {
-      let semId = sem.id
-      let newSemObj = { ...sem }
+    isSyncingRef.current = true
+    try {
+      const updatedList = []
+      for (const sem of localList) {
+        let semId = sem.id
+        let newSemObj = { ...sem }
 
-      // 1. Ensure Semester is in Supabase
-      if (typeof semId === 'string' && semId.startsWith('sem-')) {
-        const { data: newSem } = await supabase
-          .from('student_semesters')
-          .insert({ user_id: user.id, name: sem.name || 'Semester' })
-          .select()
-          .single()
-        if (newSem) {
-          semId = newSem.id
-          newSemObj.id = newSem.id
-        }
-      } else {
-        await supabase
-          .from('student_semesters')
-          .update({ name: sem.name || 'Semester' })
-          .eq('id', semId)
-      }
-
-      // 2. Sync courses for this semester
-      const syncedCourses = []
-      for (const course of (sem.courses || [])) {
-        if (typeof course.id === 'string' && course.id.startsWith('course-')) {
-          const { data: newCourse } = await supabase
-            .from('student_semester_courses')
-            .insert({
-              semester_id: semId,
-              user_id: user.id,
-              course_code: course.course_code || '',
-              course_name: course.course_name || '',
-              credit_hours: Number(course.credit_hours) || 0,
-              grade: course.grade || ''
-            })
+        // 1. Ensure Semester is saved in Supabase student_semesters table
+        if (typeof semId === 'string' && semId.startsWith('sem-')) {
+          const { data: newSem } = await supabase
+            .from('student_semesters')
+            .insert({ user_id: user.id, name: sem.name || 'Semester' })
             .select()
             .single()
-          if (newCourse) {
-            syncedCourses.push(newCourse)
-          } else {
-            syncedCourses.push({ ...course, semester_id: semId })
+          if (newSem) {
+            semId = newSem.id
+            newSemObj.id = newSem.id
           }
         } else {
           await supabase
-            .from('student_semester_courses')
-            .update({
-              course_code: course.course_code || '',
-              course_name: course.course_name || '',
-              credit_hours: Number(course.credit_hours) || 0,
-              grade: course.grade || ''
-            })
-            .eq('id', course.id)
-          syncedCourses.push({ ...course, semester_id: semId })
+            .from('student_semesters')
+            .upsert({ id: semId, user_id: user.id, name: sem.name || 'Semester' })
         }
+
+        // 2. Automatically save all courses for this semester into student_semester_courses
+        const syncedCourses = []
+        for (const course of (sem.courses || [])) {
+          if (typeof course.id === 'string' && course.id.startsWith('course-')) {
+            const { data: newCourse } = await supabase
+              .from('student_semester_courses')
+              .insert({
+                semester_id: semId,
+                user_id: user.id,
+                course_code: course.course_code || '',
+                course_name: course.course_name || '',
+                credit_hours: Number(course.credit_hours) || 0,
+                grade: course.grade || ''
+              })
+              .select()
+              .single()
+            if (newCourse) {
+              syncedCourses.push(newCourse)
+            } else {
+              syncedCourses.push({ ...course, semester_id: semId })
+            }
+          } else {
+            await supabase
+              .from('student_semester_courses')
+              .upsert({
+                id: course.id,
+                semester_id: semId,
+                user_id: user.id,
+                course_code: course.course_code || '',
+                course_name: course.course_name || '',
+                credit_hours: Number(course.credit_hours) || 0,
+                grade: course.grade || ''
+              })
+            syncedCourses.push({ ...course, semester_id: semId })
+          }
+        }
+
+        newSemObj.courses = syncedCourses
+        updatedList.push(newSemObj)
       }
 
-      newSemObj.courses = syncedCourses
-      updatedList.push(newSemObj)
+      setSemesters(updatedList)
+      localStorage.setItem('axon_exam_results_semesters', JSON.stringify(updatedList))
+      return updatedList
+    } catch (e) {
+      console.error('Auto cloud sync error:', e)
+      return localList
+    } finally {
+      isSyncingRef.current = false
     }
-
-    setSemesters(updatedList)
-    localStorage.setItem('axon_exam_results_semesters', JSON.stringify(updatedList))
-    if (!silent) {
-      setSyncingCloud(false)
-      showToast('All results synced to cloud!', 'success')
-    }
-    return updatedList
   }
 
-  async function loadSemesters(showToastMsg = false) {
-    setLoading(true)
-    if (showToastMsg) setSyncingCloud(true)
+  function autoScheduleCloudSync(nextList) {
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
+    syncTimerRef.current = setTimeout(() => {
+      syncAllToSupabase(nextList)
+    }, 400)
+  }
+
+  async function loadSemesters() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       const cached = localStorage.getItem('axon_exam_results_semesters')
       if (cached) {
-        const parsed = JSON.parse(cached)
-        setSemesters(parsed.map(s => ({
-          ...s,
-          courses: (s.courses && s.courses.length > 0) ? s.courses : createDefaultThreeCourses(s.id)
-        })))
+        try {
+          const parsed = JSON.parse(cached)
+          setSemesters(parsed.map(s => ({
+            ...s,
+            courses: (s.courses && s.courses.length > 0) ? s.courses : createDefaultThreeCourses(s.id)
+          })))
+        } catch (e) {}
       } else {
         const defaultSem = [{
           id: 'sem-1',
@@ -174,11 +173,25 @@ export default function ExamResultsPage() {
         setSemesters(defaultSem)
         localStorage.setItem('axon_exam_results_semesters', JSON.stringify(defaultSem))
       }
-      setLoading(false)
-      if (showToastMsg) setSyncingCloud(false)
       return
     }
 
+    // 1. First automatically push any local unsynced laptop edits up to Supabase
+    const cached = localStorage.getItem('axon_exam_results_semesters')
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached)
+        const hasUnsynced = parsed.some(s => 
+          String(s.id).startsWith('sem-') || 
+          (s.courses || []).some(c => String(c.id).startsWith('course-'))
+        )
+        if (hasUnsynced) {
+          await syncAllToSupabase(parsed)
+        }
+      } catch (e) {}
+    }
+
+    // 2. Fetch all semesters & courses from Supabase (so mobile/laptop see all records)
     const { data: semsData } = await supabase
       .from('student_semesters')
       .select('*')
@@ -193,7 +206,6 @@ export default function ExamResultsPage() {
 
     if (semsData && semsData.length > 0) {
       const cachedLockMap = {}
-      const cached = localStorage.getItem('axon_exam_results_semesters')
       if (cached) {
         try {
           const parsedCached = JSON.parse(cached)
@@ -212,35 +224,30 @@ export default function ExamResultsPage() {
       })
       setSemesters(merged)
       localStorage.setItem('axon_exam_results_semesters', JSON.stringify(merged))
-    } else {
-      const cached = localStorage.getItem('axon_exam_results_semesters')
-      if (cached) {
+    } else if (cached) {
+      try {
         const parsed = JSON.parse(cached)
-        await syncAllToSupabase(parsed, true)
-      } else {
-        const defaultSem = [{
-          id: 'sem-1',
-          name: 'Year 1 Semester 1',
-          is_submitted: false,
-          courses: createDefaultThreeCourses('sem-1')
-        }]
-        const synced = await syncAllToSupabase(defaultSem, true)
-        setSemesters(synced)
-      }
-    }
-    setLoading(false)
-    if (showToastMsg) {
-      setSyncingCloud(false)
-      showToast('Exam results synced across devices!', 'success')
+        await syncAllToSupabase(parsed)
+      } catch (e) {}
+    } else {
+      const defaultSem = [{
+        id: 'sem-1',
+        name: 'Year 1 Semester 1',
+        is_submitted: false,
+        courses: createDefaultThreeCourses('sem-1')
+      }]
+      const synced = await syncAllToSupabase(defaultSem)
+      setSemesters(synced)
     }
   }
 
-  function saveSemestersToLocal(list) {
+  function saveAndAutoSync(list) {
     setSemesters(list)
     localStorage.setItem('axon_exam_results_semesters', JSON.stringify(list))
+    autoScheduleCloudSync(list)
   }
 
-  async function handleCreateSemester(e) {
+  function handleCreateSemester(e) {
     e?.preventDefault()
     if (!newSemesterName.trim()) return
     const newSem = {
@@ -252,19 +259,16 @@ export default function ExamResultsPage() {
     newSem.courses = createDefaultThreeCourses(newSem.id)
 
     const nextList = [...semesters, newSem]
-    saveSemestersToLocal(nextList)
+    saveAndAutoSync(nextList)
     setNewSemesterName('')
     setShowAddSemModal(false)
     showToast('Semester added successfully.', 'success')
-
-    // Immediate background sync so it is available on mobile right away
-    syncAllToSupabase(nextList, true)
   }
 
   async function handleDeleteSemester(semId) {
     if (!await confirm({ title: 'Delete Semester?', message: 'All courses inside this semester will be removed.' })) return
     const nextList = semesters.filter(s => s.id !== semId)
-    saveSemestersToLocal(nextList)
+    saveAndAutoSync(nextList)
     showToast('Semester deleted.', 'success')
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -288,7 +292,7 @@ export default function ExamResultsPage() {
       if (s.id !== semId) return s
       return { ...s, courses: [...(s.courses || []), newCourse] }
     })
-    saveSemestersToLocal(nextList)
+    saveAndAutoSync(nextList)
   }
 
   function handleUpdateCourse(semId, courseId, updatedFields) {
@@ -299,7 +303,7 @@ export default function ExamResultsPage() {
         courses: s.courses.map(c => c.id === courseId ? { ...c, ...updatedFields } : c)
       }
     })
-    saveSemestersToLocal(nextList)
+    saveAndAutoSync(nextList)
   }
 
   function handleDeleteCourse(semId, courseId) {
@@ -307,32 +311,28 @@ export default function ExamResultsPage() {
       if (s.id !== semId) return s
       return { ...s, courses: s.courses.filter(c => c.id !== courseId) }
     })
-    saveSemestersToLocal(nextList)
+    saveAndAutoSync(nextList)
   }
 
-  // Toggle submitted vs edit state on a Semester Card & sync immediately
-  async function handleToggleSubmitSemester(semId, targetSubmittedState) {
+  function handleToggleSubmitSemester(semId, targetSubmittedState) {
     const nextList = semesters.map(s => {
       if (s.id !== semId) return s
       return { ...s, is_submitted: targetSubmittedState }
     })
-    saveSemestersToLocal(nextList)
+    saveAndAutoSync(nextList)
 
     if (targetSubmittedState) {
-      showToast('Semester results locked & synced to cloud!', 'success')
-      await syncAllToSupabase(nextList, true)
+      showToast('Semester results locked & saved automatically!', 'success')
     } else {
       showToast('Editing mode unlocked.', 'info')
     }
   }
 
-  async function handleAIResultImport(extractedItems) {
+  function handleAIResultImport(extractedItems) {
     if (!Array.isArray(extractedItems) || extractedItems.length === 0) {
       setAnalyzerOpen(false)
       return
     }
-
-    const { data: { user } } = await supabase.auth.getUser()
 
     if (activeTab === 'calculator') {
       const importedCalcRows = extractedItems.map((item, idx) => ({
@@ -397,10 +397,9 @@ export default function ExamResultsPage() {
       }
     }
 
-    saveSemestersToLocal(nextList)
+    saveAndAutoSync(nextList)
     setAnalyzerOpen(false)
     showToast(`Successfully imported ${extractedItems.length} courses!`, 'success')
-    syncAllToSupabase(nextList, true)
   }
 
   const overall = calculateOverallCGPA(semesters)
@@ -419,32 +418,20 @@ export default function ExamResultsPage() {
         <div>
           <h1 className="page-title mb-1">Exam Results & CGPA</h1>
           <p className="text-sm text-slate-400">
-            TAR UMT 5.6 Standard Grading Scale · Real-time Cloud Sync
+            TAR UMT 5.6 Standard Grading Scale · Automatic Cloud Sync
           </p>
         </div>
 
-        {/* Sync & Overall CGPA Banner */}
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => syncAllToSupabase(semesters, false)}
-            disabled={syncingCloud}
-            className="flex items-center gap-2 rounded-xl bg-[#131b2e] px-4 py-3 text-xs sm:text-sm font-semibold text-slate-300 hover:bg-[#1a243d] hover:text-white transition-all shadow-sm"
-            title="Sync laptop changes to cloud for mobile"
-          >
-            <RefreshCw className={`h-4 w-4 text-blue-400 ${syncingCloud ? 'animate-spin' : ''}`} />
-            <span>{syncingCloud ? 'Syncing...' : 'Sync Mobile/Laptop'}</span>
-          </button>
-
-          <div className="flex items-center gap-4 rounded-2xl bg-[#131b2e] px-5 py-3 shadow-md">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-500/15">
-              <Award className="h-6 w-6 text-blue-400" />
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Overall CGPA</p>
-              <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-3xl font-extrabold text-white tracking-tight">{overall.cgpa}</span>
-                <span className="text-xs font-semibold text-slate-400">({overall.overallCredits} Credits)</span>
-              </div>
+        {/* Overall CGPA Banner (Sync button removed, 100% automatic) */}
+        <div className="flex items-center gap-4 rounded-2xl bg-[#131b2e] px-5 py-3 shadow-md">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-500/15">
+            <Award className="h-6 w-6 text-blue-400" />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Overall CGPA</p>
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span className="text-3xl font-extrabold text-white tracking-tight">{overall.cgpa}</span>
+              <span className="text-xs font-semibold text-slate-400">({overall.overallCredits} Credits)</span>
             </div>
           </div>
         </div>
@@ -502,7 +489,7 @@ export default function ExamResultsPage() {
         )}
       </div>
 
-      {/* Main 3-Column Desktop Grid Layout (Fills laptop screen generously & balanced) */}
+      {/* Main 3-Column Desktop Grid Layout */}
       <div className="grid gap-8 lg:grid-cols-3 items-start">
         {/* Left 2 Columns: Main Workspace */}
         <div className="lg:col-span-2 space-y-7">
@@ -559,10 +546,9 @@ export default function ExamResultsPage() {
                 )}
               </div>
 
-              {/* VIEW MODE 1: DEDICATED RESULT SCREEN (ONLY SHOWS RESULT AFTER CLICKING CALCULATE) */}
+              {/* VIEW MODE 1: DEDICATED RESULT SCREEN AFTER CALCULATE */}
               {showCalcResult ? (
                 <div className="space-y-6 py-4 animate-fadeIn">
-                  {/* Big Calculated Result Banner */}
                   <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-8 text-center border border-white/5">
                     <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Calculated SGPA</span>
                     <div className="my-2 text-5xl sm:text-6xl font-black text-white tracking-tight">
@@ -577,7 +563,6 @@ export default function ExamResultsPage() {
                     </p>
                   </div>
 
-                  {/* Summary of Courses */}
                   <div className="rounded-xl bg-[#0e1626] p-5">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
                       Simulated Course List
@@ -626,7 +611,7 @@ export default function ExamResultsPage() {
                   </div>
                 </div>
               ) : (
-                /* VIEW MODE 2: COURSE INPUT TABLE BEFORE CLICKING CALCULATE */
+                /* VIEW MODE 2: COURSE INPUT TABLE BEFORE CALCULATE */
                 <>
                   <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
                     {calcRows.map((row, idx) => (
@@ -711,7 +696,7 @@ export default function ExamResultsPage() {
           )}
         </div>
 
-        {/* Right 1 Column: Sticky Desktop Sidebar (Substantial & informative, makes right side look full & professional) */}
+        {/* Right 1 Column: Sticky Desktop Sidebar */}
         <div className="lg:col-span-1 space-y-6 sticky top-6">
           {/* CGPA Standing Card */}
           <div className="rounded-2xl bg-[#131b2e] p-6 shadow-xl">
@@ -896,35 +881,32 @@ function SemesterCard({
           {(semester.courses || []).length === 0 ? (
             <p className="py-6 text-center text-sm text-slate-500">No courses listed in this semester.</p>
           ) : (
-            (semester.courses || []).map((course, idx) => {
-              const pt = getGradePoint(course.grade)
-              return (
-                <div
-                  key={course.id || idx}
-                  className="flex items-center justify-between py-3.5 text-sm sm:text-base"
-                >
-                  <div className="flex items-center gap-3">
-                    {course.course_code && (
-                      <span className="font-mono text-xs font-bold uppercase rounded bg-white/5 px-2 py-1 text-slate-400">
-                        {course.course_code}
-                      </span>
-                    )}
-                    <span className="font-semibold text-white">
-                      {course.course_name || `Course #${idx + 1}`}
+            (semester.courses || []).map((course, idx) => (
+              <div
+                key={course.id || idx}
+                className="flex items-center justify-between py-3.5 text-sm sm:text-base"
+              >
+                <div className="flex items-center gap-3">
+                  {course.course_code && (
+                    <span className="font-mono text-xs font-bold uppercase rounded bg-white/5 px-2 py-1 text-slate-400">
+                      {course.course_code}
                     </span>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <span className="text-xs sm:text-sm font-medium text-slate-400">
-                      {course.credit_hours || 0} Credits
-                    </span>
-                    <span className={`rounded-lg px-3 py-1 font-mono text-xs sm:text-sm font-bold border ${getGradeBadgeStyle(course.grade)}`}>
-                      {course.grade || '-'}
-                    </span>
-                  </div>
+                  )}
+                  <span className="font-semibold text-white">
+                    {course.course_name || `Course #${idx + 1}`}
+                  </span>
                 </div>
-              )
-            })
+
+                <div className="flex items-center gap-4">
+                  <span className="text-xs sm:text-sm font-medium text-slate-400">
+                    {course.credit_hours || 0} Credits
+                  </span>
+                  <span className={`rounded-lg px-3 py-1 font-mono text-xs sm:text-sm font-bold border ${getGradeBadgeStyle(course.grade)}`}>
+                    {course.grade || '-'}
+                  </span>
+                </div>
+              </div>
+            ))
           )}
         </div>
       ) : (
