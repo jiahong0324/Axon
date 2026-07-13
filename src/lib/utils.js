@@ -91,7 +91,7 @@ export function markdownToHtml(text = '') {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/___LINE_BREAK___/g, '<br class="my-1" />')
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-purple-200">$1</strong>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
       .replace(/`(.*?)`/g, '<code class="bg-slate-800 text-purple-300 px-1.5 py-0.5 rounded text-xs font-mono border border-slate-700/60">$1</code>')
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-theme-400 underline hover:text-theme-300">$1</a>')
@@ -132,7 +132,7 @@ export function markdownToHtml(text = '') {
       const tableHtml = `
         <div class="ai-table-wrapper my-4 w-full overflow-x-auto rounded-2xl border border-slate-700/70 bg-slate-900/60 shadow-xl">
           <table class="ai-table w-full border-collapse text-left text-sm">
-            <thead class="border-b border-slate-700/80 bg-slate-800/80 text-xs font-semibold text-purple-200">
+            <thead class="border-b border-slate-700/80 bg-slate-800/80 text-xs font-semibold">
               <tr>
                 ${headers.map(h => `<th class="px-4 py-3 align-top">${formatInline(h)}</th>`).join('')}
               </tr>
@@ -153,22 +153,22 @@ export function markdownToHtml(text = '') {
 
     // Check for Headings
     if (/^######\s+(.*)$/.test(line)) {
-      htmlLines.push(`<h6 class="font-heading text-xs font-semibold text-purple-300 mt-3 mb-1">${formatInline(line.replace(/^######\s+/, ''))}</h6>`)
+      htmlLines.push(`<h6 class="font-heading text-xs font-semibold mt-3 mb-1">${formatInline(line.replace(/^######\s+/, ''))}</h6>`)
       i++
       continue
     }
     if (/^#####\s+(.*)$/.test(line)) {
-      htmlLines.push(`<h5 class="font-heading text-sm font-semibold text-purple-300 mt-3.5 mb-1.5">${formatInline(line.replace(/^#####\s+/, ''))}</h5>`)
+      htmlLines.push(`<h5 class="font-heading text-sm font-semibold mt-3.5 mb-1.5">${formatInline(line.replace(/^#####\s+/, ''))}</h5>`)
       i++
       continue
     }
     if (/^####\s+(.*)$/.test(line)) {
-      htmlLines.push(`<h4 class="ai-h4 font-heading text-sm md:text-base font-bold text-purple-300 mt-4 mb-2">${formatInline(line.replace(/^####\s+/, ''))}</h4>`)
+      htmlLines.push(`<h4 class="ai-h4 font-heading text-sm md:text-base font-bold mt-4 mb-2">${formatInline(line.replace(/^####\s+/, ''))}</h4>`)
       i++
       continue
     }
     if (/^###\s+(.*)$/.test(line)) {
-      htmlLines.push(`<h3 class="ai-h3 font-heading text-base md:text-lg font-bold text-purple-200 mt-5 mb-2.5">${formatInline(line.replace(/^###\s+/, ''))}</h3>`)
+      htmlLines.push(`<h3 class="ai-h3 font-heading text-base md:text-lg font-bold mt-5 mb-2.5">${formatInline(line.replace(/^###\s+/, ''))}</h3>`)
       i++
       continue
     }
