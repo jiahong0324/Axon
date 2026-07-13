@@ -100,8 +100,6 @@ export default function HomePage() {
 
       const exData = await fetchExerciseData(activeUser.id)
       setExerciseLogs(exData.logs || [])
-      setExerciseGoal(exData.weeklyGoal || 4)
-      setExerciseXp(exData.xpTotal || 0)
       setExerciseFreezes(exData.freezesAvailable || 1)
 
       writeCache(`axon_home_dashboard_${activeUser.id}`, {
