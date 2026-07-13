@@ -82,7 +82,7 @@ export function getLevelInfo(xpTotal, t) {
   }
 }
 
-export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes = 1, todayStr = getTodayStr()) {
+export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes = 1, todayStr = getTodayStr(), xpTotal = 0) {
   const loggedDatesSet = new Set(logs.map(log => log.log_date))
   const isCheckedInToday = loggedDatesSet.has(todayStr)
 
@@ -169,35 +169,64 @@ export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes
   }
   if (currentStreak > longestStreak) longestStreak = currentStreak
 
-  // Compute Badge Statuses
+  // Compute 8 Milestone Badges
+  const computedXp = Math.max(xpTotal, logs.reduce((acc, cur) => acc + (cur.xp_earned || 20), 0))
   const badgeStatuses = [
     {
+      id: 'first_step',
+      titleKey: 'First Check-in',
+      descKey: 'Log your very first workout in Axon',
+      icon: '🌟',
+      unlocked: logs.length >= 1
+    },
+    {
+      id: '3_day',
+      titleKey: '3-Day Starter',
+      descKey: 'Reach a 3-day workout streak',
+      icon: '⚡',
+      unlocked: longestStreak >= 3 || currentStreak >= 3
+    },
+    {
       id: '7_day',
-      titleKey: 'exercise.badge7',
-      descKey: 'exercise.badge7Desc',
+      titleKey: '7-Day Streak',
+      descKey: 'Reach a 7-day workout streak',
       icon: '🔥',
       unlocked: longestStreak >= 7 || currentStreak >= 7
     },
     {
+      id: '14_day',
+      titleKey: '14-Day Warrior',
+      descKey: 'Reach a 14-day workout streak',
+      icon: '💪',
+      unlocked: longestStreak >= 14 || currentStreak >= 14
+    },
+    {
       id: '30_day',
-      titleKey: 'exercise.badge30',
-      descKey: 'exercise.badge30Desc',
-      icon: '⚡',
+      titleKey: '30-Day Streak',
+      descKey: 'Reach a 30-day workout streak',
+      icon: '🚀',
       unlocked: longestStreak >= 30 || currentStreak >= 30
     },
     {
       id: '100_day',
-      titleKey: 'exercise.badge100',
-      descKey: 'exercise.badge100Desc',
+      titleKey: '100-Day Legend',
+      descKey: 'Reach a 100-day workout streak',
       icon: '👑',
       unlocked: longestStreak >= 100 || currentStreak >= 100
     },
     {
       id: 'weekly_goal',
-      titleKey: 'exercise.badgeWeekly',
-      descKey: 'exercise.badgeWeeklyDesc',
+      titleKey: 'Weekly Champion',
+      descKey: 'Meet your weekly exercise target',
       icon: '🏆',
       unlocked: weeklyCount >= weeklyGoal
+    },
+    {
+      id: 'xp_500',
+      titleKey: 'XP Master (500+ XP)',
+      descKey: 'Earn 500 total XP from workouts & habits',
+      icon: '💎',
+      unlocked: computedXp >= 500
     }
   ]
 

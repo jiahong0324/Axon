@@ -1,4 +1,4 @@
-import { Award, Bot, Calendar, Check, Dumbbell, Flame, Info, Pencil, RefreshCw, Shield, Trash2, Trophy, Zap } from 'lucide-react'
+import { Award, Bot, Calendar, Check, Dumbbell, Flame, Info, Pencil, RefreshCw, Shield, Trash2, Trophy, Zap, Lock } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useConfirmDialog } from '../components/ConfirmModal'
 import EmptyState from '../components/EmptyState'
@@ -95,8 +95,8 @@ export default function ExercisePage() {
   }
 
   const stats = useMemo(
-    () => calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, todayStr),
-    [logs, weeklyGoal, freezesAvailable, todayStr]
+    () => calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, todayStr, xpTotal),
+    [logs, weeklyGoal, freezesAvailable, todayStr, xpTotal]
   )
 
   const levelInfo = useMemo(
@@ -110,6 +110,28 @@ export default function ExercisePage() {
   async function handleCheckIn() {
     if (stats.isCheckedInToday || checkingIn) return
     setCheckingIn(true)
+
+    // 1. Optimistic Instant UI Update (0ms delay)
+    const optimisticLog = {
+      id: `local-${Date.now()}`,
+      user_id: userId,
+      log_date: todayStr,
+      activity_type: selectedTag,
+      xp_earned: 20
+    }
+    const optimisticLogs = [optimisticLog, ...logs]
+    const optimisticXp = xpTotal + 20
+    setLogs(optimisticLogs)
+    setXpTotal(optimisticXp)
+
+    showToast(t('exercise.checkedInToday'), 'success')
+    setCelebrationModal({
+      xpEarned: 20,
+      message: dailyMsg,
+      unlockedBadges: []
+    })
+
+    // 2. Persist in background
     try {
       const result = await logExerciseCheckIn({
         userId,
@@ -121,24 +143,20 @@ export default function ExercisePage() {
         logs
       })
 
-      if (result.error) {
-        showToast(result.error, 'error')
-        return
+      if (!result.error) {
+        setLogs(result.updatedLogs)
+        setXpTotal(result.newXpTotal)
+        setFreezesAvailable(result.newFreezes)
+        if (result.unlockedBadges && result.unlockedBadges.length > 0) {
+          setCelebrationModal({
+            xpEarned: result.xpEarned,
+            message: dailyMsg,
+            unlockedBadges: result.unlockedBadges
+          })
+        }
       }
-
-      setLogs(result.updatedLogs)
-      setXpTotal(result.newXpTotal)
-      setFreezesAvailable(result.newFreezes)
-
-      showToast(t('exercise.checkedInToday'), 'success')
-
-      setCelebrationModal({
-        xpEarned: result.xpEarned,
-        message: dailyMsg,
-        unlockedBadges: result.unlockedBadges || []
-      })
     } catch {
-      showToast('Could not record check-in.', 'error')
+      // Background sync error ignored if local state succeeded
     } finally {
       setCheckingIn(false)
     }
@@ -250,11 +268,11 @@ export default function ExercisePage() {
         </div>
       </div>
 
-      {/* TOP 2 HERO CARDS (Previous Layout + Result Page Design + Left Colored Accent Bars) */}
+      {/* TOP 2 HERO CARDS */}
       <div className="grid gap-6 md:grid-cols-2 mb-8">
         {/* HERO CARD 1: Habit Tracker & Streak (LEFT ACCENT: ORANGE) */}
         <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5 border-l-4 border-l-orange-500">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-start justify-between mb-6">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
                 {t('exercise.currentStreak')}
@@ -269,18 +287,19 @@ export default function ExercisePage() {
               </div>
             </div>
 
-            <div className="text-right">
-              <p className="text-xs font-semibold text-slate-400 mb-1">Weekly Target</p>
-              <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-3.5 py-1 text-xs font-bold text-blue-400">
+            {/* Aligned Weekly Target Label & Button */}
+            <div className="flex flex-col items-end">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Weekly Target
+              </span>
+              <button
+                onClick={() => { setTempGoal(weeklyGoal); setShowGoalSheet(true) }}
+                className="inline-flex items-center gap-2 rounded-full bg-blue-500/15 border border-blue-500/30 px-3.5 py-1.5 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-all shadow-sm"
+                title={t('exercise.editGoal')}
+              >
                 <span>{stats.weeklyCount} / {weeklyGoal} Days</span>
-                <button
-                  onClick={() => { setTempGoal(weeklyGoal); setShowGoalSheet(true) }}
-                  className="hover:text-white transition-colors"
-                  title={t('exercise.editGoal')}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-              </div>
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
 
@@ -333,10 +352,10 @@ export default function ExercisePage() {
         </section>
       </div>
 
-      {/* STACKED SECTIONS BELOW HERO CARDS (Previous Layout + Result Page Design System) */}
+      {/* STACKED SECTIONS BELOW HERO CARDS */}
       <div className="space-y-7">
-        {/* 1. THIS WEEK DAY SELECTOR STRIP CARD */}
-        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5">
+        {/* 1. THIS WEEK DAY SELECTOR STRIP CARD (100% whole width on mobile, no horizontal scrolling) */}
+        <section className="rounded-2xl bg-[#131b2e] p-5 sm:p-8 shadow-xl border border-white/5">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
@@ -349,36 +368,34 @@ export default function ExercisePage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto scrollbar-hide">
-            <div className="flex items-center justify-between gap-3 min-w-[340px]">
-              {stats.currentWeekDays.map(day => {
-                const isToday = day.dateStr === todayStr
-                return (
-                  <div
-                    key={day.dateStr}
-                    className={`flex-1 flex flex-col items-center justify-center rounded-xl p-3.5 transition-all min-h-[72px] border ${
-                      day.logged
-                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 font-bold'
-                        : isToday
-                        ? 'bg-blue-500/15 border-blue-500/30 text-blue-400 font-bold'
-                        : 'bg-[#0e1626] border-white/5 text-slate-400'
-                    }`}
-                  >
-                    <span className="text-xs font-semibold uppercase tracking-wider">{day.dayName}</span>
-                    {day.logged ? (
-                      <span className="mt-1.5 text-lg">{ACTIVITY_ICONS[day.activityType] || '✅'}</span>
-                    ) : (
-                      <span className="mt-2.5 h-3 w-3 rounded-full border border-current opacity-30" />
-                    )}
-                  </div>
-                )
-              })}
-            </div>
+          <div className="grid grid-cols-7 gap-1 sm:gap-3 w-full">
+            {stats.currentWeekDays.map(day => {
+              const isToday = day.dateStr === todayStr
+              return (
+                <div
+                  key={day.dateStr}
+                  className={`flex flex-col items-center justify-center rounded-xl p-2 sm:p-3.5 transition-all min-h-[64px] border ${
+                    day.logged
+                      ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 font-bold'
+                      : isToday
+                      ? 'bg-blue-500/15 border-blue-500/30 text-blue-400 font-bold'
+                      : 'bg-[#0e1626] border-white/5 text-slate-400'
+                  }`}
+                >
+                  <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">{day.dayName}</span>
+                  {day.logged ? (
+                    <span className="mt-1.5 text-base sm:text-lg">{ACTIVITY_ICONS[day.activityType] || '✅'}</span>
+                  ) : (
+                    <span className="mt-2.5 h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full border border-current opacity-30" />
+                  )}
+                </div>
+              )
+            })}
           </div>
         </section>
 
-        {/* 2. MONTHLY CHECK-IN HEATMAP CARD */}
-        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5">
+        {/* 2. MONTHLY CHECK-IN HEATMAP CARD (100% whole width on mobile, no horizontal scrolling) */}
+        <section className="rounded-2xl bg-[#131b2e] p-5 sm:p-8 shadow-xl border border-white/5">
           <div className="mb-5">
             <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
               <Calendar className="h-5 w-5 text-emerald-400" />
@@ -389,23 +406,21 @@ export default function ExercisePage() {
             </p>
           </div>
 
-          <div className="overflow-x-auto scrollbar-hide">
-            <div className="grid grid-cols-7 gap-2 min-w-[340px]">
-              {heatmapDays.map(day => (
-                <div
-                  key={day.dateStr}
-                  title={`${day.dateStr} (${day.activity || 'No workout'})`}
-                  className={`flex flex-col items-center justify-center rounded-xl p-2 min-h-[48px] border transition-colors ${
-                    day.logged
-                      ? 'bg-emerald-500/20 border-emerald-500/35 text-emerald-400 font-bold'
-                      : 'bg-[#0e1626] border-white/5 text-slate-400'
-                  }`}
-                >
-                  <span className="text-[10px] font-mono">{day.label}</span>
-                  {day.logged && <span className="text-xs mt-0.5">{ACTIVITY_ICONS[day.activity] || '⚡'}</span>}
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 w-full">
+            {heatmapDays.map(day => (
+              <div
+                key={day.dateStr}
+                title={`${day.dateStr} (${day.activity || 'No workout'})`}
+                className={`flex flex-col items-center justify-center rounded-lg sm:rounded-xl p-1 sm:p-2 min-h-[42px] sm:min-h-[48px] border transition-colors ${
+                  day.logged
+                    ? 'bg-emerald-500/20 border-emerald-500/35 text-emerald-400 font-bold'
+                    : 'bg-[#0e1626] border-white/5 text-slate-400'
+                }`}
+              >
+                <span className="text-[9px] sm:text-[10px] font-mono">{day.label}</span>
+                {day.logged && <span className="text-[11px] sm:text-xs mt-0.5">{ACTIVITY_ICONS[day.activity] || '⚡'}</span>}
+              </div>
+            ))}
           </div>
 
           <div className="mt-4 flex items-center justify-end gap-2 text-xs text-slate-400">
@@ -417,7 +432,7 @@ export default function ExercisePage() {
           </div>
         </section>
 
-        {/* 3. MILESTONE BADGES CARD */}
+        {/* 3. MILESTONE BADGES CARD (Clearly distinguished Unlocked vs Locked) */}
         <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5">
           <div className="mb-5">
             <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
@@ -425,7 +440,7 @@ export default function ExercisePage() {
               {t('exercise.badgesTitle')}
             </h3>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Earn badges by building streaks & XP
+              Earn badges by building streaks, consistency & XP
             </p>
           </div>
 
@@ -434,17 +449,27 @@ export default function ExercisePage() {
               <button
                 key={b.id}
                 onClick={() => setSelectedBadge(b)}
-                className="w-full flex items-center justify-between rounded-xl bg-[#0e1626] px-4 py-3 text-left transition-all hover:bg-white/[0.04] border border-white/5"
+                className={`w-full flex items-center justify-between rounded-xl px-4 py-3.5 text-left transition-all border ${
+                  b.unlocked
+                    ? 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/15 shadow-md'
+                    : 'bg-[#0a101d]/60 border-white/[0.04] opacity-55 hover:opacity-80'
+                }`}
               >
-                <div className="flex items-center gap-3">
-                  <span className="grid h-9 w-9 place-items-center rounded-lg bg-amber-500/15 text-lg">
+                <div className="flex items-center gap-3.5">
+                  <span className={`grid h-10 w-10 place-items-center rounded-xl text-xl ${
+                    b.unlocked ? 'bg-amber-500/25 text-amber-300 shadow-inner' : 'bg-white/[0.04] text-slate-500 grayscale'
+                  }`}>
                     {b.icon}
                   </span>
                   <div>
-                    <p className="font-bold text-sm text-slate-200">{t(b.titleKey)}</p>
-                    <p className={`text-[11px] ${b.unlocked ? 'text-amber-400 font-semibold' : 'text-slate-400'}`}>
-                      {b.unlocked ? t('exercise.badgeUnlocked') : t('exercise.badgeLocked')}
+                    <p className={`text-sm ${b.unlocked ? 'font-bold text-white' : 'font-semibold text-slate-400'}`}>
+                      {t(b.titleKey)}
                     </p>
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold mt-1 px-2 py-0.5 rounded-full ${
+                      b.unlocked ? 'bg-amber-500/20 text-amber-300' : 'bg-white/[0.05] text-slate-500'
+                    }`}>
+                      {b.unlocked ? '✨ UNLOCKED' : '🔒 LOCKED'}
+                    </span>
                   </div>
                 </div>
                 <Info className="h-4 w-4 text-slate-500 shrink-0" />
@@ -544,30 +569,27 @@ export default function ExercisePage() {
         </section>
       </div>
 
-      {/* STICKY BOTTOM CHECK-IN BAR */}
-      <div className="fixed inset-x-0 bottom-16 md:bottom-6 z-30 px-4 pointer-events-none flex justify-center">
-        <div className="w-full max-w-2xl pointer-events-auto rounded-[20px] border border-white/[0.08] bg-[#131826]/95 p-4 shadow-2xl backdrop-blur-xl">
-          {/* Activity Tag Selector */}
-          <div className="mb-3 flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide pb-1">
-            <span className="text-xs font-medium text-[#8E9BAE] shrink-0">{t('exercise.activityTag')}:</span>
-            <div className="flex items-center gap-1.5">
-              {ACTIVITY_TYPES.map(type => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setSelectedTag(type)}
-                  disabled={stats.isCheckedInToday}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all shrink-0 ${
-                    selectedTag === type
-                      ? 'bg-[#3B82F6]/20 text-[#38BDF8] border border-[#3B82F6]/40'
-                      : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.04] hover:text-white'
-                  }`}
-                >
-                  <span>{ACTIVITY_ICONS[type]}</span>
-                  <span>{t(`exercise.activity.${type}`) || type}</span>
-                </button>
-              ))}
-            </div>
+      {/* STICKY BOTTOM CHECK-IN BAR (bottom-20 on mobile to clear bottom tab bar, md:left-60 md:right-0 centered on laptop) */}
+      <div className="fixed inset-x-0 bottom-20 md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center">
+        <div className="w-full max-w-2xl pointer-events-auto rounded-[20px] border border-white/[0.08] bg-[#131826]/95 p-3.5 sm:p-4 shadow-2xl backdrop-blur-xl">
+          {/* Activity Tag Selector (Label removed, 'Other' option included) */}
+          <div className="mb-3 flex items-center justify-center gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+            {ACTIVITY_TYPES.map(type => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setSelectedTag(type)}
+                disabled={stats.isCheckedInToday}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all shrink-0 ${
+                  selectedTag === type
+                    ? 'bg-[#3B82F6]/20 text-[#38BDF8] border border-[#3B82F6]/40'
+                    : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.04] hover:text-white'
+                }`}
+              >
+                <span>{ACTIVITY_ICONS[type]}</span>
+                <span>{t(`exercise.activity.${type}`) || type}</span>
+              </button>
+            ))}
           </div>
 
           {/* Mark Today Done button */}
