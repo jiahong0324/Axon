@@ -37,7 +37,8 @@ export function markdownToHtml(text = '') {
   if (!text) return ''
 
   const mathBlocks = []
-  let processed = text
+  const codeBlocks = []
+  let processed = String(text)
 
   // 1. Extract block math: \[ ... \] or $$ ... $$
   processed = processed.replace(/\\\[([\s\S]*?)\\\]|\$\$([\s\S]*?)\$\$/g, (match, g1, g2) => {
@@ -54,7 +55,7 @@ export function markdownToHtml(text = '') {
     }
   })
 
-  // 2. Extract inline math: \( ... \) or $ ... $ (with math indicators)
+  // 2. Extract inline math: \( ... \) or $ ... $
   processed = processed.replace(/\\\(([\s\S]*?)\\\)|\$([^\$\n]*?(\\|\=|\^|\_)[^\$\n]*?)\$/g, (match, g1, g2) => {
     const formula = (g1 !== undefined ? g1 : g2).trim()
     try {
@@ -66,26 +67,182 @@ export function markdownToHtml(text = '') {
     }
   })
 
-  // 3. Standard markdown styling and HTML escaping
-  processed = processed
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/`(.*?)`/g, '<code class="bg-slate-800 text-purple-300 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>')
-    .replace(/^\s*-\s(.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/gs, '<ul class="list-disc pl-5 space-y-1 my-2">$1</ul>')
-    .replace(/\n/g, '<br />')
-
-  // 4. Restore rendered KaTeX math blocks
-  mathBlocks.forEach((html, i) => {
-    const token = `___MATH_BLOCK_${i}___`
-    processed = processed.split(`<br />${token}<br />`).join(html)
-    processed = processed.split(`${token}<br />`).join(html)
-    processed = processed.split(`<br />${token}`).join(html)
-    processed = processed.split(token).join(html)
+  // 3. Extract fenced code blocks: ```lang ... ```
+  processed = processed.replace(/```([\w-]*)\n?([\s\S]*?)```/g, (match, lang, code) => {
+    const escapedCode = code
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+    const html = `
+      <div class="ai-code-card my-3.5 overflow-hidden rounded-xl border border-slate-700/80 bg-slate-950 shadow-md">
+        ${lang ? `<div class="flex items-center justify-between border-b border-slate-800/80 bg-slate-900/90 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-purple-300"><span>${lang}</span></div>` : ''}
+        <pre class="overflow-x-auto p-3.5 text-xs md:text-sm font-mono leading-relaxed text-slate-200"><code>${escapedCode}</code></pre>
+      </div>
+    `
+    codeBlocks.push(html)
+    return `___CODE_BLOCK_${codeBlocks.length - 1}___`
   })
 
-  return processed
+  // Helper for inline markdown formatting
+  function formatInline(str = '') {
+    return str
+      .replace(/<br\s*\/?>/gi, '___LINE_BREAK___')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/___LINE_BREAK___/g, '<br class="my-1" />')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-purple-200">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+      .replace(/`(.*?)`/g, '<code class="bg-slate-800 text-purple-300 px-1.5 py-0.5 rounded text-xs font-mono border border-slate-700/60">$1</code>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-theme-400 underline hover:text-theme-300">$1</a>')
+  }
+
+  // Helper to parse table row cells
+  function parseTableRow(line) {
+    return line
+      .split('|')
+      .map(cell => cell.trim())
+      .filter((cell, idx, arr) => {
+        if (idx === 0 && cell === '') return false
+        if (idx === arr.length - 1 && cell === '') return false
+        return true
+      })
+  }
+
+  // 4. Line-by-line / block parser
+  const lines = processed.split('\n')
+  const htmlLines = []
+  let i = 0
+
+  while (i < lines.length) {
+    const line = lines[i]
+
+    // Check for Markdown Table Block
+    if (line.includes('|') && i + 1 < lines.length && /^\s*\|?\s*[:\-]+(\s*\|\s*[:\-]+)+\s*\|?\s*$/.test(lines[i + 1])) {
+      const headers = parseTableRow(line)
+      i += 2 // skip header and separator lines
+
+      const rows = []
+      while (i < lines.length && lines[i].includes('|')) {
+        const rowCells = parseTableRow(lines[i])
+        if (rowCells.length > 0) rows.push(rowCells)
+        i++
+      }
+
+      const tableHtml = `
+        <div class="ai-table-wrapper my-4 w-full overflow-x-auto rounded-2xl border border-slate-700/70 bg-slate-900/60 shadow-xl">
+          <table class="ai-table w-full border-collapse text-left text-sm">
+            <thead class="border-b border-slate-700/80 bg-slate-800/80 text-xs font-semibold text-purple-200">
+              <tr>
+                ${headers.map(h => `<th class="px-4 py-3 align-top">${formatInline(h)}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60">
+              ${rows.map(row => `
+                <tr class="transition-colors hover:bg-white/[0.03]">
+                  ${headers.map((_, colIdx) => `<td class="px-4 py-3.5 align-top leading-relaxed text-slate-200">${formatInline(row[colIdx] || '')}</td>`).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `
+      htmlLines.push(tableHtml)
+      continue
+    }
+
+    // Check for Headings
+    if (/^######\s+(.*)$/.test(line)) {
+      htmlLines.push(`<h6 class="font-heading text-xs font-semibold text-purple-300 mt-3 mb-1">${formatInline(line.replace(/^######\s+/, ''))}</h6>`)
+      i++
+      continue
+    }
+    if (/^#####\s+(.*)$/.test(line)) {
+      htmlLines.push(`<h5 class="font-heading text-sm font-semibold text-purple-300 mt-3.5 mb-1.5">${formatInline(line.replace(/^#####\s+/, ''))}</h5>`)
+      i++
+      continue
+    }
+    if (/^####\s+(.*)$/.test(line)) {
+      htmlLines.push(`<h4 class="ai-h4 font-heading text-sm md:text-base font-bold text-purple-300 mt-4 mb-2">${formatInline(line.replace(/^####\s+/, ''))}</h4>`)
+      i++
+      continue
+    }
+    if (/^###\s+(.*)$/.test(line)) {
+      htmlLines.push(`<h3 class="ai-h3 font-heading text-base md:text-lg font-bold text-purple-200 mt-5 mb-2.5">${formatInline(line.replace(/^###\s+/, ''))}</h3>`)
+      i++
+      continue
+    }
+    if (/^##\s+(.*)$/.test(line)) {
+      htmlLines.push(`<h2 class="ai-h2 font-heading text-lg md:text-xl font-bold text-white mt-6 mb-3 pb-2 border-b border-white/10">${formatInline(line.replace(/^##\s+/, ''))}</h2>`)
+      i++
+      continue
+    }
+    if (/^#\s+(.*)$/.test(line)) {
+      htmlLines.push(`<h1 class="ai-h1 font-heading text-xl md:text-2xl font-extrabold text-white mt-6 mb-3">${formatInline(line.replace(/^#\s+/, ''))}</h1>`)
+      i++
+      continue
+    }
+
+    // Check for Horizontal Rules
+    if (/^\s*([-*_]){3,}\s*$/.test(line)) {
+      htmlLines.push(`<hr class="my-4 border-slate-700/80" />`)
+      i++
+      continue
+    }
+
+    // Check for Blockquotes
+    if (/^>\s+(.*)$/.test(line)) {
+      const bqLines = []
+      while (i < lines.length && /^>\s+/.test(lines[i])) {
+        bqLines.push(lines[i].replace(/^>\s+/, ''))
+        i++
+      }
+      htmlLines.push(`<blockquote class="ai-blockquote my-3 border-l-4 border-purple-500 bg-purple-500/10 px-4 py-3 rounded-r-xl italic text-slate-200">${bqLines.map(l => formatInline(l)).join('<br />')}</blockquote>`)
+      continue
+    }
+
+    // Check for Unordered Lists
+    if (/^\s*[-*]\s+(.*)$/.test(line)) {
+      const items = []
+      while (i < lines.length && /^\s*[-*]\s+(.*)$/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*[-*]\s+/, ''))
+        i++
+      }
+      htmlLines.push(`<ul class="ai-ul my-3 list-disc pl-6 space-y-1.5">${items.map(item => `<li class="leading-relaxed">${formatInline(item)}</li>`).join('')}</ul>`)
+      continue
+    }
+
+    // Check for Ordered Lists
+    if (/^\s*\d+\.\s+(.*)$/.test(line)) {
+      const items = []
+      while (i < lines.length && /^\s*\d+\.\s+(.*)$/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*\d+\.\s+/, ''))
+        i++
+      }
+      htmlLines.push(`<ol class="ai-ol my-3 list-decimal pl-6 space-y-1.5">${items.map(item => `<li class="leading-relaxed">${formatInline(item)}</li>`).join('')}</ol>`)
+      continue
+    }
+
+    // Regular lines
+    if (line.trim() === '') {
+      htmlLines.push('<div class="h-2"></div>')
+    } else {
+      htmlLines.push(`<p class="my-1.5 leading-relaxed">${formatInline(line)}</p>`)
+    }
+    i++
+  }
+
+  let finalHtml = htmlLines.join('\n')
+
+  // 5. Restore Code blocks
+  codeBlocks.forEach((html, idx) => {
+    finalHtml = finalHtml.split(`___CODE_BLOCK_${idx}___`).join(html)
+  })
+
+  // 6. Restore KaTeX math blocks
+  mathBlocks.forEach((html, idx) => {
+    finalHtml = finalHtml.split(`___MATH_BLOCK_${idx}___`).join(html)
+  })
+
+  return finalHtml
 }

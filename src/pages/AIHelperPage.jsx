@@ -319,8 +319,8 @@ function Message({ msg }) {
       <div className="ai-avatar flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
         <Bot className="h-4 w-4" />
       </div>
-      <div className="ai-assistant-bubble max-w-[86%] break-words rounded-2xl rounded-bl-md px-4 py-3 text-sm leading-relaxed md:max-w-[74%]">
-        {isWelcomeMessage(msg.content) ? <WelcomeContent content={msg.content} /> : <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />}
+      <div className="ai-assistant-bubble max-w-[95%] break-words rounded-2xl rounded-bl-md px-4 py-3.5 text-sm leading-relaxed md:max-w-[88%] md:px-5 md:py-4">
+        {isWelcomeMessage(msg.content) ? <WelcomeContent content={msg.content} /> : <div className="ai-formatted-content w-full" dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />}
       </div>
     </div>
   )

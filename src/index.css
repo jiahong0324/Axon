@@ -318,6 +318,29 @@ input, select, textarea { font-size: 16px; }
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
 }
 
+.ai-formatted-content {
+  line-height: 1.65;
+}
+
+.ai-table-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+.ai-table th {
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.ai-table td {
+  vertical-align: top;
+}
+
+.ai-code-card pre {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
 .ai-user-bubble {
   background: linear-gradient(135deg, #2563eb, #7c3aed);
   box-shadow: 0 14px 30px rgba(37, 99, 235, 0.2);
@@ -566,6 +589,38 @@ input, select, textarea { font-size: 16px; }
   border-color: rgba(203, 213, 225, 0.9);
   color: #334155;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme='light'] .ai-table-wrapper {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme='light'] .ai-table thead {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #4f46e5 !important;
+}
+
+[data-theme='light'] .ai-table tbody tr:hover {
+  background: rgba(241, 245, 249, 0.8) !important;
+}
+
+[data-theme='light'] .ai-table td {
+  color: #334155 !important;
+  border-color: #f1f5f9 !important;
+}
+
+[data-theme='light'] .ai-h1,
+[data-theme='light'] .ai-h2 {
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme='light'] .ai-h3,
+[data-theme='light'] .ai-h4 {
+  color: #4f46e5 !important;
 }
 
 [data-theme='light'] .ai-input-frame {
