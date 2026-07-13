@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../components/Toast'
@@ -23,6 +23,9 @@ export default function ExamResultsPage() {
   const [showAddSemModal, setShowAddSemModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [targetSemesterId, setTargetSemesterId] = useState(null)
+
+  const pendingUpdatesRef = useRef({})
+  const debounceTimersRef = useRef({})
 
   // Quick Calculator State (defaults to 3 empty rows)
   const [calcRows, setCalcRows] = useState([
@@ -154,19 +157,23 @@ export default function ExamResultsPage() {
 
   async function handleDeleteSemester(semId) {
     if (!await confirm({ title: 'Delete Semester?', message: 'All courses inside this semester will be removed.' })) return
+    setSemesters(prev => {
+      const nextList = prev.filter(s => s.id !== semId)
+      localStorage.setItem('axon_exam_results_semesters', JSON.stringify(nextList))
+      return nextList
+    })
+    showToast('Semester deleted.', 'success')
+
     const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
+    if (user && typeof semId === 'string' && !semId.startsWith('sem-')) {
       await supabase.from('student_semesters').delete().eq('id', semId)
     }
-    const nextList = semesters.filter(s => s.id !== semId)
-    saveSemestersToLocal(nextList)
-    showToast('Semester deleted.', 'success')
   }
 
-  async function handleAddCourse(semId, course) {
-    const { data: { user } } = await supabase.auth.getUser()
+  function handleAddCourse(semId, course) {
+    const tempId = `course-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`
     const newCourse = {
-      id: `course-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: tempId,
       semester_id: semId,
       course_code: course?.course_code || '',
       course_name: course?.course_name || '',
@@ -174,57 +181,138 @@ export default function ExamResultsPage() {
       grade: course?.grade || ''
     }
 
-    if (user && typeof semId === 'string' && !semId.startsWith('sem-')) {
-      const { data } = await supabase
-        .from('student_semester_courses')
-        .insert({
-          semester_id: semId,
-          user_id: user.id,
-          course_code: newCourse.course_code,
-          course_name: newCourse.course_name,
-          credit_hours: newCourse.credit_hours,
-          grade: newCourse.grade
-        })
-        .select()
-        .single()
-      if (data) newCourse.id = data.id
-    }
-
-    const nextList = semesters.map(s => {
-      if (s.id !== semId) return s
-      return { ...s, courses: [...(s.courses || []), newCourse] }
+    setSemesters(prev => {
+      const nextList = prev.map(s => {
+        if (s.id !== semId) return s
+        return { ...s, courses: [...(s.courses || []), newCourse] }
+      })
+      localStorage.setItem('axon_exam_results_semesters', JSON.stringify(nextList))
+      return nextList
     })
-    saveSemestersToLocal(nextList)
+
+    if (typeof semId === 'string' && !semId.startsWith('sem-')) {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) return
+        supabase
+          .from('student_semester_courses')
+          .insert({
+            semester_id: semId,
+            user_id: user.id,
+            course_code: newCourse.course_code,
+            course_name: newCourse.course_name,
+            credit_hours: newCourse.credit_hours,
+            grade: newCourse.grade
+          })
+          .select()
+          .single()
+          .then(({ data }) => {
+            if (data && data.id) {
+              setSemesters(prev => {
+                const nextList = prev.map(s => {
+                  if (s.id !== semId) return s
+                  return {
+                    ...s,
+                    courses: s.courses.map(c => c.id === tempId ? { ...c, id: data.id } : c)
+                  }
+                })
+                localStorage.setItem('axon_exam_results_semesters', JSON.stringify(nextList))
+                return nextList
+              })
+            }
+          })
+      })
+    }
   }
 
-  async function handleUpdateCourse(semId, courseId, updatedFields) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user && typeof courseId === 'string' && !courseId.startsWith('course-')) {
-      await supabase
-        .from('student_semester_courses')
-        .update(updatedFields)
-        .eq('id', courseId)
+  function handleUpdateCourse(semId, courseId, updatedFields) {
+    // 1. Immediately update UI state synchronously so typing has 0ms latency
+    setSemesters(prev => {
+      const nextList = prev.map(s => {
+        if (s.id !== semId) return s
+        return {
+          ...s,
+          courses: s.courses.map(c => c.id === courseId ? { ...c, ...updatedFields } : c)
+        }
+      })
+      localStorage.setItem('axon_exam_results_semesters', JSON.stringify(nextList))
+      return nextList
+    })
+
+    // 2. Debounce background Supabase sync
+    pendingUpdatesRef.current[courseId] = {
+      ...(pendingUpdatesRef.current[courseId] || {}),
+      ...updatedFields
     }
-    const nextList = semesters.map(s => {
-      if (s.id !== semId) return s
-      return {
-        ...s,
-        courses: s.courses.map(c => c.id === courseId ? { ...c, ...updatedFields } : c)
+
+    if (debounceTimersRef.current[courseId]) {
+      clearTimeout(debounceTimersRef.current[courseId])
+    }
+
+    debounceTimersRef.current[courseId] = setTimeout(async () => {
+      const fieldsToSave = pendingUpdatesRef.current[courseId]
+      delete pendingUpdatesRef.current[courseId]
+      delete debounceTimersRef.current[courseId]
+
+      if (!fieldsToSave) return
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      if (typeof courseId === 'string' && !courseId.startsWith('course-')) {
+        await supabase
+          .from('student_semester_courses')
+          .update(fieldsToSave)
+          .eq('id', courseId)
+      } else if (typeof semId === 'string' && !semId.startsWith('sem-')) {
+        const { data } = await supabase
+          .from('student_semester_courses')
+          .insert({
+            semester_id: semId,
+            user_id: user.id,
+            course_code: fieldsToSave.course_code || '',
+            course_name: fieldsToSave.course_name || '',
+            credit_hours: Number(fieldsToSave.credit_hours) || 0,
+            grade: fieldsToSave.grade || ''
+          })
+          .select()
+          .single()
+
+        if (data && data.id) {
+          setSemesters(prev => {
+            const nextList = prev.map(s => {
+              if (s.id !== semId) return s
+              return {
+                ...s,
+                courses: s.courses.map(c => c.id === courseId ? { ...c, id: data.id } : c)
+              }
+            })
+            localStorage.setItem('axon_exam_results_semesters', JSON.stringify(nextList))
+            return nextList
+          })
+        }
       }
-    })
-    saveSemestersToLocal(nextList)
+    }, 450)
   }
 
-  async function handleDeleteCourse(semId, courseId) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user && typeof courseId === 'string' && !courseId.startsWith('course-')) {
-      await supabase.from('student_semester_courses').delete().eq('id', courseId)
+  function handleDeleteCourse(semId, courseId) {
+    if (debounceTimersRef.current[courseId]) {
+      clearTimeout(debounceTimersRef.current[courseId])
+      delete debounceTimersRef.current[courseId]
+      delete pendingUpdatesRef.current[courseId]
     }
-    const nextList = semesters.map(s => {
-      if (s.id !== semId) return s
-      return { ...s, courses: s.courses.filter(c => c.id !== courseId) }
+
+    setSemesters(prev => {
+      const nextList = prev.map(s => {
+        if (s.id !== semId) return s
+        return { ...s, courses: s.courses.filter(c => c.id !== courseId) }
+      })
+      localStorage.setItem('axon_exam_results_semesters', JSON.stringify(nextList))
+      return nextList
     })
-    saveSemestersToLocal(nextList)
+
+    if (typeof courseId === 'string' && !courseId.startsWith('course-')) {
+      supabase.from('student_semester_courses').delete().eq('id', courseId).then()
+    }
   }
 
   async function handleAIResultImport(extractedItems) {
