@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, CheckCircle2, ChevronDown, ChevronUp, Info, RefreshCw } from 'lucide-react'
+import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, CheckCircle2, ChevronDown, ChevronUp, Info } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../components/Toast'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -597,31 +597,16 @@ export default function ExamResultsPage() {
           </p>
         </div>
 
-        {/* Overall CGPA Badge & Sync Cloud */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => loadSemesters(true)}
-            disabled={syncingCloud}
-            className={`flex items-center gap-2 rounded-2xl border px-4 py-3.5 text-xs font-bold transition-all ${
-              syncingCloud
-                ? 'border-purple-500/40 bg-purple-500/15 text-purple-300'
-                : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/10 hover:text-white'
-            }`}
-            title="Sync results across devices"
-          >
-            <RefreshCw className={`h-4 w-4 ${syncingCloud ? 'animate-spin text-purple-400' : ''}`} />
-            <span>Sync Cloud</span>
-          </button>
-          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-theme-500/10 text-theme-400">
-              <Award className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Overall CGPA</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-white">{overall.cgpa}</span>
-                <span className="text-xs font-semibold text-slate-400">({overall.overallCredits} Credits)</span>
-              </div>
+        {/* Overall CGPA Badge */}
+        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-theme-500/10 text-theme-400">
+            <Award className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Overall CGPA</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-white">{overall.cgpa}</span>
+              <span className="text-xs font-semibold text-slate-400">({overall.overallCredits} Credits)</span>
             </div>
           </div>
         </div>

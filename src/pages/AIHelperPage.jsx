@@ -12,7 +12,6 @@ import {
   Table,
   Trash2,
   ImagePlus,
-  RefreshCw,
   X
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -328,19 +327,6 @@ export default function AIHelperPage({ role = 'student' }) {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => syncAIChatWithSupabase()}
-              disabled={syncingCloud}
-              className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all ${
-                syncingCloud
-                  ? 'bg-purple-500/20 text-purple-300'
-                  : 'hover:bg-white/5 text-slate-400 hover:text-white'
-              }`}
-              title="Sync chat across devices"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${syncingCloud ? 'animate-spin text-purple-400' : ''}`} />
-              <span className="hidden sm:inline">Sync</span>
-            </button>
             <button className="ai-clear-button min-h-0 min-w-0 rounded-xl p-2 text-sm transition-colors hover:bg-white/5" style={{ color: 'var(--text-muted)' }} onClick={clearChatHistory} aria-label="Clear chat" title="Clear chat history">
               <Trash2 className="h-4 w-4" />
             </button>
