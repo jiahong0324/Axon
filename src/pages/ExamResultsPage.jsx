@@ -40,6 +40,38 @@ export default function ExamResultsPage() {
 
   useEffect(() => {
     loadSemesters()
+
+    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        loadSemesters()
+      }
+    })
+
+    function handleAutoRefresh() {
+      if (document.visibilityState === 'visible') {
+        loadSemesters()
+      }
+    }
+
+    window.addEventListener('visibilitychange', handleAutoRefresh)
+    window.addEventListener('focus', handleAutoRefresh)
+
+    const channel = supabase
+      .channel('exam-results-auto-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'student_semesters' }, () => {
+        loadSemesters()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'student_semester_courses' }, () => {
+        loadSemesters()
+      })
+      .subscribe()
+
+    return () => {
+      authSub?.subscription?.unsubscribe()
+      window.removeEventListener('visibilitychange', handleAutoRefresh)
+      window.removeEventListener('focus', handleAutoRefresh)
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   async function syncLocalSemestersToSupabase(user, localList) {

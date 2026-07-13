@@ -72,6 +72,35 @@ export default function AIHelperPage({ role = 'student' }) {
 
   useEffect(() => {
     syncAIChatWithSupabase()
+
+    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        syncAIChatWithSupabase()
+      }
+    })
+
+    function handleAutoRefresh() {
+      if (document.visibilityState === 'visible') {
+        syncAIChatWithSupabase()
+      }
+    }
+
+    window.addEventListener('visibilitychange', handleAutoRefresh)
+    window.addEventListener('focus', handleAutoRefresh)
+
+    const channel = supabase
+      .channel('ai-chat-auto-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'student_ai_chats' }, () => {
+        syncAIChatWithSupabase()
+      })
+      .subscribe()
+
+    return () => {
+      authSub?.subscription?.unsubscribe()
+      window.removeEventListener('visibilitychange', handleAutoRefresh)
+      window.removeEventListener('focus', handleAutoRefresh)
+      supabase.removeChannel(channel)
+    }
   }, [isManager])
 
   async function syncAIChatWithSupabase() {
@@ -318,7 +347,7 @@ export default function AIHelperPage({ role = 'student' }) {
           </div>
         </header>
 
-        <div className="ai-message-list scrollbar-hide flex min-h-0 flex-1 flex-col-reverse gap-3 overflow-y-auto overscroll-contain px-4 py-4 md:px-5 md:py-5">
+        <div className="ai-message-list scrollbar-hide flex min-h-0 flex-1 flex-col-reverse gap-3 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-3.5 md:px-5 md:py-5">
           <div className="flex-1" />
           {loading && <TypingIndicator />}
           {[...messages].reverse().map((msg, i) => <Message key={`msg-${messages.length - 1 - i}`} msg={msg} />)}
@@ -408,19 +437,19 @@ export default function AIHelperPage({ role = 'student' }) {
 function Message({ msg }) {
   const isUser = msg.role === 'user'
   return isUser ? (
-    <div className="ai-message flex justify-end">
-      <div className="ai-user-bubble flex flex-col items-end max-w-[86%] break-words rounded-2xl rounded-br-md px-4 py-3 text-sm leading-relaxed text-white md:max-w-[72%]">
+    <div className="ai-message flex w-full min-w-0 justify-end">
+      <div className="ai-user-bubble flex flex-col items-end max-w-[86%] min-w-0 break-words rounded-2xl rounded-br-md px-3.5 py-2.5 text-sm leading-relaxed text-white md:max-w-[72%] md:px-4 md:py-3">
         {msg.image && <img src={msg.image} alt="User upload" className="mb-2 max-h-64 rounded-xl object-contain" />}
-        {msg.content && <span>{msg.content}</span>}
+        {msg.content && <span className="break-words">{msg.content}</span>}
       </div>
     </div>
   ) : (
-    <div className="ai-message flex items-start gap-2.5">
-      <div className="ai-avatar flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-        <Bot className="h-4 w-4" />
+    <div className="ai-message flex w-full min-w-0 items-start gap-2 md:gap-2.5">
+      <div className="ai-avatar flex h-7 w-7 shrink-0 items-center justify-center rounded-full md:h-8 md:w-8">
+        <Bot className="h-3.5 w-3.5 md:h-4 md:w-4" />
       </div>
-      <div className="ai-assistant-bubble max-w-[95%] break-words rounded-2xl rounded-bl-md px-4 py-3.5 text-sm leading-relaxed md:max-w-[88%] md:px-5 md:py-4">
-        {isWelcomeMessage(msg.content) ? <WelcomeContent content={msg.content} /> : <div className="ai-formatted-content w-full" dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />}
+      <div className="ai-assistant-bubble min-w-0 max-w-[calc(100%-2.25rem)] break-words rounded-2xl rounded-bl-md px-3.5 py-3 text-sm leading-relaxed overflow-hidden md:max-w-[88%] md:px-5 md:py-4">
+        {isWelcomeMessage(msg.content) ? <WelcomeContent content={msg.content} /> : <div className="ai-formatted-content w-full min-w-0 overflow-x-auto" dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />}
       </div>
     </div>
   )
