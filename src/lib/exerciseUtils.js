@@ -215,23 +215,26 @@ export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes
 }
 
 export async function fetchExerciseData(userId) {
-  if (!userId) return { logs: [], weeklyGoal: 4, xpTotal: 0, freezesAvailable: 1 }
-
+  const cacheKey = userId ? `axon_exercise_data_${userId}` : 'axon_exercise_data_global'
   let logs = []
   let weeklyGoal = 4
   let xpTotal = 0
   let freezesAvailable = 1
 
-  // 1. Read from local cache first
+  // 1. Read from local cache first (global fallback + user specific)
   try {
-    const cached = JSON.parse(localStorage.getItem(`axon_exercise_data_${userId}`) || 'null')
-    if (cached && Array.isArray(cached.logs)) {
-      logs = cached.logs
-      weeklyGoal = cached.weeklyGoal || 4
-      xpTotal = cached.xpTotal || 0
-      freezesAvailable = cached.freezesAvailable ?? 1
+    const cachedGlobal = JSON.parse(localStorage.getItem('axon_exercise_data_global') || 'null')
+    const cachedUser = JSON.parse(localStorage.getItem(cacheKey) || 'null')
+    const cached = cachedUser || cachedGlobal
+    if (cached) {
+      if (Array.isArray(cached.logs)) logs = cached.logs
+      if (typeof cached.weeklyGoal === 'number') weeklyGoal = cached.weeklyGoal
+      if (typeof cached.xpTotal === 'number') xpTotal = cached.xpTotal
+      if (typeof cached.freezesAvailable === 'number') freezesAvailable = cached.freezesAvailable
     }
   } catch (e) {}
+
+  if (!userId) return { logs, weeklyGoal, xpTotal, freezesAvailable }
 
   // 2. Read from Supabase profile, auth user_metadata, and exercise_logs table
   try {
@@ -251,7 +254,7 @@ export async function fetchExerciseData(userId) {
     const metaLogs = Array.isArray(meta.axon_exercise_logs) ? meta.axon_exercise_logs : []
     const tableLogs = (logsRes.data && Array.isArray(logsRes.data)) ? logsRes.data : []
 
-    // Merge and deduplicate logs by log_date
+    // Merge and deduplicate logs by log_date across local cache + metadata + database table
     const mergedMap = new Map()
     for (const l of [...logs, ...metaLogs, ...tableLogs]) {
       if (l && l.log_date) {
@@ -267,6 +270,9 @@ export async function fetchExerciseData(userId) {
     }
     if (typeof meta.axon_xp_total === 'number') {
       xpTotal = Math.max(xpTotal, meta.axon_xp_total)
+    }
+    if (typeof meta.axon_weekly_goal === 'number') {
+      weeklyGoal = meta.axon_weekly_goal
     }
   } catch (e) {}
 
@@ -284,7 +290,8 @@ export async function fetchExerciseData(userId) {
 
   const result = { logs, weeklyGoal, xpTotal, freezesAvailable }
   try {
-    localStorage.setItem(`axon_exercise_data_${userId}`, JSON.stringify(result))
+    localStorage.setItem(cacheKey, JSON.stringify(result))
+    localStorage.setItem('axon_exercise_data_global', JSON.stringify(result))
   } catch {}
 
   return result
@@ -354,6 +361,7 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
   }
   try {
     localStorage.setItem(`axon_exercise_data_${userId}`, JSON.stringify(resultData))
+    localStorage.setItem('axon_exercise_data_global', JSON.stringify(resultData))
   } catch {}
 
   // 2. Persist to Supabase user_metadata (guaranteed dual cloud sync across laptop & mobile) + SQL tables

@@ -83,13 +83,10 @@ export default function ExercisePage() {
   async function loadInitialData(showLoading = true) {
     if (showLoading) setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      if (showLoading) setLoading(false)
-      return
-    }
-    setUserId(user.id)
+    const currentUserId = user?.id || null
+    setUserId(currentUserId)
 
-    const data = await fetchExerciseData(user.id)
+    const data = await fetchExerciseData(currentUserId)
     setLogs(data.logs || [])
     setWeeklyGoal(data.weeklyGoal || 4)
     setXpTotal(data.xpTotal || 0)
@@ -151,7 +148,28 @@ export default function ExercisePage() {
     e.preventDefault()
     setWeeklyGoal(tempGoal)
     setShowGoalSheet(false)
+
+    // Save immediately to localStorage so modification never disappears on refresh
+    const cacheKey = userId ? `axon_exercise_data_${userId}` : 'axon_exercise_data_global'
+    const updatedData = {
+      logs,
+      weeklyGoal: tempGoal,
+      xpTotal,
+      freezesAvailable
+    }
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(updatedData))
+      localStorage.setItem('axon_exercise_data_global', JSON.stringify(updatedData))
+    } catch {}
+
     showToast(t('exercise.saveGoal'), 'success')
+
+    try {
+      await supabase.auth.updateUser({
+        data: { axon_weekly_goal: tempGoal }
+      })
+    } catch {}
+
     if (userId) {
       try {
         await supabase.from('profiles').update({ weekly_exercise_goal: tempGoal }).eq('id', userId)
@@ -219,7 +237,7 @@ export default function ExercisePage() {
 
   return (
     <main className="main-content pb-36">
-      {/* Page Header matching ExamResultsPage header style */}
+      {/* Page Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="page-title mb-1 flex items-center gap-2.5">
@@ -230,305 +248,300 @@ export default function ExercisePage() {
             {t('exercise.subtitle')}
           </p>
         </div>
-
-        {/* Current Streak Banner matching Results page CGPA Banner */}
-        <div className="flex items-center gap-4 rounded-2xl bg-[#131b2e] px-5 py-3 shadow-md">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-500/15">
-            <Flame className="h-6 w-6 text-orange-400" />
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              {t('exercise.currentStreak')}
-            </p>
-            <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-3xl font-extrabold text-white tracking-tight">
-                {stats.currentStreak}
-              </span>
-              <span className="text-xs font-semibold text-slate-400">
-                {t('common.days')}
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Main 3-Column Desktop Grid Layout matching ExamResultsPage */}
-      <div className="grid gap-8 lg:grid-cols-3 items-start">
-        {/* Left 2 Columns: Main Interactive Workspace */}
-        <div className="lg:col-span-2 space-y-7">
-          {/* This Week Day Selector Strip Card */}
-          <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl">
-            <div className="mb-5 flex items-center justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-blue-400" />
-                  {t('exercise.thisWeekStrip')}
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                  Track your consistency across current week
-                </p>
+      {/* TOP 2 HERO CARDS (Previous Layout + Result Page Design + Left Colored Accent Bars) */}
+      <div className="grid gap-6 md:grid-cols-2 mb-8">
+        {/* HERO CARD 1: Habit Tracker & Streak (LEFT ACCENT: ORANGE) */}
+        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5 border-l-4 border-l-orange-500">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                {t('exercise.currentStreak')}
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-black text-white tracking-tight">
+                  {stats.currentStreak}
+                </span>
+                <span className="text-sm font-bold text-orange-400">
+                  {t('common.days')} 🔥
+                </span>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-3 py-1 text-xs font-bold text-blue-400">
+            </div>
+
+            <div className="text-right">
+              <p className="text-xs font-semibold text-slate-400 mb-1">Weekly Target</p>
+              <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-3.5 py-1 text-xs font-bold text-blue-400">
                 <span>{stats.weeklyCount} / {weeklyGoal} Days</span>
+                <button
+                  onClick={() => { setTempGoal(weeklyGoal); setShowGoalSheet(true) }}
+                  className="hover:text-white transition-colors"
+                  title={t('exercise.editGoal')}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
+          </div>
 
-            <div className="overflow-x-auto scrollbar-hide">
-              <div className="flex items-center justify-between gap-3 min-w-[340px]">
-                {stats.currentWeekDays.map(day => {
-                  const isToday = day.dateStr === todayStr
-                  return (
-                    <div
-                      key={day.dateStr}
-                      className={`flex-1 flex flex-col items-center justify-center rounded-xl p-3.5 transition-all min-h-[72px] border ${
-                        day.logged
-                          ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 font-bold'
-                          : isToday
-                          ? 'bg-blue-500/15 border-blue-500/30 text-blue-400 font-bold'
-                          : 'bg-[#0e1626] border-white/5 text-slate-400'
-                      }`}
-                    >
-                      <span className="text-xs font-semibold uppercase tracking-wider">{day.dayName}</span>
-                      {day.logged ? (
-                        <span className="mt-1.5 text-lg">{ACTIVITY_ICONS[day.activityType] || '✅'}</span>
-                      ) : (
-                        <span className="mt-2.5 h-3 w-3 rounded-full border border-current opacity-30" />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+          <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Shield className="h-4 w-4 text-cyan-400" />
+              <span className="text-xs font-bold text-slate-300">Streak Protection</span>
             </div>
-          </section>
+            <span className="text-xs font-bold text-cyan-400">
+              {stats.freezesAvailable} Freezes Available
+            </span>
+          </div>
+        </section>
 
-          {/* Check-in Heatmap Card */}
-          <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl">
-            <div className="mb-5">
-              <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-emerald-400" />
-                {t('exercise.monthlyHeatmap')}
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Your 30-day activity matrix
+        {/* HERO CARD 2: Novice Mover Level / XP (LEFT ACCENT: PURPLE) */}
+        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5 border-l-4 border-l-purple-500">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Level & Rank Status
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-white tracking-tight">
+                  {levelInfo.title}
+                </span>
+              </div>
+              <p className="text-xs font-bold text-purple-400 mt-0.5">
+                {t('exercise.level', { level: levelInfo.level })}
               </p>
             </div>
 
-            <div className="overflow-x-auto scrollbar-hide">
-              <div className="grid grid-cols-7 gap-2 min-w-[340px]">
-                {heatmapDays.map(day => (
+            <div className="text-right">
+              <span className="text-3xl font-black text-white">{xpTotal}</span>
+              <p className="text-xs font-bold text-slate-400">Total XP</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5 space-y-2.5">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+              <span>Level Progress</span>
+              <span className="text-purple-300">{levelInfo.xpNeeded} XP to next rank</span>
+            </div>
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
+              <div
+                className="h-full rounded-full bg-purple-500 transition-all duration-500"
+                style={{ width: `${levelInfo.progressPercent}%` }}
+              />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* STACKED SECTIONS BELOW HERO CARDS (Previous Layout + Result Page Design System) */}
+      <div className="space-y-7">
+        {/* 1. THIS WEEK DAY SELECTOR STRIP CARD */}
+        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-blue-400" />
+                {t('exercise.thisWeekStrip')}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                Track your consistency across current week
+              </p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="flex items-center justify-between gap-3 min-w-[340px]">
+              {stats.currentWeekDays.map(day => {
+                const isToday = day.dateStr === todayStr
+                return (
                   <div
                     key={day.dateStr}
-                    title={`${day.dateStr} (${day.activity || 'No workout'})`}
-                    className={`flex flex-col items-center justify-center rounded-xl p-2 min-h-[48px] border transition-colors ${
+                    className={`flex-1 flex flex-col items-center justify-center rounded-xl p-3.5 transition-all min-h-[72px] border ${
                       day.logged
-                        ? 'bg-emerald-500/20 border-emerald-500/35 text-emerald-400 font-bold'
+                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 font-bold'
+                        : isToday
+                        ? 'bg-blue-500/15 border-blue-500/30 text-blue-400 font-bold'
                         : 'bg-[#0e1626] border-white/5 text-slate-400'
                     }`}
                   >
-                    <span className="text-[10px] font-mono">{day.label}</span>
-                    {day.logged && <span className="text-xs mt-0.5">{ACTIVITY_ICONS[day.activity] || '⚡'}</span>}
+                    <span className="text-xs font-semibold uppercase tracking-wider">{day.dayName}</span>
+                    {day.logged ? (
+                      <span className="mt-1.5 text-lg">{ACTIVITY_ICONS[day.activityType] || '✅'}</span>
+                    ) : (
+                      <span className="mt-2.5 h-3 w-3 rounded-full border border-current opacity-30" />
+                    )}
                   </div>
-                ))}
-              </div>
+                )
+              })}
             </div>
+          </div>
+        </section>
 
-            <div className="mt-4 flex items-center justify-end gap-2 text-xs text-slate-400">
-              <span>{t('exercise.less')}</span>
-              <span className="h-3 w-3 rounded bg-[#0e1626] border border-white/10" />
-              <span className="h-3 w-3 rounded bg-emerald-500/30" />
-              <span className="h-3 w-3 rounded bg-emerald-500" />
-              <span>{t('exercise.more')}</span>
-            </div>
-          </section>
+        {/* 2. MONTHLY CHECK-IN HEATMAP CARD */}
+        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5">
+          <div className="mb-5">
+            <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-emerald-400" />
+              {t('exercise.monthlyHeatmap')}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              Your 30-day activity matrix
+            </p>
+          </div>
 
-          {/* Recent Activity / History Section matching Results Table Style */}
-          <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl mb-12">
-            <div className="mb-5">
-              <h3 className="text-xl font-extrabold text-white">
-                {t('exercise.history')}
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Recent workouts and activity logs
-              </p>
-            </div>
-
-            {logs.length === 0 ? (
-              <EmptyState emoji="🏃" message={t('exercise.noHistory')} />
-            ) : (
-              <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden border border-white/5">
-                {logs.slice(0, 10).map((item, idx) => (
-                  <div
-                    key={item.id || idx}
-                    className="flex items-center justify-between p-4"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-500/15 text-xl">
-                        {ACTIVITY_ICONS[item.activity_type] || '⚡'}
-                      </span>
-                      <div>
-                        <p className="font-bold text-sm text-white">{item.activity_type || 'Workout'}</p>
-                        <p className="text-xs text-slate-400">{item.log_date}</p>
-                      </div>
-                    </div>
-                    <span className="rounded-lg bg-blue-500/15 px-3 py-1 font-mono text-xs font-bold text-blue-400">
-                      +{item.xp_earned || 20} XP
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-
-        {/* Right 1 Column: Sticky Desktop Sidebar matching Results Page */}
-        <div className="lg:col-span-1 space-y-6 sticky top-6">
-          {/* Level & XP Overview Card */}
-          <div className="rounded-2xl bg-[#131b2e] p-6 shadow-xl">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-              Level & XP Status
-            </h4>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-2xl font-black text-white">{levelInfo.title}</p>
-                <p className="text-xs text-slate-400">{t('exercise.level', { level: levelInfo.level })}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-slate-200">{xpTotal}</p>
-                <p className="text-xs text-slate-400">Total XP</p>
-              </div>
-            </div>
-
-            <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5 space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                <span>Level Progress</span>
-                <span>{levelInfo.xpNeeded} XP to next level</span>
-              </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="grid grid-cols-7 gap-2 min-w-[340px]">
+              {heatmapDays.map(day => (
                 <div
-                  className="h-full rounded-full bg-blue-500 transition-all duration-500"
-                  style={{ width: `${levelInfo.progressPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Weekly Goal & Streak Freezes Card */}
-          <div className="rounded-2xl bg-[#131b2e] p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h4 className="text-sm font-bold uppercase tracking-wider text-white">
-                  Weekly Goal & Protection
-                </h4>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Target: {weeklyGoal} days per week
-                </p>
-              </div>
-              <button
-                onClick={() => { setTempGoal(weeklyGoal); setShowGoalSheet(true) }}
-                className="rounded-lg bg-blue-500/15 p-2 text-blue-400 hover:bg-blue-500/25 transition-colors"
-                title={t('exercise.editGoal')}
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5 space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-400">Longest Streak</span>
-                <span className="font-bold text-white">{stats.longestStreak} Days</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-400 flex items-center gap-1.5">
-                  <Shield className="h-3.5 w-3.5 text-cyan-400" />
-                  Freezes Available
-                </span>
-                <span className="font-bold text-cyan-400">{stats.freezesAvailable}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Milestone Badges Reference Card matching TAR UMT Grading Reference Card */}
-          <div className="rounded-2xl bg-[#131b2e] p-6 shadow-xl">
-            <div className="mb-4">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-white">
-                {t('exercise.badgesTitle')}
-              </h4>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Earn badges by building streaks & XP
-              </p>
-            </div>
-
-            <div className="space-y-2.5">
-              {stats.badgeStatuses.map(b => (
-                <button
-                  key={b.id}
-                  onClick={() => setSelectedBadge(b)}
-                  className="w-full flex items-center justify-between rounded-xl bg-[#0e1626] px-4 py-3 text-left transition-all hover:bg-white/[0.04] border border-white/5"
+                  key={day.dateStr}
+                  title={`${day.dateStr} (${day.activity || 'No workout'})`}
+                  className={`flex flex-col items-center justify-center rounded-xl p-2 min-h-[48px] border transition-colors ${
+                    day.logged
+                      ? 'bg-emerald-500/20 border-emerald-500/35 text-emerald-400 font-bold'
+                      : 'bg-[#0e1626] border-white/5 text-slate-400'
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500/15 text-lg">
-                      {b.icon}
-                    </span>
-                    <div>
-                      <p className="font-bold text-sm text-slate-200">{t(b.titleKey)}</p>
-                      <p className={`text-[11px] ${b.unlocked ? 'text-amber-400 font-semibold' : 'text-slate-400'}`}>
-                        {b.unlocked ? t('exercise.badgeUnlocked') : t('exercise.badgeLocked')}
-                      </p>
-                    </div>
-                  </div>
-                  <Info className="h-4 w-4 text-slate-500 shrink-0" />
-                </button>
+                  <span className="text-[10px] font-mono">{day.label}</span>
+                  {day.logged && <span className="text-xs mt-0.5">{ACTIVITY_ICONS[day.activity] || '⚡'}</span>}
+                </div>
               ))}
             </div>
           </div>
 
-          {/* AI Workout Suggestion Card */}
-          <div className="rounded-2xl bg-[#131b2e] p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
-                <Bot className="h-4 w-4 text-blue-400" />
-                {t('exercise.aiTitle')}
-              </h4>
-              {!aiPlan && !aiLoading && (
-                <button
-                  className="rounded-xl bg-blue-500 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-600 transition-colors shadow-md"
-                  onClick={generateAiSuggestion}
-                >
-                  {t('exercise.generatePlan')}
-                </button>
-              )}
-            </div>
+          <div className="mt-4 flex items-center justify-end gap-2 text-xs text-slate-400">
+            <span>{t('exercise.less')}</span>
+            <span className="h-3 w-3 rounded bg-[#0e1626] border border-white/10" />
+            <span className="h-3 w-3 rounded bg-emerald-500/30" />
+            <span className="h-3 w-3 rounded bg-emerald-500" />
+            <span>{t('exercise.more')}</span>
+          </div>
+        </section>
 
-            {aiLoading ? (
-              <div className="skeleton h-32 rounded-xl" />
-            ) : aiPlan ? (
-              <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5">
-                <div
-                  className="scrollbar-hide max-h-72 overflow-y-auto text-xs sm:text-sm leading-relaxed text-slate-300"
-                  dangerouslySetInnerHTML={{ __html: markdownToHtml(aiPlan) }}
-                />
-                <div className="flex gap-2 justify-end mt-4 pt-3 border-t border-white/5">
-                  <button
-                    className="p-2 text-slate-400 hover:text-red-400 transition-colors"
-                    onClick={deleteAiSuggestion}
-                    title={t('exercise.deletePlan')}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="flex items-center gap-1.5 rounded-lg bg-blue-500/15 px-3 py-1.5 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-colors"
-                    onClick={generateAiSuggestion}
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    <span>{t('exercise.regeneratePlan')}</span>
-                  </button>
+        {/* 3. MILESTONE BADGES CARD */}
+        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5">
+          <div className="mb-5">
+            <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
+              <Award className="h-5 w-5 text-amber-400" />
+              {t('exercise.badgesTitle')}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              Earn badges by building streaks & XP
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {stats.badgeStatuses.map(b => (
+              <button
+                key={b.id}
+                onClick={() => setSelectedBadge(b)}
+                className="w-full flex items-center justify-between rounded-xl bg-[#0e1626] px-4 py-3 text-left transition-all hover:bg-white/[0.04] border border-white/5"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="grid h-9 w-9 place-items-center rounded-lg bg-amber-500/15 text-lg">
+                    {b.icon}
+                  </span>
+                  <div>
+                    <p className="font-bold text-sm text-slate-200">{t(b.titleKey)}</p>
+                    <p className={`text-[11px] ${b.unlocked ? 'text-amber-400 font-semibold' : 'text-slate-400'}`}>
+                      {b.unlocked ? t('exercise.badgeUnlocked') : t('exercise.badgeLocked')}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <p className="text-xs text-slate-400">{t('exercise.aiDesc')}</p>
+                <Info className="h-4 w-4 text-slate-500 shrink-0" />
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* 4. AI WORKOUT SUGGESTION CARD */}
+        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
+                <Bot className="h-5 w-5 text-blue-400" />
+                {t('exercise.aiTitle')}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                Personalized AI workout routines tailored for students
+              </p>
+            </div>
+            {!aiPlan && !aiLoading && (
+              <button
+                className="rounded-xl bg-blue-500 px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-blue-600 transition-colors shadow-md"
+                onClick={generateAiSuggestion}
+              >
+                {t('exercise.generatePlan')}
+              </button>
             )}
           </div>
-        </div>
+
+          {aiLoading ? (
+            <div className="skeleton h-32 rounded-xl" />
+          ) : aiPlan ? (
+            <div className="rounded-xl bg-[#0e1626] p-5 border border-white/5">
+              <div
+                className="text-xs sm:text-sm leading-relaxed text-slate-300"
+                dangerouslySetInnerHTML={{ __html: markdownToHtml(aiPlan) }}
+              />
+              <div className="flex gap-2 justify-end mt-4 pt-3 border-t border-white/5">
+                <button
+                  className="p-2 text-slate-400 hover:text-red-400 transition-colors"
+                  onClick={deleteAiSuggestion}
+                  title={t('exercise.deletePlan')}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                <button
+                  className="flex items-center gap-1.5 rounded-lg bg-blue-500/15 px-3.5 py-1.5 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-colors"
+                  onClick={generateAiSuggestion}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  <span>{t('exercise.regeneratePlan')}</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs sm:text-sm text-slate-400">{t('exercise.aiDesc')}</p>
+          )}
+        </section>
+
+        {/* 5. RECENT ACTIVITY / HISTORY CARD */}
+        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5 mb-12">
+          <div className="mb-5">
+            <h3 className="text-xl font-extrabold text-white">
+              {t('exercise.history')}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              Recent workouts and activity logs
+            </p>
+          </div>
+
+          {logs.length === 0 ? (
+            <EmptyState emoji="🏃" message={t('exercise.noHistory')} />
+          ) : (
+            <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden border border-white/5">
+              {logs.slice(0, 10).map((item, idx) => (
+                <div
+                  key={item.id || idx}
+                  className="flex items-center justify-between p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-500/15 text-xl">
+                      {ACTIVITY_ICONS[item.activity_type] || '⚡'}
+                    </span>
+                    <div>
+                      <p className="font-bold text-sm text-white">{item.activity_type || 'Workout'}</p>
+                      <p className="text-xs text-slate-400">{item.log_date}</p>
+                    </div>
+                  </div>
+                  <span className="rounded-lg bg-blue-500/15 px-3 py-1 font-mono text-xs font-bold text-blue-400">
+                    +{item.xp_earned || 20} XP
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
 
       {/* STICKY BOTTOM CHECK-IN BAR */}
