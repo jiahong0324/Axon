@@ -567,11 +567,11 @@ export default function ExercisePage() {
         </section>
 
         {/* Explicit bottom spacer ensuring full scroll clearance on mobile above floating check-in bar */}
-        <div className="h-32 sm:h-20 w-full shrink-0 pointer-events-none" />
+        <div className="h-44 sm:h-24 w-full shrink-0 pointer-events-none" />
       </div>
 
-      {/* STICKY BOTTOM CHECK-IN BAR (bottom-[68px] snugly on top of mobile bottom tab bar, md:left-60 md:right-0 centered on laptop) */}
-      <div className="fixed inset-x-0 bottom-[68px] md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center">
+      {/* STICKY BOTTOM CHECK-IN BAR (bottom-28 on mobile clear of bottom tab bar, md:left-60 md:right-0 centered on laptop) */}
+      <div className="fixed inset-x-0 bottom-28 md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center">
         <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-white/10 bg-[#131b2e] p-3 shadow-2xl">
           {/* Activity Tag Selector (All options visible at once via flex-wrap, no horizontal scroll needed) */}
           <div className="mb-3.5 flex flex-wrap items-center justify-center gap-1.5 w-full">
