@@ -291,21 +291,24 @@ export default function ExamResultsPage() {
     showToast('New semester created!', 'success')
   }
 
-  function handleDeleteSemester(id) {
-    confirm({
+  async function handleDeleteSemester(id) {
+    const ok = await confirm({
       title: 'Delete Semester?',
       message: 'Are you sure you want to delete this entire semester and its course results?',
       confirmText: 'Delete Semester',
-      variant: 'danger',
-      onConfirm: async () => {
-        const nextList = semesters.filter(s => s.id !== id)
-        saveAndAutoSync(nextList)
-        showToast('Semester deleted.', 'info')
-        if (typeof id !== 'string' || !id.startsWith('sem-')) {
-          await supabase.from('student_semesters').delete().eq('id', id)
-        }
-      }
+      variant: 'danger'
     })
+    if (!ok) return
+
+    const nextList = semesters.filter(s => s.id !== id)
+    saveAndAutoSync(nextList)
+    showToast('Semester deleted.', 'info')
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user && typeof id === 'string' && !id.startsWith('sem-')) {
+      await supabase.from('student_semester_courses').delete().eq('semester_id', id)
+      await supabase.from('student_semesters').delete().eq('id', id)
+    }
   }
 
   function handleAddCourse(semId, newCourse) {
@@ -518,11 +521,11 @@ export default function ExamResultsPage() {
         )}
       </div>
 
-      {/* Main Single-Column Full-Width Layout */}
-      <div className="space-y-7 max-w-5xl mx-auto">
-        {/* TAB 1: MY SEMESTER RECORDS */}
+      {/* Main Container */}
+      <div className="w-full">
+        {/* TAB 1: MY SEMESTER RECORDS (100% Full Width) */}
         {activeTab === 'records' && (
-          <>
+          <div className="space-y-7 w-full">
             {semesters.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-2xl bg-[#131b2e] py-20 text-center shadow-lg">
                 <BookOpen className="mb-4 h-14 w-14 text-slate-500" />
@@ -550,175 +553,210 @@ export default function ExamResultsPage() {
                 )
               })
             )}
-          </>
+          </div>
         )}
 
-        {/* TAB 2: QUICK SGPA CALCULATOR */}
+        {/* TAB 2: QUICK SGPA CALCULATOR (With TAR UMT Grading Scale side-by-side) */}
         {activeTab === 'calculator' && (
-          <div className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl">
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-extrabold text-white">Quick SGPA Simulator</h3>
-                <p className="text-xs sm:text-sm text-slate-400 mt-1">Simulate grade combinations and credit hours</p>
+          <div className="grid gap-8 lg:grid-cols-3 items-start w-full">
+            {/* Left 2 Cols: Quick Calculator */}
+            <div className="lg:col-span-2 rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-extrabold text-white">Quick SGPA Simulator</h3>
+                  <p className="text-xs sm:text-sm text-slate-400 mt-1">Simulate grade combinations and credit hours</p>
+                </div>
+
+                {showCalcResult && (
+                  <button
+                    onClick={() => setShowCalcResult(false)}
+                    className="flex items-center gap-2 rounded-xl bg-blue-500/15 px-4 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-all"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    <span>Edit Courses</span>
+                  </button>
+                )}
               </div>
 
-              {showCalcResult && (
-                <button
-                  onClick={() => setShowCalcResult(false)}
-                  className="flex items-center gap-2 rounded-xl bg-blue-500/15 px-4 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-all"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  <span>Edit Courses</span>
-                </button>
+              {/* VIEW MODE 1: DEDICATED RESULT SCREEN AFTER CALCULATE */}
+              {showCalcResult ? (
+                <div className="space-y-6 py-4 animate-fadeIn">
+                  <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-8 text-center border border-white/5">
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Calculated SGPA</span>
+                    <div className="my-2 text-5xl sm:text-6xl font-black text-white tracking-tight">
+                      {calcGPA.gpa}
+                    </div>
+                    <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-4 py-1.5 text-xs font-bold text-blue-400">
+                      <Award className="h-4 w-4" />
+                      <span>{calcStanding.title}</span>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-400">
+                      Based on <strong className="text-white">{calcGPA.totalCredits} Total Credits</strong> across simulated courses
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-[#0e1626] p-5">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                      Simulated Course List
+                    </h4>
+                    <div className="divide-y divide-white/[0.06]">
+                      {calcRows
+                        .filter(r => r.credits !== '' && r.grade !== '')
+                        .map((r, i) => (
+                          <div key={r.id} className="flex items-center justify-between py-3 text-sm">
+                            <span className="font-semibold text-white">
+                              {r.name || 'Course'}
+                            </span>
+                            <div className="flex items-center gap-4">
+                              <span className="text-xs font-medium text-slate-400">{r.credits} Credits</span>
+                              <span className={`rounded-lg px-3 py-1 font-mono text-xs font-bold ${getGradeBadgeStyle(r.grade)}`}>
+                                {r.grade}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button
+                      onClick={() => setShowCalcResult(false)}
+                      className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-500 py-3.5 text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-md"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      <span>Recalculate / Edit Courses</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCalcRows([
+                          { id: 1, name: '', credits: '', grade: '' },
+                          { id: 2, name: '', credits: '', grade: '' },
+                          { id: 3, name: '', credits: '', grade: '' }
+                        ])
+                        setShowCalcResult(false)
+                      }}
+                      className="flex items-center justify-center gap-2 rounded-xl bg-[#1e293b] px-6 py-3.5 text-sm font-bold text-slate-300 hover:bg-[#283548] transition-all"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Reset</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* VIEW MODE 2: COURSE INPUT TABLE BEFORE CALCULATE */
+                <>
+                  <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
+                    {calcRows.map(row => (
+                      <div
+                        key={row.id}
+                        className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 p-4"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+                          <input
+                            className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0"
+                            placeholder="Course"
+                            value={row.name}
+                            onChange={e => {
+                              const val = e.target.value
+                              setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
+                            }}
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <select
+                            className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                            value={row.credits}
+                            onChange={e => {
+                              const val = e.target.value
+                              setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
+                            }}
+                          >
+                            <option value="">Credit</option>
+                            {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
+                          </select>
+
+                          <select
+                            className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                            value={row.grade}
+                            onChange={e => {
+                              const val = e.target.value
+                              setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
+                            }}
+                          >
+                            <option value="">Grade</option>
+                            {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
+                          </select>
+
+                          <button
+                            onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
+                            className="p-2 text-slate-500 hover:text-red-400 transition-colors"
+                            title="Remove row"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])}
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Row</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const hasFilled = calcRows.some(r => r.credits !== '' && r.grade !== '')
+                      if (!hasFilled) {
+                        showToast('Please select at least one Credit & Grade first.', 'warning')
+                        return
+                      }
+                      setShowCalcResult(true)
+                    }}
+                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-4 text-base font-extrabold text-white hover:bg-blue-600 transition-all shadow-lg"
+                  >
+                    <Calculator className="h-5 w-5" />
+                    <span>Calculate SGPA Result</span>
+                  </button>
+                </>
               )}
             </div>
 
-            {/* VIEW MODE 1: DEDICATED RESULT SCREEN AFTER CALCULATE */}
-            {showCalcResult ? (
-              <div className="space-y-6 py-4 animate-fadeIn">
-                <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-8 text-center border border-white/5">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Calculated SGPA</span>
-                  <div className="my-2 text-5xl sm:text-6xl font-black text-white tracking-tight">
-                    {calcGPA.gpa}
-                  </div>
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-4 py-1.5 text-xs font-bold text-blue-400">
-                    <Award className="h-4 w-4" />
-                    <span>{calcStanding.title}</span>
-                  </div>
-                  <p className="mt-3 text-xs text-slate-400">
-                    Based on <strong className="text-white">{calcGPA.totalCredits} Total Credits</strong> across simulated courses
-                  </p>
-                </div>
-
-                <div className="rounded-xl bg-[#0e1626] p-5">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                    Simulated Course List
-                  </h4>
-                  <div className="divide-y divide-white/[0.06]">
-                    {calcRows
-                      .filter(r => r.credits !== '' && r.grade !== '')
-                      .map((r, i) => (
-                        <div key={r.id} className="flex items-center justify-between py-3 text-sm">
-                          <span className="font-semibold text-white">
-                            {r.name || 'Course'}
-                          </span>
-                          <div className="flex items-center gap-4">
-                            <span className="text-xs font-medium text-slate-400">{r.credits} Credits</span>
-                            <span className={`rounded-lg px-3 py-1 font-mono text-xs font-bold ${getGradeBadgeStyle(r.grade)}`}>
-                              {r.grade}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <button
-                    onClick={() => setShowCalcResult(false)}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-500 py-3.5 text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-md"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    <span>Recalculate / Edit Courses</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setCalcRows([
-                        { id: 1, name: '', credits: '', grade: '' },
-                        { id: 2, name: '', credits: '', grade: '' },
-                        { id: 3, name: '', credits: '', grade: '' }
-                      ])
-                      setShowCalcResult(false)
-                    }}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-[#1e293b] px-6 py-3.5 text-sm font-bold text-slate-300 hover:bg-[#283548] transition-all"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span>Reset</span>
-                  </button>
-                </div>
+            {/* Right 1 Col: TAR UMT Grading Scale Card */}
+            <div className="lg:col-span-1 rounded-2xl bg-[#131b2e] p-6 shadow-xl sticky top-6">
+              <div className="mb-4">
+                <h4 className="text-sm font-bold uppercase tracking-wider text-white">
+                  TAR UMT Grading Scale
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  5.6 Standard Scale · June 2023 Intake & Onwards
+                </p>
               </div>
-            ) : (
-              /* VIEW MODE 2: COURSE INPUT TABLE BEFORE CALCULATE */
-              <>
-                <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
-                  {calcRows.map(row => (
-                    <div
-                      key={row.id}
-                      className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 p-4"
-                    >
-                      <div className="flex items-center gap-2 flex-1 min-w-[160px]">
-                        <input
-                          className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0"
-                          placeholder="Course"
-                          value={row.name}
-                          onChange={e => {
-                            const val = e.target.value
-                            setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
-                          }}
-                        />
-                      </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <select
-                          className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
-                          value={row.credits}
-                          onChange={e => {
-                            const val = e.target.value
-                            setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
-                          }}
-                        >
-                          <option value="">Credit</option>
-                          {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
-                        </select>
-
-                        <select
-                          className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
-                          value={row.grade}
-                          onChange={e => {
-                            const val = e.target.value
-                            setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
-                          }}
-                        >
-                          <option value="">Grade</option>
-                          {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
-                        </select>
-
-                        <button
-                          onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
-                          className="p-2 text-slate-500 hover:text-red-400 transition-colors"
-                          title="Remove row"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+              <div className="space-y-2.5">
+                {TARUMT_GRADES.map(g => (
+                  <div
+                    key={g.grade}
+                    className="flex items-center justify-between rounded-xl bg-[#0e1626] px-4 py-2.5 text-xs sm:text-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-7 w-8 place-items-center rounded-lg bg-blue-500/15 font-bold text-blue-400">
+                        {g.grade}
+                      </span>
+                      <span className="font-semibold text-slate-300">{g.markRange}%</span>
                     </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Row</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    const hasFilled = calcRows.some(r => r.credits !== '' && r.grade !== '')
-                    if (!hasFilled) {
-                      showToast('Please select at least one Credit & Grade first.', 'warning')
-                      return
-                    }
-                    setShowCalcResult(true)
-                  }}
-                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-4 text-base font-extrabold text-white hover:bg-blue-600 transition-all shadow-lg"
-                >
-                  <Calculator className="h-5 w-5" />
-                  <span>Calculate SGPA Result</span>
-                </button>
-              </>
-            )}
+                    <div className="text-right">
+                      <span className="font-mono font-bold text-white text-sm">{g.point.toFixed(4)}</span>
+                      <span className="ml-2 hidden xl:inline text-[10px] text-slate-400 font-medium">{g.description}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
