@@ -62,7 +62,7 @@ export default function ExamResultsPage() {
     }
   }, [])
 
-  // 100% Automatic background cloud sync without any manual buttons
+  // 100% Automatic background cloud sync: saves to user_metadata (guaranteed universal cloud sync) + SQL tables
   async function syncAllToSupabase(localList) {
     if (isSyncingRef.current) return localList
     const { data: { user } } = await supabase.auth.getUser()
@@ -70,12 +70,17 @@ export default function ExamResultsPage() {
 
     isSyncingRef.current = true
     try {
+      // 1. Guaranteed dual-storage sync to user_metadata so any device immediately sees all semesters
+      await supabase.auth.updateUser({
+        data: { axon_exam_results_semesters: localList }
+      })
+
+      // 2. Also sync to SQL tables if they exist
       const updatedList = []
       for (const sem of localList) {
         let semId = sem.id
         let newSemObj = { ...sem }
 
-        // 1. Ensure Semester is saved in Supabase student_semesters table
         if (typeof semId === 'string' && semId.startsWith('sem-')) {
           const { data: newSem } = await supabase
             .from('student_semesters')
@@ -92,7 +97,6 @@ export default function ExamResultsPage() {
             .upsert({ id: semId, user_id: user.id, name: sem.name || 'Semester' })
         }
 
-        // 2. Automatically save all courses for this semester into student_semester_courses
         const syncedCourses = []
         for (const course of (sem.courses || [])) {
           if (typeof course.id === 'string' && course.id.startsWith('course-')) {
@@ -137,7 +141,6 @@ export default function ExamResultsPage() {
       localStorage.setItem('axon_exam_results_semesters', JSON.stringify(updatedList))
       return updatedList
     } catch (e) {
-      console.error('Auto cloud sync error:', e)
       return localList
     } finally {
       isSyncingRef.current = false
@@ -176,22 +179,19 @@ export default function ExamResultsPage() {
       return
     }
 
-    // 1. First automatically push any local unsynced laptop edits up to Supabase
+    // 1. Read local storage
+    let localList = []
     const cached = localStorage.getItem('axon_exam_results_semesters')
     if (cached) {
-      try {
-        const parsed = JSON.parse(cached)
-        const hasUnsynced = parsed.some(s => 
-          String(s.id).startsWith('sem-') || 
-          (s.courses || []).some(c => String(c.id).startsWith('course-'))
-        )
-        if (hasUnsynced) {
-          await syncAllToSupabase(parsed)
-        }
-      } catch (e) {}
+      try { localList = JSON.parse(cached) || [] } catch (e) {}
     }
 
-    // 2. Fetch all semesters & courses from Supabase (so mobile/laptop see all records)
+    // 2. Read user_metadata from Supabase Auth
+    const metaList = Array.isArray(user?.user_metadata?.axon_exam_results_semesters)
+      ? user.user_metadata.axon_exam_results_semesters
+      : []
+
+    // 3. Read SQL tables
     const { data: semsData } = await supabase
       .from('student_semesters')
       .select('*')
@@ -204,41 +204,52 @@ export default function ExamResultsPage() {
       .eq('user_id', user.id)
       .order('created_at')
 
+    let tableList = []
     if (semsData && semsData.length > 0) {
-      const cachedLockMap = {}
-      if (cached) {
-        try {
-          const parsedCached = JSON.parse(cached)
-          parsedCached.forEach(s => { cachedLockMap[s.id] = s.is_submitted })
-        } catch (e) {}
-      }
-
-      const merged = semsData.map(s => {
+      tableList = semsData.map(s => {
         const semCourses = (coursesData || []).filter(c => c.semester_id === s.id)
         const hasGradedCourses = semCourses.some(c => c.grade && c.grade !== '')
         return {
           ...s,
-          is_submitted: cachedLockMap[s.id] !== undefined ? cachedLockMap[s.id] : hasGradedCourses,
+          is_submitted: hasGradedCourses,
           courses: semCourses.length > 0 ? semCourses : createDefaultThreeCourses(s.id)
         }
       })
-      setSemesters(merged)
-      localStorage.setItem('axon_exam_results_semesters', JSON.stringify(merged))
-    } else if (cached) {
-      try {
-        const parsed = JSON.parse(cached)
-        await syncAllToSupabase(parsed)
-      } catch (e) {}
-    } else {
-      const defaultSem = [{
+    }
+
+    // 4. Merge all lists by semester name or id so no laptop/mobile data is ever lost
+    const mergedMap = new Map()
+    for (const sem of [...localList, ...metaList, ...tableList]) {
+      if (!sem || !sem.name) continue
+      const key = sem.name.trim().toLowerCase()
+      if (!mergedMap.has(key)) {
+        mergedMap.set(key, {
+          ...sem,
+          courses: (sem.courses && sem.courses.length > 0) ? sem.courses : createDefaultThreeCourses(sem.id)
+        })
+      } else {
+        const existing = mergedMap.get(key)
+        // If the incoming semester has courses with grades or is submitted, prefer/merge it
+        const existingHasGrades = (existing.courses || []).some(c => c.grade && c.grade !== '')
+        const incomingHasGrades = (sem.courses || []).some(c => c.grade && c.grade !== '')
+        if (incomingHasGrades && !existingHasGrades) {
+          mergedMap.set(key, sem)
+        }
+      }
+    }
+
+    let merged = Array.from(mergedMap.values())
+    if (merged.length === 0) {
+      merged = [{
         id: 'sem-1',
         name: 'Year 1 Semester 1',
         is_submitted: false,
         courses: createDefaultThreeCourses('sem-1')
       }]
-      const synced = await syncAllToSupabase(defaultSem)
-      setSemesters(synced)
     }
+
+    setSemesters(merged)
+    localStorage.setItem('axon_exam_results_semesters', JSON.stringify(merged))
   }
 
   function saveAndAutoSync(list) {

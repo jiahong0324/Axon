@@ -53,19 +53,38 @@ export default function ExercisePage() {
   const todayStr = getTodayStr()
 
   useEffect(() => {
-    loadInitialData()
+    loadInitialData(true)
     const savedPlan = localStorage.getItem('axon_exercise_ai_plan_content')
     const savedDate = localStorage.getItem('axon_exercise_ai_plan_date')
     if (savedPlan && savedDate === todayStr) {
       setAiPlan(savedPlan)
     }
+
+    const { data: authSub } = supabase.auth.onAuthStateChange(() => {
+      loadInitialData(false)
+    })
+
+    function handleAutoRefresh() {
+      if (document.visibilityState === 'visible') {
+        loadInitialData(false)
+      }
+    }
+
+    window.addEventListener('visibilitychange', handleAutoRefresh)
+    window.addEventListener('focus', handleAutoRefresh)
+
+    return () => {
+      authSub?.subscription?.unsubscribe()
+      window.removeEventListener('visibilitychange', handleAutoRefresh)
+      window.removeEventListener('focus', handleAutoRefresh)
+    }
   }, [todayStr])
 
-  async function loadInitialData() {
-    setLoading(true)
+  async function loadInitialData(showLoading = true) {
+    if (showLoading) setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      setLoading(false)
+      if (showLoading) setLoading(false)
       return
     }
     setUserId(user.id)
@@ -75,7 +94,7 @@ export default function ExercisePage() {
     setWeeklyGoal(data.weeklyGoal || 4)
     setXpTotal(data.xpTotal || 0)
     setFreezesAvailable(data.freezesAvailable || 1)
-    setLoading(false)
+    if (showLoading) setLoading(false)
   }
 
   const stats = useMemo(

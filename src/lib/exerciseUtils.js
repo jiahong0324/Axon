@@ -222,32 +222,53 @@ export async function fetchExerciseData(userId) {
   let xpTotal = 0
   let freezesAvailable = 1
 
+  // 1. Read from local cache first
   try {
-    const [profileRes, logsRes] = await Promise.all([
+    const cached = JSON.parse(localStorage.getItem(`axon_exercise_data_${userId}`) || 'null')
+    if (cached && Array.isArray(cached.logs)) {
+      logs = cached.logs
+      weeklyGoal = cached.weeklyGoal || 4
+      xpTotal = cached.xpTotal || 0
+      freezesAvailable = cached.freezesAvailable ?? 1
+    }
+  } catch (e) {}
+
+  // 2. Read from Supabase profile, auth user_metadata, and exercise_logs table
+  try {
+    const [userRes, profileRes, logsRes] = await Promise.all([
+      supabase.auth.getUser(),
       supabase.from('profiles').select('weekly_exercise_goal, xp_total, streak_freezes_available').eq('id', userId).single(),
       supabase.from('exercise_logs').select('*').eq('user_id', userId).order('log_date', { ascending: false })
     ])
 
     if (profileRes.data) {
       if (typeof profileRes.data.weekly_exercise_goal === 'number') weeklyGoal = profileRes.data.weekly_exercise_goal
-      if (typeof profileRes.data.xp_total === 'number') xpTotal = profileRes.data.xp_total
+      if (typeof profileRes.data.xp_total === 'number') xpTotal = Math.max(xpTotal, profileRes.data.xp_total)
       if (typeof profileRes.data.streak_freezes_available === 'number') freezesAvailable = profileRes.data.streak_freezes_available
     }
 
-    if (logsRes.data && Array.isArray(logsRes.data)) {
-      logs = logsRes.data
-    }
-  } catch {
-    // Read from local cache if offline
-    try {
-      const cached = JSON.parse(localStorage.getItem(`axon_exercise_data_${userId}`) || 'null')
-      if (cached) {
-        return cached
+    const meta = userRes?.data?.user?.user_metadata || {}
+    const metaLogs = Array.isArray(meta.axon_exercise_logs) ? meta.axon_exercise_logs : []
+    const tableLogs = (logsRes.data && Array.isArray(logsRes.data)) ? logsRes.data : []
+
+    // Merge and deduplicate logs by log_date
+    const mergedMap = new Map()
+    for (const l of [...logs, ...metaLogs, ...tableLogs]) {
+      if (l && l.log_date) {
+        if (!mergedMap.has(l.log_date)) {
+          mergedMap.set(l.log_date, l)
+        }
       }
-    } catch {
-      // ignore
     }
-  }
+    const mergedLogs = Array.from(mergedMap.values()).sort((a, b) => (a.log_date < b.log_date ? 1 : -1))
+
+    if (mergedLogs.length > 0) {
+      logs = mergedLogs
+    }
+    if (typeof meta.axon_xp_total === 'number') {
+      xpTotal = Math.max(xpTotal, meta.axon_xp_total)
+    }
+  } catch (e) {}
 
   // Also sync weekly freeze reward check
   const checkWeekKey = `axon_freeze_awarded_week_${userId}`
@@ -256,20 +277,15 @@ export async function fetchExerciseData(userId) {
   if (localStorage.getItem(checkWeekKey) !== String(weekNo)) {
     freezesAvailable += 1
     localStorage.setItem(checkWeekKey, String(weekNo))
-    // Try to update profile
     try {
       await supabase.from('profiles').update({ streak_freezes_available: freezesAvailable }).eq('id', userId)
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
   const result = { logs, weeklyGoal, xpTotal, freezesAvailable }
   try {
     localStorage.setItem(`axon_exercise_data_${userId}`, JSON.stringify(result))
-  } catch {
-    // ignore
-  }
+  } catch {}
 
   return result
 }
@@ -307,7 +323,6 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
   let bonusXP = 0
   const unlockedNow = []
 
-  // Check milestone bonuses
   if (!beforeStats.badgeStatuses.find(b => b.id === '7_day')?.unlocked && afterStats.badgeStatuses.find(b => b.id === '7_day')?.unlocked) {
     bonusXP += 100
     unlockedNow.push('7_day')
@@ -330,7 +345,28 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
   const newXpTotal = currentXpTotal + xpEarned
   const newFreezes = afterStats.freezesAvailable
 
-  // Persist to Supabase
+  // 1. Update local cache immediately
+  const resultData = {
+    logs: updatedLogs,
+    weeklyGoal: currentWeeklyGoal,
+    xpTotal: newXpTotal,
+    freezesAvailable: newFreezes
+  }
+  try {
+    localStorage.setItem(`axon_exercise_data_${userId}`, JSON.stringify(resultData))
+  } catch {}
+
+  // 2. Persist to Supabase user_metadata (guaranteed dual cloud sync across laptop & mobile) + SQL tables
+  try {
+    await supabase.auth.updateUser({
+      data: {
+        axon_exercise_logs: updatedLogs,
+        axon_xp_total: newXpTotal,
+        axon_freezes: newFreezes
+      }
+    })
+  } catch {}
+
   try {
     await supabase.from('exercise_logs').insert({
       user_id: userId,
@@ -342,28 +378,11 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
       xp_total: newXpTotal,
       streak_freezes_available: newFreezes
     }).eq('id', userId)
-  } catch {
-    // ignore offline errors
-  }
-
-  // Update local cache
-  const resultData = {
-    logs: updatedLogs,
-    weeklyGoal: currentWeeklyGoal,
-    xpTotal: newXpTotal,
-    freezesAvailable: newFreezes
-  }
-  try {
-    localStorage.setItem(`axon_exercise_data_${userId}`, JSON.stringify(resultData))
-  } catch {
-    // ignore
-  }
+  } catch {}
 
   try {
     await logActivity(`Exercise check-in (${activityType})`, 'exercise', activityType)
-  } catch {
-    // ignore
-  }
+  } catch {}
 
   return {
     success: true,
