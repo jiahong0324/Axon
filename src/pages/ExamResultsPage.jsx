@@ -256,13 +256,9 @@ export default function ExamResultsPage() {
     }
 
     let merged = Array.from(mergedMap.values())
-    if (merged.length === 0) {
-      merged = [{
-        id: 'sem-1',
-        name: 'Year 1 Semester 1',
-        is_submitted: false,
-        courses: createDefaultThreeCourses('sem-1')
-      }]
+    const hasRealSemester = merged.some(s => s.name !== 'Year 1 Semester 1' || (s.courses || []).some(c => c.grade && c.grade !== ''))
+    if (hasRealSemester) {
+      merged = merged.filter(s => !(s.name === 'Year 1 Semester 1' && (s.courses || []).every(c => !c.grade || c.grade === '')))
     }
 
     setSemesters(merged)
@@ -889,23 +885,20 @@ function SemesterCard({
             (semester.courses || []).map((course, idx) => (
               <div
                 key={course.id || idx}
-                className="flex items-center justify-between py-3.5 text-sm sm:text-base gap-3"
+                className="flex items-center justify-between py-3.5 text-sm sm:text-base"
               >
-                <div className="flex items-center gap-3 shrink-0 max-w-[65%]">
+                <div className="flex items-center gap-3">
                   {course.course_code && (
-                    <span className="font-mono text-xs font-bold uppercase rounded bg-white/5 px-2.5 py-1 text-slate-400 shrink-0">
+                    <span className="font-mono text-xs font-bold uppercase rounded bg-white/5 px-2 py-1 text-slate-400">
                       {course.course_code}
                     </span>
                   )}
-                  <span className="font-semibold text-white truncate">
+                  <span className="font-semibold text-white">
                     {course.course_name || 'Course'}
                   </span>
                 </div>
 
-                {/* Subtle dotted connector line filling the center space */}
-                <div className="hidden sm:block flex-1 border-b border-dotted border-white/10 mx-4 my-auto"></div>
-
-                <div className="flex items-center gap-4 shrink-0">
+                <div className="flex items-center gap-4">
                   <span className="text-xs sm:text-sm font-medium text-slate-400">
                     {course.credit_hours || 0} Credits
                   </span>
@@ -940,9 +933,6 @@ function SemesterCard({
                     onChange={e => onUpdateCourse(semester.id, course.id, { course_name: e.target.value })}
                   />
                 </div>
-
-                {/* Subtle dotted connector line in edit mode too */}
-                <div className="hidden sm:block flex-1 border-b border-dotted border-white/10 mx-4 my-auto"></div>
 
                 <div className="flex items-center gap-2.5 shrink-0">
                   <select
