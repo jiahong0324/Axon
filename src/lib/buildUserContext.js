@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
 import { supabase } from './supabase'
 import { formatTime } from './utils'
+import { calculateOverallCGPA, calculateSemesterGPA } from './tarumtGrading'
 
 export async function buildUserContext() {
   const { data: { user } } = await supabase.auth.getUser()
@@ -43,11 +44,13 @@ ${announcements.length === 0 ? 'No announcements.' : announcements.slice(0, 5).m
 `.trim()
   }
 
-  const [classesRes, assignmentsRes, examsRes, remindersRes] = await Promise.all([
+  const [classesRes, assignmentsRes, examsRes, remindersRes, semsRes, coursesRes] = await Promise.all([
     supabase.from('classes').select('*').eq('user_id', user.id),
     supabase.from('assignments').select('*').eq('user_id', user.id).neq('status', 'Done'),
     supabase.from('exams').select('*').eq('user_id', user.id).gte('exam_date', todayStr).order('exam_date'),
-    supabase.from('reminders').select('*').eq('user_id', user.id).eq('is_active', true)
+    supabase.from('reminders').select('*').eq('user_id', user.id).eq('is_active', true),
+    supabase.from('student_semesters').select('*').eq('user_id', user.id).order('created_at'),
+    supabase.from('student_semester_courses').select('*').eq('user_id', user.id).order('created_at')
   ])
 
   let classes = classesRes.data || []
@@ -72,6 +75,23 @@ ${announcements.length === 0 ? 'No announcements.' : announcements.slice(0, 5).m
   } else {
     classes = [...classes, ...validReplacements]
   }
+
+  let semesters = (semsRes.data || []).map(s => {
+    const semCourses = (coursesRes.data || []).filter(c => c.semester_id === s.id)
+    return { ...s, courses: semCourses }
+  })
+
+  if (typeof window !== 'undefined' && window.localStorage && semesters.length === 0) {
+    try {
+      const savedSems = JSON.parse(localStorage.getItem('axon_exam_results_semesters') || '[]')
+      if (Array.isArray(savedSems) && savedSems.length > 0) {
+        semesters = savedSems
+      }
+    } catch (e) {}
+  }
+
+  const overall = calculateOverallCGPA(semesters)
+
   const assignments = assignmentsRes.data || []
   const exams = examsRes.data || []
   const reminders = remindersRes.data || []
@@ -82,6 +102,15 @@ ${announcements.length === 0 ? 'No announcements.' : announcements.slice(0, 5).m
 Name: ${displayName}
 Email: ${user.email}
 Today: ${dayName}, ${format(today, 'dd MMMM yyyy')}
+
+=== ACADEMIC EXAM RESULTS & CGPA ===
+Overall CGPA: ${overall.cgpa} (${overall.overallCredits} Total Credits)
+${semesters.length === 0 ? 'No semester exam records recorded.' : semesters.map(sem => {
+  const semStat = calculateSemesterGPA(sem.courses)
+  const validCourses = (sem.courses || []).filter(c => c.course_name || c.grade)
+  return `Semester: ${sem.name} (GPA: ${semStat.gpa}, Credits: ${semStat.totalCredits})\n` +
+    validCourses.map(c => `  - ${c.course_code ? c.course_code + ' ' : ''}${c.course_name}: Grade ${c.grade || 'N/A'} (${c.credit_hours} cr)`).join('\n')
+}).join('\n\n')}
 
 === TODAY'S CLASSES (${dayName}) ===
 ${todayClasses.length === 0 ? 'No classes today.' : todayClasses.map(c => `- ${c.subject} [${c.class_type}] from ${formatTime(c.start_time)} to ${formatTime(c.end_time)} at ${c.classroom || 'TBA'} with ${c.lecturer || 'TBA'}`).join('\n')}
