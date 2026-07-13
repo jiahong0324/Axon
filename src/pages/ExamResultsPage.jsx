@@ -588,7 +588,7 @@ export default function ExamResultsPage() {
 
   return (
     <main className="main-content">
-      {/* Simple Header */}
+      {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="page-title mb-1">Exam Results & CGPA</h1>
@@ -597,9 +597,11 @@ export default function ExamResultsPage() {
           </p>
         </div>
 
-        {/* Overall CGPA Badge */}
-        <div className="flex items-center gap-4 rounded-2xl border-l-4 border-l-theme-500 bg-[#131b2e] px-5 py-4">
-          <Award className="h-7 w-7 text-theme-400 shrink-0" />
+        {/* Overall CGPA Card — blue left accent bar */}
+        <div className="flex items-center gap-4 rounded-2xl border-l-4 border-l-blue-500 bg-[#131b2e] px-5 py-4">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-500/15">
+            <Award className="h-5 w-5 text-blue-400" />
+          </div>
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Overall CGPA</p>
             <div className="flex items-baseline gap-2 mt-0.5">
@@ -610,28 +612,28 @@ export default function ExamResultsPage() {
         </div>
       </div>
 
-      {/* Simple 2-Tab Switcher */}
-      <div className="mb-6 flex flex-wrap gap-3">
+      {/* Segmented Tab Control — solid fill active, no accent bars */}
+      <div className="mb-6 inline-flex rounded-xl bg-[#111827] p-1">
         <button
           onClick={() => setActiveTab('records')}
-          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-all ${
             activeTab === 'records'
-              ? 'border-l-4 border-l-theme-500 bg-[#131b2e] text-white shadow-md'
-              : 'border-l-4 border-l-transparent bg-[#111827] text-slate-400 hover:text-white'
+              ? 'bg-blue-500 text-white'
+              : 'text-slate-400 hover:text-white'
           }`}
         >
-          <BookOpen className={`h-4 w-4 shrink-0 ${activeTab === 'records' ? 'text-theme-400' : 'text-slate-400'}`} />
+          <BookOpen className="h-4 w-4 shrink-0" />
           <span>My Semesters</span>
         </button>
         <button
           onClick={() => setActiveTab('calculator')}
-          className={`flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-all ${
             activeTab === 'calculator'
-              ? 'border-l-4 border-l-purple-500 bg-[#131b2e] text-white shadow-md'
-              : 'border-l-4 border-l-transparent bg-[#111827] text-slate-400 hover:text-white'
+              ? 'bg-blue-500 text-white'
+              : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Calculator className={`h-4 w-4 shrink-0 ${activeTab === 'calculator' ? 'text-purple-400' : 'text-slate-400'}`} />
+          <Calculator className="h-4 w-4 shrink-0" />
           <span>Quick Calculator</span>
         </button>
       </div>
@@ -640,28 +642,30 @@ export default function ExamResultsPage() {
       {activeTab === 'records' && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:justify-between">
+            {/* Add Semester — flat solid blue */}
             <button
               onClick={() => setShowAddSemModal(true)}
-              className="flex items-center justify-center gap-2 rounded-xl border-l-4 border-l-theme-500 bg-[#131b2e] px-5 py-3 text-xs sm:text-sm font-semibold text-white hover:bg-[#18233c] transition-all shadow-md"
+              className="flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-5 py-3 text-xs sm:text-sm font-semibold text-white hover:bg-blue-600 transition-colors shadow-md"
             >
-              <Plus className="h-4 w-4 text-theme-400 shrink-0" />
+              <Plus className="h-4 w-4 shrink-0" />
               <span>Add Semester</span>
             </button>
 
+            {/* AI Import Screenshot — flat solid teal */}
             <button
               onClick={() => {
                 setTargetSemesterId(null)
                 setAnalyzerOpen(true)
               }}
-              className="flex items-center justify-center gap-2 rounded-xl border-l-4 border-l-purple-500 bg-[#131b2e] px-5 py-3 text-xs sm:text-sm font-semibold text-white hover:bg-[#18233c] transition-all shadow-md"
+              className="flex items-center justify-center gap-2 rounded-xl bg-teal-500 px-5 py-3 text-xs sm:text-sm font-semibold text-white hover:bg-teal-600 transition-colors shadow-md"
             >
-              <Sparkles className="h-4 w-4 text-purple-400 shrink-0" />
+              <Sparkles className="h-4 w-4 shrink-0" />
               <span>AI Import Screenshot</span>
             </button>
           </div>
 
           {semesters.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border-l-4 border-l-theme-500 bg-[#131b2e] py-16 text-center">
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-[#131b2e] py-16 text-center">
               <BookOpen className="mb-3 h-12 w-12 text-slate-500" />
               <h3 className="text-lg font-bold text-white">No Semester Records</h3>
               <p className="mt-1 text-sm text-slate-400">Click "+ Add Semester" or upload a screenshot to start.</p>
@@ -689,31 +693,30 @@ export default function ExamResultsPage() {
         </div>
       )}
 
-      {/* TAB 2: SIMPLE TAR UMT CALCULATOR */}
+      {/* TAB 2: QUICK CALCULATOR */}
       {activeTab === 'calculator' && (
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Left 2 Cols: Simple Calculator Table */}
-          <div className="lg:col-span-2 rounded-2xl border-l-4 border-l-purple-500 bg-[#131b2e] p-5 sm:p-6">
+          {/* Left 2 Cols: Calculator — blue left accent bar on section card */}
+          <div className="lg:col-span-2 rounded-2xl border-l-4 border-l-blue-500 bg-[#131b2e] p-5 sm:p-6">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-white">Quick SGPA Calculator</h3>
                 <p className="text-xs text-slate-400">Simulate grades and credit hours instantly</p>
               </div>
-              <div className="flex items-center gap-3 rounded-xl border-l-4 border-l-purple-500 bg-[#0e1626] px-4 py-3">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Calculated SGPA</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-white mt-0.5">{calcGPA.gpa}</p>
-                </div>
+              <div className="rounded-xl bg-[#0e1626] px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Calculated SGPA</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white mt-0.5">{calcGPA.gpa}</p>
               </div>
             </div>
 
-            <div className="space-y-3">
+            {/* Calculator rows — plain rows with dividers, no accent bars */}
+            <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
               {calcRows.map((row, idx) => (
                 <div
                   key={row.id}
-                  className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 rounded-xl border-l-4 border-l-purple-400 bg-[#0e1626] p-3 sm:p-3.5"
+                  className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 p-3 sm:p-3.5"
                 >
-                  <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+                  <div className="flex items-center gap-2 flex-1 min-w-[140px]">
                     <input
                       className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0"
                       placeholder={`Course #${idx + 1}`}
@@ -727,32 +730,32 @@ export default function ExamResultsPage() {
 
                   <div className="flex items-center gap-2 shrink-0">
                     <select
-                      className="bg-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                      className="bg-[#1a2236] rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
                       value={row.credits}
                       onChange={e => {
                         const val = e.target.value
                         setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
                       }}
                     >
-                      <option value="">Cr</option>
-                      {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Cr</option>)}
+                      <option value="">Credit</option>
+                      {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
 
                     <select
-                      className="bg-emerald-500/15 text-emerald-400 font-bold rounded-lg px-2.5 py-1.5 text-xs sm:text-sm border-0 focus:outline-none"
+                      className="bg-[#1a2236] rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
                       value={row.grade}
                       onChange={e => {
                         const val = e.target.value
                         setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
                       }}
                     >
-                      <option value="">Grd</option>
+                      <option value="">Grade</option>
                       {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
                     </select>
 
                     <button
                       onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
-                      className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
+                      className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
                       title="Remove row"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -760,19 +763,20 @@ export default function ExamResultsPage() {
                   </div>
                 </div>
               ))}
-
-              <button
-                onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-l-4 border-l-purple-500 bg-[#0e1626] py-3 text-xs sm:text-sm font-semibold text-white hover:bg-[#152036] transition-all"
-              >
-                <Plus className="h-4 w-4 text-purple-400" />
-                <span>Add Row</span>
-              </button>
             </div>
+
+            {/* + Add Row — outlined style */}
+            <button
+              onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Row</span>
+            </button>
           </div>
 
-          {/* Right Col: TAR UMT 5.6 Grading Reference Table */}
-          <div className="rounded-2xl border-l-4 border-l-theme-500 bg-[#131b2e] p-5 sm:p-6">
+          {/* Right Col: TAR UMT 5.6 Grading Reference — blue left accent bar */}
+          <div className="rounded-2xl border-l-4 border-l-blue-500 bg-[#131b2e] p-5 sm:p-6">
             <h4 className="text-sm font-bold uppercase tracking-wider text-white mb-2">
               TAR UMT Grading Scale
             </h4>
@@ -787,7 +791,7 @@ export default function ExamResultsPage() {
                   className="flex items-center justify-between rounded-xl bg-[#0e1626] px-3 py-2 text-xs"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="grid h-6 w-7 place-items-center rounded bg-theme-500/15 font-bold text-theme-400">
+                    <span className="grid h-6 w-7 place-items-center rounded bg-blue-500/15 font-bold text-blue-400">
                       {g.grade}
                     </span>
                     <span className="font-medium text-slate-300">{g.markRange}</span>
@@ -846,9 +850,9 @@ export default function ExamResultsPage() {
 
 function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDeleteCourse, onDeleteSemester, onAIImport }) {
   return (
-    <div className="rounded-2xl border-l-4 border-l-theme-500 bg-[#131b2e] p-5 sm:p-6 shadow-xl">
+    <div className="rounded-2xl border-l-4 border-l-blue-500 bg-[#131b2e] p-5 sm:p-6">
       {/* Semester Card Header */}
-      <div className="mb-4 sm:mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+      <div className="mb-4 sm:mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-4">
         <div>
           <h3 className="text-base sm:text-xl font-bold text-white tracking-tight">{semester.name}</h3>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -857,23 +861,26 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-xl bg-emerald-500/15 px-3 py-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">GPA</span>
-            <span className="font-mono text-sm sm:text-base font-bold text-emerald-400">{semStat.gpa}</span>
+          {/* GPA pill — green fill */}
+          <div className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-white">GPA</span>
+            <span className="font-mono text-sm sm:text-base font-bold text-white">{semStat.gpa}</span>
           </div>
 
+          {/* AI Import — teal */}
           <button
             onClick={onAIImport}
-            className="flex items-center gap-1.5 rounded-xl border-l-4 border-l-purple-500 bg-[#111827] px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-[#18243c] transition-all"
+            className="flex items-center gap-1.5 rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-600 transition-colors"
             title="Import from screenshot"
           >
-            <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+            <Sparkles className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">AI Import</span>
           </button>
 
+          {/* Delete */}
           <button
             onClick={() => onDeleteSemester(semester.id)}
-            className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:bg-red-500/15 hover:text-red-400 transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-slate-400 hover:bg-red-500/15 hover:text-red-400 transition-all"
             title="Delete Semester"
           >
             <Trash2 className="h-4 w-4" />
@@ -881,17 +888,17 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
         </div>
       </div>
 
-      {/* Courses List */}
-      <div className="space-y-3">
+      {/* Course rows — plain rows with subtle dividers, NO accent bars */}
+      <div className="divide-y divide-white/[0.06]">
         {(semester.courses || []).map((course, idx) => (
           <div
             key={course.id}
-            className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 rounded-xl border-l-4 border-l-theme-400 bg-[#0e1626] p-3 sm:p-3.5"
+            className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 py-3 first:pt-0"
           >
-            <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 flex-1 min-w-[140px]">
               <input
-                className="w-20 sm:w-24 bg-transparent text-xs sm:text-sm font-medium text-slate-400 placeholder:text-slate-500 focus:outline-none"
-                placeholder="Code (opt)"
+                className="w-20 sm:w-24 bg-transparent text-xs font-medium text-slate-400 placeholder:text-slate-500 focus:outline-none"
+                placeholder="Code"
                 value={course.course_code || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { course_code: e.target.value })}
               />
@@ -904,27 +911,29 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              {/* Credit dropdown — neutral */}
               <select
-                className="bg-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                className="bg-[#1a2236] rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
                 value={course.credit_hours || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
               >
-                <option value="">Cr</option>
-                {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Cr</option>)}
+                <option value="">Credit</option>
+                {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c}</option>)}
               </select>
 
+              {/* Grade dropdown — identical neutral styling to Credit */}
               <select
-                className="bg-emerald-500/15 text-emerald-400 font-bold rounded-lg px-2.5 py-1.5 text-xs sm:text-sm border-0 focus:outline-none"
+                className="bg-[#1a2236] rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
                 value={course.grade || ''}
                 onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
               >
-                <option value="">Grd</option>
+                <option value="">Grade</option>
                 {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
               </select>
 
               <button
                 onClick={() => onDeleteCourse(semester.id, course.id)}
-                className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
+                className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
                 title="Remove course"
               >
                 <Trash2 className="h-4 w-4" />
@@ -932,15 +941,16 @@ function SemesterCard({ semester, semStat, onAddCourse, onUpdateCourse, onDelete
             </div>
           </div>
         ))}
-
-        <button
-          onClick={() => onAddCourse(semester.id, { course_code: '', course_name: '', credit_hours: '', grade: '' })}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-l-4 border-l-theme-500 bg-[#0e1626] py-3 text-xs sm:text-sm font-semibold text-white hover:bg-[#152036] transition-all"
-        >
-          <Plus className="h-4 w-4 text-theme-400" />
-          <span>Add Course</span>
-        </button>
       </div>
+
+      {/* + Add Course — outlined style with blue icon */}
+      <button
+        onClick={() => onAddCourse(semester.id, { course_code: '', course_name: '', credit_hours: '', grade: '' })}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
+      >
+        <Plus className="h-4 w-4" />
+        <span>Add Course</span>
+      </button>
     </div>
   )
 }
