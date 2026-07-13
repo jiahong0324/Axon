@@ -76,6 +76,7 @@ export default function ExamResultsPage() {
       })
 
       // 2. Also sync to SQL tables if they exist
+      let hasIdChanges = false
       const updatedList = []
       for (const sem of localList) {
         let semId = sem.id
@@ -90,6 +91,7 @@ export default function ExamResultsPage() {
           if (newSem) {
             semId = newSem.id
             newSemObj.id = newSem.id
+            hasIdChanges = true
           }
         } else {
           await supabase
@@ -114,6 +116,7 @@ export default function ExamResultsPage() {
               .single()
             if (newCourse) {
               syncedCourses.push(newCourse)
+              hasIdChanges = true
             } else {
               syncedCourses.push({ ...course, semester_id: semId })
             }
@@ -137,8 +140,10 @@ export default function ExamResultsPage() {
         updatedList.push(newSemObj)
       }
 
-      setSemesters(updatedList)
       localStorage.setItem('axon_exam_results_semesters', JSON.stringify(updatedList))
+      if (hasIdChanges) {
+        setSemesters(updatedList)
+      }
       return updatedList
     } catch (e) {
       return localList
@@ -191,7 +196,15 @@ export default function ExamResultsPage() {
       ? user.user_metadata.axon_exam_results_semesters
       : []
 
-    // 3. Read SQL tables
+    // 3. Preserve lock/submitted states explicitly
+    const lockMap = {}
+    for (const sem of [...localList, ...metaList]) {
+      if (sem && sem.name && sem.is_submitted !== undefined) {
+        lockMap[sem.name.trim().toLowerCase()] = Boolean(sem.is_submitted)
+      }
+    }
+
+    // 4. Read SQL tables
     const { data: semsData } = await supabase
       .from('student_semesters')
       .select('*')
@@ -208,16 +221,17 @@ export default function ExamResultsPage() {
     if (semsData && semsData.length > 0) {
       tableList = semsData.map(s => {
         const semCourses = (coursesData || []).filter(c => c.semester_id === s.id)
+        const key = (s.name || '').trim().toLowerCase()
         const hasGradedCourses = semCourses.some(c => c.grade && c.grade !== '')
         return {
           ...s,
-          is_submitted: hasGradedCourses,
+          is_submitted: lockMap[key] !== undefined ? lockMap[key] : hasGradedCourses,
           courses: semCourses.length > 0 ? semCourses : createDefaultThreeCourses(s.id)
         }
       })
     }
 
-    // 4. Merge all lists by semester name or id so no laptop/mobile data is ever lost
+    // 5. Merge all lists by semester name or id so no laptop/mobile data is ever lost
     const mergedMap = new Map()
     for (const sem of [...localList, ...metaList, ...tableList]) {
       if (!sem || !sem.name) continue
@@ -233,7 +247,10 @@ export default function ExamResultsPage() {
         const existingHasGrades = (existing.courses || []).some(c => c.grade && c.grade !== '')
         const incomingHasGrades = (sem.courses || []).some(c => c.grade && c.grade !== '')
         if (incomingHasGrades && !existingHasGrades) {
-          mergedMap.set(key, sem)
+          mergedMap.set(key, {
+            ...sem,
+            is_submitted: lockMap[key] !== undefined ? lockMap[key] : sem.is_submitted
+          })
         }
       }
     }
@@ -259,49 +276,50 @@ export default function ExamResultsPage() {
   }
 
   function handleCreateSemester(e) {
-    e?.preventDefault()
+    e.preventDefault()
     if (!newSemesterName.trim()) return
     const newSem = {
       id: `sem-${Date.now()}`,
       name: newSemesterName.trim(),
       is_submitted: false,
-      courses: []
+      courses: createDefaultThreeCourses(`sem-${Date.now()}`)
     }
-    newSem.courses = createDefaultThreeCourses(newSem.id)
-
     const nextList = [...semesters, newSem]
     saveAndAutoSync(nextList)
     setNewSemesterName('')
     setShowAddSemModal(false)
-    showToast('Semester added successfully.', 'success')
+    showToast('New semester created!', 'success')
   }
 
-  async function handleDeleteSemester(semId) {
-    if (!await confirm({ title: 'Delete Semester?', message: 'All courses inside this semester will be removed.' })) return
-    const nextList = semesters.filter(s => s.id !== semId)
-    saveAndAutoSync(nextList)
-    showToast('Semester deleted.', 'success')
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user && typeof semId === 'string' && !semId.startsWith('sem-')) {
-      await supabase.from('student_semesters').delete().eq('id', semId)
-    }
+  function handleDeleteSemester(id) {
+    confirm({
+      title: 'Delete Semester?',
+      message: 'Are you sure you want to delete this entire semester and its course results?',
+      confirmText: 'Delete Semester',
+      variant: 'danger',
+      onConfirm: async () => {
+        const nextList = semesters.filter(s => s.id !== id)
+        saveAndAutoSync(nextList)
+        showToast('Semester deleted.', 'info')
+        if (typeof id !== 'string' || !id.startsWith('sem-')) {
+          await supabase.from('student_semesters').delete().eq('id', id)
+        }
+      }
+    })
   }
 
-  function handleAddCourse(semId, course) {
-    const tempId = `course-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`
-    const newCourse = {
-      id: tempId,
-      semester_id: semId,
-      course_code: course?.course_code || '',
-      course_name: course?.course_name || '',
-      credit_hours: Number(course?.credit_hours) || 0,
-      grade: course?.grade || ''
-    }
-
+  function handleAddCourse(semId, newCourse) {
     const nextList = semesters.map(s => {
       if (s.id !== semId) return s
-      return { ...s, courses: [...(s.courses || []), newCourse] }
+      const courseWithId = {
+        id: `course-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        semester_id: semId,
+        course_code: newCourse.course_code || '',
+        course_name: newCourse.course_name || '',
+        credit_hours: newCourse.credit_hours || '',
+        grade: newCourse.grade || ''
+      }
+      return { ...s, courses: [...(s.courses || []), courseWithId] }
     })
     saveAndAutoSync(nextList)
   }
@@ -311,7 +329,10 @@ export default function ExamResultsPage() {
       if (s.id !== semId) return s
       return {
         ...s,
-        courses: s.courses.map(c => c.id === courseId ? { ...c, ...updatedFields } : c)
+        courses: s.courses.map(c => {
+          if (c.id !== courseId) return c
+          return { ...c, ...updatedFields }
+        })
       }
     })
     saveAndAutoSync(nextList)
@@ -370,7 +391,7 @@ export default function ExamResultsPage() {
       nextList = nextList.map(s => {
         if (s.id !== targetSemesterId) return s
         const existingFilled = (s.courses || []).filter(c => c.course_name?.trim() !== '' || c.grade !== '')
-        return { ...s, is_submitted: false, courses: [...existingFilled, ...newCourses] }
+        return { ...s, is_submitted: true, courses: [...existingFilled, ...newCourses] }
       })
     } else {
       const grouped = {}
@@ -387,7 +408,7 @@ export default function ExamResultsPage() {
           targetSem = {
             id: `sem-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
             name: semName,
-            is_submitted: false,
+            is_submitted: true,
             courses: []
           }
           nextList.push(targetSem)
@@ -403,14 +424,14 @@ export default function ExamResultsPage() {
         nextList = nextList.map(s => {
           if (s.id !== targetSem.id) return s
           const existingFilled = (s.courses || []).filter(c => c.course_name?.trim() !== '' || c.grade !== '')
-          return { ...s, is_submitted: false, courses: [...existingFilled, ...newCourses] }
+          return { ...s, is_submitted: true, courses: [...existingFilled, ...newCourses] }
         })
       }
     }
 
     saveAndAutoSync(nextList)
     setAnalyzerOpen(false)
-    showToast(`Successfully imported ${extractedItems.length} courses!`, 'success')
+    showToast(`Successfully imported & submitted ${extractedItems.length} courses!`, 'success')
   }
 
   const overall = calculateOverallCGPA(semesters)
@@ -428,12 +449,9 @@ export default function ExamResultsPage() {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="page-title mb-1">Exam Results & CGPA</h1>
-          <p className="text-sm text-slate-400">
-            TAR UMT 5.6 Standard Grading Scale · Automatic Cloud Sync
-          </p>
         </div>
 
-        {/* Overall CGPA Banner (Sync button removed, 100% automatic) */}
+        {/* Overall CGPA Banner */}
         <div className="flex items-center gap-4 rounded-2xl bg-[#131b2e] px-5 py-3 shadow-md">
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-500/15">
             <Award className="h-6 w-6 text-blue-400" />
@@ -500,274 +518,209 @@ export default function ExamResultsPage() {
         )}
       </div>
 
-      {/* Main 3-Column Desktop Grid Layout */}
-      <div className="grid gap-8 lg:grid-cols-3 items-start">
-        {/* Left 2 Columns: Main Workspace */}
-        <div className="lg:col-span-2 space-y-7">
-          {/* TAB 1: MY SEMESTER RECORDS */}
-          {activeTab === 'records' && (
-            <>
-              {semesters.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl bg-[#131b2e] py-20 text-center shadow-lg">
-                  <BookOpen className="mb-4 h-14 w-14 text-slate-500" />
-                  <h3 className="text-xl font-bold text-white">No Semester Records</h3>
-                  <p className="mt-1 text-sm text-slate-400">Click "+ Add Semester" or upload a screenshot to start.</p>
-                </div>
-              ) : (
-                semesters.map(sem => {
-                  const semStat = calculateSemesterGPA(sem.courses)
-                  return (
-                    <SemesterCard
-                      key={sem.id}
-                      semester={sem}
-                      semStat={semStat}
-                      onAddCourse={handleAddCourse}
-                      onUpdateCourse={handleUpdateCourse}
-                      onDeleteCourse={handleDeleteCourse}
-                      onDeleteSemester={handleDeleteSemester}
-                      onToggleSubmit={handleToggleSubmitSemester}
-                      onAIImport={() => {
-                        setTargetSemesterId(sem.id)
-                        setAnalyzerOpen(true)
-                      }}
-                    />
-                  )
-                })
+      {/* Main Single-Column Full-Width Layout */}
+      <div className="space-y-7 max-w-5xl mx-auto">
+        {/* TAB 1: MY SEMESTER RECORDS */}
+        {activeTab === 'records' && (
+          <>
+            {semesters.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-2xl bg-[#131b2e] py-20 text-center shadow-lg">
+                <BookOpen className="mb-4 h-14 w-14 text-slate-500" />
+                <h3 className="text-xl font-bold text-white">No Semester Records</h3>
+                <p className="mt-1 text-sm text-slate-400">Click "+ Add Semester" or upload a screenshot to start.</p>
+              </div>
+            ) : (
+              semesters.map(sem => {
+                const semStat = calculateSemesterGPA(sem.courses)
+                return (
+                  <SemesterCard
+                    key={sem.id}
+                    semester={sem}
+                    semStat={semStat}
+                    onAddCourse={handleAddCourse}
+                    onUpdateCourse={handleUpdateCourse}
+                    onDeleteCourse={handleDeleteCourse}
+                    onDeleteSemester={handleDeleteSemester}
+                    onToggleSubmit={handleToggleSubmitSemester}
+                    onAIImport={() => {
+                      setTargetSemesterId(sem.id)
+                      setAnalyzerOpen(true)
+                    }}
+                  />
+                )
+              })
+            )}
+          </>
+        )}
+
+        {/* TAB 2: QUICK SGPA CALCULATOR */}
+        {activeTab === 'calculator' && (
+          <div className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-extrabold text-white">Quick SGPA Simulator</h3>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1">Simulate grade combinations and credit hours</p>
+              </div>
+
+              {showCalcResult && (
+                <button
+                  onClick={() => setShowCalcResult(false)}
+                  className="flex items-center gap-2 rounded-xl bg-blue-500/15 px-4 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-all"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  <span>Edit Courses</span>
+                </button>
               )}
-            </>
-          )}
+            </div>
 
-          {/* TAB 2: QUICK SGPA CALCULATOR */}
-          {activeTab === 'calculator' && (
-            <div className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl">
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-extrabold text-white">Quick SGPA Simulator</h3>
-                  <p className="text-xs sm:text-sm text-slate-400 mt-1">Simulate grade combinations and credit hours</p>
+            {/* VIEW MODE 1: DEDICATED RESULT SCREEN AFTER CALCULATE */}
+            {showCalcResult ? (
+              <div className="space-y-6 py-4 animate-fadeIn">
+                <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-8 text-center border border-white/5">
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Calculated SGPA</span>
+                  <div className="my-2 text-5xl sm:text-6xl font-black text-white tracking-tight">
+                    {calcGPA.gpa}
+                  </div>
+                  <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-4 py-1.5 text-xs font-bold text-blue-400">
+                    <Award className="h-4 w-4" />
+                    <span>{calcStanding.title}</span>
+                  </div>
+                  <p className="mt-3 text-xs text-slate-400">
+                    Based on <strong className="text-white">{calcGPA.totalCredits} Total Credits</strong> across simulated courses
+                  </p>
                 </div>
 
-                {showCalcResult && (
+                <div className="rounded-xl bg-[#0e1626] p-5">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                    Simulated Course List
+                  </h4>
+                  <div className="divide-y divide-white/[0.06]">
+                    {calcRows
+                      .filter(r => r.credits !== '' && r.grade !== '')
+                      .map((r, i) => (
+                        <div key={r.id} className="flex items-center justify-between py-3 text-sm">
+                          <span className="font-semibold text-white">
+                            {r.name || 'Course'}
+                          </span>
+                          <div className="flex items-center gap-4">
+                            <span className="text-xs font-medium text-slate-400">{r.credits} Credits</span>
+                            <span className={`rounded-lg px-3 py-1 font-mono text-xs font-bold ${getGradeBadgeStyle(r.grade)}`}>
+                              {r.grade}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
                     onClick={() => setShowCalcResult(false)}
-                    className="flex items-center gap-2 rounded-xl bg-blue-500/15 px-4 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-500 py-3.5 text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-md"
                   >
                     <RotateCcw className="h-4 w-4" />
-                    <span>Edit Courses</span>
+                    <span>Recalculate / Edit Courses</span>
                   </button>
-                )}
-              </div>
-
-              {/* VIEW MODE 1: DEDICATED RESULT SCREEN AFTER CALCULATE */}
-              {showCalcResult ? (
-                <div className="space-y-6 py-4 animate-fadeIn">
-                  <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-8 text-center border border-white/5">
-                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Calculated SGPA</span>
-                    <div className="my-2 text-5xl sm:text-6xl font-black text-white tracking-tight">
-                      {calcGPA.gpa}
-                    </div>
-                    <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-4 py-1.5 text-xs font-bold text-blue-400">
-                      <Award className="h-4 w-4" />
-                      <span>{calcStanding.title}</span>
-                    </div>
-                    <p className="mt-3 text-xs text-slate-400">
-                      Based on <strong className="text-white">{calcGPA.totalCredits} Total Credits</strong> across simulated courses
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl bg-[#0e1626] p-5">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                      Simulated Course List
-                    </h4>
-                    <div className="divide-y divide-white/[0.06]">
-                      {calcRows
-                        .filter(r => r.credits !== '' && r.grade !== '')
-                        .map((r, i) => (
-                          <div key={r.id} className="flex items-center justify-between py-3 text-sm">
-                            <span className="font-semibold text-white">
-                              {r.name || `Course #${i + 1}`}
-                            </span>
-                            <div className="flex items-center gap-4">
-                              <span className="text-xs font-medium text-slate-400">{r.credits} Credits</span>
-                              <span className={`rounded-lg px-3 py-1 font-mono text-xs font-bold ${getGradeBadgeStyle(r.grade)}`}>
-                                {r.grade}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                    <button
-                      onClick={() => setShowCalcResult(false)}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-500 py-3.5 text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-md"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      <span>Recalculate / Edit Courses</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setCalcRows([
-                          { id: 1, name: '', credits: '', grade: '' },
-                          { id: 2, name: '', credits: '', grade: '' },
-                          { id: 3, name: '', credits: '', grade: '' }
-                        ])
-                        setShowCalcResult(false)
-                      }}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-[#1e293b] px-6 py-3.5 text-sm font-bold text-slate-300 hover:bg-[#283548] transition-all"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span>Reset</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* VIEW MODE 2: COURSE INPUT TABLE BEFORE CALCULATE */
-                <>
-                  <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
-                    {calcRows.map((row, idx) => (
-                      <div
-                        key={row.id}
-                        className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 p-4"
-                      >
-                        <div className="flex items-center gap-2 flex-1 min-w-[160px]">
-                          <input
-                            className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0"
-                            placeholder={`Course #${idx + 1}`}
-                            value={row.name}
-                            onChange={e => {
-                              const val = e.target.value
-                              setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
-                            }}
-                          />
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <select
-                            className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
-                            value={row.credits}
-                            onChange={e => {
-                              const val = e.target.value
-                              setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
-                            }}
-                          >
-                            <option value="">Credit</option>
-                            {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
-                          </select>
-
-                          <select
-                            className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
-                            value={row.grade}
-                            onChange={e => {
-                              const val = e.target.value
-                              setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
-                            }}
-                          >
-                            <option value="">Grade</option>
-                            {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
-                          </select>
-
-                          <button
-                            onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
-                            className="p-2 text-slate-500 hover:text-red-400 transition-colors"
-                            title="Remove row"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Add Row</span>
-                  </button>
-
                   <button
                     onClick={() => {
-                      const hasFilled = calcRows.some(r => r.credits !== '' && r.grade !== '')
-                      if (!hasFilled) {
-                        showToast('Please select at least one Credit & Grade first.', 'warning')
-                        return
-                      }
-                      setShowCalcResult(true)
+                      setCalcRows([
+                        { id: 1, name: '', credits: '', grade: '' },
+                        { id: 2, name: '', credits: '', grade: '' },
+                        { id: 3, name: '', credits: '', grade: '' }
+                      ])
+                      setShowCalcResult(false)
                     }}
-                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-4 text-base font-extrabold text-white hover:bg-blue-600 transition-all shadow-lg"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#1e293b] px-6 py-3.5 text-sm font-bold text-slate-300 hover:bg-[#283548] transition-all"
                   >
-                    <Calculator className="h-5 w-5" />
-                    <span>Calculate SGPA Result</span>
+                    <Trash2 className="h-4 w-4" />
+                    <span>Reset</span>
                   </button>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Right 1 Column: Sticky Desktop Sidebar */}
-        <div className="lg:col-span-1 space-y-6 sticky top-6">
-          {/* CGPA Standing Card */}
-          <div className="rounded-2xl bg-[#131b2e] p-6 shadow-xl">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-              Academic Standing Overview
-            </h4>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-3xl font-black text-white">{overall.cgpa}</p>
-                <p className="text-xs text-slate-400">Cumulative GPA</p>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-slate-200">{overall.overallCredits}</p>
-                <p className="text-xs text-slate-400">Total Credits</p>
-              </div>
-            </div>
-
-            <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5">
-              <div className="flex items-center gap-2 mb-1">
-                <Award className="h-4 w-4 text-blue-400" />
-                <span className="text-sm font-bold text-white">{standing.title}</span>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                {standing.description}
-              </p>
-            </div>
-          </div>
-
-          {/* TAR UMT 5.6 Standard Grading Reference Card */}
-          <div className="rounded-2xl bg-[#131b2e] p-6 shadow-xl">
-            <div className="mb-4">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-white">
-                TAR UMT Grading Scale
-              </h4>
-              <p className="text-xs text-slate-400 mt-0.5">
-                5.6 Standard Scale · June 2023 Intake & Onwards
-              </p>
-            </div>
-
-            <div className="space-y-2.5">
-              {TARUMT_GRADES.map(g => (
-                <div
-                  key={g.grade}
-                  className="flex items-center justify-between rounded-xl bg-[#0e1626] px-4 py-2.5 text-xs sm:text-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-7 w-8 place-items-center rounded-lg bg-blue-500/15 font-bold text-blue-400">
-                      {g.grade}
-                    </span>
-                    <span className="font-semibold text-slate-300">{g.markRange}%</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono font-bold text-white text-sm">{g.point.toFixed(4)}</span>
-                    <span className="ml-2 hidden xl:inline text-[10px] text-slate-400 font-medium">{g.description}</span>
-                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              /* VIEW MODE 2: COURSE INPUT TABLE BEFORE CALCULATE */
+              <>
+                <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
+                  {calcRows.map(row => (
+                    <div
+                      key={row.id}
+                      className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 p-4"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+                        <input
+                          className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0"
+                          placeholder="Course"
+                          value={row.name}
+                          onChange={e => {
+                            const val = e.target.value
+                            setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
+                          }}
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <select
+                          className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                          value={row.credits}
+                          onChange={e => {
+                            const val = e.target.value
+                            setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
+                          }}
+                        >
+                          <option value="">Credit</option>
+                          {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
+                        </select>
+
+                        <select
+                          className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                          value={row.grade}
+                          onChange={e => {
+                            const val = e.target.value
+                            setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
+                          }}
+                        >
+                          <option value="">Grade</option>
+                          {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
+                        </select>
+
+                        <button
+                          onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
+                          className="p-2 text-slate-500 hover:text-red-400 transition-colors"
+                          title="Remove row"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Row</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const hasFilled = calcRows.some(r => r.credits !== '' && r.grade !== '')
+                    if (!hasFilled) {
+                      showToast('Please select at least one Credit & Grade first.', 'warning')
+                      return
+                    }
+                    setShowCalcResult(true)
+                  }}
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-4 text-base font-extrabold text-white hover:bg-blue-600 transition-all shadow-lg"
+                >
+                  <Calculator className="h-5 w-5" />
+                  <span>Calculate SGPA Result</span>
+                </button>
+              </>
+            )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Modal: Add Semester */}
@@ -842,7 +795,7 @@ function SemesterCard({
           </div>
 
           {/* SUBMIT / EDIT Toggle Button */}
-          {isSubmitted ? (
+          {isSubmitted && (
             <button
               onClick={() => onToggleSubmit(semester.id, false)}
               className="flex items-center gap-1.5 rounded-xl bg-[#1e293b] px-4 py-2 text-xs sm:text-sm font-bold text-slate-200 hover:bg-[#283548] transition-all"
@@ -850,15 +803,6 @@ function SemesterCard({
             >
               <Edit2 className="h-3.5 w-3.5 text-blue-400" />
               <span>Edit</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => onToggleSubmit(semester.id, true)}
-              className="flex items-center gap-1.5 rounded-xl bg-blue-500 px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-md"
-              title="Submit & lock semester results"
-            >
-              <Check className="h-4 w-4" />
-              <span>Submit</span>
             </button>
           )}
 
@@ -904,7 +848,7 @@ function SemesterCard({
                     </span>
                   )}
                   <span className="font-semibold text-white">
-                    {course.course_name || `Course #${idx + 1}`}
+                    {course.course_name || 'Course'}
                   </span>
                 </div>
 
@@ -938,7 +882,7 @@ function SemesterCard({
                   />
                   <input
                     className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0"
-                    placeholder={`Course #${idx + 1}`}
+                    placeholder="Course"
                     value={course.course_name || ''}
                     onChange={e => onUpdateCourse(semester.id, course.id, { course_name: e.target.value })}
                   />
@@ -981,6 +925,14 @@ function SemesterCard({
           >
             <Plus className="h-4 w-4" />
             <span>Add Course</span>
+          </button>
+
+          <button
+            onClick={() => onToggleSubmit(semester.id, true)}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-md"
+          >
+            <Check className="h-4 w-4" />
+            <span>Submit</span>
           </button>
         </>
       )}
