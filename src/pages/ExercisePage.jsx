@@ -254,7 +254,7 @@ export default function ExercisePage() {
   }
 
   return (
-    <main className="main-content pb-36">
+    <main className="main-content pb-64 md:pb-40">
       {/* Page Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -451,25 +451,21 @@ export default function ExercisePage() {
                 onClick={() => setSelectedBadge(b)}
                 className={`w-full flex items-center justify-between rounded-xl px-4 py-3.5 text-left transition-all border ${
                   b.unlocked
-                    ? 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/15 shadow-md'
-                    : 'bg-[#0a101d]/60 border-white/[0.04] opacity-55 hover:opacity-80'
+                    ? 'bg-amber-500/[0.07] border-amber-500/35 hover:bg-amber-500/15 shadow-md'
+                    : 'bg-[#0e1626] border-white/5 hover:border-white/10'
                 }`}
               >
                 <div className="flex items-center gap-3.5">
-                  <span className={`grid h-10 w-10 place-items-center rounded-xl text-xl ${
-                    b.unlocked ? 'bg-amber-500/25 text-amber-300 shadow-inner' : 'bg-white/[0.04] text-slate-500 grayscale'
-                  }`}>
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500/15 text-xl shrink-0">
                     {b.icon}
                   </span>
                   <div>
-                    <p className={`text-sm ${b.unlocked ? 'font-bold text-white' : 'font-semibold text-slate-400'}`}>
+                    <p className="font-bold text-sm text-slate-200">
                       {t(b.titleKey)}
                     </p>
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold mt-1 px-2 py-0.5 rounded-full ${
-                      b.unlocked ? 'bg-amber-500/20 text-amber-300' : 'bg-white/[0.05] text-slate-500'
-                    }`}>
-                      {b.unlocked ? '✨ UNLOCKED' : '🔒 LOCKED'}
-                    </span>
+                    <p className={`text-xs mt-0.5 ${b.unlocked ? 'font-bold text-amber-400' : 'text-slate-400'}`}>
+                      {b.unlocked ? 'Unlocked ✨' : 'Locked'}
+                    </p>
                   </div>
                 </div>
                 <Info className="h-4 w-4 text-slate-500 shrink-0" />
@@ -569,21 +565,21 @@ export default function ExercisePage() {
         </section>
       </div>
 
-      {/* STICKY BOTTOM CHECK-IN BAR (bottom-20 on mobile to clear bottom tab bar, md:left-60 md:right-0 centered on laptop) */}
-      <div className="fixed inset-x-0 bottom-20 md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center">
+      {/* STICKY BOTTOM CHECK-IN BAR (bottom-24 on mobile to clear bottom tab bar, md:left-60 md:right-0 centered on laptop) */}
+      <div className="fixed inset-x-0 bottom-24 md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center">
         <div className="w-full max-w-2xl pointer-events-auto rounded-[20px] border border-white/[0.08] bg-[#131826]/95 p-3.5 sm:p-4 shadow-2xl backdrop-blur-xl">
-          {/* Activity Tag Selector (Label removed, 'Other' option included) */}
-          <div className="mb-3 flex items-center justify-center gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+          {/* Activity Tag Selector (All options visible at once via flex-wrap, no horizontal scroll needed) */}
+          <div className="mb-3.5 flex flex-wrap items-center justify-center gap-1.5 w-full">
             {ACTIVITY_TYPES.map(type => (
               <button
                 key={type}
                 type="button"
                 onClick={() => setSelectedTag(type)}
                 disabled={stats.isCheckedInToday}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all shrink-0 ${
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                   selectedTag === type
-                    ? 'bg-[#3B82F6]/20 text-[#38BDF8] border border-[#3B82F6]/40'
-                    : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.04] hover:text-white'
+                    ? 'bg-[#3B82F6]/25 text-[#38BDF8] border border-[#3B82F6]/50 shadow-sm'
+                    : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.05] hover:text-white'
                 }`}
               >
                 <span>{ACTIVITY_ICONS[type]}</span>
