@@ -9,6 +9,7 @@ import {
   Languages,
   ListChecks,
   Sparkles,
+  Table,
   Trash2,
   ImagePlus,
   X
@@ -22,6 +23,7 @@ import { useLanguage } from '../components/LanguageProvider'
 const studentActions = [
   { icon: Brain, mobile: 'Explain', tKey: 'explain' },
   { icon: FileText, mobile: 'Summarize', tKey: 'summarize' },
+  { icon: Table, mobile: 'Show in table', tKey: 'table' },
   { icon: HelpCircle, mobile: 'Quiz me', tKey: 'quiz' },
   { icon: CalendarClock, mobile: 'Study plan', tKey: 'plan' },
   { icon: Languages, mobile: 'Translate', tKey: 'translate' },
@@ -236,7 +238,7 @@ export default function AIHelperPage({ role = 'student' }) {
                     style={{ minHeight: '34px', minWidth: 'auto' }}
                   >
                     <action.icon className="h-3.5 w-3.5" />
-                    <span>{action.mobile}</span>
+                    <span>{action.tKey ? t(`ai.mobile${action.tKey.charAt(0).toUpperCase() + action.tKey.slice(1)}`) : action.mobile}</span>
                   </button>
                 ))}
               </div>
