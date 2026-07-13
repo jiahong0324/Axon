@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     const cleanHistory = (Array.isArray(history) ? history : [])
       .filter(msg => (msg.role === 'user' || msg.role === 'assistant') && msg.content && typeof msg.content === 'string')
       .filter(msg => !msg.content.includes('Selamat datang!') && !msg.content.includes('Welcome to the Manager AI Control Center'))
-      .slice(-12)
+      .slice(-6)
       .map(msg => ({ role: msg.role, content: msg.content }))
 
     if (mode === 'vision') {
@@ -79,37 +79,48 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ content })
     } else {
-      const body = {
-        model: CHAT_MODEL,
-        messages: [
-          { role: 'system', content: systemContext || '' },
-          ...cleanHistory,
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 4096,
-        temperature: 0.7
+      const modelsToTry = [
+        { model: 'llama-3.3-70b-versatile', maxTokens: 2048 },
+        { model: CHAT_MODEL, maxTokens: 1500 },
+        { model: 'llama-3.1-8b-instant', maxTokens: 2048 }
+      ]
+
+      let lastError = 'Groq API error'
+      let lastStatus = 500
+
+      for (const { model, maxTokens } of modelsToTry) {
+        const body = {
+          model,
+          messages: [
+            { role: 'system', content: systemContext || '' },
+            ...cleanHistory,
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: maxTokens,
+          temperature: 0.7
+        }
+
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`
+          },
+          body: JSON.stringify(body)
+        })
+
+        const data = await groqRes.json().catch(() => ({}))
+        if (groqRes.ok) {
+          let content = data.choices?.[0]?.message?.content || ''
+          content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+          return res.status(200).json({ content })
+        } else {
+          lastStatus = groqRes.status || 500
+          lastError = data.error?.message || `Groq API error (${lastStatus})`
+        }
       }
 
-      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`
-        },
-        body: JSON.stringify(body)
-      })
-
-      const data = await groqRes.json()
-      if (!groqRes.ok) {
-        return res.status(groqRes.status).json({ error: data.error?.message || 'Groq API error' })
-      }
-
-      let content = data.choices?.[0]?.message?.content || ''
-      // Remove <think>...</think> block which Qwen reasoning models output
-      // Also matches if the model gets cut off and never outputs the closing </think>
-      content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
-
-      return res.status(200).json({ content })
+      return res.status(lastStatus).json({ error: lastError })
     }
   } catch (error) {
     return res.status(500).json({ error: 'Groq proxy failed' })
