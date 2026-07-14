@@ -17,7 +17,17 @@ function createDefaultThreeCourses(semId) {
 
 export default function ExamResultsPage() {
   const [activeTab, setActiveTab] = useState('records') // 'records' | 'calculator'
-  const [semesters, setSemesters] = useState([])
+  const [semesters, setSemesters] = useState(() => {
+    try {
+      const cached = localStorage.getItem('axon_exam_results_semesters')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch (e) {}
+    return []
+  })
+  const [loading, setLoading] = useState(true)
   const [newSemesterName, setNewSemesterName] = useState('')
   const [showAddSemModal, setShowAddSemModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
@@ -181,6 +191,7 @@ export default function ExamResultsPage() {
         setSemesters(defaultSem)
         localStorage.setItem('axon_exam_results_semesters', JSON.stringify(defaultSem))
       }
+      setLoading(false)
       return
     }
 
@@ -238,6 +249,7 @@ export default function ExamResultsPage() {
 
     setSemesters(merged)
     localStorage.setItem('axon_exam_results_semesters', JSON.stringify(merged))
+    setLoading(false)
   }
 
   function saveAndAutoSync(list) {
@@ -568,7 +580,11 @@ export default function ExamResultsPage() {
         {/* TAB 1: MY SEMESTER RECORDS (100% Full Width) */}
         {activeTab === 'records' && (
           <div className="space-y-7 w-full">
-            {semesters.length === 0 ? (
+            {loading && semesters.length === 0 ? (
+              <div className="mt-4 flex items-center justify-center py-20">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-theme-500 border-t-transparent" />
+              </div>
+            ) : semesters.length === 0 ? (
               <div className="mt-4 flex flex-col items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
                 <div className="w-16 h-16 bg-theme-500/20 text-theme-400 rounded-full flex items-center justify-center mb-6">
                   <Plus className="h-8 w-8" />
