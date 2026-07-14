@@ -5,7 +5,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
   if (!isOpen) return null
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-sm">
-      <div className={`glass flex h-auto max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-3xl sm:rounded-2xl border border-white/10 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] px-5 sm:p-6 transition-transform ${maxWidth}`}>
+      <div className={`glass flex h-auto max-h-[calc(90dvh-4rem)] sm:max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-3xl sm:rounded-2xl border border-white/10 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] px-5 sm:p-6 transition-transform ${maxWidth}`}>
         <div className="mb-4 flex shrink-0 items-center justify-between gap-4">
           <h2 className="text-lg font-semibold">{title}</h2>
           <button onClick={onClose} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">
