@@ -967,7 +967,7 @@ function SemesterCard({
                       {course.course_code}
                     </span>
                   )}
-                  <span className={`font-semibold text-white text-sm sm:text-base leading-snug break-words ${course.course_code ? 'pl-1 sm:pl-0' : ''}`}>
+                  <span className={`font-semibold text-white text-sm sm:text-base leading-snug break-words ${course.course_code ? 'pl-2.5 sm:pl-0' : ''}`}>
                     {course.course_name || 'Course'}
                   </span>
                 </div>
