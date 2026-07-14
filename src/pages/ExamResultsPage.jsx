@@ -438,7 +438,7 @@ export default function ExamResultsPage() {
       {/* Page Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="page-title mb-1">Exam Results & CGPA</h1>
+          <h1 className="page-title mb-1">Results</h1>
         </div>
 
         {/* Overall CGPA Banner */}
@@ -485,24 +485,24 @@ export default function ExamResultsPage() {
           </button>
         </div>
 
-        {activeTab === 'records' && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowAddSemModal(true)}
-              className="flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-5 py-3 text-xs sm:text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-md"
-            >
-              <Plus className="h-4 w-4 shrink-0" />
-              <span>Add Semester</span>
-            </button>
+        {activeTab === 'records' && semesters.length > 0 && (
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => {
                 setTargetSemesterId(null)
                 setAnalyzerOpen(true)
               }}
-              className="flex items-center justify-center gap-2 rounded-xl bg-teal-500 px-5 py-3 text-xs sm:text-sm font-bold text-white hover:bg-teal-600 transition-all shadow-md"
+              className="btn-import text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px]"
             >
               <Sparkles className="h-4 w-4 shrink-0" />
-              <span>AI Import Screenshot</span>
+              <span>Import Screenshot</span>
+            </button>
+            <button
+              onClick={() => setShowAddSemModal(true)}
+              className="btn-add text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px]"
+            >
+              <Plus className="h-4 w-4 shrink-0" />
+              <span>Add Semester</span>
             </button>
           </div>
         )}
@@ -514,10 +514,34 @@ export default function ExamResultsPage() {
         {activeTab === 'records' && (
           <div className="space-y-7 w-full">
             {semesters.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl bg-[#131b2e] py-20 text-center shadow-lg">
-                <BookOpen className="mb-4 h-14 w-14 text-slate-500" />
-                <h3 className="text-xl font-bold text-white">No Semester Records</h3>
-                <p className="mt-1 text-sm text-slate-400">Click "+ Add Semester" or upload a screenshot to start.</p>
+              <div className="mt-4 flex flex-col items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
+                <div className="w-16 h-16 bg-theme-500/20 text-theme-400 rounded-full flex items-center justify-center mb-6">
+                  <Plus className="h-8 w-8" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">No semesters yet</h2>
+                <p className="text-slate-400 max-w-sm mb-8 leading-relaxed">
+                  Get started by adding your semesters manually.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                  <button
+                    className="btn-import flex-1 justify-center py-3.5 text-[15px]"
+                    onClick={() => {
+                      setTargetSemesterId(null)
+                      setAnalyzerOpen(true)
+                    }}
+                  >
+                    <Sparkles className="h-5 w-5 shrink-0" />
+                    <span>Import Screenshot</span>
+                  </button>
+                  <button
+                    className="btn-add flex-1 justify-center py-3.5 text-[15px]"
+                    onClick={() => setShowAddSemModal(true)}
+                  >
+                    <Plus className="h-5 w-5 shrink-0" />
+                    <span>Add Semester</span>
+                  </button>
+                </div>
               </div>
             ) : (
               semesters.map(sem => {
@@ -543,14 +567,14 @@ export default function ExamResultsPage() {
           </div>
         )}
 
-        {/* TAB 2: QUICK SGPA CALCULATOR (With TAR UMT Grading Scale side-by-side) */}
+        {/* TAB 2: QUICK GPA CALCULATOR (With TAR UMT Grading Scale side-by-side) */}
         {activeTab === 'calculator' && (
           <div className="grid gap-8 lg:grid-cols-3 items-start w-full">
             {/* Left 2 Cols: Quick Calculator */}
             <div className="lg:col-span-2 rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-xl font-extrabold text-white">Quick SGPA Simulator</h3>
+                  <h3 className="text-xl font-extrabold text-white">Quick GPA Simulator</h3>
                   <p className="text-xs sm:text-sm text-slate-400 mt-1">Simulate grade combinations and credit hours</p>
                 </div>
 
@@ -569,7 +593,7 @@ export default function ExamResultsPage() {
               {showCalcResult ? (
                 <div className="space-y-6 py-4 animate-fadeIn">
                   <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-8 text-center border border-white/5">
-                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Calculated SGPA</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Calculated GPA</span>
                     <div className="my-2 text-5xl sm:text-6xl font-black text-white tracking-tight">
                       {calcGPA.gpa}
                     </div>
@@ -707,7 +731,7 @@ export default function ExamResultsPage() {
                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-4 text-base font-extrabold text-white hover:bg-blue-600 transition-all shadow-lg"
                   >
                     <Calculator className="h-5 w-5" />
-                    <span>Calculate SGPA Result</span>
+                    <span>Calculate GPA Result</span>
                   </button>
                 </>
               )}

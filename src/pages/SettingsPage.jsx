@@ -584,7 +584,7 @@ export default function SettingsPage() {
             <ToggleRow label="Include Weekly Timetable" checked={digestOptions.classes} onChange={next => setDigestOptions(prev => ({ ...prev, classes: next }))} />
             <ToggleRow label="Include Pending Assignments" checked={digestOptions.assignments} onChange={next => setDigestOptions(prev => ({ ...prev, assignments: next }))} />
             <ToggleRow label="Include Exam Schedules" checked={digestOptions.exams} onChange={next => setDigestOptions(prev => ({ ...prev, exams: next }))} />
-            <ToggleRow label="Include Exam Results & CGPA" checked={digestOptions.results} onChange={next => setDigestOptions(prev => ({ ...prev, results: next }))} />
+            <ToggleRow label="Include Results" checked={digestOptions.results} onChange={next => setDigestOptions(prev => ({ ...prev, results: next }))} />
           </div>
           <button className="btn-primary w-full mt-4" onClick={sendAcademicEmail} disabled={sendingDigest}>
             <Mail className="h-4 w-4" /> {sendingDigest ? 'Sending Email...' : 'Email Academic Report'}
