@@ -963,11 +963,11 @@ function SemesterCard({
               >
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 min-w-0 flex-1 pr-2">
                   {course.course_code && (
-                    <span className="w-fit sm:w-24 shrink-0 text-center font-mono text-xs font-bold uppercase rounded-md sm:rounded-lg bg-white/5 py-0.5 sm:py-1 px-2.5 text-slate-300 tracking-wider">
+                    <span className="w-fit sm:w-24 shrink-0 text-center font-mono text-xs font-bold uppercase rounded-md sm:rounded-lg bg-white/5 py-0.5 sm:py-1 px-1.5 text-slate-300 tracking-wider">
                       {course.course_code}
                     </span>
                   )}
-                  <span className={`font-semibold text-white text-sm sm:text-base leading-snug break-words ${course.course_code ? 'pl-2.5 sm:pl-0' : ''}`}>
+                  <span className={`font-semibold text-white text-sm sm:text-base leading-snug break-words ${course.course_code ? 'pl-1 sm:pl-0' : ''}`}>
                     {course.course_name || 'Course'}
                   </span>
                 </div>
