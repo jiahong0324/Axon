@@ -528,15 +528,6 @@ Keep table text concise. Do NOT output anything extra outside the 3-sentence tip
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
                 Personalized AI workout routines tailored to your class schedule
               </p>
-            </div>
-            {!aiPlan && !aiLoading && (
-              <button
-                className="rounded-xl bg-blue-500 px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-blue-600 transition-colors shadow-md self-start sm:self-auto"
-                onClick={generateAiSuggestion}
-              >
-                {t('exercise.generatePlan')}
-              </button>
-            )}
           </div>
 
           {aiLoading ? (

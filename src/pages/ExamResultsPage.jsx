@@ -657,13 +657,13 @@ export default function ExamResultsPage() {
                       {calcRows
                         .filter(r => r.credits !== '' && r.grade !== '')
                         .map((r, i) => (
-                          <div key={r.id} className="flex items-center justify-between py-3 text-sm">
-                            <span className="font-semibold text-white">
+                          <div key={r.id} className="flex items-start sm:items-center justify-between gap-3 py-3 text-sm">
+                            <span className="font-semibold text-white break-words leading-snug pr-2">
                               {r.name || 'Course'}
                             </span>
-                            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                              <span className="w-16 sm:w-20 text-right text-xs font-medium text-slate-400 shrink-0">{r.credits} Credits</span>
-                              <span className={`inline-flex items-center justify-center w-11 h-8 rounded-lg font-mono text-xs font-bold shrink-0 border ${getGradeBadgeStyle(r.grade)}`}>
+                            <div className="flex items-center gap-2 sm:gap-4 shrink-0 pt-0.5 sm:pt-0">
+                              <span className="text-right text-xs font-medium text-slate-400 shrink-0">{r.credits} Credits</span>
+                              <span className={`inline-flex items-center justify-center w-10 sm:w-11 h-8 rounded-lg font-mono text-xs font-bold shrink-0 border ${getGradeBadgeStyle(r.grade)}`}>
                                 {r.grade}
                               </span>
                             </div>
@@ -703,11 +703,11 @@ export default function ExamResultsPage() {
                     {calcRows.map(row => (
                       <div
                         key={row.id}
-                        className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 p-4"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
                       >
-                        <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+                        <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
                           <input
-                            className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0"
+                            className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0 w-full"
                             placeholder="Course"
                             value={row.name}
                             onChange={e => {
@@ -717,7 +717,7 @@ export default function ExamResultsPage() {
                           />
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0 pt-1 sm:pt-0 border-t sm:border-0 border-white/5">
                           <select
                             className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
                             value={row.credits}
@@ -744,7 +744,7 @@ export default function ExamResultsPage() {
 
                           <button
                             onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
-                            className="p-2 text-slate-500 hover:text-red-400 transition-colors"
+                            className="p-2 text-slate-500 hover:text-red-400 transition-colors ml-auto"
                             title="Remove row"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -931,24 +931,24 @@ function SemesterCard({
             (semester.courses || []).map((course, idx) => (
               <div
                 key={course.id || idx}
-                className="flex items-center justify-between gap-3 py-3.5 text-sm sm:text-base"
+                className="flex items-start sm:items-center justify-between gap-3 py-3.5 text-sm sm:text-base"
               >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 min-w-0 flex-1 pr-2">
                   {course.course_code && (
-                    <span className="w-24 shrink-0 text-center font-mono text-xs font-bold uppercase rounded-lg bg-white/5 py-1 px-2 text-slate-300 tracking-wider">
+                    <span className="w-fit sm:w-24 shrink-0 text-center font-mono text-xs font-bold uppercase rounded-md sm:rounded-lg bg-white/5 py-0.5 sm:py-1 px-2 text-slate-300 tracking-wider">
                       {course.course_code}
                     </span>
                   )}
-                  <span className="font-semibold text-white truncate min-w-0">
+                  <span className="font-semibold text-white text-sm sm:text-base leading-snug break-words">
                     {course.course_name || 'Course'}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                  <span className="w-16 sm:w-20 text-right text-xs sm:text-sm font-medium text-slate-400 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-4 shrink-0 pt-0.5 sm:pt-0">
+                  <span className="text-right text-xs sm:text-sm font-medium text-slate-400 shrink-0">
                     {course.credit_hours || 0} Credits
                   </span>
-                  <span className={`inline-flex items-center justify-center w-11 h-8 rounded-lg font-mono text-xs sm:text-sm font-bold shrink-0 border ${getGradeBadgeStyle(course.grade)}`}>
+                  <span className={`inline-flex items-center justify-center w-10 sm:w-11 h-8 rounded-lg font-mono text-xs sm:text-sm font-bold shrink-0 border ${getGradeBadgeStyle(course.grade)}`}>
                     {course.grade || '-'}
                   </span>
                 </div>
@@ -963,41 +963,43 @@ function SemesterCard({
             {(semester.courses || []).map((course, idx) => (
               <div
                 key={course.id}
-                className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 py-3.5 first:pt-0"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3.5 first:pt-0"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 flex-1 min-w-[160px]">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 flex-1 w-full sm:w-auto">
                   <input
-                    className="w-24 sm:w-28 bg-transparent text-xs sm:text-sm font-semibold text-slate-400 placeholder:text-slate-500 focus:outline-none"
+                    className="w-full sm:w-28 bg-transparent text-xs sm:text-sm font-semibold text-slate-400 placeholder:text-slate-500 focus:outline-none"
                     placeholder="Code"
                     value={course.course_code || ''}
                     onChange={e => onUpdateCourse(semester.id, course.id, { course_code: e.target.value })}
                   />
                   <input
-                    className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0"
+                    className="bg-transparent flex-1 w-full text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0"
                     placeholder="Course"
                     value={course.course_name || ''}
                     onChange={e => onUpdateCourse(semester.id, course.id, { course_name: e.target.value })}
                   />
                 </div>
 
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <select
-                    className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
-                    value={course.credit_hours || ''}
-                    onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
-                  >
-                    <option value="">Credit</option>
-                    {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
-                  </select>
+                <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto shrink-0 pt-1 sm:pt-0 border-t sm:border-0 border-white/5">
+                  <div className="flex items-center gap-2.5">
+                    <select
+                      className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                      value={course.credit_hours || ''}
+                      onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
+                    >
+                      <option value="">Credit</option>
+                      {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
+                    </select>
 
-                  <select
-                    className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
-                    value={course.grade || ''}
-                    onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
-                  >
-                    <option value="">Grade</option>
-                    {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
-                  </select>
+                    <select
+                      className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                      value={course.grade || ''}
+                      onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
+                    >
+                      <option value="">Grade</option>
+                      {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
+                    </select>
+                  </div>
 
                   <button
                     onClick={() => onDeleteCourse(semester.id, course.id)}

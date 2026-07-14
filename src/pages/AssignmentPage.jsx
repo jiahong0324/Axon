@@ -250,9 +250,9 @@ function AssignmentCard({ item, updateItem, deleteItem, onEdit }) {
       </div>
       
       <div className="flex flex-col gap-2.5 mb-5">
-        <div className="flex items-center gap-2.5 text-slate-400">
-          <BookOpen className="w-4 h-4 shrink-0 text-slate-500" />
-          <span className="text-[13px] font-medium truncate">{item.subject}</span>
+        <div className="flex items-start gap-2.5 text-slate-400">
+          <BookOpen className="w-4 h-4 shrink-0 text-slate-500 mt-0.5" />
+          <span className="text-[13px] font-medium break-words leading-snug">{item.subject}</span>
         </div>
         <div className="flex items-center gap-2.5 text-slate-400">
           <Calendar className="w-4 h-4 shrink-0 text-slate-500" />
