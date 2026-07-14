@@ -1,5 +1,5 @@
 import { Award, Bot, Calendar, Check, Dumbbell, Flame, Info, Pencil, RefreshCw, Shield, Trash2, Trophy, Zap, Lock } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useConfirmDialog } from '../components/ConfirmModal'
 import EmptyState from '../components/EmptyState'
 import { useLanguage } from '../components/LanguageProvider'
@@ -47,6 +47,7 @@ export default function ExercisePage() {
   const { t } = useLanguage()
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
+  const lastLoadedRef = useRef(Date.now())
 
   const [userId, setUserId] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -98,7 +99,7 @@ export default function ExercisePage() {
     })
 
     function handleAutoRefresh() {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && Date.now() - lastLoadedRef.current > 15000) {
         loadInitialData(false)
       }
     }
@@ -114,6 +115,7 @@ export default function ExercisePage() {
   }, [todayStr])
 
   async function loadInitialData(showLoading = true) {
+    lastLoadedRef.current = Date.now()
     if (showLoading) setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     const currentUserId = user?.id || null
@@ -308,7 +310,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
   }
 
   return (
-    <main className="main-content pb-16 md:pb-12">
+    <main className="main-content pb-16 md:pb-12 transform-gpu">
       {/* Page Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -502,15 +504,15 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
               <button
                 key={b.id}
                 onClick={() => setSelectedBadge(b)}
-                className={`w-full flex items-center justify-between rounded-xl px-4 py-3.5 text-left transition-all border ${
+                className={`w-full flex items-center justify-between rounded-xl px-4 py-3.5 text-left border ${
                   b.unlocked
                     ? 'bg-[#0e1626] border-white/10 hover:border-white/20 shadow-md'
-                    : 'bg-[#0a101d]/60 border-white/[0.04] opacity-45 grayscale hover:opacity-75'
+                    : 'bg-[#0a101d]/60 border-white/[0.04] opacity-50 hover:opacity-75'
                 }`}
               >
                 <div className="flex items-center gap-3.5">
                   <span className={`grid h-10 w-10 place-items-center rounded-xl text-xl shrink-0 ${
-                    b.unlocked ? 'bg-amber-500/15' : 'bg-white/5'
+                    b.unlocked ? 'bg-amber-500/15' : 'bg-white/5 opacity-60'
                   }`}>
                     {b.icon}
                   </span>
@@ -636,8 +638,8 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
       </div>
 
       {/* STICKY BOTTOM CHECK-IN BAR (bottom-28 on mobile clear of bottom tab bar, md:left-60 md:right-0 centered on laptop) */}
-      <div className="fixed inset-x-0 bottom-28 md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center">
-        <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-white/10 bg-[#131b2e] p-3 shadow-2xl">
+      <div className="fixed inset-x-0 bottom-28 md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center transform-gpu">
+        <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-white/10 bg-[#131b2e] p-3 shadow-2xl transform-gpu">
           {/* Activity Tag Selector (All options visible at once via flex-wrap, no horizontal scroll needed) */}
           <div className="mb-3.5 flex flex-wrap items-center justify-center gap-1.5 w-full">
             {ACTIVITY_TYPES.map(type => (
