@@ -139,6 +139,7 @@ export default function ExercisePage() {
 
   const messagesPool = t('exercise.dailyMessages')
   const dailyMsg = useMemo(() => getDailyMessage(messagesPool, todayStr), [messagesPool, todayStr])
+  const renderedAiPlan = useMemo(() => markdownToHtml(aiPlan), [aiPlan])
 
   async function handleCheckIn() {
     if (stats.isCheckedInToday || checkingIn) return
@@ -496,7 +497,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
             </p>
           </div>
 
-          <div className="max-h-[238px] sm:max-h-none overflow-y-auto pr-1 sm:pr-0 grid gap-3 sm:grid-cols-2 scrollbar-thin">
+          <div className="grid gap-3 sm:grid-cols-2">
             {stats.badgeStatuses.map(b => (
               <button
                 key={b.id}
@@ -553,8 +554,8 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
           ) : aiPlan ? (
             <div className="rounded-2xl bg-[#0e1626] p-5 sm:p-6 border border-white/5">
               <div
-                className="text-xs sm:text-sm leading-relaxed text-slate-300 overflow-x-auto"
-                dangerouslySetInnerHTML={{ __html: markdownToHtml(aiPlan) }}
+                className="text-xs sm:text-sm leading-relaxed text-slate-300"
+                dangerouslySetInnerHTML={{ __html: renderedAiPlan }}
               />
               <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-white/5">
                 <span className="text-xs text-slate-400 font-medium">

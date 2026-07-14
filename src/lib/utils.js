@@ -130,7 +130,7 @@ export function markdownToHtml(text = '') {
       }
 
       const desktopTableHtml = `
-        <div class="ai-table-wrapper hidden sm:block my-4 w-full max-w-full overflow-x-auto rounded-2xl border border-white/10 bg-[#0a101d]/80 shadow-2xl backdrop-blur-md">
+        <div class="ai-table-wrapper hidden sm:block my-4 w-full max-w-full overflow-x-auto rounded-2xl border border-white/10 bg-[#0a101d] shadow-lg">
           <table class="ai-table w-full min-w-full border-collapse text-left text-xs md:text-sm">
             <thead class="border-b border-white/10 bg-blue-500/15 text-blue-300 text-[11px] md:text-xs font-bold uppercase tracking-wider">
               <tr>
