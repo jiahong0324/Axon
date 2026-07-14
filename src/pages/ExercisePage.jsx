@@ -510,13 +510,13 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
                   onClick={() => setSelectedBadge(b)}
                   className={`w-full flex items-center justify-between rounded-xl px-4 py-3.5 text-left border ${
                     b.unlocked
-                      ? 'bg-[#0e1626] border-white/10 hover:border-white/20 shadow-md'
+                      ? 'bg-[#0e1626] border-amber-500/40 hover:border-amber-500/60 shadow-md shadow-amber-500/10'
                       : 'bg-[#0a101d]/60 border-white/[0.04] opacity-50 hover:opacity-75'
                   }`}
                 >
                   <div className="flex items-center gap-3.5">
                     <span className={`grid h-10 w-10 place-items-center rounded-xl text-xl shrink-0 ${
-                      b.unlocked ? 'bg-amber-500/15' : 'bg-white/5 opacity-60'
+                      b.unlocked ? 'bg-amber-500/20' : 'bg-white/5 opacity-60'
                     }`}>
                       {b.icon}
                     </span>
@@ -760,31 +760,121 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
       {/* BADGE DETAIL MODAL */}
       <Modal isOpen={Boolean(selectedBadge)} onClose={() => setSelectedBadge(null)} title="Milestone Badge Details">
         {selectedBadge && (
-          <div className="text-center py-4 space-y-4">
-            <span className="text-6xl inline-block">{selectedBadge.icon}</span>
+          <div className="text-center py-4 space-y-5 relative overflow-hidden">
+            {/* Inline confetti keyframes */}
+            {selectedBadge.unlocked && (
+              <style>{`
+                @keyframes badge-confetti {
+                  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+                  100% { transform: translateY(180px) rotate(720deg); opacity: 0; }
+                }
+                @keyframes badge-glow-pulse {
+                  0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.3), 0 0 40px rgba(245,158,11,0.1); }
+                  50% { box-shadow: 0 0 30px rgba(245,158,11,0.5), 0 0 60px rgba(245,158,11,0.2); }
+                }
+                @keyframes badge-icon-bounce {
+                  0%, 100% { transform: scale(1); }
+                  50% { transform: scale(1.1); }
+                }
+                @keyframes badge-shimmer {
+                  0% { background-position: -200% center; }
+                  100% { background-position: 200% center; }
+                }
+              `}</style>
+            )}
+
+            {/* Confetti particles for unlocked */}
+            {selectedBadge.unlocked && (
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-2 h-2 rounded-full"
+                    style={{
+                      left: `${8 + (i * 7.5)}%`,
+                      top: '-8px',
+                      backgroundColor: ['#F59E0B', '#3B82F6', '#10B981', '#A855F7', '#EF4444', '#EC4899'][i % 6],
+                      animation: `badge-confetti ${1.5 + (i % 5) * 0.4}s ease-in ${i * 0.15}s both`,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Badge Icon with glow */}
+            <div className="relative inline-block">
+              <div
+                className="inline-flex items-center justify-center h-24 w-24 rounded-2xl mx-auto"
+                style={selectedBadge.unlocked ? {
+                  background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05))',
+                  animation: 'badge-glow-pulse 2s ease-in-out infinite',
+                } : {
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                }}
+              >
+                <span
+                  className="text-6xl inline-block"
+                  style={selectedBadge.unlocked ? { animation: 'badge-icon-bounce 2s ease-in-out infinite' } : { filter: 'grayscale(0.8) opacity(0.4)' }}
+                >
+                  {selectedBadge.icon}
+                </span>
+              </div>
+            </div>
+
+            {/* Title & Description */}
             <div>
               <h3 className="text-xl font-bold">{t(selectedBadge.titleKey)}</h3>
               <p className="text-sm text-slate-400 mt-1">{t(selectedBadge.descKey)}</p>
             </div>
-            <div className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold border ${
+
+            {/* Status badge with shimmer for unlocked */}
+            <div className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold border ${
               selectedBadge.unlocked
-                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                ? 'text-emerald-400 border-emerald-500/30'
                 : 'bg-[#0e1626] text-slate-400 border-white/5'
-            }`}>
+            }`}
+              style={selectedBadge.unlocked ? {
+                background: 'linear-gradient(90deg, rgba(16,185,129,0.1), rgba(16,185,129,0.2), rgba(16,185,129,0.1))',
+                backgroundSize: '200% 100%',
+                animation: 'badge-shimmer 3s linear infinite',
+              } : {}}
+            >
               {selectedBadge.unlocked ? (
                 <>
                   <Check className="h-4 w-4 stroke-[1.5]" />
                   <span>{t('exercise.badgeUnlocked')}</span>
                 </>
               ) : (
-                <span>{t('exercise.badgeLocked')}</span>
+                <>
+                  <Lock className="h-3.5 w-3.5" />
+                  <span>{t('exercise.badgeLocked')}</span>
+                </>
               )}
             </div>
+
+            {/* Motivational message */}
+            {selectedBadge.unlocked ? (
+              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-3">
+                <p className="text-xs font-bold text-amber-400">🎉 Achievement Unlocked!</p>
+                <p className="text-xs text-amber-200/70 mt-1">You earned this badge through dedication. Keep pushing!</p>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-slate-500/10 border border-white/5 px-4 py-3">
+                <p className="text-xs font-bold text-slate-400">🔒 Keep Going!</p>
+                <p className="text-xs text-slate-500 mt-1">Stay consistent and this badge will be yours soon.</p>
+              </div>
+            )}
+
             <button
-              className="w-full mt-4 min-h-[48px] rounded-xl bg-[#0e1626] hover:bg-white/[0.08] font-bold text-slate-300 border border-white/5 transition-colors"
+              className={`w-full mt-2 min-h-[48px] rounded-xl font-bold transition-colors ${
+                selectedBadge.unlocked
+                  ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30'
+                  : 'bg-[#0e1626] hover:bg-white/[0.08] text-slate-300 border border-white/5'
+              }`}
               onClick={() => setSelectedBadge(null)}
             >
-              Close
+              {selectedBadge.unlocked ? '✨ Awesome!' : 'Close'}
             </button>
           </div>
         )}

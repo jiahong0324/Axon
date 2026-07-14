@@ -188,7 +188,7 @@ export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes
   }
   if (currentStreak > longestStreak) longestStreak = currentStreak
 
-  // Compute 8 Milestone Badges
+  // Compute 15 Milestone Badges
   const computedXp = Math.max(xpTotal, logs.reduce((acc, cur) => acc + (cur.xp_earned || 20), 0))
   const badgeStatuses = [
     {
@@ -246,6 +246,55 @@ export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes
       descKey: 'Earn 500 total XP from workouts & habits',
       icon: '💎',
       unlocked: computedXp >= 500
+    },
+    {
+      id: '5_workouts',
+      titleKey: '5 Workouts Done',
+      descKey: 'Complete 5 total workouts',
+      icon: '🎯',
+      unlocked: logs.length >= 5
+    },
+    {
+      id: '10_workouts',
+      titleKey: '10 Workouts Club',
+      descKey: 'Complete 10 total workouts',
+      icon: '🔟',
+      unlocked: logs.length >= 10
+    },
+    {
+      id: '25_workouts',
+      titleKey: '25 Workouts Veteran',
+      descKey: 'Complete 25 total workouts',
+      icon: '🎖️',
+      unlocked: logs.length >= 25
+    },
+    {
+      id: '50_workouts',
+      titleKey: '50 Workouts Legend',
+      descKey: 'Complete 50 total workouts',
+      icon: '🏅',
+      unlocked: logs.length >= 50
+    },
+    {
+      id: 'xp_1000',
+      titleKey: 'XP Titan (1000+ XP)',
+      descKey: 'Earn 1000 total XP from workouts & habits',
+      icon: '🔮',
+      unlocked: computedXp >= 1000
+    },
+    {
+      id: 'xp_2500',
+      titleKey: 'XP Overlord (2500+ XP)',
+      descKey: 'Earn 2500 total XP from workouts & habits',
+      icon: '⚜️',
+      unlocked: computedXp >= 2500
+    },
+    {
+      id: 'variety_3',
+      titleKey: 'Activity Explorer',
+      descKey: 'Try 3 different workout types',
+      icon: '🌈',
+      unlocked: new Set(logs.map(l => l.activity_type).filter(Boolean)).size >= 3
     }
   ]
 
@@ -393,6 +442,18 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
   if (!beforeStats.badgeStatuses.find(b => b.id === 'weekly_goal')?.unlocked && afterStats.badgeStatuses.find(b => b.id === 'weekly_goal')?.unlocked) {
     bonusXP += 50
     unlockedNow.push('weekly_goal')
+  }
+  if (!beforeStats.badgeStatuses.find(b => b.id === '14_day')?.unlocked && afterStats.badgeStatuses.find(b => b.id === '14_day')?.unlocked) {
+    bonusXP += 150
+    unlockedNow.push('14_day')
+  }
+  if (!beforeStats.badgeStatuses.find(b => b.id === 'xp_1000')?.unlocked && afterStats.badgeStatuses.find(b => b.id === 'xp_1000')?.unlocked) {
+    bonusXP += 200
+    unlockedNow.push('xp_1000')
+  }
+  if (!beforeStats.badgeStatuses.find(b => b.id === 'xp_2500')?.unlocked && afterStats.badgeStatuses.find(b => b.id === 'xp_2500')?.unlocked) {
+    bonusXP += 500
+    unlockedNow.push('xp_2500')
   }
 
   const xpEarned = 20 + bonusXP
