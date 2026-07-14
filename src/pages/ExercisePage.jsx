@@ -502,7 +502,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
           <div className="relative">
             <div
               className="grid gap-3 sm:grid-cols-2 overflow-y-auto pr-1"
-              style={{ maxHeight: '18rem', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
+              style={{ maxHeight: '14.25rem', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
             >
               {stats.badgeStatuses.map(b => (
                 <button
