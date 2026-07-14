@@ -483,7 +483,7 @@ export default function TimetablePage() {
           <button className="btn-primary w-full" onClick={addLinkedProfile}>{t('timetable.addProfile')}</button>
         </div>
       </Modal>
-      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title={t('timetable.addClass')}>
+      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title={t('timetable.addClass')} mobileMaxHeight="max-h-[78%]">
         <form onSubmit={addClass} className="space-y-4">
           <Field label={t('timetable.subject')}><input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></Field>
           <div className="flex items-center gap-2 mb-1 pl-1">
