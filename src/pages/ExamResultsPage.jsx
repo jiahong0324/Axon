@@ -523,14 +523,14 @@ export default function ExamResultsPage() {
                 setTargetSemesterId(null)
                 setAnalyzerOpen(true)
               }}
-              className="btn-import text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px]"
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#14b8a6] hover:bg-[#0f968c] text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px] transition-all shadow-md"
             >
               <Sparkles className="h-4 w-4 shrink-0" />
               <span>Import Screenshot</span>
             </button>
             <button
               onClick={() => setShowAddSemModal(true)}
-              className="btn-add text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px]"
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#14b8a6] hover:bg-[#0f968c] text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px] transition-all shadow-md"
             >
               <Plus className="h-4 w-4 shrink-0" />
               <span>Add Semester</span>
@@ -568,7 +568,7 @@ export default function ExamResultsPage() {
                 
                 <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
                   <button
-                    className="btn-import flex-1 justify-center py-3.5 text-[15px]"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#14b8a6] hover:bg-[#0f968c] text-white font-bold flex-1 py-3.5 text-[15px] transition-all shadow-md"
                     onClick={() => {
                       setTargetSemesterId(null)
                       setAnalyzerOpen(true)
@@ -578,7 +578,7 @@ export default function ExamResultsPage() {
                     <span>Import Screenshot</span>
                   </button>
                   <button
-                    className="btn-add flex-1 justify-center py-3.5 text-[15px]"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#14b8a6] hover:bg-[#0f968c] text-white font-bold flex-1 py-3.5 text-[15px] transition-all shadow-md"
                     onClick={() => setShowAddSemModal(true)}
                   >
                     <Plus className="h-5 w-5 shrink-0" />
