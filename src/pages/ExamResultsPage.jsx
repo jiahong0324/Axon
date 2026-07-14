@@ -533,7 +533,7 @@ export default function ExamResultsPage() {
         </div>
 
         {activeTab === 'records' && semesters.length > 0 && (
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden md:flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => {
                 setTargetSemesterId(null)
