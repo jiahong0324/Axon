@@ -30,29 +30,30 @@ export default function ManagerSidebar({ user, profile }) {
     navigate('/login')
   }
 
-  const linkClass = ({ isActive }) => `flex min-h-[48px] items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
-    isActive ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
+  const linkClass = ({ isActive }) => `flex min-h-[44px] items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all duration-150 ${
+    isActive ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20 font-semibold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
   }`
 
   return (
     <>
       <aside className="hidden w-60 shrink-0 border-r border-slate-200 dark:border-white/10 bg-white dark:bg-[#1E293B] p-4 md:flex md:flex-col">
-        <div className="mb-7 flex items-center gap-3 px-2">
+        <div className="mb-5 flex items-center gap-3 px-2 shrink-0">
           <img src="/icons/logo.png" alt="Axon logo" className="h-8 w-8 rounded-lg object-contain" />
           <div>
             <p className="font-heading text-lg font-bold manager-gradient-text">Axon</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">Manager Portal</p>
           </div>
         </div>
-        <nav className="flex flex-1 flex-col gap-2">
+        <nav className="flex flex-1 flex-col gap-1.5 overflow-y-auto scrollbar-hide py-1">
           {navItems.map(item => (
             <NavLink key={item.path} to={item.path} end={item.path === '/manager'} className={linkClass}>
-              <item.icon className="h-5 w-5" />
-              {item.label}
+              <item.icon className="h-5 w-5 shrink-0" />
+              <span className="truncate">{item.label}</span>
             </NavLink>
           ))}
         </nav>
-        <div className="mt-4 rounded-2xl border border-slate-200 dark:border-white/10 p-3">
+        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 flex flex-col gap-3 shrink-0">
+          <div className="rounded-2xl border border-slate-200 dark:border-white/10 p-3">
           <div className="mb-3 flex items-center gap-3">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-500 font-semibold text-white">{initials(name)}</div>
             <div className="min-w-0">
@@ -66,6 +67,7 @@ export default function ManagerSidebar({ user, profile }) {
           <button onClick={logout} className="btn-ghost w-full justify-start text-red-400 hover:bg-red-500/10 hover:text-red-300">
             <LogOut className="h-4 w-4" /> Log out
           </button>
+        </div>
         </div>
       </aside>
       <nav className="bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 gap-1 rounded-t-2xl border-t border-slate-200 dark:border-white/10 bg-white/85 dark:bg-navy-950/85 px-2 pt-2 backdrop-blur-xl md:hidden">

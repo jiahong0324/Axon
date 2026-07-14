@@ -34,46 +34,51 @@ export default function Sidebar({ user }) {
     navigate('/login')
   }
 
-  const linkClass = ({ isActive }) => `student-nav-link flex min-h-[48px] items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
-    isActive ? 'is-active bg-theme-500 text-white shadow-lg shadow-theme-500/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
+  const linkClass = ({ isActive }) => `student-nav-link flex min-h-[44px] items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all duration-150 ${
+    isActive ? 'is-active bg-theme-500 text-white shadow-lg shadow-theme-500/20 font-semibold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
   }`
 
   return (
     <>
       <aside className="student-sidebar hidden w-60 shrink-0 border-r border-slate-200 dark:border-white/10 bg-white dark:bg-[#1E293B] p-4 md:flex md:flex-col">
-        <div className="mb-7 flex items-center gap-3 px-2">
+        <div className="mb-5 flex items-center gap-3 px-2 shrink-0">
           <img src="/icons/logo.png" alt="Axon logo" className="h-8 w-8 rounded-lg object-contain" />
           <div>
             <p className="font-heading text-lg font-bold gradient-text">Axon</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('sidebar.tagline')}</p>
           </div>
         </div>
-        <nav className="flex flex-1 flex-col gap-2">
+        <nav className="flex flex-1 flex-col gap-1.5 overflow-y-auto scrollbar-hide py-1">
           {navItems.map(item => (
             <NavLink key={item.path} to={item.path} end={item.path === '/home'} className={linkClass}>
-              <item.icon className="h-5 w-5" />
-              {item.tKey ? t(item.tKey) : item.label}
+              <item.icon className="h-5 w-5 shrink-0" />
+              <span className="truncate">{item.tKey ? t(item.tKey) : item.label}</span>
             </NavLink>
           ))}
         </nav>
-        <button onClick={() => setFeedbackOpen(true)} className="feedback-button mb-4 flex min-h-[48px] items-center gap-3 rounded-xl border border-theme-500/20 bg-theme-500/10 px-3 text-sm font-medium text-theme-400 transition-colors hover:bg-theme-500/20">
-          <MessageSquare className="h-5 w-5" />
-          {t('common.feedback')}
-        </button>
-        <div className="student-profile-card rounded-2xl border border-slate-200 dark:border-white/10 p-3">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-theme-500 font-semibold text-white">{initials(name)}</div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{name}</p>
-              <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
-            </div>
-          </div>
-          <NavLink to="/?view=true" className="mb-2 flex w-fit items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white">
-            <Globe className="h-3.5 w-3.5" /> {t('common.officialWebsite')}
-          </NavLink>
-          <button onClick={logout} className="btn-ghost w-full justify-start text-red-400 hover:bg-red-500/10 hover:text-red-300">
-            <LogOut className="h-4 w-4" /> {t('sidebar.logout')}
+        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 flex flex-col gap-3 shrink-0">
+          <button
+            onClick={() => setFeedbackOpen(true)}
+            className="feedback-button flex min-h-[44px] w-full items-center gap-3 rounded-xl border border-theme-500/25 bg-theme-500/10 px-3.5 py-2.5 text-sm font-semibold text-theme-500 dark:text-theme-400 transition-all duration-200 hover:bg-theme-500/20 hover:shadow-md hover:shadow-theme-500/10"
+          >
+            <MessageSquare className="h-5 w-5 shrink-0" />
+            <span>{t('common.feedback')}</span>
           </button>
+          <div className="student-profile-card rounded-2xl border border-slate-200 dark:border-white/10 p-3">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-theme-500 font-semibold text-white">{initials(name)}</div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{name}</p>
+                <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
+              </div>
+            </div>
+            <NavLink to="/?view=true" className="mb-2 flex w-fit items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white">
+              <Globe className="h-3.5 w-3.5" /> {t('common.officialWebsite')}
+            </NavLink>
+            <button onClick={logout} className="btn-ghost w-full justify-start text-red-400 hover:bg-red-500/10 hover:text-red-300">
+              <LogOut className="h-4 w-4" /> {t('sidebar.logout')}
+            </button>
+          </div>
         </div>
       </aside>
       <nav className="bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 gap-1 rounded-t-2xl border-t border-slate-200 dark:border-white/10 bg-white/85 dark:bg-navy-950/85 px-2 pt-2 backdrop-blur-xl md:hidden">

@@ -20,14 +20,14 @@ import { askGroq } from '../lib/groq'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml } from '../lib/utils'
 
-const DEFAULT_TABLE_PLAN = `### 🏋️ Daily Campus Workout Plan
+const DEFAULT_TABLE_PLAN = `💡 **Schedule Tip:** Based on your campus classes today, fit this 25-minute workout session between classes or right after your last lecture!
 
 | Phase | Exercise / Activity | Duration / Sets | Intensity | Coach Tips |
 | :--- | :--- | :--- | :--- | :--- |
-| **Warmup 🔥** | Dynamic Arm Circles & High Knees | 5 mins | Light | Warm up joints and get heart rate up smoothly |
-| **Strength 💪** | Bodyweight Circuit (Push-ups & Squats) | 3 sets x 12 reps | Moderate-High | Keep core engaged and maintain clean form |
-| **Cardio ⚡** | Brisk Campus Walk or Stair Climb | 15 mins | Moderate | Maintain a steady breathing pace |
-| **Cooldown 🧘** | Hamstring & Shoulder Stretches | 5 mins | Gentle | Hold each stretch for 30 seconds to recover |`
+| **Warmup 🔥** | Dynamic Arm Circles & High Knees | 3 mins | Light | Warm up joints smoothly |
+| **Strength 💪** | Bodyweight Push-ups & Squats | 2 sets x 12 reps | Moderate | Clean form, core engaged |
+| **Cardio ⚡** | Brisk Campus Walk / Stairs | 15 mins | Moderate | Steady breathing pace |
+| **Cooldown 🧘** | Hamstring & Shoulder Stretch | 3 mins | Gentle | Hold 30s to recover |`
 
 export default function ExercisePage() {
   const { t } = useLanguage()
@@ -216,17 +216,21 @@ export default function ExercisePage() {
     setAiLoading(true)
     try {
       const context = await buildUserContext()
-      const prompt = `You are an expert fitness coach for university students. Based on this student's current workout streak of ${stats.currentStreak} days and weekly goal of ${weeklyGoal} days/week, generate a structured daily workout routine tailored for a campus routine.
-IMPORTANT: You MUST format your suggestion ONLY as a clear Markdown Table with exactly these columns:
+      const prompt = `You are an expert fitness coach for university students. Look at the student's TODAY'S CLASSES and weekly timetable in the provided context.
+Generate a very brief, practical workout suggestion tailored around their timetable today. Keep words minimal—do NOT write long paragraphs.
+
+Your output MUST follow exactly this format:
+1. One concise sentence starting with "💡 **Schedule Tip:** " explaining the best time today to exercise based on their class hours (e.g. if classes end at 4 PM, suggest evening; if no classes today, suggest morning/afternoon). Keep it under 25 words.
+2. A clean Markdown Table ONLY with exactly these columns:
 | Phase | Exercise / Activity | Duration / Sets | Intensity | Coach Tips |
 
-Include 4 well-structured rows:
+Include exactly 4 concise rows:
 1. Warmup
 2. Strength / Resistance
 3. Cardio / Agility
 4. Cooldown / Mobility
 
-Do NOT use bullet points. Always output a markdown table.`
+Keep all text inside the table short and punchy. Do NOT output anything extra outside the tip and the table.`
       const plan = await askGroq(prompt, context)
       const finalPlan = plan && plan.includes('|') ? plan : DEFAULT_TABLE_PLAN
       setAiPlan(finalPlan)
