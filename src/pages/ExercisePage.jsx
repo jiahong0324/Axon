@@ -20,15 +20,28 @@ import { askGroq } from '../lib/groq'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml } from '../lib/utils'
 
-const DEFAULT_TABLE_PLAN = `💡 **Personalized Coach Tips:**
-Based on your campus timetable today, scheduling this 25-minute workout session between classes or right after your last lecture is optimal for maintaining your study focus. Since you are protecting your current workout streak, aim for steady consistency rather than maximum exhaustion so your muscles stay energized for tomorrow's academic workload. Remember to drink at least 500ml of water after cooldown and get a solid hamstring stretch to prevent lower back stiffness from sitting long hours in lecture halls.
-
-| Phase | Exercise / Activity | Duration / Sets | Intensity | Coach Tips |
+const DEFAULT_TABLE_PLAN = `| Phase | Exercise / Activity | Duration / Sets | Intensity | Coach Tips |
 | :--- | :--- | :--- | :--- | :--- |
 | **Warmup 🔥** | Dynamic Arm Circles & High Knees | 3 mins | Light | Warm up joints smoothly |
 | **Strength 💪** | Bodyweight Push-ups & Squats | 2 sets x 12 reps | Moderate | Clean form, core engaged |
 | **Cardio ⚡** | Brisk Campus Walk / Stairs | 15 mins | Moderate | Steady breathing pace |
-| **Cooldown 🧘** | Hamstring & Shoulder Stretch | 3 mins | Gentle | Hold 30s to recover |`
+| **Cooldown 🧘** | Hamstring & Shoulder Stretch | 3 mins | Gentle | Hold 30s to recover |
+
+💡 **Personalized Coach Tips:**
+Schedule this 25-min session between classes or after your last lecture. Keep a steady pace to maintain focus and stay hydrated!`
+
+function formatPlanOrder(plan) {
+  if (!plan || !plan.includes('💡 **Personalized Coach Tips:**') || !plan.includes('|')) return plan
+  const tipIdx = plan.indexOf('💡 **Personalized Coach Tips:**')
+  const tableIdx = plan.indexOf('|')
+  if (tipIdx < tableIdx) {
+    const tableIndexInOrig = plan.indexOf('|')
+    const tipsSection = plan.slice(tipIdx, tableIndexInOrig).trim()
+    const tableSection = plan.slice(tableIndexInOrig).trim()
+    return `${tableSection}\n\n${tipsSection}`
+  }
+  return plan
+}
 
 export default function ExercisePage() {
   const { t } = useLanguage()
@@ -66,8 +79,12 @@ export default function ExercisePage() {
     loadInitialData(true)
     const savedPlan = localStorage.getItem('axon_exercise_ai_plan_content')
     const savedDate = localStorage.getItem('axon_exercise_ai_plan_date')
-    if (savedPlan && savedDate === todayStr && savedPlan.includes('|')) {
-      setAiPlan(savedPlan)
+    const deletedDate = localStorage.getItem('axon_exercise_ai_plan_deleted_date')
+
+    if (deletedDate === todayStr) {
+      setAiPlan('')
+    } else if (savedPlan && savedDate === todayStr && savedPlan.includes('|')) {
+      setAiPlan(formatPlanOrder(savedPlan))
     } else {
       setAiPlan(DEFAULT_TABLE_PLAN)
       try {
@@ -216,16 +233,13 @@ export default function ExercisePage() {
   async function generateAiSuggestion() {
     setAiLoading(true)
     try {
+      localStorage.removeItem('axon_exercise_ai_plan_deleted_date')
       const context = await buildUserContext()
       const prompt = `You are an expert fitness coach for university students. Look at the student's TODAY'S CLASSES, weekly timetable, and current workout streak of ${stats.currentStreak} days in the provided context.
-Generate personalized workout tips tailored around their timetable today and a structured routine.
+Generate brief, personalized workout tips tailored around their timetable today and a structured routine.
 
 Your output MUST follow exactly this format:
-1. A paragraph starting with "💡 **Personalized Coach Tips:**" containing AT LEAST 3 clear, personalized sentences:
-   - Sentence 1: Best time today to exercise around their specific class schedule (e.g., between lectures, after 4 PM, or morning if no class).
-   - Sentence 2: Advice on intensity or pacing based on their current ${stats.currentStreak}-day workout streak and academic load.
-   - Sentence 3: Practical hydration, nutrition, or recovery advice tailored for a student routine.
-2. A clean Markdown Table ONLY with exactly these columns:
+1. A clean Markdown Table ONLY with exactly these columns:
 | Phase | Exercise / Activity | Duration / Sets | Intensity | Coach Tips |
 
 Include exactly 4 concise rows:
@@ -234,9 +248,11 @@ Include exactly 4 concise rows:
 3. Cardio / Agility
 4. Cooldown / Mobility
 
-Keep table text concise. Do NOT output anything extra outside the 3-sentence tip paragraph and the table.`
+2. Below the table, add one short, punchy paragraph starting with "💡 **Personalized Coach Tips:**" containing 1 or 2 concise sentences (maximum 25 words total) on the best time today to exercise around their schedule and a quick tip on intensity or hydration.
+
+Keep table text concise. Do NOT output anything extra outside the table and the short 1-2 sentence tip paragraph below it.`
       const plan = await askGroq(prompt, context)
-      const finalPlan = plan && plan.includes('|') ? plan : DEFAULT_TABLE_PLAN
+      const finalPlan = formatPlanOrder(plan && plan.includes('|') ? plan : DEFAULT_TABLE_PLAN)
       setAiPlan(finalPlan)
       localStorage.setItem('axon_exercise_ai_plan_content', finalPlan)
       localStorage.setItem('axon_exercise_ai_plan_date', todayStr)
@@ -253,6 +269,7 @@ Keep table text concise. Do NOT output anything extra outside the 3-sentence tip
     setAiPlan('')
     localStorage.removeItem('axon_exercise_ai_plan_content')
     localStorage.removeItem('axon_exercise_ai_plan_date')
+    localStorage.setItem('axon_exercise_ai_plan_deleted_date', todayStr)
   }
 
   const heatmapDays = useMemo(() => {
