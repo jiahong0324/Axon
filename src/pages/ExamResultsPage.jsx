@@ -470,34 +470,6 @@ export default function ExamResultsPage() {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center justify-between">
           <h1 className="page-title mb-1">Results</h1>
-          <div className="flex items-center gap-1 sm:gap-2 md:hidden">
-            <button
-              className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center shrink-0"
-              onClick={() => {
-                setTargetSemesterId(null)
-                setAnalyzerOpen(true)
-              }}
-              title="AI Import Screenshot"
-            >
-              <Sparkles className="h-5 w-5" />
-            </button>
-            <button
-              className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center shrink-0"
-              onClick={() => setShowAddSemModal(true)}
-              title="Add Semester"
-            >
-              <Plus className="h-5 w-5" />
-            </button>
-            {semesters.length > 0 && (
-              <button
-                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0"
-                onClick={handleClearAllSemesters}
-                title="Clear All Semesters"
-              >
-                <Trash2 className="h-5 w-5" />
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Overall CGPA Banner */}
@@ -545,7 +517,7 @@ export default function ExamResultsPage() {
         </div>
 
         {activeTab === 'records' && semesters.length > 0 && (
-          <div className="hidden md:flex items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <button
               onClick={() => {
                 setTargetSemesterId(null)
