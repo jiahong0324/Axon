@@ -212,7 +212,6 @@ input, select, textarea { font-size: 16px; }
     padding-top: calc(env(safe-area-inset-top) + 1.25rem);
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    will-change: scroll-position;
   }
   .page-title { @apply text-xl md:text-2xl font-bold font-heading mb-6; }
   .card { @apply glass rounded-xl md:rounded-2xl p-4 md:p-5 transition-all duration-200; }
