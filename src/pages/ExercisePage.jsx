@@ -499,35 +499,42 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
             </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {stats.badgeStatuses.map(b => (
-              <button
-                key={b.id}
-                onClick={() => setSelectedBadge(b)}
-                className={`w-full flex items-center justify-between rounded-xl px-4 py-3.5 text-left border ${
-                  b.unlocked
-                    ? 'bg-[#0e1626] border-white/10 hover:border-white/20 shadow-md'
-                    : 'bg-[#0a101d]/60 border-white/[0.04] opacity-50 hover:opacity-75'
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <span className={`grid h-10 w-10 place-items-center rounded-xl text-xl shrink-0 ${
-                    b.unlocked ? 'bg-amber-500/15' : 'bg-white/5 opacity-60'
-                  }`}>
-                    {b.icon}
-                  </span>
-                  <div>
-                    <p className={`font-bold text-sm ${b.unlocked ? 'text-white' : 'text-slate-400'}`}>
-                      {t(b.titleKey)}
-                    </p>
-                    <p className={`text-xs mt-0.5 ${b.unlocked ? 'font-bold text-amber-400' : 'text-slate-500'}`}>
-                      {b.unlocked ? 'Unlocked ✨' : 'Locked'}
-                    </p>
+          <div className="relative">
+            <div
+              className="grid gap-3 sm:grid-cols-2 overflow-y-auto pr-1"
+              style={{ maxHeight: '18rem', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
+            >
+              {stats.badgeStatuses.map(b => (
+                <button
+                  key={b.id}
+                  onClick={() => setSelectedBadge(b)}
+                  className={`w-full flex items-center justify-between rounded-xl px-4 py-3.5 text-left border ${
+                    b.unlocked
+                      ? 'bg-[#0e1626] border-white/10 hover:border-white/20 shadow-md'
+                      : 'bg-[#0a101d]/60 border-white/[0.04] opacity-50 hover:opacity-75'
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5">
+                    <span className={`grid h-10 w-10 place-items-center rounded-xl text-xl shrink-0 ${
+                      b.unlocked ? 'bg-amber-500/15' : 'bg-white/5 opacity-60'
+                    }`}>
+                      {b.icon}
+                    </span>
+                    <div>
+                      <p className={`font-bold text-sm ${b.unlocked ? 'text-white' : 'text-slate-400'}`}>
+                        {t(b.titleKey)}
+                      </p>
+                      <p className={`text-xs mt-0.5 ${b.unlocked ? 'font-bold text-amber-400' : 'text-slate-500'}`}>
+                        {b.unlocked ? 'Unlocked ✨' : 'Locked'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <Info className="h-4 w-4 text-slate-500 shrink-0" />
-              </button>
-            ))}
+                  <Info className="h-4 w-4 text-slate-500 shrink-0" />
+                </button>
+              ))}
+            </div>
+            {/* Fade gradient hinting there's more to scroll */}
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 rounded-b-xl bg-gradient-to-t from-[#131b2e] to-transparent" />
           </div>
         </section>
 
