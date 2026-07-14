@@ -20,7 +20,8 @@ import { askGroq } from '../lib/groq'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml } from '../lib/utils'
 
-const DEFAULT_TABLE_PLAN = `💡 **Schedule Tip:** Based on your campus classes today, fit this 25-minute workout session between classes or right after your last lecture!
+const DEFAULT_TABLE_PLAN = `💡 **Personalized Coach Tips:**
+Based on your campus timetable today, scheduling this 25-minute workout session between classes or right after your last lecture is optimal for maintaining your study focus. Since you are protecting your current workout streak, aim for steady consistency rather than maximum exhaustion so your muscles stay energized for tomorrow's academic workload. Remember to drink at least 500ml of water after cooldown and get a solid hamstring stretch to prevent lower back stiffness from sitting long hours in lecture halls.
 
 | Phase | Exercise / Activity | Duration / Sets | Intensity | Coach Tips |
 | :--- | :--- | :--- | :--- | :--- |
@@ -216,11 +217,14 @@ export default function ExercisePage() {
     setAiLoading(true)
     try {
       const context = await buildUserContext()
-      const prompt = `You are an expert fitness coach for university students. Look at the student's TODAY'S CLASSES and weekly timetable in the provided context.
-Generate a very brief, practical workout suggestion tailored around their timetable today. Keep words minimal—do NOT write long paragraphs.
+      const prompt = `You are an expert fitness coach for university students. Look at the student's TODAY'S CLASSES, weekly timetable, and current workout streak of ${stats.currentStreak} days in the provided context.
+Generate personalized workout tips tailored around their timetable today and a structured routine.
 
 Your output MUST follow exactly this format:
-1. One concise sentence starting with "💡 **Schedule Tip:** " explaining the best time today to exercise based on their class hours (e.g. if classes end at 4 PM, suggest evening; if no classes today, suggest morning/afternoon). Keep it under 25 words.
+1. A paragraph starting with "💡 **Personalized Coach Tips:**" containing AT LEAST 3 clear, personalized sentences:
+   - Sentence 1: Best time today to exercise around their specific class schedule (e.g., between lectures, after 4 PM, or morning if no class).
+   - Sentence 2: Advice on intensity or pacing based on their current ${stats.currentStreak}-day workout streak and academic load.
+   - Sentence 3: Practical hydration, nutrition, or recovery advice tailored for a student routine.
 2. A clean Markdown Table ONLY with exactly these columns:
 | Phase | Exercise / Activity | Duration / Sets | Intensity | Coach Tips |
 
@@ -230,7 +234,7 @@ Include exactly 4 concise rows:
 3. Cardio / Agility
 4. Cooldown / Mobility
 
-Keep all text inside the table short and punchy. Do NOT output anything extra outside the tip and the table.`
+Keep table text concise. Do NOT output anything extra outside the 3-sentence tip paragraph and the table.`
       const plan = await askGroq(prompt, context)
       const finalPlan = plan && plan.includes('|') ? plan : DEFAULT_TABLE_PLAN
       setAiPlan(finalPlan)
@@ -517,11 +521,12 @@ Keep all text inside the table short and punchy. Do NOT output anything extra ou
                   {t('exercise.aiTitle')}
                 </h3>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 text-[11px] font-bold text-blue-300 shadow-sm">
-                  <span>Table View 📊</span>
+                  <span className="hidden sm:inline">Table View 📊</span>
+                  <span className="inline sm:hidden">Smart Cards ⚡</span>
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Personalized AI workout routines structured in table format
+                Personalized AI workout routines tailored to your class schedule
               </p>
             </div>
             {!aiPlan && !aiLoading && (

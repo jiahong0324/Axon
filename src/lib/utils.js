@@ -129,8 +129,8 @@ export function markdownToHtml(text = '') {
         i++
       }
 
-      const tableHtml = `
-        <div class="ai-table-wrapper my-4 w-full max-w-full overflow-x-auto rounded-2xl border border-white/10 bg-[#0a101d]/80 shadow-2xl backdrop-blur-md">
+      const desktopTableHtml = `
+        <div class="ai-table-wrapper hidden sm:block my-4 w-full max-w-full overflow-x-auto rounded-2xl border border-white/10 bg-[#0a101d]/80 shadow-2xl backdrop-blur-md">
           <table class="ai-table w-full min-w-full border-collapse text-left text-xs md:text-sm">
             <thead class="border-b border-white/10 bg-blue-500/15 text-blue-300 text-[11px] md:text-xs font-bold uppercase tracking-wider">
               <tr>
@@ -147,7 +147,38 @@ export function markdownToHtml(text = '') {
           </table>
         </div>
       `
-      htmlLines.push(tableHtml)
+
+      const mobileCardsHtml = `
+        <div class="ai-mobile-table-cards block sm:hidden space-y-3 my-3">
+          ${rows.map((row, rIdx) => {
+            const title = row[0] || `Phase ${rIdx + 1}`
+            const subtitle = row[1] || ''
+            const badge = row[2] || ''
+            const details = headers.slice(3).map((h, cIdx) => {
+              const val = row[cIdx + 3]
+              if (!val) return ''
+              return `
+                <div class="flex flex-col gap-0.5 text-xs">
+                  <span class="font-bold text-blue-300 uppercase tracking-wider text-[10px]">${formatInline(h)}</span>
+                  <span class="text-slate-200 leading-relaxed">${formatInline(val)}</span>
+                </div>`
+            }).join('')
+
+            return `
+              <div class="rounded-2xl border border-white/10 bg-[#0e1626] p-4 shadow-lg space-y-2.5">
+                <div class="flex items-start justify-between gap-2 border-b border-white/10 pb-2.5">
+                  <div class="font-extrabold text-blue-400 text-sm leading-snug">${formatInline(title)}</div>
+                  ${badge ? `<span class="inline-flex shrink-0 items-center rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 text-[11px] font-bold text-blue-300">${formatInline(badge)}</span>` : ''}
+                </div>
+                ${subtitle ? `<div class="text-sm font-semibold text-white leading-relaxed">${formatInline(subtitle)}</div>` : ''}
+                ${details ? `<div class="grid grid-cols-1 gap-2 pt-1 border-t border-white/5">${details}</div>` : ''}
+              </div>
+            `
+          }).join('')}
+        </div>
+      `
+
+      htmlLines.push(desktopTableHtml + mobileCardsHtml)
       continue
     }
 
