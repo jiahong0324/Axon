@@ -673,9 +673,9 @@ export default function ExamResultsPage() {
                             <span className="font-semibold text-white">
                               {r.name || 'Course'}
                             </span>
-                            <div className="flex items-center gap-4">
-                              <span className="text-xs font-medium text-slate-400">{r.credits} Credits</span>
-                              <span className={`rounded-lg px-3 py-1 font-mono text-xs font-bold ${getGradeBadgeStyle(r.grade)}`}>
+                            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                              <span className="w-16 sm:w-20 text-right text-xs font-medium text-slate-400 shrink-0">{r.credits} Credits</span>
+                              <span className={`inline-flex items-center justify-center w-11 h-8 rounded-lg font-mono text-xs font-bold shrink-0 border ${getGradeBadgeStyle(r.grade)}`}>
                                 {r.grade}
                               </span>
                             </div>
@@ -943,24 +943,24 @@ function SemesterCard({
             (semester.courses || []).map((course, idx) => (
               <div
                 key={course.id || idx}
-                className="flex items-center justify-between py-3.5 text-sm sm:text-base"
+                className="flex items-center justify-between gap-3 py-3.5 text-sm sm:text-base"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   {course.course_code && (
-                    <span className="font-mono text-xs font-bold uppercase rounded bg-white/5 px-2 py-1 text-slate-400">
+                    <span className="w-24 shrink-0 text-center font-mono text-xs font-bold uppercase rounded-lg bg-white/5 py-1 px-2 text-slate-300 tracking-wider">
                       {course.course_code}
                     </span>
                   )}
-                  <span className="font-semibold text-white">
+                  <span className="font-semibold text-white truncate min-w-0">
                     {course.course_name || 'Course'}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <span className="text-xs sm:text-sm font-medium text-slate-400">
+                <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                  <span className="w-16 sm:w-20 text-right text-xs sm:text-sm font-medium text-slate-400 shrink-0">
                     {course.credit_hours || 0} Credits
                   </span>
-                  <span className={`rounded-lg px-3 py-1 font-mono text-xs sm:text-sm font-bold border ${getGradeBadgeStyle(course.grade)}`}>
+                  <span className={`inline-flex items-center justify-center w-11 h-8 rounded-lg font-mono text-xs sm:text-sm font-bold shrink-0 border ${getGradeBadgeStyle(course.grade)}`}>
                     {course.grade || '-'}
                   </span>
                 </div>
