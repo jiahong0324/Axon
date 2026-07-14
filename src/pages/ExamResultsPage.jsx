@@ -472,7 +472,7 @@ export default function ExamResultsPage() {
           <h1 className="page-title mb-1">Results</h1>
           <div className="flex items-center gap-1 sm:gap-2 md:hidden">
             <button
-              className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center shrink-0"
+              className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors flex items-center justify-center shrink-0"
               onClick={() => {
                 setTargetSemesterId(null)
                 setAnalyzerOpen(true)
@@ -482,7 +482,7 @@ export default function ExamResultsPage() {
               <Sparkles className="h-5 w-5" />
             </button>
             <button
-              className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center shrink-0"
+              className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors flex items-center justify-center shrink-0"
               onClick={() => setShowAddSemModal(true)}
               title="Add Semester"
             >
