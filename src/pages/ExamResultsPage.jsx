@@ -959,11 +959,11 @@ function SemesterCard({
             (semester.courses || []).map((course, idx) => (
               <div
                 key={course.id || idx}
-                className="flex items-start sm:items-center justify-between gap-3 py-3.5 text-sm sm:text-base"
+                className="flex items-center justify-between gap-3 py-3.5 text-sm sm:text-base"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 min-w-0 flex-1 pr-2">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 pr-2">
                   {course.course_code && (
-                    <span className="w-fit sm:w-24 shrink-0 text-center font-mono text-xs font-bold uppercase rounded-md sm:rounded-lg bg-white/5 py-0.5 sm:py-1 px-2 text-slate-300 tracking-wider">
+                    <span className="shrink-0 text-center font-mono text-xs font-bold uppercase rounded-md sm:rounded-lg bg-white/5 py-1 px-2.5 text-slate-300 tracking-wider">
                       {course.course_code}
                     </span>
                   )}
@@ -972,7 +972,7 @@ function SemesterCard({
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 sm:gap-4 shrink-0 pt-0.5 sm:pt-0">
+                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                   <span className="text-right text-xs sm:text-sm font-medium text-slate-400 shrink-0">
                     {course.credit_hours || 0} Credits
                   </span>
@@ -993,9 +993,9 @@ function SemesterCard({
                 key={course.id}
                 className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3.5 first:pt-0"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 flex-1 w-full sm:w-auto">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 w-full sm:w-auto">
                   <input
-                    className="w-full sm:w-28 bg-transparent text-xs sm:text-sm font-semibold text-slate-400 placeholder:text-slate-500 focus:outline-none"
+                    className="w-20 sm:w-28 shrink-0 bg-transparent text-xs sm:text-sm font-semibold text-slate-400 placeholder:text-slate-500 focus:outline-none"
                     placeholder="Code"
                     value={course.course_code || ''}
                     onChange={e => onUpdateCourse(semester.id, course.id, { course_code: e.target.value })}
