@@ -286,6 +286,25 @@ export default function ExamResultsPage() {
     }
   }
 
+  async function handleClearAllSemesters() {
+    const ok = await confirm({
+      title: 'Clear All Semesters?',
+      message: 'Are you sure you want to delete all semesters and course records?',
+      confirmText: 'Clear All',
+      variant: 'danger'
+    })
+    if (!ok) return
+
+    saveAndAutoSync([])
+    showToast('All semester records cleared.', 'info')
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('student_semester_courses').delete().eq('user_id', user.id)
+      await supabase.from('student_semesters').delete().eq('user_id', user.id)
+    }
+  }
+
   function handleAddCourse(semId, newCourse) {
     const nextList = semesters.map(s => {
       if (s.id !== semId) return s
@@ -437,8 +456,36 @@ export default function ExamResultsPage() {
     <main className="main-content">
       {/* Page Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="flex items-center justify-between">
           <h1 className="page-title mb-1">Results</h1>
+          <div className="flex items-center gap-1 sm:gap-2 md:hidden">
+            <button
+              className="text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0"
+              onClick={() => {
+                setTargetSemesterId(null)
+                setAnalyzerOpen(true)
+              }}
+              title="AI Import Screenshot"
+            >
+              <Sparkles className="h-5 w-5" />
+            </button>
+            <button
+              className="text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0"
+              onClick={() => setShowAddSemModal(true)}
+              title="Add Semester"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+            {semesters.length > 0 && (
+              <button
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0"
+                onClick={handleClearAllSemesters}
+                title="Clear All Semesters"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Overall CGPA Banner */}
@@ -503,6 +550,14 @@ export default function ExamResultsPage() {
             >
               <Plus className="h-4 w-4 shrink-0" />
               <span>Add Semester</span>
+            </button>
+            <button
+              onClick={handleClearAllSemesters}
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 sm:px-3 sm:py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5 shrink-0 border border-red-500/20"
+              title="Clear All Semesters"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="text-xs sm:text-sm font-medium hidden sm:block">Clear</span>
             </button>
           </div>
         )}
