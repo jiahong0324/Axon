@@ -4,8 +4,11 @@ import { useEffect } from 'react'
 export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md', bodyClassName = 'overflow-y-auto overflow-x-hidden scrollbar-hide' }) {
   if (!isOpen) return null
   return (
-    <div className="fixed inset-x-0 top-0 bottom-16 sm:inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-sm">
-      <div className={`glass flex h-auto max-h-[90%] sm:max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-3xl sm:rounded-2xl border border-white/10 pt-6 pb-6 px-5 sm:p-6 transition-transform ${maxWidth}`}>
+    <div
+      className="fixed inset-x-0 top-0 z-50 flex items-end sm:items-center justify-center bg-black/60 sm:inset-0 sm:p-4 backdrop-blur-sm"
+      style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
+    >
+      <div className={`glass flex h-auto max-h-[calc(100%-0.5rem)] sm:max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-3xl sm:rounded-2xl border border-white/10 pt-6 pb-6 px-5 sm:p-6 transition-transform ${maxWidth}`}>
         <div className="mb-4 flex shrink-0 items-center justify-between gap-4">
           <h2 className="text-lg font-semibold">{title}</h2>
           <button onClick={onClose} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">
