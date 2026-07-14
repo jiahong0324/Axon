@@ -533,8 +533,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
                 </button>
               ))}
             </div>
-            {/* Fade gradient hinting there's more to scroll */}
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 rounded-b-xl bg-gradient-to-t from-[#131b2e] to-transparent" />
+
           </div>
         </section>
 
