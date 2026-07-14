@@ -528,6 +528,7 @@ Keep table text concise. Do NOT output anything extra outside the 3-sentence tip
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
                 Personalized AI workout routines tailored to your class schedule
               </p>
+            </div>
           </div>
 
           {aiLoading ? (
