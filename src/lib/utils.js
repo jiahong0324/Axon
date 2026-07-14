@@ -130,17 +130,17 @@ export function markdownToHtml(text = '') {
       }
 
       const tableHtml = `
-        <div class="ai-table-wrapper my-3.5 w-full max-w-full overflow-x-auto rounded-xl md:rounded-2xl border border-slate-700/70 bg-slate-900/60 shadow-xl">
+        <div class="ai-table-wrapper my-4 w-full max-w-full overflow-x-auto rounded-2xl border border-white/10 bg-[#0a101d]/80 shadow-2xl backdrop-blur-md">
           <table class="ai-table w-full min-w-full border-collapse text-left text-xs md:text-sm">
-            <thead class="border-b border-slate-700/80 bg-slate-800/80 text-[11px] md:text-xs font-semibold">
+            <thead class="border-b border-white/10 bg-blue-500/15 text-blue-300 text-[11px] md:text-xs font-bold uppercase tracking-wider">
               <tr>
-                ${headers.map(h => `<th class="px-2.5 py-2 md:px-4 md:py-3 align-top whitespace-nowrap">${formatInline(h)}</th>`).join('')}
+                ${headers.map(h => `<th class="px-3 py-3 md:px-4 md:py-3.5 align-top whitespace-nowrap">${formatInline(h)}</th>`).join('')}
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-800/60">
-              ${rows.map(row => `
-                <tr class="transition-colors hover:bg-white/[0.03]">
-                  ${headers.map((_, colIdx) => `<td class="px-2.5 py-2.5 md:px-4 md:py-3.5 align-top leading-relaxed text-slate-200 break-words">${formatInline(row[colIdx] || '')}</td>`).join('')}
+            <tbody class="divide-y divide-white/[0.06]">
+              ${rows.map((row, rIdx) => `
+                <tr class="transition-colors hover:bg-white/[0.05] ${rIdx % 2 === 1 ? 'bg-white/[0.015]' : ''}">
+                  ${headers.map((_, colIdx) => `<td class="px-3 py-3 md:px-4 md:py-3.5 align-top leading-relaxed text-slate-200">${formatInline(row[colIdx] || '')}</td>`).join('')}
                 </tr>
               `).join('')}
             </tbody>

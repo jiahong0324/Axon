@@ -112,9 +112,31 @@ export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes
     if (logged) weeklyCount++
   }
 
+  // Find the earliest log date in user history
+  const earliestLogDate = logs.length > 0
+    ? logs.reduce((min, l) => (l.log_date < min ? l.log_date : min), logs[0].log_date)
+    : null
+
   // Calculate current streak backwards
   let currentStreak = 0
   let freezesAvailable = Number(storedFreezes) >= 0 ? Number(storedFreezes) : 1
+  if (storedFreezes === 0 && logs.length > 0) {
+    const sortedLogDates = Array.from(loggedDatesSet).sort()
+    let hasActualGap = false
+    for (let i = 1; i < sortedLogDates.length; i++) {
+      const prev = new Date(sortedLogDates[i - 1] + 'T00:00:00')
+      const curr = new Date(sortedLogDates[i] + 'T00:00:00')
+      const diff = Math.round((curr - prev) / (1000 * 60 * 60 * 24))
+      if (diff > 1) {
+        hasActualGap = true
+        break
+      }
+    }
+    if (!hasActualGap) {
+      freezesAvailable = 1
+    }
+  }
+
   let freezeUsedThisStreak = false
 
   const cursorDate = new Date(todayStr + 'T00:00:00')
@@ -131,11 +153,9 @@ export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes
     if (loggedDatesSet.has(ds)) {
       currentStreak++
     } else {
-      // Check if we can protect a single gap day with a freeze
-      if (freezesAvailable > 0 && currentStreak > 0) {
+      if (freezesAvailable > 0 && currentStreak > 0 && earliestLogDate && earliestLogDate < ds) {
         freezesAvailable--
         freezeUsedThisStreak = true
-        currentStreak++
       } else {
         break
       }
@@ -158,8 +178,7 @@ export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes
       if (diffDays === 1) {
         tempStreak++
       } else if (diffDays === 2) {
-        // Protected 1 skipped day
-        tempStreak += 2
+        tempStreak += 1
       } else {
         tempStreak = 1
       }

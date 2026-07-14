@@ -372,7 +372,7 @@ export const translations = {
     'analyzer.scan5': 'Detecting class types (L/T/P)...',
     'analyzer.errorRead': "AI couldn't read this image clearly",
 
-    'exercise.title': 'Exercise & Health',
+    'exercise.title': 'Exercise',
     'exercise.subtitle': 'Build daily habits, earn XP, and protect your streak.',
     'exercise.markTodayDone': 'Mark Today Done',
     'exercise.checkedInToday': 'Checked In Today!',
@@ -835,7 +835,7 @@ export const translations = {
     'analyzer.scan5': '正在识别课程类型（L/T/P）...',
     'analyzer.errorRead': 'AI 无法清楚读取这张图片',
 
-    'exercise.title': '运动与健康',
+    'exercise.title': '运动',
     'exercise.subtitle': '养成运动好习惯，累积 XP 经验值，保持连续打卡！',
     'exercise.markTodayDone': '完成今日打卡',
     'exercise.checkedInToday': '今日已打卡完成！',

@@ -20,6 +20,15 @@ import { askGroq } from '../lib/groq'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml } from '../lib/utils'
 
+const DEFAULT_TABLE_PLAN = `### 🏋️ Daily Campus Workout Plan
+
+| Phase | Exercise / Activity | Duration / Sets | Intensity | Coach Tips |
+| :--- | :--- | :--- | :--- | :--- |
+| **Warmup 🔥** | Dynamic Arm Circles & High Knees | 5 mins | Light | Warm up joints and get heart rate up smoothly |
+| **Strength 💪** | Bodyweight Circuit (Push-ups & Squats) | 3 sets x 12 reps | Moderate-High | Keep core engaged and maintain clean form |
+| **Cardio ⚡** | Brisk Campus Walk or Stair Climb | 15 mins | Moderate | Maintain a steady breathing pace |
+| **Cooldown 🧘** | Hamstring & Shoulder Stretches | 5 mins | Gentle | Hold each stretch for 30 seconds to recover |`
+
 export default function ExercisePage() {
   const { t } = useLanguage()
   const { showToast } = useToast()
@@ -56,8 +65,14 @@ export default function ExercisePage() {
     loadInitialData(true)
     const savedPlan = localStorage.getItem('axon_exercise_ai_plan_content')
     const savedDate = localStorage.getItem('axon_exercise_ai_plan_date')
-    if (savedPlan && savedDate === todayStr) {
+    if (savedPlan && savedDate === todayStr && savedPlan.includes('|')) {
       setAiPlan(savedPlan)
+    } else {
+      setAiPlan(DEFAULT_TABLE_PLAN)
+      try {
+        localStorage.setItem('axon_exercise_ai_plan_content', DEFAULT_TABLE_PLAN)
+        localStorage.setItem('axon_exercise_ai_plan_date', todayStr)
+      } catch {}
     }
 
     const { data: authSub } = supabase.auth.onAuthStateChange(() => {
@@ -201,13 +216,26 @@ export default function ExercisePage() {
     setAiLoading(true)
     try {
       const context = await buildUserContext()
-      const prompt = `You are a motivating fitness coach. Based on this student's schedule, current workout streak of ${stats.currentStreak} days, and weekly goal of ${weeklyGoal} days/week, generate a concise, practical 3-part workout suggestion for today that fits a student routine. Format in clear Markdown with bullet points.`
+      const prompt = `You are an expert fitness coach for university students. Based on this student's current workout streak of ${stats.currentStreak} days and weekly goal of ${weeklyGoal} days/week, generate a structured daily workout routine tailored for a campus routine.
+IMPORTANT: You MUST format your suggestion ONLY as a clear Markdown Table with exactly these columns:
+| Phase | Exercise / Activity | Duration / Sets | Intensity | Coach Tips |
+
+Include 4 well-structured rows:
+1. Warmup
+2. Strength / Resistance
+3. Cardio / Agility
+4. Cooldown / Mobility
+
+Do NOT use bullet points. Always output a markdown table.`
       const plan = await askGroq(prompt, context)
-      setAiPlan(plan)
-      localStorage.setItem('axon_exercise_ai_plan_content', plan)
+      const finalPlan = plan && plan.includes('|') ? plan : DEFAULT_TABLE_PLAN
+      setAiPlan(finalPlan)
+      localStorage.setItem('axon_exercise_ai_plan_content', finalPlan)
       localStorage.setItem('axon_exercise_ai_plan_date', todayStr)
     } catch {
-      setAiPlan('### Quick Campus Workout\n- **Warmup**: 5 mins dynamic stretches\n- **Cardio/Strength**: 20 mins brisk walk or bodyweight circuits (push-ups, squats, planks)\n- **Cooldown**: 5 mins deep breathing and hamstring stretches')
+      setAiPlan(DEFAULT_TABLE_PLAN)
+      localStorage.setItem('axon_exercise_ai_plan_content', DEFAULT_TABLE_PLAN)
+      localStorage.setItem('axon_exercise_ai_plan_date', todayStr)
     } finally {
       setAiLoading(false)
     }
@@ -258,8 +286,7 @@ export default function ExercisePage() {
       {/* Page Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="page-title mb-1 flex items-center gap-2.5">
-            <Dumbbell className="h-6 w-6 text-blue-400 stroke-[1.5]" />
+          <h1 className="page-title mb-1">
             {t('exercise.title')}
           </h1>
           <p className="text-sm text-slate-400">
@@ -478,19 +505,24 @@ export default function ExercisePage() {
 
         {/* 4. AI WORKOUT SUGGESTION CARD */}
         <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5">
-          <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
-                <Bot className="h-5 w-5 text-blue-400" />
-                {t('exercise.aiTitle')}
-              </h3>
+              <div className="flex items-center gap-2.5">
+                <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-blue-400" />
+                  {t('exercise.aiTitle')}
+                </h3>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 text-[11px] font-bold text-blue-300 shadow-sm">
+                  <span>Table View 📊</span>
+                </span>
+              </div>
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Personalized AI workout routines tailored for students
+                Personalized AI workout routines structured in table format
               </p>
             </div>
             {!aiPlan && !aiLoading && (
               <button
-                className="rounded-xl bg-blue-500 px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-blue-600 transition-colors shadow-md"
+                className="rounded-xl bg-blue-500 px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-blue-600 transition-colors shadow-md self-start sm:self-auto"
                 onClick={generateAiSuggestion}
               >
                 {t('exercise.generatePlan')}
@@ -499,32 +531,46 @@ export default function ExercisePage() {
           </div>
 
           {aiLoading ? (
-            <div className="skeleton h-32 rounded-xl" />
+            <div className="skeleton h-44 rounded-2xl" />
           ) : aiPlan ? (
-            <div className="rounded-xl bg-[#0e1626] p-5 border border-white/5">
+            <div className="rounded-2xl bg-[#0e1626] p-5 sm:p-6 border border-white/5">
               <div
-                className="text-xs sm:text-sm leading-relaxed text-slate-300"
+                className="text-xs sm:text-sm leading-relaxed text-slate-300 overflow-x-auto"
                 dangerouslySetInnerHTML={{ __html: markdownToHtml(aiPlan) }}
               />
-              <div className="flex gap-2 justify-end mt-4 pt-3 border-t border-white/5">
-                <button
-                  className="p-2 text-slate-400 hover:text-red-400 transition-colors"
-                  onClick={deleteAiSuggestion}
-                  title={t('exercise.deletePlan')}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-                <button
-                  className="flex items-center gap-1.5 rounded-lg bg-blue-500/15 px-3.5 py-1.5 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-colors"
-                  onClick={generateAiSuggestion}
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  <span>{t('exercise.regeneratePlan')}</span>
-                </button>
+              <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-white/5">
+                <span className="text-xs text-slate-400 font-medium">
+                  💡 Tailored daily campus workout table
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    className="p-2 text-slate-400 hover:text-red-400 transition-colors rounded-lg hover:bg-white/5"
+                    onClick={deleteAiSuggestion}
+                    title={t('exercise.deletePlan')}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="flex items-center gap-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 px-3.5 py-1.5 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-colors shadow-sm"
+                    onClick={generateAiSuggestion}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    <span>{t('exercise.regeneratePlan')}</span>
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
-            <p className="text-xs sm:text-sm text-slate-400">{t('exercise.aiDesc')}</p>
+            <div className="rounded-2xl bg-[#0e1626] p-6 border border-white/5 text-center">
+              <p className="text-xs sm:text-sm text-slate-400 mb-4">{t('exercise.aiDesc')}</p>
+              <button
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-5 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/20"
+                onClick={generateAiSuggestion}
+              >
+                <Bot className="h-4 w-4" />
+                <span>{t('exercise.generatePlan')}</span>
+              </button>
+            </div>
           )}
         </section>
 
