@@ -5,7 +5,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
   if (!isOpen) return null
   const isIOS = typeof window !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
   const resolvedMaxHeight = (mobileMaxHeight === 'form' || mobileMaxHeight === 'max-h-[83%]')
-    ? (isIOS ? 'max-h-[80%]' : 'max-h-[86%]')
+    ? (isIOS ? 'max-h-[80%]' : 'max-h-[88%]')
     : mobileMaxHeight
 
   return (
