@@ -108,14 +108,24 @@ export default async function handler(req, res) {
 
       const subPayloads = []
 
-      // A. Reminders (always exact time matching)
+      // A. Reminders (always exact time matching, with weekday filtering for weekly repeats)
       const userReminders = reminders?.filter(r => r.user_id === sub.user_id) || []
       userReminders.forEach(r => {
+        if ((r.repeat_type || '').toLowerCase() === 'weekly' && r.created_at) {
+          try {
+            const createdWeekday = new Intl.DateTimeFormat('en-US', { ...options, weekday: 'long' }).format(new Date(r.created_at))
+            if (createdWeekday !== todayDay) return
+          } catch (e) {
+            console.error('Error formatting created_at date for weekly check:', e)
+          }
+        }
+
         subPayloads.push({
           id: `reminder_${r.id}`,
           title: '📚 Axon Reminder',
           body: r.title,
-          url: '/reminders'
+          url: '/reminders',
+          reminderObj: r
         })
       })
 
@@ -274,6 +284,17 @@ export default async function handler(req, res) {
       }
 
       for (const payload of unsentPayloads) {
+        if (payload.reminderObj && (payload.reminderObj.repeat_type || '').toLowerCase() === 'once') {
+          try {
+            await supabase
+              .from('reminders')
+              .update({ is_active: false })
+              .eq('id', payload.reminderObj.id)
+          } catch (err) {
+            console.error(`Failed to auto-close once reminder ${payload.reminderObj.id}:`, err)
+          }
+        }
+
         const promise = webpush.sendNotification(
           subObject,
           JSON.stringify({

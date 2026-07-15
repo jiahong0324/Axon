@@ -47,7 +47,21 @@ self.addEventListener('fetch', e => {
 
 self.addEventListener('notificationclick', e => {
   e.notification.close()
-  e.waitUntil(clients.openWindow('/reminders'))
+  const targetUrl = e.notification.data || '/reminders'
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          if (client.url.includes(targetUrl) || targetUrl === '/') {
+            return client.focus()
+          }
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl)
+      }
+    })
+  )
 })
 
 const seenPushes = new Set()
@@ -77,7 +91,7 @@ self.addEventListener('push', e => {
     icon: '/icons/logo-colored.png',
     badge: '/icons/badge.png',
     vibrate: data.vibrate || [200, 100, 200],
-    data: data.url || '/',
+    data: data.url || '/reminders',
     color: '#000000'
   }
 

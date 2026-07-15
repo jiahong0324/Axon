@@ -51,7 +51,7 @@ export default function NotificationManager() {
   }, [])
 
   function checkNotifications() {
-    return setInterval(async () => {
+    const runCheck = async () => {
       if (!('Notification' in window) || Notification.permission !== 'granted') return
 
       const now = new Date()
@@ -88,7 +88,12 @@ export default function NotificationManager() {
         .eq('is_active', true)
         .eq('reminder_time', currentTime)
 
-      reminders?.forEach(r => {
+      reminders?.forEach(async r => {
+        if ((r.repeat_type || '').toLowerCase() === 'weekly' && r.created_at) {
+          const createdDay = new Date(r.created_at).getDay()
+          if (createdDay !== now.getDay()) return
+        }
+
         const key = `notified_reminder_${r.id}_${todayDate}_${currentTime}`
         if (localStorage.getItem(key)) return
         new Notification('📚 Axon Reminder', {
@@ -98,6 +103,18 @@ export default function NotificationManager() {
           vibrate: [200, 100, 200]
         })
         localStorage.setItem(key, '1')
+
+        if ((r.repeat_type || '').toLowerCase() === 'once') {
+          try {
+            await supabase
+              .from('reminders')
+              .update({ is_active: false })
+              .eq('id', r.id)
+            window.dispatchEvent(new CustomEvent('axon_reminder_updated', { detail: { id: r.id, is_active: false } }))
+          } catch (err) {
+            console.error('Failed to auto-close once reminder:', err)
+          }
+        }
       })
 
       const notifyMinutes = parseInt(localStorage.getItem('axon_notify_minutes') || '10', 10)
@@ -237,7 +254,10 @@ export default function NotificationManager() {
           })
         }
       }
-    }, 60000)
+    }
+
+    setTimeout(runCheck, 2000)
+    return setInterval(runCheck, 60000)
   }
 
   return null
