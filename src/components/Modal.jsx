@@ -4,9 +4,11 @@ import { useEffect } from 'react'
 export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md', mobileMaxHeight = 'max-h-[calc(100%-0.5rem)]', bodyClassName = 'overflow-y-auto overflow-x-hidden scrollbar-hide' }) {
   if (!isOpen) return null
   const isIOS = typeof window !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
-  const resolvedMaxHeight = (mobileMaxHeight === 'form' || mobileMaxHeight === 'max-h-[83%]')
-    ? (isIOS ? 'max-h-[80%]' : 'max-h-[88%]')
-    : mobileMaxHeight
+  const resolvedMaxHeight = mobileMaxHeight === 'form-exam'
+    ? 'max-h-[88%]'
+    : (mobileMaxHeight === 'form' || mobileMaxHeight === 'max-h-[83%]')
+      ? (isIOS ? 'max-h-[80%]' : 'max-h-[88%]')
+      : mobileMaxHeight
 
   return (
     <div
