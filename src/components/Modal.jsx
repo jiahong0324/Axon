@@ -10,8 +10,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-50 flex items-end sm:items-center justify-center bg-black/60 sm:inset-0 sm:p-4 backdrop-blur-sm"
-      style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
+      className="fixed inset-x-0 top-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] sm:inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 sm:p-4 backdrop-blur-sm"
     >
       <div className={`glass flex h-auto ${resolvedMaxHeight} sm:max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-3xl sm:rounded-2xl border border-white/10 pt-6 pb-6 px-5 sm:p-6 transition-transform ${maxWidth}`}>
         <div className="mb-4 flex shrink-0 items-center justify-between gap-4">

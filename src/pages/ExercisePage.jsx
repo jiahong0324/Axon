@@ -636,60 +636,62 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
       </div>
 
       {/* STICKY BOTTOM CHECK-IN BAR (bottom-[101px] for iOS/default; bottom-[69px] for Android) */}
-      <div className={`fixed inset-x-0 ${isAndroid ? 'bottom-[69px]' : 'bottom-[101px]'} md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center`}>
-        <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-white/10 bg-[#131b2e] p-3 shadow-2xl">
-          {/* Activity Tag Selector: exact original flex-wrap for iOS, single-row flex-1 for Android */}
-          <div className={`mb-3.5 flex ${isAndroid ? 'items-center justify-between gap-1 sm:gap-1.5' : 'flex-wrap items-center justify-center gap-1.5'} w-full`}>
-            {ACTIVITY_TYPES.map(type => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setSelectedTag(type)}
-                disabled={stats.isCheckedInToday}
-                className={
-                  isAndroid
-                    ? `flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 rounded-full px-1.5 sm:px-3 py-1.5 text-xs font-medium transition-all ${
-                        selectedTag === type
-                          ? 'bg-[#3B82F6]/25 text-[#38BDF8] border border-[#3B82F6]/50 shadow-sm'
-                          : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.05] hover:text-white'
-                      }`
-                    : `flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-                        selectedTag === type
-                          ? 'bg-[#3B82F6]/25 text-[#38BDF8] border border-[#3B82F6]/50 shadow-sm'
-                          : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.05] hover:text-white'
-                      }`
-                }
-              >
-                <span className={isAndroid ? 'shrink-0' : ''}>{ACTIVITY_ICONS[type]}</span>
-                <span className={isAndroid ? 'truncate' : ''}>{t(`exercise.activity.${type}`) || type}</span>
-              </button>
-            ))}
-          </div>
+      {!celebrationModal && !showGoalSheet && !selectedBadge && (
+        <div className={`fixed inset-x-0 ${isAndroid ? 'bottom-[69px]' : 'bottom-[101px]'} md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center`}>
+          <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-white/10 bg-[#131b2e] p-3 shadow-2xl">
+            {/* Activity Tag Selector: exact original flex-wrap for iOS, single-row flex-1 for Android */}
+            <div className={`mb-3.5 flex ${isAndroid ? 'items-center justify-between gap-1 sm:gap-1.5' : 'flex-wrap items-center justify-center gap-1.5'} w-full`}>
+              {ACTIVITY_TYPES.map(type => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setSelectedTag(type)}
+                  disabled={stats.isCheckedInToday}
+                  className={
+                    isAndroid
+                      ? `flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 rounded-full px-1.5 sm:px-3 py-1.5 text-xs font-medium transition-all ${
+                          selectedTag === type
+                            ? 'bg-[#3B82F6]/25 text-[#38BDF8] border border-[#3B82F6]/50 shadow-sm'
+                            : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.05] hover:text-white'
+                        }`
+                      : `flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                          selectedTag === type
+                            ? 'bg-[#3B82F6]/25 text-[#38BDF8] border border-[#3B82F6]/50 shadow-sm'
+                            : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.05] hover:text-white'
+                        }`
+                  }
+                >
+                  <span className={isAndroid ? 'shrink-0' : ''}>{ACTIVITY_ICONS[type]}</span>
+                  <span className={isAndroid ? 'truncate' : ''}>{t(`exercise.activity.${type}`) || type}</span>
+                </button>
+              ))}
+            </div>
 
-          {/* Mark Today Done button */}
-          <button
-            onClick={handleCheckIn}
-            disabled={stats.isCheckedInToday || checkingIn}
-            className={`w-full min-h-[48px] rounded-full font-bold text-sm md:text-base transition-all flex items-center justify-center gap-2 ${
-              stats.isCheckedInToday
-                ? 'bg-[#10B981] text-white cursor-default'
-                : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-lg shadow-blue-600/20'
-            }`}
-          >
-            {stats.isCheckedInToday ? (
-              <>
-                <Check className="h-5 w-5 stroke-[1.5]" />
-                {t('exercise.checkedInToday')}
-              </>
-            ) : (
-              <>
-                <Flame className="h-5 w-5 stroke-[1.5]" />
-                {t('exercise.markTodayDone')} (+20 XP)
-              </>
-            )}
-          </button>
+            {/* Mark Today Done button */}
+            <button
+              onClick={handleCheckIn}
+              disabled={stats.isCheckedInToday || checkingIn}
+              className={`w-full min-h-[48px] rounded-full font-bold text-sm md:text-base transition-all flex items-center justify-center gap-2 ${
+                stats.isCheckedInToday
+                  ? 'bg-[#10B981] text-white cursor-default'
+                  : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-lg shadow-blue-600/20'
+              }`}
+            >
+              {stats.isCheckedInToday ? (
+                <>
+                  <Check className="h-5 w-5 stroke-[1.5]" />
+                  {t('exercise.checkedInToday')}
+                </>
+              ) : (
+                <>
+                  <Flame className="h-5 w-5 stroke-[1.5]" />
+                  {t('exercise.markTodayDone')} (+20 XP)
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* CELEBRATION MODAL */}
       <Modal isOpen={Boolean(celebrationModal)} onClose={() => setCelebrationModal(null)} title="Check-in Complete!">

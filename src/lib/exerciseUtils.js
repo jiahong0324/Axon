@@ -67,7 +67,20 @@ export function getLevelInfo(xpTotal, t) {
     nextLevelXP = 250
   }
 
-  const title = t ? t(titleKey) : titleKey
+  const defaultTitles = {
+    'exercise.levelTitles.1': 'Novice Mover',
+    'exercise.levelTitles.2': 'Active Explorer',
+    'exercise.levelTitles.3': 'Fitness Buff',
+    'exercise.levelTitles.4': 'Dedicated Athlete',
+    'exercise.levelTitles.5': 'Streak Master',
+    'exercise.levelTitles.6': 'Elite Performer'
+  }
+
+  let title = t ? t(titleKey) : (defaultTitles[titleKey] || titleKey)
+  if (title === titleKey && defaultTitles[titleKey]) {
+    title = defaultTitles[titleKey]
+  }
+
   const progressPercent = Math.min(100, Math.max(0, Math.round(((xp - currentBaseXP) / (nextLevelXP - currentBaseXP)) * 100)))
   const xpNeeded = Math.max(0, nextLevelXP - xp)
 
@@ -343,9 +356,10 @@ export async function fetchExerciseData(userId) {
 
   // 2. Read from Supabase profile, auth user_metadata, and exercise_logs table
   try {
-    const [profileRes, logsRes] = await Promise.all([
+    const [profileRes, logsRes, activityRes] = await Promise.all([
       supabase.from('profiles').select('weekly_exercise_goal, xp_total, streak_freezes_available').eq('id', userId).single(),
-      supabase.from('exercise_logs').select('*').eq('user_id', userId).order('log_date', { ascending: false })
+      supabase.from('exercise_logs').select('*').eq('user_id', userId).order('log_date', { ascending: false }),
+      supabase.from('activity_log').select('*').eq('user_id', userId).eq('entity_type', 'exercise').order('created_at', { ascending: false })
     ])
 
     if (profileRes.data) {
@@ -358,9 +372,29 @@ export async function fetchExerciseData(userId) {
     const metaLogs = Array.isArray(meta.axon_exercise_logs) ? meta.axon_exercise_logs : []
     const tableLogs = (logsRes.data && Array.isArray(logsRes.data)) ? logsRes.data : []
 
-    // Merge and deduplicate logs by log_date across local cache + metadata + database table
+    const activityLogs = (activityRes.data && Array.isArray(activityRes.data)) ? activityRes.data.map(a => {
+      const d = new Date(a.created_at)
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      const ds = `${y}-${m}-${day}`
+      let actType = a.entity_name || 'Gym'
+      if (a.action && a.action.includes('(') && a.action.includes(')')) {
+        const match = a.action.match(/\((.*?)\)/)
+        if (match && match[1]) actType = match[1]
+      }
+      return {
+        id: a.id || `act-${ds}`,
+        user_id: userId,
+        log_date: ds,
+        activity_type: actType,
+        xp_earned: 20
+      }
+    }) : []
+
+    // Merge and deduplicate logs by log_date across local cache + metadata + database table + activity_log
     const mergedMap = new Map()
-    for (const l of [...logs, ...metaLogs, ...tableLogs]) {
+    for (const l of [...logs, ...metaLogs, ...tableLogs, ...activityLogs]) {
       if (l && l.log_date) {
         if (!mergedMap.has(l.log_date)) {
           mergedMap.set(l.log_date, l)
@@ -379,8 +413,13 @@ export async function fetchExerciseData(userId) {
       weeklyGoal = meta.axon_weekly_goal
     }
 
-    // Auto-sync missing local/metadata check-ins up to SQL exercise_logs & activity_log when student is logged in
-    if (isSelf && mergedLogs.length > 0) {
+    const calculatedMinXp = mergedLogs.reduce((acc, cur) => acc + (cur.xp_earned || 20), 0)
+    if (calculatedMinXp > xpTotal) {
+      xpTotal = calculatedMinXp
+    }
+
+    // Auto-sync missing check-ins up to SQL exercise_logs & activity_log
+    if (mergedLogs.length > 0) {
       const tableDates = new Set(tableLogs.map(t => t.log_date))
       const missingLogs = mergedLogs.filter(l => l && l.log_date && !tableDates.has(l.log_date))
       if (missingLogs.length > 0) {
@@ -393,11 +432,20 @@ export async function fetchExerciseData(userId) {
               xp_earned: missing.xp_earned || 20
             }, { onConflict: 'user_id,log_date' })
           } catch {}
-          try {
-            await logActivity(`Exercise check-in (${missing.activity_type || 'Gym'})`, 'exercise', missing.activity_type || 'Gym', userId)
-          } catch {}
+          if (isSelf) {
+            try {
+              await logActivity(`Exercise check-in (${missing.activity_type || 'Gym'})`, 'exercise', missing.activity_type || 'Gym', userId)
+            } catch {}
+          }
         })).catch(() => {})
 
+        try {
+          await supabase.from('profiles').update({
+            xp_total: xpTotal,
+            streak_freezes_available: freezesAvailable
+          }).eq('id', userId)
+        } catch {}
+      } else if (profileRes.data && (profileRes.data.xp_total < xpTotal || profileRes.data.streak_freezes_available !== freezesAvailable)) {
         try {
           await supabase.from('profiles').update({
             xp_total: xpTotal,
