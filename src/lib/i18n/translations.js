@@ -302,7 +302,7 @@ export const translations = {
     'ai.errorPrefix': 'Oops! Something went wrong: {message}',
     'ai.welcome1': 'Welcome! I am your dedicated AI Study Helper.',
     'ai.welcome2': 'How can I support your software engineering studies today? You can ask me to explain algorithms, summarize notes, generate mock interview questions, or plan out your semester schedules!',
-    'ai.welcome3': 'Note: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, or active reminders!',
+    'ai.welcome3': 'Note: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, active reminders, exam results & CGPA, or your exercise streak & workout history!',
 
     'auth.signIn': 'Sign In',
     'auth.signUp': 'Sign Up',
@@ -765,7 +765,7 @@ export const translations = {
     'ai.errorPrefix': '糟糕，出现错误：{message}',
     'ai.welcome1': '欢迎！我是你的 AI 学习助手。',
     'ai.welcome2': '今天想让我怎样帮助你的软件工程学习？你可以让我解释算法、总结笔记、生成面试练习题，或规划整个学期的学习安排！',
-    'ai.welcome3': '注意：我可以安全读取你的学习数据。你可以询问课表课程、待完成作业、即将到来的考试或启用中的提醒！',
+    'ai.welcome3': '注意：我可以安全读取你的学习数据。你可以询问课表课程、待完成作业、即将到来的考试、成绩与CGPA、运动打卡记录及健身等级！',
 
     'auth.signIn': '登录',
     'auth.signUp': '注册',

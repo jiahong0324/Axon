@@ -318,10 +318,18 @@ export async function fetchExerciseData(userId) {
   let xpTotal = 0
   let freezesAvailable = 1
 
-  // 1. Read from local cache first (global fallback + user specific)
+  let currentUser = null
   try {
-    const cachedGlobal = JSON.parse(localStorage.getItem('axon_exercise_data_global') || 'null')
-    const cachedUser = JSON.parse(localStorage.getItem(cacheKey) || 'null')
+    const { data: { user } } = await supabase.auth.getUser()
+    currentUser = user
+  } catch (e) {}
+
+  const isSelf = Boolean(currentUser && (!userId || currentUser.id === userId))
+
+  // 1. Read from local cache first (only fall back to global if self or no userId specified)
+  try {
+    const cachedUser = userId ? JSON.parse(localStorage.getItem(cacheKey) || 'null') : null
+    const cachedGlobal = isSelf ? JSON.parse(localStorage.getItem('axon_exercise_data_global') || 'null') : null
     const cached = cachedUser || cachedGlobal
     if (cached) {
       if (Array.isArray(cached.logs)) logs = cached.logs
@@ -335,8 +343,7 @@ export async function fetchExerciseData(userId) {
 
   // 2. Read from Supabase profile, auth user_metadata, and exercise_logs table
   try {
-    const [userRes, profileRes, logsRes] = await Promise.all([
-      supabase.auth.getUser(),
+    const [profileRes, logsRes] = await Promise.all([
       supabase.from('profiles').select('weekly_exercise_goal, xp_total, streak_freezes_available').eq('id', userId).single(),
       supabase.from('exercise_logs').select('*').eq('user_id', userId).order('log_date', { ascending: false })
     ])
@@ -347,7 +354,7 @@ export async function fetchExerciseData(userId) {
       if (typeof profileRes.data.streak_freezes_available === 'number') freezesAvailable = profileRes.data.streak_freezes_available
     }
 
-    const meta = userRes?.data?.user?.user_metadata || {}
+    const meta = isSelf ? (currentUser?.user_metadata || {}) : {}
     const metaLogs = Array.isArray(meta.axon_exercise_logs) ? meta.axon_exercise_logs : []
     const tableLogs = (logsRes.data && Array.isArray(logsRes.data)) ? logsRes.data : []
 
@@ -365,30 +372,60 @@ export async function fetchExerciseData(userId) {
     if (mergedLogs.length > 0) {
       logs = mergedLogs
     }
-    if (typeof meta.axon_xp_total === 'number') {
+    if (isSelf && typeof meta.axon_xp_total === 'number') {
       xpTotal = Math.max(xpTotal, meta.axon_xp_total)
     }
-    if (typeof meta.axon_weekly_goal === 'number') {
+    if (isSelf && typeof meta.axon_weekly_goal === 'number') {
       weeklyGoal = meta.axon_weekly_goal
+    }
+
+    // Auto-sync missing local/metadata check-ins up to SQL exercise_logs & activity_log when student is logged in
+    if (isSelf && mergedLogs.length > 0) {
+      const tableDates = new Set(tableLogs.map(t => t.log_date))
+      const missingLogs = mergedLogs.filter(l => l && l.log_date && !tableDates.has(l.log_date))
+      if (missingLogs.length > 0) {
+        Promise.all(missingLogs.map(async (missing) => {
+          try {
+            await supabase.from('exercise_logs').upsert({
+              user_id: userId,
+              log_date: missing.log_date,
+              activity_type: missing.activity_type || 'Gym',
+              xp_earned: missing.xp_earned || 20
+            }, { onConflict: 'user_id,log_date' })
+          } catch {}
+          try {
+            await logActivity(`Exercise check-in (${missing.activity_type || 'Gym'})`, 'exercise', missing.activity_type || 'Gym', userId)
+          } catch {}
+        })).catch(() => {})
+
+        try {
+          await supabase.from('profiles').update({
+            xp_total: xpTotal,
+            streak_freezes_available: freezesAvailable
+          }).eq('id', userId)
+        } catch {}
+      }
     }
   } catch (e) {}
 
-  // Also sync weekly freeze reward check
-  const checkWeekKey = `axon_freeze_awarded_week_${userId}`
-  const todayDate = new Date()
-  const weekNo = getWeekNumber(todayDate)
-  if (localStorage.getItem(checkWeekKey) !== String(weekNo)) {
-    freezesAvailable += 1
-    localStorage.setItem(checkWeekKey, String(weekNo))
-    try {
-      await supabase.from('profiles').update({ streak_freezes_available: freezesAvailable }).eq('id', userId)
-    } catch {}
+  // Also sync weekly freeze reward check only if self
+  if (isSelf) {
+    const checkWeekKey = `axon_freeze_awarded_week_${userId}`
+    const todayDate = new Date()
+    const weekNo = getWeekNumber(todayDate)
+    if (localStorage.getItem(checkWeekKey) !== String(weekNo)) {
+      freezesAvailable += 1
+      localStorage.setItem(checkWeekKey, String(weekNo))
+      try {
+        await supabase.from('profiles').update({ streak_freezes_available: freezesAvailable }).eq('id', userId)
+      } catch {}
+    }
   }
 
   const result = { logs, weeklyGoal, xpTotal, freezesAvailable }
   try {
-    localStorage.setItem(cacheKey, JSON.stringify(result))
-    localStorage.setItem('axon_exercise_data_global', JSON.stringify(result))
+    if (userId) localStorage.setItem(cacheKey, JSON.stringify(result))
+    if (isSelf) localStorage.setItem('axon_exercise_data_global', JSON.stringify(result))
   } catch {}
 
   return result
@@ -485,12 +522,12 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
   } catch {}
 
   try {
-    await supabase.from('exercise_logs').insert({
+    await supabase.from('exercise_logs').upsert({
       user_id: userId,
       log_date: logDate,
       activity_type: activityType,
       xp_earned: xpEarned
-    })
+    }, { onConflict: 'user_id,log_date' })
     await supabase.from('profiles').update({
       xp_total: newXpTotal,
       streak_freezes_available: newFreezes
@@ -498,7 +535,7 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
   } catch {}
 
   try {
-    await logActivity(`Exercise check-in (${activityType})`, 'exercise', activityType)
+    await logActivity(`Exercise check-in (${activityType})`, 'exercise', activityType, userId)
   } catch {}
 
   return {

@@ -1,5 +1,7 @@
 export const STUDY_SYSTEM_PROMPT = `You are Axon, a helpful AI study assistant for a university student in Malaysia studying Software Engineering. Be concise, friendly, and academically helpful. Format responses clearly using bullet points when appropriate. Keep responses under 300 words unless asked for more detail. IMPORTANT: When using bulleted lists, do NOT put an empty line between the bullet point and the text that belongs to it. Keep them together. If the user asks for a workout suggestion or asks "Show in table" or "📊 Show in table" or "表格展示", always format the data or workout routine into a neat, clean Markdown table with clear columns.`
 
+export const MANAGER_SYSTEM_PROMPT = `You are Axon, the intelligent Manager Control Center AI Assistant for the university platform. You have full, secure, comprehensive access to all student records, check-ins, exercise stats, assignments, timetables, exams, feedback tickets, announcements, blog posts, and system activities provided in the system context. Be concise, professional, friendly, and highly detailed when answering management queries. Always use the provided database context directly to answer questions accurately without claiming lack of access. Format responses cleanly using bullet points or Markdown tables when appropriate. IMPORTANT: When using bulleted lists, do NOT put an empty line between the bullet point and the text that belongs to it. Keep them together.`
+
 export function getPreferenceContext() {
   const language = localStorage.getItem('aiLanguage') || 'English'
   const style = localStorage.getItem('aiStyle') || 'Casual'
@@ -7,13 +9,16 @@ export function getPreferenceContext() {
 }
 
 export async function askGroq(prompt, systemContext = '', history = []) {
+  const isManager = systemContext.includes('=== MANAGER AI CONTROL CENTER') || systemContext.includes('=== MANAGER PROFILE ===')
+  const basePrompt = isManager ? MANAGER_SYSTEM_PROMPT : STUDY_SYSTEM_PROMPT
+
   const response = await fetch('/api/groq', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       mode: 'chat',
       prompt,
-      systemContext: `${STUDY_SYSTEM_PROMPT}\n\n${systemContext || ''}${getPreferenceContext()}`,
+      systemContext: `${basePrompt}\n\n${systemContext || ''}${getPreferenceContext()}`,
       history
     })
   })

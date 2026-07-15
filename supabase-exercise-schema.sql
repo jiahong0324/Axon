@@ -33,6 +33,21 @@ create policy "Users can delete their own exercise logs."
   on public.exercise_logs for delete
   using (auth.uid() = user_id);
 
+create or replace function public.check_is_manager(user_id uuid default auth.uid())
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.profiles
+    where id = user_id
+      and role = 'manager'
+  );
+$$;
+
 create policy "Managers can view all exercise logs."
   on public.exercise_logs for select
-  using (exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'manager'));
+  using (public.check_is_manager() or exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'manager'));

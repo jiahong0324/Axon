@@ -41,7 +41,7 @@ const managerActions = [
 
 const studentWelcome = {
   role: 'assistant',
-  content: `Selamat datang! I am your dedicated AI Study Helper.\n\nHow can I support your software engineering studies today? You can ask me to explain algorithms, summarize notes, generate mock interview questions, or plan out your semester schedules!\n\nNote: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, active reminders, or your academic exam results & CGPA!`,
+  content: `Selamat datang! I am your dedicated AI Study Helper.\n\nHow can I support your software engineering studies today? You can ask me to explain algorithms, summarize notes, generate mock interview questions, or plan out your semester schedules!\n\nNote: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, active reminders, academic exam results & CGPA, or your exercise streak, workout history & fitness level!`,
   timestamp: new Date()
 }
 
