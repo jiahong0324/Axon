@@ -4,12 +4,14 @@ import { formatTime } from './utils'
 import { calculateOverallCGPA, calculateSemesterGPA } from './tarumtGrading'
 import { fetchExerciseData, calculateStreakAndStats, getLevelInfo } from './exerciseUtils'
 import { translations } from './i18n/translations'
+import { DEFAULT_PREFERENCES } from './preferences'
+import { faqs } from '../pages/landing/LandingFAQ'
 
 export async function buildUserContext() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return ''
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
   const isManager = profile?.role === 'manager'
 
   const today = new Date()
@@ -41,7 +43,7 @@ export async function buildUserContext() {
       supabase.from('classes').select('*'),
       supabase.from('assignments').select('*').neq('status', 'Done'),
       supabase.from('exams').select('*').gte('exam_date', todayStr).order('exam_date'),
-      supabase.from('blog_posts').select('id, title, category, views_count, likes_count, created_at').order('created_at', { ascending: false }),
+      supabase.from('blog_posts').select('id, slug, title, category, read_time, description, views_count, likes_count, created_at').order('created_at', { ascending: false }),
       supabase.from('student_semesters').select('*').order('created_at'),
       supabase.from('student_semester_courses').select('*').order('created_at'),
       supabase.from('reminders').select('*').eq('is_active', true),
@@ -111,7 +113,7 @@ ${feedback.filter(f => f.status !== 'pending').slice(0, 15).map(f => `- [${(f.st
 ${announcements.length === 0 ? 'No announcements.' : announcements.slice(0, 10).map(a => `- [${(a.type || 'info').toUpperCase()}] "${a.title}": ${a.message} (Expires: ${a.expires_at || 'No expiration'})`).join('\n')}
 
 === BLOG POSTS OVERVIEW ===
-${blogPosts.length === 0 ? 'No blog posts.' : blogPosts.slice(0, 10).map(b => `- "${b.title}" [Category: ${b.category}] (${b.views_count || 0} views, ${b.likes_count || 0} likes)`).join('\n')}
+${blogPosts.length === 0 ? 'No blog posts.' : blogPosts.slice(0, 15).map(b => `- "${b.title}" [Category: ${b.category}] (${b.read_time}, ${b.views_count || 0} views, ${b.likes_count || 0} likes) - Slug: /blog/${b.slug}`).join('\n')}
 
 === STUDENT ASSIGNMENTS & UPCOMING EXAMS ===
 Active Assignments:
@@ -127,17 +129,21 @@ ${semesters.length === 0 ? 'No student semester records recorded.' : semesters.s
 
 === RECENT STUDENT AI STUDY TOPICS & QUESTIONS ===
 ${aiChats.length === 0 ? 'No recent student AI queries.' : aiChats.filter(c => c.role === 'user').slice(0, 15).map(c => `- ${getStudentName(c.user_id)} asked AI: "${c.content.slice(0, 100)}${c.content.length > 100 ? '...' : ''}"`).join('\n')}
+
+=== FREQUENTLY ASKED QUESTIONS (Axon FAQ) ===
+${faqs.map(f => `- Q: ${f.question}\n  A: ${f.answer}`).join('\n\n')}
 `.trim()
   }
 
-  const [classesRes, assignmentsRes, examsRes, remindersRes, semsRes, coursesRes, exerciseData] = await Promise.all([
+  const [classesRes, assignmentsRes, examsRes, remindersRes, semsRes, coursesRes, exerciseData, blogRes] = await Promise.all([
     supabase.from('classes').select('*').eq('user_id', user.id),
     supabase.from('assignments').select('*').eq('user_id', user.id).neq('status', 'Done'),
     supabase.from('exams').select('*').eq('user_id', user.id).gte('exam_date', todayStr).order('exam_date'),
     supabase.from('reminders').select('*').eq('user_id', user.id).eq('is_active', true),
     supabase.from('student_semesters').select('*').eq('user_id', user.id).order('created_at'),
     supabase.from('student_semester_courses').select('*').eq('user_id', user.id).order('created_at'),
-    fetchExerciseData(user.id)
+    fetchExerciseData(user.id),
+    supabase.from('blog_posts').select('slug, title, category, read_time, description, views_count, likes_count').order('created_at', { ascending: false }).limit(20)
   ])
 
   let classes = classesRes.data || []
@@ -182,16 +188,32 @@ ${aiChats.length === 0 ? 'No recent student AI queries.' : aiChats.filter(c => c
   const assignments = assignmentsRes.data || []
   const exams = examsRes.data || []
   const reminders = remindersRes.data || []
+  const blogPosts = blogRes.data || []
   const todayClasses = classes.filter(c => c.is_replacement ? c.date === todayStr : c.day === dayName)
 
   const exerciseStats = calculateStreakAndStats(exerciseData.logs, exerciseData.weeklyGoal, exerciseData.freezesAvailable, todayStr, exerciseData.xpTotal)
   const exerciseLevel = getLevelInfo(exerciseData.xpTotal, (key) => translations.en[key] || key)
   const unlockedBadges = exerciseStats.badgeStatuses.filter(b => b.unlocked)
 
+  const university = profile?.university || user.user_metadata?.university || 'Not specified'
+  const course = profile?.course || user.user_metadata?.course || 'Not specified'
+  const studentId = profile?.student_id || user.user_metadata?.student_id || 'Not specified'
+  const prefs = { ...DEFAULT_PREFERENCES, ...(user.user_metadata?.preferences || {}) }
+  const aiLanguage = prefs.aiLanguage || 'English'
+  const aiStyle = prefs.aiStyle || 'Casual'
+  const reminderLeadTime = prefs.reminderLeadTime || '3 days'
+  const firstDay = prefs.firstDay || 'Monday'
+  const timeFormat = prefs.timeFormat || '24hr'
+
   return `
-=== STUDENT PROFILE ===
+=== STUDENT PROFILE & SETTINGS ===
 Name: ${displayName}
 Email: ${user.email}
+University: ${university}
+Course / Major: ${course}
+Student ID: ${studentId}
+AI Preferences: Language (${aiLanguage}), Style (${aiStyle})
+Planner Settings: First Day of Week (${firstDay}), Time Format (${timeFormat}), Deadline Alert Lead Time (${reminderLeadTime})
 Today: ${dayName}, ${format(today, 'dd MMMM yyyy')}
 
 === ACADEMIC EXAM RESULTS & CGPA ===
@@ -227,6 +249,12 @@ Checked In Today (${todayStr}): ${exerciseStats.isCheckedInToday ? `Yes (${exerc
 Unlocked Badges (${unlockedBadges.length} total): ${unlockedBadges.map(b => b.titleKey).join(', ') || 'None yet'}
 Recent Workout History:
 ${exerciseData.logs.length === 0 ? 'No workouts logged yet.' : exerciseData.logs.slice(0, 10).map(l => `- ${l.log_date}: ${l.activity_type || 'Workout'} (+${l.xp_earned || 20} XP)`).join('\n')}
+
+=== PUBLIC BLOG ARTICLES & STUDY GUIDES ===
+${blogPosts.length === 0 ? 'No blog posts found.' : blogPosts.map(p => `- [${p.category}] "${p.title}" (${p.read_time}, ${p.views_count || 0} views, ${p.likes_count || 0} likes)\n  Slug: /blog/${p.slug}\n  Summary: ${p.description}`).join('\n\n')}
+
+=== FREQUENTLY ASKED QUESTIONS (Axon FAQ) ===
+${faqs.map(f => `- Q: ${f.question}\n  A: ${f.answer}`).join('\n\n')}
 `.trim()
 }
 

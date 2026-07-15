@@ -12,7 +12,9 @@ import {
   Table,
   Trash2,
   ImagePlus,
-  X
+  X,
+  Activity,
+  Users
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { buildUserContext } from '../lib/buildUserContext'
@@ -34,20 +36,22 @@ const studentActions = [
 ]
 
 const managerActions = [
-  { icon: FileText, mobile: 'Summarize', desktop: 'Summarize feedback', prompt: 'Summarize the recent student feedback' },
-  { icon: Sparkles, mobile: 'Draft', desktop: 'Draft announcement', prompt: 'Draft a new announcement' },
-  { icon: ListChecks, mobile: 'Review', desktop: 'Review activity', prompt: 'Review recent system activity' }
+  { icon: FileText, mobile: 'Summarize', desktop: 'Summarize feedback', prompt: 'Summarize the recent student feedback tickets' },
+  { icon: Sparkles, mobile: 'Draft', desktop: 'Draft announcement', prompt: 'Draft a new announcement for students' },
+  { icon: Activity, mobile: 'Check-ins', desktop: 'Check-in activity', prompt: 'Show me the recent student check-in and workout activity across all students' },
+  { icon: Users, mobile: 'Students', desktop: 'Student overview', prompt: 'Give me an overview of all active students and their assignments/exams' },
+  { icon: ListChecks, mobile: 'Review', desktop: 'System activity', prompt: 'Review recent system activity logs across all students' }
 ]
 
 const studentWelcome = {
   role: 'assistant',
-  content: `Selamat datang! I am your dedicated AI Study Helper.\n\nHow can I support your software engineering studies today? You can ask me to explain algorithms, summarize notes, generate mock interview questions, or plan out your semester schedules!\n\nNote: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, active reminders, academic exam results & CGPA, or your exercise streak, workout history & fitness level!`,
+  content: `Selamat datang! I am your dedicated AI Study Helper.\n\nHow can I support your software engineering studies today? You can ask me to explain algorithms, summarize notes, generate mock interview questions, or plan out your semester schedules!\n\nNote: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, active reminders, academic exam results & CGPA, your exercise streak & workout history, or study articles & FAQ from our Public Landing Blog! I also know your Settings profile (University & Major) to tailor tips to your course!`,
   timestamp: new Date()
 }
 
 const managerWelcome = {
   role: 'assistant',
-  content: `Welcome to the Manager AI Control Center!\n\nI have full secure access to your university database. You can ask me to summarize student feedback, draft new announcements, or analyze system overviews!`,
+  content: `Welcome to the Manager AI Control Center!\n\nI have full secure access to your university database and all student data. You can ask me about student profiles, activity logs, daily check-ins & exercise stats, feedback tickets, announcements, blog posts, assignments, exams, and academic performance reports!`,
   timestamp: new Date()
 }
 
@@ -464,5 +468,5 @@ function TypingIndicator() {
 }
 
 function isWelcomeMessage(content = '') {
-  return content.includes('secure access to your database')
+  return content.includes('secure access to your database') || content.includes('secure access to your university database') || content.includes('Welcome to the Manager AI Control Center')
 }

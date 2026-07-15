@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
 
-const faqs = [
+export const faqs = [
   {
     question: 'What is Axon?',
     answer: 'Axon is a student productivity platform that brings your timetable, assignments, exams, reminders, study articles, and AI learning support into one organized workspace.'
