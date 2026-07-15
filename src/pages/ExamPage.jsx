@@ -257,14 +257,14 @@ function ExamCard({ exam, result, deleteExam, onEdit }) {
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-3 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
         <div className="flex items-center gap-3 text-slate-400 bg-black/20 rounded-2xl p-3 border border-white/5 transition-colors hover:bg-black/30">
            <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
              <span className="text-sm">📅</span>
            </div>
-           <div className="min-w-0">
+           <div className="min-w-0 flex-1">
              <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Date</p>
-             <p className="text-[13px] font-semibold text-slate-200 truncate">{dateLabel(exam.exam_date)}</p>
+             <p className="text-[13px] font-semibold text-slate-200 break-words">{dateLabel(exam.exam_date)}</p>
            </div>
         </div>
 
@@ -272,19 +272,19 @@ function ExamCard({ exam, result, deleteExam, onEdit }) {
            <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
              <span className="text-sm">🕒</span>
            </div>
-           <div className="min-w-0">
+           <div className="min-w-0 flex-1">
              <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Time</p>
-             <p className="text-[13px] font-semibold text-slate-200 truncate">{exam.start_time && exam.end_time ? `${formatTime(exam.start_time)} \u2013 ${formatTime(exam.end_time)}` : 'TBA'}</p>
+             <p className="text-[13px] font-semibold text-slate-200 break-words">{exam.start_time && exam.end_time ? `${formatTime(exam.start_time)} \u2013 ${formatTime(exam.end_time)}` : 'TBA'}</p>
            </div>
         </div>
         
-        <div className="col-span-2 flex items-center gap-3 text-slate-400 bg-black/20 rounded-2xl p-3 border border-white/5 transition-colors hover:bg-black/30">
+        <div className="col-span-1 sm:col-span-2 flex items-center gap-3 text-slate-400 bg-black/20 rounded-2xl p-3 border border-white/5 transition-colors hover:bg-black/30">
            <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
              <MapPin className="h-4 w-4 text-theme-400" />
            </div>
            <div className="min-w-0 flex-1">
              <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Venue</p>
-             <p className="text-[13px] font-semibold text-slate-200 truncate">{exam.venue || 'TBA'}</p>
+             <p className="text-[13px] font-semibold text-slate-200 break-words">{exam.venue || 'TBA'}</p>
            </div>
         </div>
       </div>
