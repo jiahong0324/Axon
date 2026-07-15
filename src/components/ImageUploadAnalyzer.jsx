@@ -65,13 +65,36 @@ Each object must have:
 }
 Ensure letter grades match TAR UMT standard grades (A+, A, A-, B+, B, B-, C+, C, F). Return ONLY valid JSON array.`
 
-const statusMessages = [
-  'Scanning the timetable grid...',
-  'Identifying subject codes...',
-  'Extracting classroom details...',
-  'Converting lecture times...',
-  'Detecting class types (L/T/P)...'
-]
+const statusMessages = {
+  timetable: [
+    'Scanning the timetable grid...',
+    'Identifying subject codes...',
+    'Extracting classroom details...',
+    'Converting lecture times...',
+    'Detecting class types (L/T/P)...'
+  ],
+  exam: [
+    'Scanning the exam schedule...',
+    'Reading subject names...',
+    'Extracting exam dates...',
+    'Detecting start & end times...',
+    'Identifying exam venues...'
+  ],
+  assignment: [
+    'Scanning for assignments...',
+    'Reading task titles...',
+    'Extracting deadlines...',
+    'Detecting priority levels...',
+    'Identifying subject names...'
+  ],
+  result: [
+    'Scanning the result slip...',
+    'Reading course codes...',
+    'Extracting grades...',
+    'Counting credit hours...',
+    'Identifying semester info...'
+  ]
+}
 const colors = ['blue', 'green', 'purple', 'cyan', 'red', 'yellow']
 const colorClasses = {
   blue: 'bg-theme-500',
@@ -92,11 +115,14 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
   const [error, setError] = useState('')
   const [isImporting, setIsImporting] = useState(false)
 
+  const messages = statusMessages[type] || statusMessages.timetable
+
   useEffect(() => {
     if (step !== 'analyzing') return undefined
-    const id = setInterval(() => setMessageIndex(i => (i + 1) % statusMessages.length), 2000)
+    setMessageIndex(0)
+    const id = setInterval(() => setMessageIndex(i => (i + 1) % messages.length), 2000)
     return () => clearInterval(id)
-  }, [step])
+  }, [step, type])
 
   function pickFile(nextFile) {
     if (!nextFile) return
@@ -244,10 +270,21 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
               </div>
             </div>
             <div className="space-y-2 max-w-sm">
-              <h3 className="text-xl font-bold text-white tracking-tight">AI is Reading Your Image</h3>
-              <p className="text-emerald-400 font-semibold text-sm animate-pulse">{statusMessages[messageIndex]}</p>
+              <h3 className="text-xl font-bold text-white tracking-tight">
+                {type === 'exam' ? 'Reading Your Exam Schedule'
+                  : type === 'assignment' ? 'Reading Your Assignments'
+                  : type === 'result' ? 'Reading Your Result Slip'
+                  : 'AI is Reading Your Image'}
+              </h3>
+              <p className="text-emerald-400 font-semibold text-sm animate-pulse">{messages[messageIndex]}</p>
               <p className="text-xs text-slate-500 leading-relaxed">
-                This takes a few seconds. We are extracting classes, dates, and times directly from your screenshot.
+                {type === 'exam'
+                  ? 'This takes a few seconds. We are extracting exam dates, times, and venues from your screenshot.'
+                  : type === 'assignment'
+                  ? 'This takes a few seconds. We are extracting assignment titles, deadlines, and priorities from your screenshot.'
+                  : type === 'result'
+                  ? 'This takes a few seconds. We are extracting your grades, credit hours, and course names from your result slip.'
+                  : 'This takes a few seconds. We are extracting classes, dates, and times directly from your screenshot.'}
               </p>
             </div>
             <div className="flex justify-center gap-1.5 pt-2">
