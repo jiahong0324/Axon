@@ -635,8 +635,8 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
         <div className="h-44 sm:h-24 w-full shrink-0 pointer-events-none" />
       </div>
 
-      {/* STICKY BOTTOM CHECK-IN BAR (bottom-[100px] for iOS/default; bottom-[69px] for Android) */}
-      <div className={`fixed inset-x-0 ${isAndroid ? 'bottom-[69px]' : 'bottom-[100px]'} md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center`}>
+      {/* STICKY BOTTOM CHECK-IN BAR (bottom-[101px] for iOS/default; bottom-[69px] for Android) */}
+      <div className={`fixed inset-x-0 ${isAndroid ? 'bottom-[69px]' : 'bottom-[101px]'} md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center`}>
         <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-white/10 bg-[#131b2e] p-3 shadow-2xl">
           {/* Activity Tag Selector: exact original flex-wrap for iOS, single-row flex-1 for Android */}
           <div className={`mb-3.5 flex ${isAndroid ? 'items-center justify-between gap-1 sm:gap-1.5' : 'flex-wrap items-center justify-center gap-1.5'} w-full`}>
