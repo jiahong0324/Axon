@@ -355,13 +355,18 @@ export default function TimetablePage() {
   const minSwipeDistance = 50
 
   const onTouchStart = (e) => {
+    if (showForm || analyzerOpen || showAddProfileModal) return
     setTouchEnd(null)
     setTouchStart({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY })
   }
 
-  const onTouchMove = (e) => setTouchEnd({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY })
+  const onTouchMove = (e) => {
+    if (showForm || analyzerOpen || showAddProfileModal) return
+    setTouchEnd({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY })
+  }
 
   const onTouchEndHandler = () => {
+    if (showForm || analyzerOpen || showAddProfileModal) return
     if (!touchStart || !touchEnd) return
     const distanceX = touchStart.x - touchEnd.x
     const distanceY = touchStart.y - touchEnd.y
