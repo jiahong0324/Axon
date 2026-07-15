@@ -365,7 +365,7 @@ export async function fetchExerciseData(userId) {
     if (profileRes.data) {
       if (typeof profileRes.data.weekly_exercise_goal === 'number') weeklyGoal = profileRes.data.weekly_exercise_goal
       if (typeof profileRes.data.xp_total === 'number') xpTotal = Math.max(xpTotal, profileRes.data.xp_total)
-      if (typeof profileRes.data.streak_freezes_available === 'number') freezesAvailable = profileRes.data.streak_freezes_available
+      if (typeof profileRes.data.streak_freezes_available === 'number') freezesAvailable = Math.max(freezesAvailable, profileRes.data.streak_freezes_available)
     }
 
     const meta = isSelf ? (currentUser?.user_metadata || {}) : {}
@@ -456,16 +456,16 @@ export async function fetchExerciseData(userId) {
     }
   } catch (e) {}
 
-  // Weekly freeze reset: restore 1 freeze at the start of each new week
+  // Weekly freeze reward: +1 freeze per week, accumulates if not used
   if (isSelf) {
     const checkWeekKey = `axon_freeze_awarded_week_${userId}`
     const todayDate = new Date()
     const weekNo = getWeekNumber(todayDate)
     if (localStorage.getItem(checkWeekKey) !== String(weekNo)) {
-      freezesAvailable = 1
+      freezesAvailable += 1
       localStorage.setItem(checkWeekKey, String(weekNo))
       try {
-        await supabase.from('profiles').update({ streak_freezes_available: 1 }).eq('id', userId)
+        await supabase.from('profiles').update({ streak_freezes_available: freezesAvailable }).eq('id', userId)
       } catch {}
     }
   }
