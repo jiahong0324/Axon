@@ -62,9 +62,11 @@
       #prerender-splash img {
         position: relative;
         z-index: 10;
-        height: 12.8rem;
-        width: 12.8rem;
-        object-fit: contain;
+        height: 7rem;
+        width: 7rem;
+        border-radius: 1.5rem;
+        object-fit: cover;
+        box-shadow: 0 0 45px 5px rgba(59, 130, 246, 0.45);
         animation: prerender-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         transition: all 1s;
       }
@@ -91,7 +93,7 @@
           var accent = localStorage.getItem('accentColor') || 'blue';
           document.documentElement.setAttribute('data-accent', accent);
         } catch (e) {}
-        })();
+      })();
     </script>
     <link rel="apple-touch-icon" href="/icons/logo.png">
     <script async src="https://cdn.jsdelivr.net/npm/pwacompat@2.0.17/pwacompat.min.js" crossorigin="anonymous"></script>
@@ -99,7 +101,7 @@
   <body>
     <div id="root">
       <div id="prerender-splash">
-        <img src="/icons/logo-glowing.png" alt="Axon Logo" />
+        <img src="/icons/logo.png" alt="Axon Logo" />
       </div>
     </div>
     <script type="module" src="/src/main.jsx"></script>
