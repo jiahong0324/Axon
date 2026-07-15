@@ -8,6 +8,7 @@ import EditStudentPanel from '../../components/EditStudentPanel'
 import Modal from '../../components/Modal'
 import PriorityBadge from '../../components/PriorityBadge'
 import { useToast } from '../../components/Toast'
+import { useLanguage } from '../../components/LanguageProvider'
 import { downloadStudentReport } from '../../lib/generateReport'
 import { supabase } from '../../lib/supabase'
 import { dateLabel, days, daysFromToday, formatTime, initials } from '../../lib/utils'
@@ -206,6 +207,7 @@ function ActivityTab({ activity }) {
 }
 
 function ExerciseManagerTab({ studentId }) {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [logs, setLogs] = useState([])
   const [weeklyGoal, setWeeklyGoal] = useState(4)
@@ -229,10 +231,10 @@ function ExerciseManagerTab({ studentId }) {
   }, [studentId])
 
   const stats = useMemo(
-    () => calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, getTodayStr()),
-    [logs, weeklyGoal, freezesAvailable]
+    () => calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, getTodayStr(), xpTotal),
+    [logs, weeklyGoal, freezesAvailable, xpTotal]
   )
-  const levelInfo = useMemo(() => getLevelInfo(xpTotal), [xpTotal])
+  const levelInfo = useMemo(() => getLevelInfo(xpTotal, t), [xpTotal, t])
 
   if (loading) {
     return <div className="card space-y-3"><div className="skeleton h-20 rounded-xl" /><div className="skeleton h-40 rounded-xl" /></div>
@@ -291,7 +293,7 @@ function ExerciseManagerTab({ studentId }) {
             >
               <span className="text-xl">{b.icon}</span>
               <div>
-                <p className="text-xs font-semibold">{b.id.replace('_', ' ').toUpperCase()}</p>
+                <p className="text-xs font-semibold">{t ? t(b.titleKey) : b.titleKey}</p>
                 <p className="text-[10px]">{b.unlocked ? 'Unlocked' : 'Locked'}</p>
               </div>
             </div>

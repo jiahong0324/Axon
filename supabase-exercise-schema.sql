@@ -51,3 +51,15 @@ $$;
 create policy "Managers can view all exercise logs."
   on public.exercise_logs for select
   using (public.check_is_manager() or exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'manager'));
+
+create policy "Managers can insert all exercise logs."
+  on public.exercise_logs for insert
+  with check (public.check_is_manager() or exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'manager'));
+
+create policy "Managers can update all exercise logs."
+  on public.exercise_logs for update
+  using (public.check_is_manager() or exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'manager'));
+
+create policy "Managers can delete all exercise logs."
+  on public.exercise_logs for delete
+  using (public.check_is_manager() or exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'manager'));
