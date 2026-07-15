@@ -48,6 +48,7 @@ export default function ExercisePage() {
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const lastLoadedRef = useRef(Date.now())
+  const isAndroid = useMemo(() => typeof navigator !== 'undefined' && /Android/i.test(navigator?.userAgent || ''), [])
 
   const [userId, setUserId] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -643,25 +644,33 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
         <div className="h-44 sm:h-24 w-full shrink-0 pointer-events-none" />
       </div>
 
-      {/* STICKY BOTTOM CHECK-IN BAR (bottom-20 on mobile clear of bottom tab bar, md:left-60 md:right-0 centered on laptop) */}
-      <div className="fixed inset-x-0 bottom-20 md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center">
-        <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-white/10 bg-[#131b2e] p-2.5 sm:p-3 shadow-2xl">
-          {/* Activity Tag Selector (All 4 options visible in one single row via grid-cols-4) */}
-          <div className="mb-3 sm:mb-3.5 grid grid-cols-4 gap-1 sm:gap-1.5 w-full">
+      {/* STICKY BOTTOM CHECK-IN BAR (Original bottom-28 for iOS/default; bottom-[104px] + single-row flex-1 for Android) */}
+      <div className={`fixed inset-x-0 ${isAndroid ? 'bottom-[104px]' : 'bottom-28'} md:left-60 md:right-0 md:bottom-6 z-30 px-3 sm:px-4 pointer-events-none flex justify-center`}>
+        <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-white/10 bg-[#131b2e] p-3 shadow-2xl">
+          {/* Activity Tag Selector: exact original flex-wrap for iOS, single-row flex-1 for Android */}
+          <div className={`mb-3.5 flex ${isAndroid ? 'items-center justify-between gap-1 sm:gap-1.5' : 'flex-wrap items-center justify-center gap-1.5'} w-full`}>
             {ACTIVITY_TYPES.map(type => (
               <button
                 key={type}
                 type="button"
                 onClick={() => setSelectedTag(type)}
                 disabled={stats.isCheckedInToday}
-                className={`flex items-center justify-center gap-1 sm:gap-1.5 rounded-full px-1 sm:px-3 py-1.5 text-[11px] sm:text-xs font-medium transition-all min-w-0 ${
-                  selectedTag === type
-                    ? 'bg-[#3B82F6]/25 text-[#38BDF8] border border-[#3B82F6]/50 shadow-sm'
-                    : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.05] hover:text-white'
-                }`}
+                className={
+                  isAndroid
+                    ? `flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 rounded-full px-1.5 sm:px-3 py-1.5 text-xs font-medium transition-all ${
+                        selectedTag === type
+                          ? 'bg-[#3B82F6]/25 text-[#38BDF8] border border-[#3B82F6]/50 shadow-sm'
+                          : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.05] hover:text-white'
+                      }`
+                    : `flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                        selectedTag === type
+                          ? 'bg-[#3B82F6]/25 text-[#38BDF8] border border-[#3B82F6]/50 shadow-sm'
+                          : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.05] hover:text-white'
+                      }`
+                }
               >
-                <span className="shrink-0">{ACTIVITY_ICONS[type]}</span>
-                <span className="truncate">{t(`exercise.activity.${type}`) || type}</span>
+                <span className={isAndroid ? 'shrink-0' : ''}>{ACTIVITY_ICONS[type]}</span>
+                <span className={isAndroid ? 'truncate' : ''}>{t(`exercise.activity.${type}`) || type}</span>
               </button>
             ))}
           </div>

@@ -257,21 +257,35 @@ function ExamCard({ exam, result, deleteExam, onEdit }) {
         </div>
       </div>
       
-      <div className="rounded-xl bg-black/25 border border-white/5 p-3 sm:p-3.5 space-y-2 mb-3 text-xs sm:text-[13px]">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-           <div className="flex items-center gap-1.5 text-slate-200 font-medium">
-             <span className="text-sm">📅</span>
-             <span className="font-semibold break-words">{dateLabel(exam.exam_date)}</span>
+      <div className="grid grid-cols-2 gap-2 sm:gap-2.5 mb-3">
+        <div className="flex items-center gap-2 text-slate-400 bg-black/20 rounded-xl p-2 sm:p-2.5 border border-white/5 transition-colors hover:bg-black/30">
+           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+             <span className="text-xs sm:text-sm">📅</span>
            </div>
-           <div className="flex items-center gap-1.5 text-slate-300">
-             <span className="text-sm">🕒</span>
-             <span className="break-words">{exam.start_time && exam.end_time ? `${formatTime(exam.start_time)} \u2013 ${formatTime(exam.end_time)}` : 'TBA'}</span>
+           <div className="min-w-0 flex-1">
+             <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Date</p>
+             <p className="text-xs sm:text-[13px] font-semibold text-slate-200 break-words leading-tight">{dateLabel(exam.exam_date)}</p>
+           </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-slate-400 bg-black/20 rounded-xl p-2 sm:p-2.5 border border-white/5 transition-colors hover:bg-black/30">
+           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+             <span className="text-xs sm:text-sm">🕒</span>
+           </div>
+           <div className="min-w-0 flex-1">
+             <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Time</p>
+             <p className="text-xs sm:text-[13px] font-semibold text-slate-200 break-words leading-tight">{exam.start_time && exam.end_time ? `${formatTime(exam.start_time)} \u2013 ${formatTime(exam.end_time)}` : 'TBA'}</p>
            </div>
         </div>
         
-        <div className="flex items-start gap-1.5 text-slate-400 pt-1.5 border-t border-white/5">
-           <MapPin className="h-3.5 w-3.5 text-theme-400 shrink-0 mt-0.5" />
-           <span className="font-medium text-slate-300 break-words">{exam.venue || 'TBA'}</span>
+        <div className="col-span-2 flex items-center gap-2 text-slate-400 bg-black/20 rounded-xl p-2 sm:p-2.5 border border-white/5 transition-colors hover:bg-black/30">
+           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+             <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-theme-400" />
+           </div>
+           <div className="min-w-0 flex-1">
+             <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Venue</p>
+             <p className="text-xs sm:text-[13px] font-semibold text-slate-200 break-words leading-tight">{exam.venue || 'TBA'}</p>
+           </div>
         </div>
       </div>
 
