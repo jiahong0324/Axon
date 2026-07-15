@@ -159,7 +159,7 @@ export default function ExamPage() {
         <ExamSection loading={loading} title={t('exams.upcoming')} exams={upcoming} results={results} deleteExam={deleteExam} onEdit={openEditModal} emptyMsg={t('exams.empty').replace('{type}', t('exams.upcoming'))} />
         <ExamSection loading={loading} title={t('exams.past')} exams={past} results={results} deleteExam={deleteExam} onEdit={openEditModal} emptyMsg={t('exams.empty').replace('{type}', t('exams.past'))} />
       </div>
-      <Modal isOpen={modal} onClose={() => { setModal(false); setForm(initialForm); setEditingId(null); }} title={editingId ? "Edit Exam" : "Add Exam"} mobileMaxHeight="max-h-[85%]">
+      <Modal isOpen={modal} onClose={() => { setModal(false); setForm(initialForm); setEditingId(null); }} title={editingId ? "Edit Exam" : "Add Exam"} mobileMaxHeight="max-h-[83%]">
         <form onSubmit={addExam} className="space-y-4">
           <Field label="Subject">
             <SubjectSelect 
@@ -191,31 +191,31 @@ function Field({ label, children }) { return <label className="block"><span clas
 
 function ExamSection({ title, exams, results, deleteExam, onEdit, emptyMsg, loading }) {
   if (loading) return (
-    <section className="mb-10">
-      <div className="flex items-center gap-3 mb-6">
+    <section className="mb-8">
+      <div className="flex items-center gap-3 mb-4">
         <h2 className="text-xl font-bold text-white tracking-tight">{title}</h2>
       </div>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-3 sm:gap-5 lg:grid-cols-2">
         <SkeletonList count={2} />
       </div>
     </section>
   );
 
   return (
-    <section className="mb-10">
-      <div className="flex items-center gap-3 mb-6">
+    <section className="mb-8">
+      <div className="flex items-center gap-3 mb-4">
         <h2 className="text-xl font-bold text-white tracking-tight">{title}</h2>
         <span className="bg-white/10 text-white text-xs font-bold px-2.5 py-0.5 rounded-full border border-white/10 shadow-inner">{exams.length}</span>
       </div>
       {exams.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center px-4 py-12 border border-white/5 bg-white/[0.02] rounded-[32px]">
-           <div className="w-14 h-14 bg-white/5 text-slate-400 rounded-full flex items-center justify-center mb-4">
-             <span className="text-2xl">📖</span>
+        <div className="flex flex-col items-center justify-center text-center px-4 py-10 border border-white/5 bg-white/[0.02] rounded-[24px]">
+           <div className="w-12 h-12 bg-white/5 text-slate-400 rounded-full flex items-center justify-center mb-3">
+             <span className="text-xl">📖</span>
            </div>
-           <p className="text-slate-400 font-medium">{emptyMsg || `No exams.`}</p>
+           <p className="text-slate-400 font-medium text-sm">{emptyMsg || `No exams.`}</p>
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
           {exams.map(exam => <ExamCard key={exam.id} exam={exam} result={results.find(r => r.exam_id === exam.id)} deleteExam={deleteExam} onEdit={() => onEdit(exam)} />)}
         </div>
       )}
@@ -242,88 +242,72 @@ function ExamCard({ exam, result, deleteExam, onEdit }) {
   const typeColor = typeMap[exam.exam_type] || 'bg-slate-500/10 text-slate-300 border-slate-500/30';
 
   return (
-    <article className={`group relative rounded-[24px] border p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] ${isPast ? 'bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.04]' : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'}`}>
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <h3 className={`font-bold text-[18px] tracking-tight leading-snug ${isPast ? 'text-slate-400' : 'text-white'}`}>{exam.subject}</h3>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-             <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${typeColor}`}>{exam.exam_type}</span>
+    <article className={`group relative rounded-[20px] border p-4 sm:p-5 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.3)] ${isPast ? 'bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.04]' : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'}`}>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h3 className={`font-bold text-base sm:text-lg tracking-tight leading-snug break-words ${isPast ? 'text-slate-400' : 'text-white'}`}>{exam.subject}</h3>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-bold uppercase tracking-wider shrink-0 ${typeColor}`}>{exam.exam_type}</span>
           </div>
         </div>
-        <div className="shrink-0">
-           <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full border text-[11px] font-bold tracking-wide uppercase shadow-sm ${statusColor}`}>
+        <div className="shrink-0 flex items-center gap-1.5">
+           <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full border text-[10px] sm:text-[11px] font-bold tracking-wide uppercase shadow-sm ${statusColor}`}>
               {label}
            </span>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-        <div className="flex items-center gap-3 text-slate-400 bg-black/20 rounded-2xl p-3 border border-white/5 transition-colors hover:bg-black/30">
-           <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+      <div className="rounded-xl bg-black/25 border border-white/5 p-3 sm:p-3.5 space-y-2 mb-3 text-xs sm:text-[13px]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+           <div className="flex items-center gap-1.5 text-slate-200 font-medium">
              <span className="text-sm">📅</span>
+             <span className="font-semibold break-words">{dateLabel(exam.exam_date)}</span>
            </div>
-           <div className="min-w-0 flex-1">
-             <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Date</p>
-             <p className="text-[13px] font-semibold text-slate-200 break-words">{dateLabel(exam.exam_date)}</p>
-           </div>
-        </div>
-
-        <div className="flex items-center gap-3 text-slate-400 bg-black/20 rounded-2xl p-3 border border-white/5 transition-colors hover:bg-black/30">
-           <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+           <div className="flex items-center gap-1.5 text-slate-300">
              <span className="text-sm">🕒</span>
-           </div>
-           <div className="min-w-0 flex-1">
-             <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Time</p>
-             <p className="text-[13px] font-semibold text-slate-200 break-words">{exam.start_time && exam.end_time ? `${formatTime(exam.start_time)} \u2013 ${formatTime(exam.end_time)}` : 'TBA'}</p>
+             <span className="break-words">{exam.start_time && exam.end_time ? `${formatTime(exam.start_time)} \u2013 ${formatTime(exam.end_time)}` : 'TBA'}</span>
            </div>
         </div>
         
-        <div className="col-span-1 sm:col-span-2 flex items-center gap-3 text-slate-400 bg-black/20 rounded-2xl p-3 border border-white/5 transition-colors hover:bg-black/30">
-           <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-             <MapPin className="h-4 w-4 text-theme-400" />
-           </div>
-           <div className="min-w-0 flex-1">
-             <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Venue</p>
-             <p className="text-[13px] font-semibold text-slate-200 break-words">{exam.venue || 'TBA'}</p>
-           </div>
+        <div className="flex items-start gap-1.5 text-slate-400 pt-1.5 border-t border-white/5">
+           <MapPin className="h-3.5 w-3.5 text-theme-400 shrink-0 mt-0.5" />
+           <span className="font-medium text-slate-300 break-words">{exam.venue || 'TBA'}</span>
         </div>
       </div>
 
       {exam.notes && (
-        <div className="mb-5 rounded-2xl bg-theme-500/5 p-4 border border-theme-500/10 relative overflow-hidden">
+        <div className="mb-3 rounded-xl bg-theme-500/5 px-3 py-2 border border-theme-500/10 relative overflow-hidden">
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-theme-500/50"></div>
-          <p className="text-[13px] text-theme-100/70 line-clamp-2 leading-relaxed pl-1">{exam.notes}</p>
+          <p className="text-xs sm:text-[13px] text-theme-100/80 line-clamp-2 leading-relaxed pl-1.5">{exam.notes}</p>
         </div>
       )}
       
       {result && (
-        <div className="mb-5 flex items-center justify-between rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-4 relative overflow-hidden">
+        <div className="mb-3 flex items-center justify-between rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2.5 relative overflow-hidden">
            <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500/50"></div>
-           <div className="pl-1">
-             <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-500/70 mb-1">Result</p>
-             <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-emerald-400 tracking-tight">{result.score}</span>
-                <span className="text-[13px] font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full">{result.grade}</span>
-             </div>
+           <div className="pl-1 flex items-center gap-2">
+             <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-500/70">Result:</span>
+             <span className="text-lg sm:text-xl font-black text-emerald-400 tracking-tight">{result.score}</span>
+             <span className="text-xs font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full">{result.grade}</span>
            </div>
-           {result.remarks && <span className="text-[11px] font-bold tracking-wide uppercase text-emerald-400/80 bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/20">{result.remarks}</span>}
+           {result.remarks && <span className="text-[10px] sm:text-[11px] font-bold tracking-wide uppercase text-emerald-400/90 bg-emerald-500/15 px-2 py-1 rounded-md border border-emerald-500/20">{result.remarks}</span>}
         </div>
       )}
 
-      <div className="mt-2 pt-4 border-t border-white/5 flex justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+      <div className="pt-2 border-t border-white/5 flex justify-end items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         <button 
-          className="flex items-center justify-center w-[32px] h-[32px] text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 hover:shadow-[0_0_12px_rgba(59,130,246,0.2)] rounded-lg transition-all" 
+          className="flex items-center justify-center w-[28px] h-[28px] text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all" 
           onClick={onEdit}
           title="Edit Exam"
         >
-          <Pencil className="h-4 w-4" />
+          <Pencil className="h-3.5 w-3.5" />
         </button>
         <button 
-          className="flex items-center justify-center w-[32px] h-[32px] text-slate-500 hover:text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] rounded-lg transition-all" 
+          className="flex items-center justify-center w-[28px] h-[28px] text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all" 
           onClick={() => deleteExam(exam.id)}
           title="Delete Exam"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
     </article>
