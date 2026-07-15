@@ -83,16 +83,10 @@ export default function ExercisePage() {
     const savedDate = localStorage.getItem('axon_exercise_ai_plan_date')
     const deletedDate = localStorage.getItem('axon_exercise_ai_plan_deleted_date')
 
-    if (deletedDate === todayStr) {
-      setAiPlan('')
-    } else if (savedPlan && savedDate === todayStr && savedPlan.includes('|')) {
+    if (savedPlan && savedDate === todayStr && deletedDate !== todayStr && savedPlan.includes('|')) {
       setAiPlan(formatPlanOrder(savedPlan))
     } else {
-      setAiPlan(DEFAULT_TABLE_PLAN)
-      try {
-        localStorage.setItem('axon_exercise_ai_plan_content', DEFAULT_TABLE_PLAN)
-        localStorage.setItem('axon_exercise_ai_plan_date', todayStr)
-      } catch {}
+      setAiPlan('')
     }
 
     const { data: authSub } = supabase.auth.onAuthStateChange(() => {
@@ -566,10 +560,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
                 className="text-xs sm:text-sm leading-relaxed text-slate-300"
                 dangerouslySetInnerHTML={{ __html: renderedAiPlan }}
               />
-              <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-white/5">
-                <span className="text-xs text-slate-400 font-medium">
-                  💡 Tailored daily campus workout table
-                </span>
+              <div className="flex flex-wrap items-center justify-end gap-3 mt-4 pt-4 border-t border-white/5">
                 <div className="flex gap-2">
                   <button
                     className="p-2 text-slate-400 hover:text-red-400 transition-colors rounded-lg hover:bg-white/5"
