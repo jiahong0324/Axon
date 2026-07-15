@@ -87,11 +87,13 @@ export default function AssignmentPage() {
 
   async function saveAll(items) {
     const { data: { user } } = await supabase.auth.getUser()
-    const rows = items.map(item => ({ priority: 'Medium', status: 'Pending', notes: '', ...item, user_id: user.id }))
+    const validItems = items.filter(item => item.title && item.deadline)
+    if (validItems.length === 0) return showToast('No valid assignments to save. Check title and deadline fields.', 'error')
+    const rows = validItems.map(item => ({ priority: 'Medium', status: 'Pending', notes: '', ...item, user_id: user.id }))
     const { error } = await supabase.from('assignments').insert(rows)
-    if (error) return showToast('Could not save extracted assignments.', 'error')
+    if (error) return showToast(`Could not save assignments: ${error.message}`, 'error')
     await Promise.all(rows.map(item => logActivity('Added assignment', 'assignment', item.title)))
-    showToast('Extracted assignments saved.', 'success')
+    showToast(`${rows.length} assignment(s) saved successfully.`, 'success')
     setAnalyzerOpen(false)
     fetchItems()
   }

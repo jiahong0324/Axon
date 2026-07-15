@@ -39,7 +39,7 @@ Each object must have:
   "exam_date": "YYYY-MM-DD",
   "start_time": "HH:MM or empty string",
   "end_time": "HH:MM or empty string",
-  "exam_type": "Quiz|Midterm|Final|Assignment",
+  "exam_type": "Test 1|Test 2|Midterm|Final|Practical",
   "venue": "string or empty string",
   "notes": "string or empty string"
 }
@@ -567,7 +567,30 @@ function normalizeItem(item, type, index) {
   }
 }
 function cleanItem({ key, selected, class_type, color, ...item }, type) {
-  return type === 'timetable' ? { ...item, class_type, color } : item
+  if (type === 'timetable') return { ...item, class_type, color }
+  if (type === 'exam') {
+    const validExamTypes = ['Test 1', 'Test 2', 'Midterm', 'Final', 'Practical']
+    return {
+      subject: item.subject || '',
+      exam_date: item.exam_date || '',
+      start_time: item.start_time || '',
+      end_time: item.end_time || '',
+      exam_type: validExamTypes.includes(item.exam_type) ? item.exam_type : 'Final',
+      venue: item.venue || '',
+      notes: item.notes || ''
+    }
+  }
+  if (type === 'assignment') {
+    return {
+      title: item.title || '',
+      subject: item.subject || '',
+      deadline: item.deadline || '',
+      priority: ['High', 'Medium', 'Low'].includes(item.priority) ? item.priority : 'Medium',
+      notes: item.notes || '',
+      status: 'Pending'
+    }
+  }
+  return item
 }
 function toBase64(file) {
   return new Promise((resolve, reject) => {

@@ -83,10 +83,12 @@ export default function ExamPage() {
 
   async function saveAll(items) {
     const { data: { user } } = await supabase.auth.getUser()
-    const { error } = await supabase.from('exams').insert(items.map(item => ({ ...item, user_id: user.id })))
-    if (error) return showToast('Could not save extracted exams.', 'error')
-    await Promise.all(items.map(item => logActivity('Added exam', 'exam', item.subject)))
-    showToast('Extracted exams saved.', 'success')
+    const validItems = items.filter(item => item.subject && item.exam_date)
+    if (validItems.length === 0) return showToast('No valid exams to save. Check subject and date fields.', 'error')
+    const { error } = await supabase.from('exams').insert(validItems.map(item => ({ ...item, user_id: user.id })))
+    if (error) return showToast(`Could not save exams: ${error.message}`, 'error')
+    await Promise.all(validItems.map(item => logActivity('Added exam', 'exam', item.subject)))
+    showToast(`${validItems.length} exam(s) saved successfully.`, 'success')
     setAnalyzerOpen(false)
     fetchExams()
   }
