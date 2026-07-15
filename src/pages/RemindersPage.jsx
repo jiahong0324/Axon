@@ -34,6 +34,26 @@ export default function RemindersPage() {
     if (savedPlan && savedDate === today) {
       setPlan(savedPlan)
     }
+
+    // Subscribe to realtime reminder updates and local auto-close events
+    const channel = supabase
+      .channel('reminders-realtime-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, () => {
+        fetchItems()
+      })
+      .subscribe()
+
+    function onReminderUpdated(e) {
+      if (e.detail && e.detail.id) {
+        setItems(prev => prev.map(item => item.id === e.detail.id ? { ...item, is_active: e.detail.is_active } : item))
+      }
+    }
+    window.addEventListener('axon_reminder_updated', onReminderUpdated)
+
+    return () => {
+      supabase.removeChannel(channel)
+      window.removeEventListener('axon_reminder_updated', onReminderUpdated)
+    }
   }, [])
   useEffect(() => {
     function onKeyDown(e) {
