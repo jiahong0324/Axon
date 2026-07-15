@@ -159,7 +159,7 @@ export default function ExamPage() {
         <ExamSection loading={loading} title={t('exams.upcoming')} exams={upcoming} results={results} deleteExam={deleteExam} onEdit={openEditModal} emptyMsg={t('exams.empty').replace('{type}', t('exams.upcoming'))} />
         <ExamSection loading={loading} title={t('exams.past')} exams={past} results={results} deleteExam={deleteExam} onEdit={openEditModal} emptyMsg={t('exams.empty').replace('{type}', t('exams.past'))} />
       </div>
-      <Modal isOpen={modal} onClose={() => { setModal(false); setForm(initialForm); setEditingId(null); }} title={editingId ? "Edit Exam" : "Add Exam"} mobileMaxHeight="max-h-[78%]">
+      <Modal isOpen={modal} onClose={() => { setModal(false); setForm(initialForm); setEditingId(null); }} title={editingId ? "Edit Exam" : "Add Exam"} mobileMaxHeight="max-h-[85%]">
         <form onSubmit={addExam} className="space-y-4">
           <Field label="Subject">
             <SubjectSelect 
