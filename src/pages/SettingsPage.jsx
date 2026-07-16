@@ -14,6 +14,7 @@ import { updatePreference } from '../lib/preferences'
 import { studentManager } from '../lib/manageStudent'
 import { useLanguage } from '../components/LanguageProvider'
 import { markExplicitLogout } from '../lib/authEvents'
+import { fetchExerciseData } from '../lib/exerciseUtils'
 const tabs = [
   ['profile', 'Profile'],
   ['account', 'Account'],
@@ -37,11 +38,11 @@ export default function SettingsPage() {
   const [sendingTest, setSendingTest] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
-  const [digestOptions, setDigestOptions] = useState({ classes: true, assignments: true, exams: true, results: true })
+  const [digestOptions, setDigestOptions] = useState({ classes: true, assignments: true, exams: true, results: true, exercise: true })
   const [sendingDigest, setSendingDigest] = useState(false)
 
   async function sendAcademicEmail() {
-    if (!digestOptions.classes && !digestOptions.assignments && !digestOptions.exams && !digestOptions.results) {
+    if (!digestOptions.classes && !digestOptions.assignments && !digestOptions.exams && !digestOptions.results && !digestOptions.exercise) {
       return showToast('Please select at least one planner section to include.', 'warning')
     }
     setSendingDigest(true)
@@ -125,6 +126,7 @@ export default function SettingsPage() {
         const { data } = await supabase.from(table).select('*').eq('user_id', user.id)
         result[table] = data || []
       }
+      const exerciseInfo = await fetchExerciseData(user.id)
 
       const doc = new jsPDF()
 
@@ -308,6 +310,19 @@ export default function SettingsPage() {
         ['Semester', 'Code', 'Course Name', 'Credits', 'Grade'],
         examResultsData,
         'No semester exam results found.'
+      )
+
+      // 6. Exercise & Workout Logs
+      const exerciseLogsData = (exerciseInfo.logs || []).map(l => [
+        l.log_date ? new Date(l.log_date + 'T00:00:00').toLocaleDateString('en-US', { dateStyle: 'medium' }) : 'N/A',
+        l.activity_type || 'Gym',
+        `+${l.xp_earned || 20} XP`
+      ])
+      addSectionTable(
+        `Exercise & Habit Logs (Total XP: ${exerciseInfo.xpTotal || 0})`,
+        ['Date', 'Activity Type', 'XP Earned'],
+        exerciseLogsData,
+        'No exercise logs found.'
       )
 
       // Add Page Numbers/Footer dynamically on each page
@@ -585,6 +600,7 @@ export default function SettingsPage() {
             <ToggleRow label="Include Pending Assignments" checked={digestOptions.assignments} onChange={next => setDigestOptions(prev => ({ ...prev, assignments: next }))} />
             <ToggleRow label="Include Exam Schedules" checked={digestOptions.exams} onChange={next => setDigestOptions(prev => ({ ...prev, exams: next }))} />
             <ToggleRow label="Include Results" checked={digestOptions.results} onChange={next => setDigestOptions(prev => ({ ...prev, results: next }))} />
+            <ToggleRow label="Include Exercise & Habit Logs" checked={digestOptions.exercise} onChange={next => setDigestOptions(prev => ({ ...prev, exercise: next }))} />
           </div>
           <button className="btn-primary w-full mt-4" onClick={sendAcademicEmail} disabled={sendingDigest}>
             <Mail className="h-4 w-4" /> {sendingDigest ? 'Sending Email...' : 'Email Academic Report'}

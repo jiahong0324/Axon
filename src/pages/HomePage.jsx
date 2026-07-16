@@ -134,7 +134,7 @@ export default function HomePage() {
     }
     return c.day === todayName
   }).sort((a, b) => a.start_time.localeCompare(b.start_time)), [classes, todayName, todayStr])
-  const dueSoon = assignments.filter(a => a.status !== 'Done' && daysFromToday(a.deadline) <= 3).slice(0, 3)
+  const dueSoon = assignments.filter(a => a.status !== 'Done').slice(0, 3)
   const nextExamDays = exams[0] ? daysFromToday(exams[0].exam_date) : null
   const nextExamValue = nextExamDays === null ? '-' : nextExamDays === 0 ? 'Today!' : nextExamDays
   const hour = currentTime.getHours()

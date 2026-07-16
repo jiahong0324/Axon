@@ -342,11 +342,13 @@ Deno.serve(async req => {
         const includeAssignments = data?.assignments ?? true
         const includeExams = data?.exams ?? true
         const includeResults = data?.results ?? true
+        const includeExercise = data?.exercise ?? true
 
         let classesData: any[] = []
         let assignmentsData: any[] = []
         let examsData: any[] = []
         let semestersData: any[] = []
+        let exerciseData: any[] = []
 
         if (includeClasses) {
           const { data: classes } = await adminClient.from('classes').select('*').eq('user_id', studentId)
@@ -372,6 +374,11 @@ Deno.serve(async req => {
           }))
         }
 
+        if (includeExercise) {
+          const { data: exercises } = await adminClient.from('exercise_logs').select('*').eq('user_id', studentId).order('log_date', { ascending: false }).limit(30)
+          exerciseData = exercises || []
+        }
+
         const htmlContent = buildAcademicDigestHtml({
           fullName: studentProfile.full_name || 'Student',
           email: studentProfile.email,
@@ -384,7 +391,9 @@ Deno.serve(async req => {
           includeExams,
           exams: examsData,
           includeResults,
-          semesters: semestersData
+          semesters: semestersData,
+          includeExercise,
+          exercises: exerciseData
         })
 
         const res = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -495,10 +504,12 @@ interface AcademicDigestParams {
   exams: any[]
   includeResults?: boolean
   semesters?: any[]
+  includeExercise?: boolean
+  exercises?: any[]
 }
 
 function buildAcademicDigestHtml(params: AcademicDigestParams): string {
-  const { fullName, university, course, includeClasses, classes, includeAssignments, assignments, includeExams, exams, includeResults, semesters = [] } = params
+  const { fullName, university, course, includeClasses, classes, includeAssignments, assignments, includeExams, exams, includeResults, semesters = [], includeExercise, exercises = [] } = params
   const dateStr = new Date().toLocaleDateString('en-US', { dateStyle: 'long' })
   
   let classesHtml = ''
@@ -679,6 +690,37 @@ function buildAcademicDigestHtml(params: AcademicDigestParams): string {
     `
   }
 
+  let exercisesHtml = ''
+  if (includeExercise && exercises.length > 0) {
+    let itemsHtml = ''
+    exercises.forEach(l => {
+      itemsHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; margin-bottom: 8px;">
+          <div>
+            <span style="font-weight: bold; color: #ffffff; font-size: 14px;">${l.activity_type || 'Gym'}</span>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">📅 Date: ${formatDate(l.log_date)}</div>
+          </div>
+          <span style="font-size: 12px; background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.2); font-weight: bold;">+${l.xp_earned || 20} XP</span>
+        </div>
+      `
+    })
+    exercisesHtml = `
+      <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 24px;">
+        <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">🏃 Exercise & Habit Logs</h2>
+        ${itemsHtml}
+      </div>
+    `
+  } else if (includeExercise) {
+    exercisesHtml = `
+      <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 24px;">
+        <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">🏃 Exercise & Habit Logs</h2>
+        <div style="text-align: center; padding: 24px; color: #94a3b8; background: #1e293b; border-radius: 8px; border: 1px solid #334155;">
+          🏃 No recent workout check-ins logged.
+        </div>
+      </div>
+    `
+  }
+
   return `
 <!DOCTYPE html>
 <html>
@@ -715,6 +757,7 @@ function buildAcademicDigestHtml(params: AcademicDigestParams): string {
       ${assignmentsHtml}
       ${examsHtml}
       ${resultsHtml}
+      ${exercisesHtml}
       
       <div style="text-align: center; margin-top: 32px; border-top: 1px solid #334155; padding-top: 20px;">
         <a href="https://axon-com.vercel.app/login" style="display: inline-block; background-color: #3b82f6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 10px; font-size: 14px;">Open Axon App</a>
