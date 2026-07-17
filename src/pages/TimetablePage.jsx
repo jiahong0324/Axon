@@ -549,23 +549,37 @@ export default function TimetablePage() {
           )}
 
           {/* Desktop View */}
-          <section className="hidden md:grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-start">
-            {days.map((day, index) => {
-              const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
+          {(() => {
+            const activeDays = days.filter(day => classes.some(c => c.day === day))
+            if (activeDays.length === 0) {
               return (
-                <div key={day} className="card">
-                  <h2 className="mb-4 font-bold">
-                    {t(`timetable.days.${day}`)}
-                  </h2>
-                  {dayClasses.length === 0 ? <EmptyState emoji="." message={t('timetable.freeDay')} /> : (
-                    <div className="space-y-3">
-                      {dayClasses.map(c => <DesktopClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}
-                    </div>
-                  )}
+                <div className="hidden md:block card text-center py-12">
+                  <EmptyState emoji="📅" message={t('timetable.freeDay')} />
                 </div>
               )
-            })}
-          </section>
+            }
+            return (
+              <section className={`hidden md:grid gap-4 items-start ${
+                activeDays.length <= 3 ? 'md:grid-cols-3' :
+                activeDays.length === 4 ? 'md:grid-cols-4' :
+                'md:grid-cols-3 xl:grid-cols-5'
+              }`}>
+                {activeDays.map(day => {
+                  const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
+                  return (
+                    <div key={day} className="card">
+                      <h2 className="mb-4 font-bold">
+                        {t(`timetable.days.${day}`)}
+                      </h2>
+                      <div className="space-y-3">
+                        {dayClasses.map(c => <DesktopClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}
+                      </div>
+                    </div>
+                  )
+                })}
+              </section>
+            )
+          })()}
         </div>
         )}
       </div>
