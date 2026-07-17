@@ -593,18 +593,46 @@ function Field({ label, children }) { return <label className="block"><span clas
 function getColorFromType(classType) { return classType === 'T' ? 'green' : classType === 'P' ? 'purple' : 'blue' }
 function normalizeItem(item, type, index) {
   const class_type = ['L', 'T', 'P'].includes(item.class_type) ? item.class_type : 'L'
-  return { 
-    ...item, 
-    key: `${index}-${item.subject || item.title || item.course_name}`, 
-    selected: true, 
-    class_type, 
+  const base = {
+    ...item,
+    key: `${index}-${item.subject || item.title || item.course_name || index}`,
+    selected: true,
+  }
+  if (type === 'timetable') {
+    return {
+      ...base,
+      class_type,
+      color: getColorFromType(class_type)
+    }
+  }
+  if (type === 'result') {
+    return {
+      ...base,
+      credit_hours: Number(item.credit_hours) || 3,
+      grade: item.grade || 'A'
+    }
+  }
+  return {
+    ...base,
+    class_type,
     color: getColorFromType(class_type),
     credit_hours: Number(item.credit_hours) || 3,
     grade: item.grade || 'A'
   }
 }
 function cleanItem({ key, selected, class_type, color, ...item }, type) {
-  if (type === 'timetable') return { ...item, class_type, color }
+  if (type === 'timetable') {
+    return {
+      subject: item.subject || '',
+      day: item.day || 'Monday',
+      start_time: item.start_time || '09:00',
+      end_time: item.end_time || '10:00',
+      lecturer: item.lecturer || '',
+      classroom: item.classroom || '',
+      class_type: class_type || 'L',
+      color: color || getColorFromType(class_type || 'L')
+    }
+  }
   if (type === 'exam') {
     const validExamTypes = ['Test 1', 'Test 2', 'Midterm', 'Final', 'Practical']
     return {
@@ -625,6 +653,15 @@ function cleanItem({ key, selected, class_type, color, ...item }, type) {
       priority: ['High', 'Medium', 'Low'].includes(item.priority) ? item.priority : 'Medium',
       notes: item.notes || '',
       status: 'Pending'
+    }
+  }
+  if (type === 'result') {
+    return {
+      semester_name: item.semester_name || 'Year 1 Semester 1',
+      course_code: item.course_code || '',
+      course_name: item.course_name || '',
+      credit_hours: Number(item.credit_hours) || 3,
+      grade: item.grade || 'A'
     }
   }
   return item

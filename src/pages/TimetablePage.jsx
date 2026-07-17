@@ -283,7 +283,18 @@ export default function TimetablePage() {
   }
 
   async function saveAll(items) {
-    const rows = items.map((item, index) => ({ ...item, id: item.id || `local-${Date.now()}-${index}`, color: item.color || classColors[item.class_type] || 'blue', profile_id: isLiveProfile ? LIVE_PROFILE_ID : activeProfileId }))
+    const rows = items.map((item, index) => ({
+      subject: item.subject || '',
+      day: item.day || 'Monday',
+      start_time: item.start_time || '09:00',
+      end_time: item.end_time || '10:00',
+      lecturer: item.lecturer || '',
+      classroom: item.classroom || '',
+      class_type: item.class_type || 'L',
+      color: item.color || classColors[item.class_type] || 'blue',
+      id: item.id || `local-${Date.now()}-${index}`,
+      profile_id: isLiveProfile ? LIVE_PROFILE_ID : activeProfileId
+    }))
     if (!isLiveProfile) {
       const freshProfiles = readLinkedProfiles(user.id)
       const freshProfile = freshProfiles.find(p => p.id === activeProfileId)
@@ -293,9 +304,12 @@ export default function TimetablePage() {
       setAnalyzerOpen(false)
       return
     }
-    const liveRows = rows.map(({ id, ...item }) => ({ ...item, user_id: user.id }))
+    const liveRows = rows.map(({ id, profile_id, ...item }) => ({ ...item, user_id: user.id }))
     const { error } = await supabase.from('classes').insert(liveRows)
-    if (error) return showToast(t('timetable.saveExtractedFailed'), 'error')
+    if (error) {
+      console.error('Save extracted classes error:', error)
+      return showToast(t('timetable.saveExtractedFailed'), 'error')
+    }
     await Promise.all(liveRows.map(item => logActivity('Added class', 'class', item.subject)))
     clearCache(classesCacheKey(user.id))
     showToast(t('timetable.savedExtracted'), 'success')
