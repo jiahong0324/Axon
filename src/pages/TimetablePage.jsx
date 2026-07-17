@@ -559,7 +559,7 @@ export default function TimetablePage() {
               )
             }
             return (
-              <section className={`hidden md:grid gap-4 items-start ${
+              <section className={`hidden md:grid gap-4 ${
                 activeDays.length <= 3 ? 'md:grid-cols-3' :
                 activeDays.length === 4 ? 'md:grid-cols-4' :
                 'md:grid-cols-3 xl:grid-cols-5'
