@@ -394,7 +394,7 @@ function TimetableResult({ item, index, updateItem }) {
               value={item.day} 
               onChange={e => updateItem(index, { day: e.target.value })}
             >
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => (
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
                 <option key={day}>{day}</option>
               ))}
             </select>

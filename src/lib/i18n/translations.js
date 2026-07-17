@@ -183,6 +183,7 @@ export const translations = {
     'timetable.days.Wednesday': 'Wednesday',
     'timetable.days.Thursday': 'Thursday',
     'timetable.days.Friday': 'Friday',
+    'timetable.days.Saturday': 'Saturday',
 
     'assignments.title': 'Assignments',
     'assignments.add': 'Add Assignment',
@@ -646,6 +647,7 @@ export const translations = {
     'timetable.days.Wednesday': '星期三',
     'timetable.days.Thursday': '星期四',
     'timetable.days.Friday': '星期五',
+    'timetable.days.Saturday': '星期六',
 
     'assignments.title': '作业',
     'assignments.add': '添加作业',

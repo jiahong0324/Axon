@@ -45,7 +45,7 @@ export default function TimetablePage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [mobileDay, setMobileDay] = useState(() => {
     const day = new Date().getDay()
-    return day >= 1 && day <= 5 ? day - 1 : 0
+    return day >= 1 && day <= 6 ? day - 1 : 0
   })
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
@@ -549,7 +549,7 @@ export default function TimetablePage() {
           )}
 
           {/* Desktop View */}
-          <section className="hidden md:grid gap-4 md:grid-cols-5">
+          <section className="hidden md:grid gap-4 md:grid-cols-3 lg:grid-cols-6">
             {days.map((day, index) => {
               const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
               return (
