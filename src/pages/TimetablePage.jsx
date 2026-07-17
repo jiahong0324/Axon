@@ -549,7 +549,7 @@ export default function TimetablePage() {
           )}
 
           {/* Desktop View */}
-          <section className="hidden md:grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <section className="hidden md:grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-start">
             {days.map((day, index) => {
               const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
               return (
