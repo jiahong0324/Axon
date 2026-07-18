@@ -50,3 +50,21 @@ export async function analyzeImageWithGroq(base64Image, mimeType, prompt, histor
   const data = await response.json()
   return data.content || ''
 }
+
+export async function transcribeAudioWithGroq(base64Audio, mimeType) {
+  const response = await fetch('/api/groq', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      mode: 'audio',
+      base64Audio,
+      mimeType
+    })
+  })
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Groq Audio Transcription error');
+  }
+  const data = await response.json()
+  return data.content || ''
+}

@@ -22,7 +22,49 @@ export default async function handler(req, res) {
       .slice(-6)
       .map(msg => ({ role: msg.role, content: msg.content }))
 
-    if (mode === 'vision') {
+    if (mode === 'audio') {
+      const { base64Audio, mimeType = 'audio/webm' } = req.body || {}
+      if (!base64Audio) {
+        return res.status(400).json({ error: 'Missing audio data' })
+      }
+      
+      const buffer = Buffer.from(base64Audio.replace(/\s+/g, ''), 'base64')
+      let ext = 'webm'
+      if (mimeType.includes('mp4') || mimeType.includes('m4a')) ext = 'm4a'
+      else if (mimeType.includes('wav')) ext = 'wav'
+      else if (mimeType.includes('ogg')) ext = 'ogg'
+      else if (mimeType.includes('mp3')) ext = 'mp3'
+
+      const fileBlob = new Blob([buffer], { type: mimeType })
+      
+      const makeAudioRequest = async (modelName) => {
+        const formData = new FormData()
+        formData.append('file', fileBlob, `voice.${ext}`)
+        formData.append('model', modelName)
+        formData.append('response_format', 'json')
+
+        const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`
+          },
+          body: formData
+        })
+        const data = await res.json().catch(() => ({}))
+        return { ok: res.ok, status: res.status, data }
+      }
+
+      let result = await makeAudioRequest('whisper-large-v3-turbo')
+      if (!result.ok) {
+        result = await makeAudioRequest('whisper-large-v3')
+      }
+
+      if (!result.ok) {
+        return res.status(result.status || 500).json({ error: result.data?.error?.message || 'Groq Audio API error' })
+      }
+
+      return res.status(200).json({ content: result.data?.text || '' })
+    } else if (mode === 'vision') {
       const githubToken = process.env.GITHUB_TOKEN
       if (!githubToken) {
         return res.status(500).json({ error: 'Missing GITHUB_TOKEN environment variable' })

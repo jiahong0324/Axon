@@ -305,6 +305,10 @@ export const translations = {
     'ai.welcome1': 'Welcome! I am your dedicated AI Study Helper.',
     'ai.welcome2': 'How can I support your software engineering studies today? You can ask me to explain algorithms, summarize notes, generate mock interview questions, or plan out your semester schedules!',
     'ai.welcome3': 'Note: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, active reminders, exam results & CGPA, exercise streak & workout history, or study articles & FAQ from our Public Landing Blog! I also know your Settings profile (University & Major) to tailor tips to your course!',
+    'ai.voiceRecord': 'Click to record voice',
+    'ai.voiceListening': 'Listening... click to stop',
+    'ai.voiceTranscribing': 'Transcribing with Axon voice..',
+    'ai.voiceError': 'Could not transcribe voice. Please check microphone permissions and try again.',
 
     'auth.signIn': 'Sign In',
     'auth.signUp': 'Sign Up',
@@ -770,6 +774,10 @@ export const translations = {
     'ai.welcome1': '欢迎！我是你的 AI 学习助手。',
     'ai.welcome2': '今天想让我怎样帮助你的软件工程学习？你可以让我解释算法、总结笔记、生成面试练习题，或规划整个学期的学习安排！',
     'ai.welcome3': '注意：我可以安全读取你的学习数据。你可以询问课表课程、待完成作业、即将到来的考试、成绩与CGPA、运动打卡记录，以及公共博客文章与常见问题（FAQ）！我还知晓你的设置个人资料（就读院校与专业），为你量身定制学习建议！',
+    'ai.voiceRecord': '点按录制语音',
+    'ai.voiceListening': '正在聆听... 点按停止录音',
+    'ai.voiceTranscribing': '正在使用 Axon 语音转录..',
+    'ai.voiceError': '无法转录语音，请检查麦克风权限后重试。',
 
     'auth.signIn': '登录',
     'auth.signUp': '注册',

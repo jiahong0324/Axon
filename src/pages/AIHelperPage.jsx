@@ -14,11 +14,14 @@ import {
   ImagePlus,
   X,
   Activity,
-  Users
+  Users,
+  Mic,
+  Square,
+  Loader2
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { buildUserContext } from '../lib/buildUserContext'
-import { askGroq, analyzeImageWithGroq } from '../lib/groq'
+import { askGroq, analyzeImageWithGroq, transcribeAudioWithGroq } from '../lib/groq'
 import { markdownToHtml } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
 import { supabase } from '../lib/supabase'
@@ -70,8 +73,12 @@ export default function AIHelperPage({ role = 'student' }) {
   const [focused, setFocused] = useState(false)
   const [selectedImage, setSelectedImage] = useState(null)
   const [syncingCloud, setSyncingCloud] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
   const textareaRef = useRef(null)
   const fileInputRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
+  const audioChunksRef = useRef([])
 
   useEffect(() => {
     syncAIChatWithSupabase()
@@ -228,6 +235,71 @@ export default function AIHelperPage({ role = 'student' }) {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  async function startVoiceRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
+        }
+      }
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(track => track.stop())
+        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || 'audio/webm' })
+        if (audioBlob.size === 0) return
+
+        setIsTranscribing(true)
+        try {
+          const reader = new FileReader()
+          reader.onloadend = async () => {
+            const base64Audio = reader.result?.split(',')[1]
+            if (base64Audio) {
+              try {
+                const text = await transcribeAudioWithGroq(base64Audio, mediaRecorder.mimeType || 'audio/webm')
+                if (text) {
+                  setInput(prev => prev ? `${prev.trim()} ${text.trim()}` : text.trim())
+                  requestAnimationFrame(() => {
+                    if (textareaRef.current) {
+                      textareaRef.current.focus()
+                      textareaRef.current.style.height = '42px'
+                      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 128)}px`
+                    }
+                  })
+                }
+              } catch (err) {
+                alert(t('ai.voiceError') || 'Could not transcribe voice.')
+              } finally {
+                setIsTranscribing(false)
+              }
+            } else {
+              setIsTranscribing(false)
+            }
+          }
+          reader.readAsDataURL(audioBlob)
+        } catch (e) {
+          setIsTranscribing(false)
+        }
+      }
+
+      mediaRecorder.start()
+      setIsRecording(true)
+    } catch (err) {
+      alert(t('ai.voiceError') || 'Microphone access denied or unavailable.')
+    }
+  }
+
+  function stopVoiceRecording() {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+    }
+  }
+
   useEffect(() => {
     localStorage.setItem(isManager ? 'aiManagerChat' : 'aiChat', JSON.stringify(messages))
   }, [messages, isManager])
@@ -377,6 +449,27 @@ export default function AIHelperPage({ role = 'student' }) {
                 </button>
               </div>
             )}
+            {isRecording && (
+              <div className="mb-2 flex items-center justify-between rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2 text-xs font-medium text-red-300 shadow-sm animate-pulse">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping" />
+                  <span>{t('ai.voiceListening')}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={stopVoiceRecording}
+                  className="rounded-lg bg-red-500 px-2.5 py-1 text-white hover:bg-red-600 transition-colors"
+                >
+                  Stop
+                </button>
+              </div>
+            )}
+            {isTranscribing && (
+              <div className="mb-2 flex items-center gap-2 rounded-xl border border-purple-500/30 bg-purple-500/10 px-3.5 py-2 text-xs font-medium text-purple-300 shadow-sm">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400" />
+                <span>{t('ai.voiceTranscribing')}</span>
+              </div>
+            )}
             <div className={`ai-input-frame flex items-end gap-2 rounded-[1.35rem] border p-1.5 transition-all duration-300 ${
               focused ? 'is-focused' : ''
             }`}>
@@ -389,6 +482,28 @@ export default function AIHelperPage({ role = 'student' }) {
                 <ImagePlus className="h-4 w-4 shrink-0" />
               </button>
               <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageSelect} />
+              
+              <button
+                type="button"
+                className={`mb-1 flex h-8 w-8 min-h-[32px] min-w-[32px] shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+                  isRecording
+                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/40 animate-pulse'
+                    : isTranscribing
+                    ? 'text-purple-400 bg-purple-500/10'
+                    : 'text-slate-400 hover:bg-white/10 hover:text-white'
+                }`}
+                onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                disabled={isTranscribing || loading}
+                title={t('ai.voiceRecord')}
+              >
+                {isTranscribing ? (
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                ) : isRecording ? (
+                  <Square className="h-3.5 w-3.5 shrink-0 fill-white" />
+                ) : (
+                  <Mic className="h-4 w-4 shrink-0" />
+                )}
+              </button>
               
               <textarea
                 ref={textareaRef}
