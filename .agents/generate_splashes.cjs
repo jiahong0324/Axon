@@ -49,14 +49,56 @@ async function generate() {
     // Standard dark background: #0A0F1E
     const bg = new Jimp(dev.pw, dev.ph, 0x0A0F1EFF);
     
-    // Scale logo dynamically to fit screen beautifully (e.g. 25% of height/width)
-    const logoSize = Math.round(Math.min(dev.pw, dev.ph) * 0.25);
+    // Scale logo dynamically to fit screen (approx 20% of smaller dimension)
+    const logoSize = Math.round(Math.min(dev.pw, dev.ph) * 0.22);
     const scaledLogo = logo.clone().resize(logoSize, logoSize);
     
-    // Position logo in center
+    // Add rounded corners to logo
+    const cornerRadius = Math.round(logoSize * 0.21);
+    scaledLogo.scan(0, 0, logoSize, logoSize, function (lx, ly, idx) {
+      let cX = 0, cY = 0;
+      if (lx < cornerRadius) cX = cornerRadius - lx;
+      else if (lx >= logoSize - cornerRadius) cX = lx - (logoSize - cornerRadius - 1);
+      
+      if (ly < cornerRadius) cY = cornerRadius - ly;
+      else if (ly >= logoSize - cornerRadius) cY = ly - (logoSize - cornerRadius - 1);
+
+      if (cX > 0 && cY > 0) {
+        const cDist = Math.sqrt(cX * cX + cY * cY);
+        if (cDist > cornerRadius) {
+          this.bitmap.data[idx + 3] = 0;
+        } else if (cDist > cornerRadius - 1) {
+          this.bitmap.data[idx + 3] = Math.round(this.bitmap.data[idx + 3] * (1 - (cDist - (cornerRadius - 1))));
+        }
+      }
+    });
+
+    // Create glowing radial blue aura layer (Image 2 style)
+    const glowSize = Math.round(logoSize * 2.2);
+    const glow = new Jimp(glowSize, glowSize, 0x00000000);
+    const glowRadius = glowSize / 2;
+
+    glow.scan(0, 0, glowSize, glowSize, function (gx, gy, idx) {
+      const dx = gx - glowRadius;
+      const dy = gy - glowRadius;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < glowRadius) {
+        const factor = Math.pow(1 - dist / glowRadius, 1.6);
+        this.bitmap.data[idx + 0] = Math.round(59 * factor);   // R
+        this.bitmap.data[idx + 1] = Math.round(130 * factor);  // G
+        this.bitmap.data[idx + 2] = Math.round(246 * factor);  // B
+        this.bitmap.data[idx + 3] = Math.round(195 * factor);  // Alpha
+      }
+    });
+
+    // Composite glow onto background
+    const glowX = Math.round((dev.pw - glowSize) / 2);
+    const glowY = Math.round((dev.ph - glowSize) / 2);
+    bg.composite(glow, glowX, glowY);
+
+    // Composite logo over glow in exact center
     const x = Math.round((dev.pw - logoSize) / 2);
     const y = Math.round((dev.ph - logoSize) / 2);
-    
     bg.composite(scaledLogo, x, y);
     
     const outputName = `splash-${dev.pw}x${dev.ph}.png`;
@@ -65,7 +107,7 @@ async function generate() {
     console.log(`Generated: ${outputName} (${dev.pw}x${dev.ph})`);
   }
   
-  console.log('All splash screens generated successfully!');
+  console.log('All splash screens generated successfully with Image 2 blue glow!');
 }
 
 generate().catch(console.error);
