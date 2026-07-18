@@ -73,8 +73,8 @@ async function generate() {
       }
     });
 
-    // Create subtle glowing blue aura layer matching web splash
-    const glowSize = Math.round(logoSize * 1.65);
+    // Create initial 0% frame glowing blue aura (subtle 25px equivalent glow)
+    const glowSize = Math.round(logoSize * 1.45);
     const glow = new Jimp(glowSize, glowSize, 0x00000000);
     const glowRadius = glowSize / 2;
 
@@ -83,11 +83,11 @@ async function generate() {
       const dy = gy - glowRadius;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < glowRadius) {
-        const factor = Math.pow(1 - dist / glowRadius, 1.8);
+        const factor = Math.pow(1 - dist / glowRadius, 2.0);
         this.bitmap.data[idx + 0] = Math.round(59 * factor);   // R
         this.bitmap.data[idx + 1] = Math.round(130 * factor);  // G
         this.bitmap.data[idx + 2] = Math.round(246 * factor);  // B
-        this.bitmap.data[idx + 3] = Math.round(160 * factor);  // Alpha
+        this.bitmap.data[idx + 3] = Math.round(115 * factor);  // Alpha (0.7 initial opacity matching 0% frame)
       }
     });
 
