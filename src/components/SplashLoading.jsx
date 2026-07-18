@@ -6,10 +6,10 @@ export default function SplashLoading() {
         alt="Axon Logo" 
         className="relative z-10 h-28 w-28 rounded-3xl object-cover"
         style={{
-          opacity: 0.75,
+          opacity: 0,
           filter: 'brightness(0.88)',
           boxShadow: '0 0 35px 5px rgba(59, 130, 246, 0.4)',
-          animation: 'prerender-pulse 2.2s ease-in-out infinite'
+          animation: 'splash-logo-enter 180ms ease-out forwards, prerender-pulse 2.2s ease-in-out 180ms infinite'
         }}
       />
     </div>

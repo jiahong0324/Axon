@@ -12,7 +12,6 @@ try {
 
 const Jimp = require('jimp');
 
-const logoPath = path.join(__dirname, '..', 'public', 'icons', 'logo.png');
 const axonPublicIcons = path.join(__dirname, '..', 'public', 'icons');
 const splashDir = path.join(axonPublicIcons, 'splash');
 
@@ -42,65 +41,10 @@ const devices = [
 ];
 
 async function generate() {
-  console.log('Loading logo from:', logoPath);
-  const logo = await Jimp.read(logoPath);
-  
   for (const dev of devices) {
-    // Standard dark background: #0A0F1E
+    // Keep iOS native launch blank and dark. The web splash fades the logo in,
+    // avoiding a static native logo being replaced by an animated web logo.
     const bg = new Jimp(dev.pw, dev.ph, 0x0A0F1EFF);
-
-    // Physical logo size matching the web splash logo size (7rem / 112px CSS)
-    const logoSize = Math.round(dev.r * 112);
-    // Match the web splash's first frame before iOS hands off to HTML.
-    const scaledLogo = logo.clone().resize(logoSize, logoSize).brightness(-0.12).opacity(0.75);
-    
-    // Add rounded corners to logo (1.5rem / 7rem ratio = ~0.214)
-    const cornerRadius = Math.round(logoSize * 0.214);
-    scaledLogo.scan(0, 0, logoSize, logoSize, function (lx, ly, idx) {
-      let cX = 0, cY = 0;
-      if (lx < cornerRadius) cX = cornerRadius - lx;
-      else if (lx >= logoSize - cornerRadius) cX = lx - (logoSize - cornerRadius - 1);
-      
-      if (ly < cornerRadius) cY = cornerRadius - ly;
-      else if (ly >= logoSize - cornerRadius) cY = ly - (logoSize - cornerRadius - 1);
-
-      if (cX > 0 && cY > 0) {
-        const cDist = Math.sqrt(cX * cX + cY * cY);
-        if (cDist > cornerRadius) {
-          this.bitmap.data[idx + 3] = 0;
-        } else if (cDist > cornerRadius - 1) {
-          this.bitmap.data[idx + 3] = Math.round(this.bitmap.data[idx + 3] * (1 - (cDist - (cornerRadius - 1))));
-        }
-      }
-    });
-
-    // Create the first animation frame's glowing blue aura
-    const glowSize = Math.round(logoSize * 1.6);
-    const glow = new Jimp(glowSize, glowSize, 0x00000000);
-    const glowRadius = glowSize / 2;
-
-    glow.scan(0, 0, glowSize, glowSize, function (gx, gy, idx) {
-      const dx = gx - glowRadius;
-      const dy = gy - glowRadius;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < glowRadius) {
-        const factor = Math.pow(1 - dist / glowRadius, 2.0);
-        this.bitmap.data[idx + 0] = Math.round(59 * factor);   // R
-        this.bitmap.data[idx + 1] = Math.round(130 * factor);  // G
-        this.bitmap.data[idx + 2] = Math.round(246 * factor);  // B
-        this.bitmap.data[idx + 3] = Math.round(115 * factor);  // Alpha (0.7 initial opacity matching 0% frame)
-      }
-    });
-
-    // Composite glow onto background
-    const glowX = Math.round((dev.pw - glowSize) / 2);
-    const glowY = Math.round((dev.ph - glowSize) / 2);
-    bg.composite(glow, glowX, glowY);
-
-    // Composite logo over glow in exact center
-    const x = Math.round((dev.pw - logoSize) / 2);
-    const y = Math.round((dev.ph - logoSize) / 2);
-    bg.composite(scaledLogo, x, y);
     
     const outputName = `splash-${dev.pw}x${dev.ph}.png`;
     const outputPath = path.join(splashDir, outputName);
@@ -108,7 +52,7 @@ async function generate() {
     console.log(`Generated: ${outputName} (${dev.pw}x${dev.ph})`);
   }
   
-  console.log('All splash screens generated successfully with Image 2 blue glow!');
+  console.log('All dark iOS launch screens generated successfully.');
 }
 
 generate().catch(console.error);

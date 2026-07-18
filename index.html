@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="Axon" />
     <link rel="icon" type="image/png" href="/icons/logo.png" />
     <link rel="apple-touch-icon" href="/icons/logo.png" />
-    <!-- iOS native startup frame matches the first frame of the web splash animation. -->
+    <!-- iOS opens on a dark native frame; the web splash then fades its logo in. -->
     <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/icons/splash/splash-750x1334.png" />
     <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/icons/splash/splash-1242x2208.png" />
     <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/icons/splash/splash-1125x2436.png" />
@@ -77,10 +77,14 @@
         width: 7rem;
         border-radius: 1.5rem;
         object-fit: cover;
-        opacity: 0.75;
+        opacity: 0;
         filter: brightness(0.88);
         box-shadow: 0 0 35px 5px rgba(59, 130, 246, 0.4);
-        animation: prerender-pulse 2.2s ease-in-out infinite;
+        animation: splash-logo-enter 180ms ease-out forwards, prerender-pulse 2.2s ease-in-out 180ms infinite;
+      }
+      @keyframes splash-logo-enter {
+        from { opacity: 0; }
+        to { opacity: 0.75; }
       }
       @keyframes prerender-pulse {
         0%, 100% {
