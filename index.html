@@ -62,6 +62,11 @@
         visibility: hidden;
         pointer-events: none;
       }
+      /* The HTML splash owns the initial handoff. Keep React's fallback hidden
+         until this element is removed so two animated logos never overlap. */
+      #prerender-splash ~ #root .startup-splash {
+        visibility: hidden;
+      }
       html[data-theme='light'] #prerender-splash {
         background-color: #f8fafc;
       }

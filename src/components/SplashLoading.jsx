@@ -1,6 +1,6 @@
 export default function SplashLoading() {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-50 dark:bg-[#0A0F1E]">
+    <div className="startup-splash fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-50 dark:bg-[#0A0F1E]">
       <img 
         src="/icons/logo.png" 
         alt="Axon Logo" 
