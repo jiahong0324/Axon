@@ -73,12 +73,11 @@
         border-radius: 1.5rem;
         object-fit: cover;
         box-shadow: 0 0 45px 5px rgba(59, 130, 246, 0.45);
-        animation: prerender-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        transition: all 1s;
+        animation: prerender-glow 2.5s ease-in-out infinite;
       }
-      @keyframes prerender-pulse {
-        0%, 100% { opacity: 1; box-shadow: 0 0 45px 5px rgba(59, 130, 246, 0.45); transform: scale(1); }
-        50% { opacity: 1; box-shadow: 0 0 65px 12px rgba(59, 130, 246, 0.65); transform: scale(1.03); }
+      @keyframes prerender-glow {
+        0%, 100% { box-shadow: 0 0 45px 5px rgba(59, 130, 246, 0.45); }
+        50% { box-shadow: 0 0 70px 15px rgba(59, 130, 246, 0.6); }
       }
     </style>
     <script>
