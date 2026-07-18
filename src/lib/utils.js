@@ -134,13 +134,13 @@ export function markdownToHtml(text = '') {
           <table class="ai-table w-full min-w-full border-collapse text-left text-xs md:text-sm">
             <thead class="border-b border-white/10 bg-blue-500/15 text-blue-300 text-[11px] md:text-xs font-bold uppercase tracking-wider">
               <tr>
-                ${headers.map(h => `<th class="px-3 py-3 md:px-4 md:py-3.5 align-top whitespace-nowrap">${formatInline(h)}</th>`).join('')}
+                ${headers.map(h => `<th class="px-3 py-3 md:px-4 md:py-3.5 align-top break-words">${formatInline(h)}</th>`).join('')}
               </tr>
             </thead>
             <tbody class="divide-y divide-white/[0.06]">
               ${rows.map((row, rIdx) => `
                 <tr class="transition-colors hover:bg-white/[0.05] ${rIdx % 2 === 1 ? 'bg-white/[0.015]' : ''}">
-                  ${headers.map((_, colIdx) => `<td class="px-3 py-3 md:px-4 md:py-3.5 align-top leading-relaxed text-slate-200">${formatInline(row[colIdx] || '')}</td>`).join('')}
+                  ${headers.map((_, colIdx) => `<td class="px-3 py-3 md:px-4 md:py-3.5 align-top leading-relaxed text-slate-200 break-words">${formatInline(row[colIdx] || '')}</td>`).join('')}
                 </tr>
               `).join('')}
             </tbody>
@@ -149,29 +149,39 @@ export function markdownToHtml(text = '') {
       `
 
       const mobileCardsHtml = `
-        <div class="ai-mobile-table-cards block sm:hidden space-y-3 my-3">
+        <div class="ai-mobile-table-cards block sm:hidden space-y-3.5 my-3 w-full min-w-0">
           ${rows.map((row, rIdx) => {
-            const title = row[0] || `Phase ${rIdx + 1}`
-            const subtitle = row[1] || ''
-            const badge = row[2] || ''
-            const details = headers.slice(3).map((h, cIdx) => {
-              const val = row[cIdx + 3]
-              if (!val) return ''
+            const title = row[0] || `Row ${rIdx + 1}`
+            const titleHeader = headers[0] || ''
+            
+            let badge = ''
+            let detailsStartIndex = 1
+            if (row.length >= 3 && row[2] && row[2].length <= 16 && !row[2].includes('. ')) {
+              badge = row[2]
+            } else if (row.length === 2 && row[1] && row[1].length <= 16 && !row[1].includes('. ')) {
+              badge = row[1]
+            }
+
+            const details = headers.slice(detailsStartIndex).map((h, cIdx) => {
+              const val = row[cIdx + detailsStartIndex]
+              if (!val || val === badge) return ''
               return `
-                <div class="flex flex-col gap-0.5 text-xs">
-                  <span class="font-bold text-blue-300 uppercase tracking-wider text-[10px]">${formatInline(h)}</span>
-                  <span class="text-slate-200 leading-relaxed">${formatInline(val)}</span>
+                <div class="flex flex-col gap-1 text-xs min-w-0 break-words">
+                  <span class="font-bold text-blue-300 uppercase tracking-wider text-[10px] break-words">${formatInline(h)}</span>
+                  <div class="text-slate-200 leading-relaxed break-words whitespace-normal">${formatInline(val)}</div>
                 </div>`
             }).join('')
 
             return `
-              <div class="rounded-2xl border border-white/10 bg-[#0e1626] p-4 shadow-lg space-y-2.5">
-                <div class="flex items-start justify-between gap-2 border-b border-white/10 pb-2.5">
-                  <div class="font-extrabold text-blue-400 text-sm leading-snug">${formatInline(title)}</div>
-                  ${badge ? `<span class="inline-flex shrink-0 items-center rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 text-[11px] font-bold text-blue-300">${formatInline(badge)}</span>` : ''}
+              <div class="rounded-2xl border border-white/10 bg-[#0e1626] p-4 shadow-lg space-y-3 w-full min-w-0 overflow-hidden break-words">
+                <div class="flex items-start justify-between gap-2.5 pb-1 border-b border-white/10 min-w-0">
+                  <div class="min-w-0 flex-1 break-words">
+                    ${titleHeader ? `<div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">${formatInline(titleHeader)}</div>` : ''}
+                    <div class="font-extrabold text-blue-400 text-sm leading-snug break-words">${formatInline(title)}</div>
+                  </div>
+                  ${badge ? `<span class="inline-flex shrink-0 max-w-[120px] truncate items-center rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 text-[11px] font-bold text-blue-300">${formatInline(badge)}</span>` : ''}
                 </div>
-                ${subtitle ? `<div class="text-sm font-semibold text-white leading-relaxed">${formatInline(subtitle)}</div>` : ''}
-                ${details ? `<div class="grid grid-cols-1 gap-2 pt-1 border-t border-white/5">${details}</div>` : ''}
+                ${details ? `<div class="grid grid-cols-1 gap-2.5 pt-1.5 min-w-0 break-words">${details}</div>` : ''}
               </div>
             `
           }).join('')}
