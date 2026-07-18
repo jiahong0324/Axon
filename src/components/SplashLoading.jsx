@@ -8,8 +8,8 @@ export default function SplashLoading() {
         alt="Axon Logo" 
         className="relative z-10 h-28 w-28 rounded-3xl object-cover"
         style={{
-          opacity: 0.7,
-          filter: 'brightness(0.85)',
+          opacity: 0.75,
+          filter: 'brightness(0.88)',
           boxShadow: '0 0 35px 5px rgba(59, 130, 246, 0.4)',
           animation: 'prerender-pulse 2.2s ease-in-out infinite'
         }}
