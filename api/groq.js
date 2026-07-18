@@ -77,7 +77,7 @@ export default async function handler(req, res) {
               Authorization: `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile',
+              model: 'openai/gpt-oss-20b',
               messages: [
                 { role: 'system', content: 'You are a professional translator. Translate the user input text from Chinese (or mixed language) into clear, natural English. Output ONLY the English translation without any extra comments, explanations, or quotes.' },
                 { role: 'user', content }
@@ -155,7 +155,7 @@ export default async function handler(req, res) {
       const modelsToTry = [
         { model: CHAT_MODEL, maxTokens: 1024 },
         { model: 'openai/gpt-oss-20b', maxTokens: 1500 },
-        { model: 'llama-3.3-70b-versatile', maxTokens: 1500 }
+        { model: 'qwen/qwen-3.6-27b', maxTokens: 1500 }
       ]
 
       let lastError = 'Groq API error'
