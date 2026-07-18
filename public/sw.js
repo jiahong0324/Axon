@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v3-profile-fix'
+const CACHE_NAME = 'axon-v4-launch-screen-refresh'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', e => {
