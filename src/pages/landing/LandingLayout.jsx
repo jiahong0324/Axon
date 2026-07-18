@@ -89,6 +89,12 @@ export default function LandingLayout() {
   }, [navigate, isViewing])
 
   useEffect(() => {
+    if (!sessionLoading && (!hasSession || isViewing)) {
+      window.hidePrerenderSplash?.()
+    }
+  }, [sessionLoading, hasSession, isViewing])
+
+  useEffect(() => {
     // Close menu when route changes
     setMenuOpen(false)
     // Reset scroll position for the main container

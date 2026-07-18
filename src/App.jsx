@@ -44,7 +44,7 @@ function SplashController() {
   const location = useLocation()
   useEffect(() => {
     const publicPaths = ['/login', '/register', '/onboarding', '/update-password', '/terms']
-    if (publicPaths.includes(location.pathname) || location.pathname === '/' || location.pathname.startsWith('/blog') || location.pathname.startsWith('/faq') || location.pathname.startsWith('/contact') || location.pathname.startsWith('/helo')) {
+    if (publicPaths.includes(location.pathname) || location.pathname.startsWith('/blog') || location.pathname.startsWith('/faq') || location.pathname.startsWith('/contact') || location.pathname.startsWith('/helo')) {
       window.hidePrerenderSplash?.()
     }
   }, [location.pathname])
