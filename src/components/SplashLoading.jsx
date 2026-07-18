@@ -7,7 +7,7 @@ export default function SplashLoading() {
         src="/icons/logo.png" 
         alt="Axon Logo" 
         className="relative z-10 h-28 w-28 rounded-3xl object-cover"
-        style={{ boxShadow: '0 0 50px 10px rgba(59, 130, 246, 0.5)', opacity: 1 }}
+        style={{ animation: 'prerender-pulse 2.2s ease-in-out infinite' }}
       />
     </div>
   )

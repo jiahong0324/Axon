@@ -49,12 +49,12 @@ async function generate() {
     // Standard dark background: #0A0F1E
     const bg = new Jimp(dev.pw, dev.ph, 0x0A0F1EFF);
     
-    // Scale logo dynamically to fit screen (approx 20% of smaller dimension)
-    const logoSize = Math.round(Math.min(dev.pw, dev.ph) * 0.22);
+    // Physical logo size matching 7rem (112px CSS points) exactly on retina screen
+    const logoSize = Math.round(dev.r * 112);
     const scaledLogo = logo.clone().resize(logoSize, logoSize);
     
-    // Add rounded corners to logo
-    const cornerRadius = Math.round(logoSize * 0.21);
+    // Add rounded corners to logo (1.5rem / 7rem ratio = ~0.214)
+    const cornerRadius = Math.round(logoSize * 0.214);
     scaledLogo.scan(0, 0, logoSize, logoSize, function (lx, ly, idx) {
       let cX = 0, cY = 0;
       if (lx < cornerRadius) cX = cornerRadius - lx;
@@ -73,8 +73,8 @@ async function generate() {
       }
     });
 
-    // Create glowing radial blue aura layer (Image 2 style)
-    const glowSize = Math.round(logoSize * 2.2);
+    // Create subtle glowing blue aura layer matching web splash
+    const glowSize = Math.round(logoSize * 1.65);
     const glow = new Jimp(glowSize, glowSize, 0x00000000);
     const glowRadius = glowSize / 2;
 
@@ -83,11 +83,11 @@ async function generate() {
       const dy = gy - glowRadius;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < glowRadius) {
-        const factor = Math.pow(1 - dist / glowRadius, 1.6);
+        const factor = Math.pow(1 - dist / glowRadius, 1.8);
         this.bitmap.data[idx + 0] = Math.round(59 * factor);   // R
         this.bitmap.data[idx + 1] = Math.round(130 * factor);  // G
         this.bitmap.data[idx + 2] = Math.round(246 * factor);  // B
-        this.bitmap.data[idx + 3] = Math.round(195 * factor);  // Alpha
+        this.bitmap.data[idx + 3] = Math.round(160 * factor);  // Alpha
       }
     });
 
