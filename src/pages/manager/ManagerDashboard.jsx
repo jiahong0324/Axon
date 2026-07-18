@@ -51,6 +51,7 @@ export default function ManagerDashboard() {
       ...item,
       profile: studentProfiles.find(p => p.id === item.user_id)
     })))
+    window.hidePrerenderSplash?.()
   }
 
   async function sendAnnouncement(e) {

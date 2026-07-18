@@ -61,6 +61,11 @@ export default function TimetablePage() {
 
   useEffect(() => { initializeTimetables() }, [])
   useEffect(() => {
+    if (!loading) {
+      window.hidePrerenderSplash?.()
+    }
+  }, [loading])
+  useEffect(() => {
     if (user) fetchClasses()
   }, [user, activeProfileId])
   useEffect(() => {

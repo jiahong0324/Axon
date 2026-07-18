@@ -38,6 +38,11 @@ export default function HomePage() {
   const exStats = useMemo(() => calculateStreakAndStats(exerciseLogs, 4, exerciseFreezes, exTodayStr), [exerciseLogs, exerciseFreezes, exTodayStr])
 
   useEffect(() => { fetchDashboard() }, [])
+  useEffect(() => {
+    if (!loading) {
+      window.hidePrerenderSplash?.()
+    }
+  }, [loading])
   useEffect(() => { if (localStorage.getItem('dailyTipEnabled') !== 'false') refreshTip() }, [])
   useEffect(() => {
     const timer = setInterval(() => {
