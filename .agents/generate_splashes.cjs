@@ -73,8 +73,8 @@ async function generate() {
       }
     });
 
-    // Create initial 0% frame glowing blue aura (subtle 25px equivalent glow)
-    const glowSize = Math.round(logoSize * 1.45);
+    // Create initial 0% frame glowing blue aura (matching 35px glow)
+    const glowSize = Math.round(logoSize * 1.6);
     const glow = new Jimp(glowSize, glowSize, 0x00000000);
     const glowRadius = glowSize / 2;
 

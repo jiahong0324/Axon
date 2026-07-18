@@ -10,7 +10,7 @@ export default function SplashLoading() {
         style={{
           opacity: 0.7,
           filter: 'brightness(0.85)',
-          boxShadow: '0 0 25px 3px rgba(59, 130, 246, 0.35)',
+          boxShadow: '0 0 35px 5px rgba(59, 130, 246, 0.4)',
           animation: 'prerender-pulse 2.2s ease-in-out infinite'
         }}
       />
