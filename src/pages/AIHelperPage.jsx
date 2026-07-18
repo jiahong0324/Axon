@@ -81,6 +81,15 @@ export default function AIHelperPage({ role = 'student' }) {
   const audioChunksRef = useRef([])
 
   useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      const newHeight = Math.max(42, Math.min(textareaRef.current.scrollHeight, 128))
+      textareaRef.current.style.height = `${newHeight}px`
+      textareaRef.current.style.overflowY = textareaRef.current.scrollHeight > 128 ? 'auto' : 'hidden'
+    }
+  }, [input])
+
+  useEffect(() => {
     syncAIChatWithSupabase()
 
     const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
@@ -263,13 +272,7 @@ export default function AIHelperPage({ role = 'student' }) {
                 const text = await transcribeAudioWithGroq(base64Audio, mediaRecorder.mimeType || 'audio/webm')
                 if (text) {
                   setInput(prev => prev ? `${prev.trim()} ${text.trim()}` : text.trim())
-                  requestAnimationFrame(() => {
-                    if (textareaRef.current) {
-                      textareaRef.current.focus()
-                      textareaRef.current.style.height = '42px'
-                      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 128)}px`
-                    }
-                  })
+                  requestAnimationFrame(() => textareaRef.current?.focus())
                 }
               } catch (err) {
                 alert(t('ai.voiceError') || 'Could not transcribe voice.')
@@ -327,7 +330,6 @@ export default function AIHelperPage({ role = 'student' }) {
       setInput('')
       setSelectedImage(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
-      if (ta) ta.style.height = '42px'
     }, 150)
 
     const newMsg = { role: 'user', content: userText, timestamp: new Date() }
@@ -485,16 +487,12 @@ export default function AIHelperPage({ role = 'student' }) {
               
               <textarea
                 ref={textareaRef}
-                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-1 py-2.5 text-base outline-none shadow-none transition-all duration-200 focus:border-0 focus:ring-0 focus:shadow-none"
+                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-1 py-2.5 text-base outline-none shadow-none transition-colors duration-200 focus:border-0 focus:ring-0 focus:shadow-none"
                 style={{ color: 'var(--text-primary)', maxHeight: '128px', height: '42px' }}
                 placeholder={t('ai.placeholder')}
                 rows={1}
                 value={input}
-                onChange={e => {
-                  setInput(e.target.value)
-                  e.target.style.height = '42px'
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`
-                }}
+                onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
