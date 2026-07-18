@@ -37,13 +37,13 @@ export default async function handler(req, res) {
 
       const fileBlob = new Blob([buffer], { type: mimeType })
       
-      const makeAudioRequest = async (modelName) => {
+      const makeAudioRequest = async (modelName, endpoint = 'translations') => {
         const formData = new FormData()
         formData.append('file', fileBlob, `voice.${ext}`)
         formData.append('model', modelName)
         formData.append('response_format', 'json')
 
-        const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        const res = await fetch(`https://api.groq.com/openai/v1/audio/${endpoint}`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${apiKey}`
@@ -54,16 +54,47 @@ export default async function handler(req, res) {
         return { ok: res.ok, status: res.status, data }
       }
 
-      let result = await makeAudioRequest('whisper-large-v3-turbo')
+      let result = await makeAudioRequest('whisper-large-v3-turbo', 'translations')
       if (!result.ok) {
-        result = await makeAudioRequest('whisper-large-v3')
+        result = await makeAudioRequest('whisper-large-v3', 'translations')
+      }
+      if (!result.ok) {
+        result = await makeAudioRequest('whisper-large-v3-turbo', 'transcriptions')
       }
 
       if (!result.ok) {
         return res.status(result.status || 500).json({ error: result.data?.error?.message || 'Groq Audio API error' })
       }
 
-      return res.status(200).json({ content: result.data?.text || '' })
+      let content = result.data?.text || ''
+
+      if (/[\u4e00-\u9fa5]/.test(content)) {
+        try {
+          const transRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: 'llama-3.3-70b-versatile',
+              messages: [
+                { role: 'system', content: 'You are a professional translator. Translate the user input text from Chinese (or mixed language) into clear, natural English. Output ONLY the English translation without any extra comments, explanations, or quotes.' },
+                { role: 'user', content }
+              ],
+              max_tokens: 500,
+              temperature: 0.2
+            })
+          })
+          if (transRes.ok) {
+            const transData = await transRes.json().catch(() => ({}))
+            const translatedText = transData.choices?.[0]?.message?.content?.trim()
+            if (translatedText) content = translatedText
+          }
+        } catch (e) {}
+      }
+
+      return res.status(200).json({ content })
     } else if (mode === 'vision') {
       const githubToken = process.env.GITHUB_TOKEN
       if (!githubToken) {

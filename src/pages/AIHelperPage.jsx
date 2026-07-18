@@ -483,9 +483,25 @@ export default function AIHelperPage({ role = 'student' }) {
               </button>
               <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageSelect} />
               
+              <textarea
+                ref={textareaRef}
+                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-1 py-2.5 text-base outline-none shadow-none transition-all duration-200 focus:border-0 focus:ring-0 focus:shadow-none"
+                style={{ color: 'var(--text-primary)', maxHeight: '128px', height: '42px' }}
+                placeholder={t('ai.placeholder')}
+                rows={1}
+                value={input}
+                onChange={e => {
+                  setInput(e.target.value)
+                  e.target.style.height = '42px'
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`
+                }}
+                onKeyDown={handleKeyDown}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+              />
               <button
                 type="button"
-                className={`mb-1 flex h-8 w-8 min-h-[32px] min-w-[32px] shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+                className={`mb-1 mr-0.5 flex h-9 w-9 min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
                   isRecording
                     ? 'bg-red-500 text-white shadow-lg shadow-red-500/40 animate-pulse'
                     : isTranscribing
@@ -504,23 +520,6 @@ export default function AIHelperPage({ role = 'student' }) {
                   <Mic className="h-4 w-4 shrink-0" />
                 )}
               </button>
-              
-              <textarea
-                ref={textareaRef}
-                className="scrollbar-hide flex-1 resize-none border-0 bg-transparent px-1 py-2.5 text-base outline-none shadow-none transition-all duration-200 focus:border-0 focus:ring-0 focus:shadow-none"
-                style={{ color: 'var(--text-primary)', maxHeight: '128px', height: '42px' }}
-                placeholder={t('ai.placeholder')}
-                rows={1}
-                value={input}
-                onChange={e => {
-                  setInput(e.target.value)
-                  e.target.style.height = '42px'
-                  e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`
-                }}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-              />
               <button
                 type="button"
                 className="ai-send-button flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-2xl text-white transition-all disabled:opacity-40"
