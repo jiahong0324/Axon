@@ -124,6 +124,7 @@ export default function TimetablePage() {
         setClasses(linkedClasses)
       }
       setLoading(false)
+      window.hidePrerenderSplash?.()
       return
     }
 
@@ -171,6 +172,7 @@ export default function TimetablePage() {
     writeCache(classesCacheKey(activeUser.id), combined)
     setClasses(combined)
     setLoading(false)
+    window.hidePrerenderSplash?.()
   }
 
   function switchProfile(profileId) {

@@ -121,7 +121,10 @@ export default function ExercisePage() {
     setWeeklyGoal(data.weeklyGoal || 4)
     setXpTotal(data.xpTotal || 0)
     setFreezesAvailable(data.freezesAvailable || 1)
-    if (showLoading) setLoading(false)
+    if (showLoading) {
+      setLoading(false)
+      window.hidePrerenderSplash?.()
+    }
   }
 
   const stats = useMemo(

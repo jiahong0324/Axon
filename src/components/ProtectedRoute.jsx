@@ -11,10 +11,22 @@ import SplashLoading from './SplashLoading'
 
 import { studentManager } from '../lib/manageStudent'
 
+import { useLocation } from 'react-router-dom'
+
 export default function ProtectedRoute({ children, requireRole = 'student' }) {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const location = useLocation()
+
+  useEffect(() => {
+    if (!loading) {
+      const deferredPaths = ['/home', '/timetable', '/exercise', '/manager']
+      if (!deferredPaths.includes(location.pathname)) {
+        window.hidePrerenderSplash?.()
+      }
+    }
+  }, [loading, location.pathname])
 
   useEffect(() => {
     if (session?.user) {

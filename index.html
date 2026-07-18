@@ -49,12 +49,18 @@
       #prerender-splash {
         position: fixed;
         inset: 0;
-        z-index: 50;
+        z-index: 99999;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         background-color: #0A0F1E;
+        transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s;
+      }
+      #prerender-splash.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
       }
       html[data-theme='light'] #prerender-splash {
         background-color: #f8fafc;
@@ -66,13 +72,12 @@
         width: 7rem;
         border-radius: 1.5rem;
         object-fit: cover;
-        box-shadow: 0 0 45px 5px rgba(59, 130, 246, 0.45);
-        animation: prerender-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        transition: all 1s;
+        box-shadow: 0 0 50px 10px rgba(59, 130, 246, 0.5);
+        animation: prerender-glow 2.5s ease-in-out infinite;
       }
-      @keyframes prerender-pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: .5; }
+      @keyframes prerender-glow {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 50px 10px rgba(59, 130, 246, 0.5); }
+        50% { transform: scale(1.03); box-shadow: 0 0 70px 18px rgba(59, 130, 246, 0.7); }
       }
     </style>
     <script>
@@ -93,17 +98,30 @@
           var accent = localStorage.getItem('accentColor') || 'blue';
           document.documentElement.setAttribute('data-accent', accent);
         } catch (e) {}
+
+        window.hidePrerenderSplash = function() {
+          var el = document.getElementById('prerender-splash');
+          if (el && !el.classList.contains('is-hidden')) {
+            el.classList.add('is-hidden');
+            setTimeout(function() {
+              if (el && el.parentNode) el.parentNode.removeChild(el);
+            }, 550);
+          }
+        };
+
+        setTimeout(function() {
+          if (window.hidePrerenderSplash) window.hidePrerenderSplash();
+        }, 3500);
       })();
     </script>
     <link rel="apple-touch-icon" href="/icons/logo.png">
     <script async src="https://cdn.jsdelivr.net/npm/pwacompat@2.0.17/pwacompat.min.js" crossorigin="anonymous"></script>
   </head>
   <body>
-    <div id="root">
-      <div id="prerender-splash">
-        <img src="/icons/logo.png" alt="Axon Logo" />
-      </div>
+    <div id="prerender-splash">
+      <img src="/icons/logo.png" alt="Axon Logo" />
     </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
