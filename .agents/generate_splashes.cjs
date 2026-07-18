@@ -49,8 +49,8 @@ async function generate() {
     // Standard dark background: #0A0F1E
     const bg = new Jimp(dev.pw, dev.ph, 0x0A0F1EFF);
     
-    // Physical logo size matching 7rem (112px CSS points) exactly on retina screen
-    const logoSize = Math.round(dev.r * 112);
+    // Physical logo size matching web splash logo size (7rem) on iOS retina screens
+    const logoSize = Math.round(dev.r * 138);
     const scaledLogo = logo.clone().resize(logoSize, logoSize);
     
     // Add rounded corners to logo (1.5rem / 7rem ratio = ~0.214)
