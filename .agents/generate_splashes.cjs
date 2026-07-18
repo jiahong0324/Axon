@@ -48,9 +48,9 @@ async function generate() {
   for (const dev of devices) {
     // Standard dark background: #0A0F1E
     const bg = new Jimp(dev.pw, dev.ph, 0x0A0F1EFF);
-    
-    // Physical logo size matching web splash logo size (7rem) on iOS retina screens
-    const logoSize = Math.round(dev.r * 138);
+
+    // Physical logo size matching web splash logo size (7rem) + aura on iOS screens
+    const logoSize = Math.round(dev.r * 175);
     const scaledLogo = logo.clone().resize(logoSize, logoSize);
     
     // Add rounded corners to logo (1.5rem / 7rem ratio = ~0.214)
@@ -73,8 +73,8 @@ async function generate() {
       }
     });
 
-    // Create initial 0% frame glowing blue aura (matching 35px glow)
-    const glowSize = Math.round(logoSize * 1.6);
+    // Create glowing blue aura matching 58px box-shadow spread
+    const glowSize = Math.round(logoSize * 2.1);
     const glow = new Jimp(glowSize, glowSize, 0x00000000);
     const glowRadius = glowSize / 2;
 
