@@ -38,18 +38,6 @@ import LandingArticle from './pages/landing/LandingArticle'
 import LandingFAQ from './pages/landing/LandingFAQ'
 import LandingContact from './pages/landing/LandingContact'
 import LandingHelo from './pages/landing/LandingHelo'
-import { useEffect } from 'react'
-
-function SplashController() {
-  const location = useLocation()
-  useEffect(() => {
-    const publicPaths = ['/login', '/register', '/onboarding', '/update-password', '/terms']
-    if (publicPaths.includes(location.pathname) || location.pathname.startsWith('/blog') || location.pathname.startsWith('/faq') || location.pathname.startsWith('/contact') || location.pathname.startsWith('/helo')) {
-      window.hidePrerenderSplash?.()
-    }
-  }, [location.pathname])
-  return null
-}
 
 export default function App() {
   return (
@@ -57,7 +45,6 @@ export default function App() {
       <ThemeProvider>
         <ToastProvider>
           <BrowserRouter>
-            <SplashController />
             <AuthEmailHandler />
             <Routes>
               <Route path="/login" element={<LoginPage />} />

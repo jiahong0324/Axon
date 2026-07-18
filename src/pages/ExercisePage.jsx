@@ -78,12 +78,6 @@ export default function ExercisePage() {
   const todayStr = getTodayStr()
 
   useEffect(() => {
-    if (!loading) {
-      window.hidePrerenderSplash?.()
-    }
-  }, [loading])
-
-  useEffect(() => {
     loadInitialData(true)
     const savedPlan = localStorage.getItem('axon_exercise_ai_plan_content')
     const savedDate = localStorage.getItem('axon_exercise_ai_plan_date')

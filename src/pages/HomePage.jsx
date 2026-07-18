@@ -112,7 +112,6 @@ export default function HomePage() {
       showToast('Failed to load dashboard.', 'error')
     } finally {
       setLoading(false)
-      window.hidePrerenderSplash?.()
     }
   }
 

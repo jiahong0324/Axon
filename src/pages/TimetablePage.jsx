@@ -45,7 +45,7 @@ export default function TimetablePage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [mobileDay, setMobileDay] = useState(() => {
     const day = new Date().getDay()
-    return day >= 1 && day <= 6 ? day - 1 : 0
+    return day >= 1 && day <= 5 ? day - 1 : 0
   })
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
@@ -124,7 +124,6 @@ export default function TimetablePage() {
         setClasses(linkedClasses)
       }
       setLoading(false)
-      window.hidePrerenderSplash?.()
       return
     }
 
@@ -172,7 +171,6 @@ export default function TimetablePage() {
     writeCache(classesCacheKey(activeUser.id), combined)
     setClasses(combined)
     setLoading(false)
-    window.hidePrerenderSplash?.()
   }
 
   function switchProfile(profileId) {
@@ -285,18 +283,7 @@ export default function TimetablePage() {
   }
 
   async function saveAll(items) {
-    const rows = items.map((item, index) => ({
-      subject: item.subject || '',
-      day: item.day || 'Monday',
-      start_time: item.start_time || '09:00',
-      end_time: item.end_time || '10:00',
-      lecturer: item.lecturer || '',
-      classroom: item.classroom || '',
-      class_type: item.class_type || 'L',
-      color: item.color || classColors[item.class_type] || 'blue',
-      id: item.id || `local-${Date.now()}-${index}`,
-      profile_id: isLiveProfile ? LIVE_PROFILE_ID : activeProfileId
-    }))
+    const rows = items.map((item, index) => ({ ...item, id: item.id || `local-${Date.now()}-${index}`, color: item.color || classColors[item.class_type] || 'blue', profile_id: isLiveProfile ? LIVE_PROFILE_ID : activeProfileId }))
     if (!isLiveProfile) {
       const freshProfiles = readLinkedProfiles(user.id)
       const freshProfile = freshProfiles.find(p => p.id === activeProfileId)
@@ -306,12 +293,9 @@ export default function TimetablePage() {
       setAnalyzerOpen(false)
       return
     }
-    const liveRows = rows.map(({ id, profile_id, ...item }) => ({ ...item, user_id: user.id }))
+    const liveRows = rows.map(({ id, ...item }) => ({ ...item, user_id: user.id }))
     const { error } = await supabase.from('classes').insert(liveRows)
-    if (error) {
-      console.error('Save extracted classes error:', error)
-      return showToast(t('timetable.saveExtractedFailed'), 'error')
-    }
+    if (error) return showToast(t('timetable.saveExtractedFailed'), 'error')
     await Promise.all(liveRows.map(item => logActivity('Added class', 'class', item.subject)))
     clearCache(classesCacheKey(user.id))
     showToast(t('timetable.savedExtracted'), 'success')
@@ -565,37 +549,23 @@ export default function TimetablePage() {
           )}
 
           {/* Desktop View */}
-          {(() => {
-            const activeDays = days.filter(day => classes.some(c => c.day === day))
-            if (activeDays.length === 0) {
+          <section className="hidden md:grid gap-4 md:grid-cols-5">
+            {days.map((day, index) => {
+              const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
               return (
-                <div className="hidden md:block card text-center py-12">
-                  <EmptyState emoji="📅" message={t('timetable.freeDay')} />
+                <div key={day} className="card">
+                  <h2 className="mb-4 font-bold">
+                    {t(`timetable.days.${day}`)}
+                  </h2>
+                  {dayClasses.length === 0 ? <EmptyState emoji="." message={t('timetable.freeDay')} /> : (
+                    <div className="space-y-3">
+                      {dayClasses.map(c => <DesktopClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}
+                    </div>
+                  )}
                 </div>
               )
-            }
-            return (
-              <section className={`hidden md:grid gap-4 ${
-                activeDays.length <= 3 ? 'md:grid-cols-3' :
-                activeDays.length === 4 ? 'md:grid-cols-4' :
-                'md:grid-cols-3 xl:grid-cols-5'
-              }`}>
-                {activeDays.map(day => {
-                  const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
-                  return (
-                    <div key={day} className="card">
-                      <h2 className="mb-4 font-bold">
-                        {t(`timetable.days.${day}`)}
-                      </h2>
-                      <div className="space-y-3">
-                        {dayClasses.map(c => <DesktopClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}
-                      </div>
-                    </div>
-                  )
-                })}
-              </section>
-            )
-          })()}
+            })}
+          </section>
         </div>
         )}
       </div>
