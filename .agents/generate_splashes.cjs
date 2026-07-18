@@ -49,9 +49,10 @@ async function generate() {
     // Standard dark background: #0A0F1E
     const bg = new Jimp(dev.pw, dev.ph, 0x0A0F1EFF);
 
-    // Physical logo size matching web splash logo size (7rem) + aura on iOS screens
-    const logoSize = Math.round(dev.r * 175);
-    const scaledLogo = logo.clone().resize(logoSize, logoSize);
+    // Physical logo size matching the web splash logo size (7rem / 112px CSS)
+    const logoSize = Math.round(dev.r * 112);
+    // Match the web splash's first frame before iOS hands off to HTML.
+    const scaledLogo = logo.clone().resize(logoSize, logoSize).brightness(-0.12).opacity(0.75);
     
     // Add rounded corners to logo (1.5rem / 7rem ratio = ~0.214)
     const cornerRadius = Math.round(logoSize * 0.214);
@@ -73,8 +74,8 @@ async function generate() {
       }
     });
 
-    // Create glowing blue aura matching 58px box-shadow spread
-    const glowSize = Math.round(logoSize * 2.1);
+    // Create the first animation frame's glowing blue aura
+    const glowSize = Math.round(logoSize * 1.6);
     const glow = new Jimp(glowSize, glowSize, 0x00000000);
     const glowRadius = glowSize / 2;
 
