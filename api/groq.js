@@ -81,8 +81,8 @@ export default async function handler(req, res) {
     } else {
       const modelsToTry = [
         { model: CHAT_MODEL, maxTokens: 1024 },
-        { model: 'llama-3.1-8b-instant', maxTokens: 1500 },
-        { model: 'mixtral-8x7b-32768', maxTokens: 1500 }
+        { model: 'openai/gpt-oss-20b', maxTokens: 1500 },
+        { model: 'llama-3.3-70b-versatile', maxTokens: 1500 }
       ]
 
       let lastError = 'Groq API error'

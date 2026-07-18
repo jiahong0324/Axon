@@ -295,9 +295,12 @@ export default function TimetablePage() {
       setAnalyzerOpen(false)
       return
     }
-    const liveRows = rows.map(({ id, ...item }) => ({ ...item, user_id: user.id }))
+    const liveRows = rows.map(({ id, profile_id, ...item }) => ({ ...item, user_id: user.id }))
     const { error } = await supabase.from('classes').insert(liveRows)
-    if (error) return showToast(t('timetable.saveExtractedFailed'), 'error')
+    if (error) {
+      console.error('Error inserting extracted classes:', error)
+      return showToast(t('timetable.saveExtractedFailed'), 'error')
+    }
     await Promise.all(liveRows.map(item => logActivity('Added class', 'class', item.subject)))
     clearCache(classesCacheKey(user.id))
     showToast(t('timetable.savedExtracted'), 'success')
@@ -336,7 +339,10 @@ export default function TimetablePage() {
     if (!await confirm({ title: t('timetable.clearTitle'), message: t('timetable.clearMessage'), confirmText: t('common.clear') })) return
     if (isLiveProfile) {
       const { error } = await supabase.from('classes').delete().eq('user_id', user.id)
-      if (error) return showToast(t('timetable.saveExtractedFailed'), 'error')
+      if (error) {
+        console.error('Error clearing classes:', error)
+        return showToast(t('timetable.clearFailed'), 'error')
+      }
       const replacements = user.user_metadata?.replacement_classes || []
       const remainingReplacements = replacements.filter(r => r.profile_id && r.profile_id !== 'account' && r.profile_id !== LIVE_PROFILE_ID)
       const { data: updatedAuth } = await supabase.auth.updateUser({ data: { replacement_classes: remainingReplacements } })
