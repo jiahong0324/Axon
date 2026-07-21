@@ -29,6 +29,19 @@ export async function saveSubscriptionToServer(subscription, userId) {
   }
 }
 
+function getPushPreferences() {
+  return {
+    axon_notify_minutes: localStorage.getItem('axon_notify_minutes') || '10',
+    axon_class_notify: localStorage.getItem('axon_class_notify') !== 'false',
+    axon_exam_notify: localStorage.getItem('axon_exam_notify') !== 'false',
+    axon_attendance_notify: localStorage.getItem('axon_attendance_notify') !== 'false',
+    axon_attendance_minutes: localStorage.getItem('axon_attendance_minutes') || '10',
+    assignmentReminders: localStorage.getItem('assignmentReminders') !== 'false',
+    examAlerts: localStorage.getItem('examAlerts') !== 'false',
+    reminderLeadTime: localStorage.getItem('reminderLeadTime') || '3 days'
+  }
+}
+
 export async function registerPushSubscription(user) {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     localStorage.setItem('axon_push_registered', 'false')
@@ -48,11 +61,7 @@ export async function registerPushSubscription(user) {
     if (existingSubscription) {
       const subObj = existingSubscription.toJSON()
       subObj.deviceId = deviceId
-      subObj.preferences = {
-        axon_notify_minutes: localStorage.getItem('axon_notify_minutes') || '10',
-        axon_class_notify: localStorage.getItem('axon_class_notify') !== 'false',
-        axon_exam_notify: localStorage.getItem('axon_exam_notify') !== 'false'
-      }
+      subObj.preferences = getPushPreferences()
       const ok = await saveSubscriptionToServer(subObj, user.id)
       if (ok) {
         localStorage.setItem('axon_push_registered', 'true')
@@ -77,11 +86,7 @@ export async function registerPushSubscription(user) {
 
     const subObj = newSubscription.toJSON()
     subObj.deviceId = deviceId
-    subObj.preferences = {
-      axon_notify_minutes: localStorage.getItem('axon_notify_minutes') || '10',
-      axon_class_notify: localStorage.getItem('axon_class_notify') !== 'false',
-      axon_exam_notify: localStorage.getItem('axon_exam_notify') !== 'false'
-    }
+    subObj.preferences = getPushPreferences()
     const ok = await saveSubscriptionToServer(subObj, user.id)
     if (ok) {
       localStorage.setItem('axon_push_registered', 'true')

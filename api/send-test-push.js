@@ -53,8 +53,10 @@ export default async function handler(req, res) {
         JSON.stringify({
           title: '🚀 Axon Test Notification',
           body: 'Success! Background push notifications are fully working on this device.',
-          url: '/settings'
-        })
+          url: '/settings',
+          id: `test_${Date.now()}`
+        }),
+        { TTL: 600, urgency: 'high' }
       ).catch(async (err) => {
         console.error(`Failed to send test push to subscription ${sub.id}:`, err)
         if (err.statusCode === 410 || err.statusCode === 404) {

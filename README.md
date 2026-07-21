@@ -40,8 +40,11 @@ VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
 For the serverless push API (`api/` functions), also add these as environment variables on your hosting platform:
 
 ```env
-VITE_VAPID_PRIVATE_KEY=your_vapid_private_key
+VAPID_PRIVATE_KEY=your_vapid_private_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+CRON_SECRET=your_long_random_cron_secret
+# Optional. Defaults to 10 minutes for delayed cron catch-up.
+PUSH_MAX_LATE_MINUTES=10
 ```
 
 ### 3. Run Supabase SQL schemas
@@ -189,15 +192,25 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 ## Push Notifications
 
-Push notifications use Web Push (VAPID). The serverless endpoint lives at `api/send-test-push.js`.
+Push notifications use Web Push (VAPID). The test endpoint lives at `api/send-test-push.js`; scheduled notifications use `api/send-push.js`.
 
 1. Generate VAPID keys:
    ```bash
    node -e "const wp=require('web-push'); const keys=wp.generateVAPIDKeys(); console.log(keys)"
    ```
-2. Add `VITE_VAPID_PUBLIC_KEY` and `VITE_VAPID_PRIVATE_KEY` to your environment.
+2. Add `VITE_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` to your environment.
 3. On iOS, users must **Add to Home Screen** first (Safari PWA requirement).
 4. Students can enable push from **Settings → Notifications**.
+
+### Notification cron job
+
+The scheduled endpoint is `GET https://YOUR_DOMAIN/api/send-push`. Configure your cron provider to call it every minute with this header:
+
+```text
+Authorization: Bearer YOUR_CRON_SECRET
+```
+
+The endpoint uses Malaysia time (`Asia/Kuala_Lumpur`) and accepts delayed runs for up to `PUSH_MAX_LATE_MINUTES` (10 minutes by default). Each browser/PWA must enable push once from **Settings → Notifications**; on iPhone/iPad, Axon must first be added to the Home Screen.
 
 ---
 
@@ -235,8 +248,10 @@ VITE_GROQ_API_KEY=
 VITE_GROQ_MODEL=llama-3.3-70b-versatile
 VITE_GROQ_VISION_MODEL=llama-3.2-90b-vision-preview
 VITE_VAPID_PUBLIC_KEY=
-VITE_VAPID_PRIVATE_KEY=
+VAPID_PRIVATE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+CRON_SECRET=
+PUSH_MAX_LATE_MINUTES=10
 ```
 
 The `api/` directory contains Vercel serverless functions (e.g. push sender). The `vercel.json` configures SPA rewrites.

@@ -1,147 +1,82 @@
-const CACHE_NAME = 'axon-v4-launch-screen-refresh'
+const CACHE_NAME = 'axon-v5-background-push'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)))
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)))
   self.skipWaiting()
 })
 
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+self.addEventListener('activate', event => {
+  event.waitUntil(caches.keys().then(keys =>
+    Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))
   ))
   self.clients.claim()
 })
 
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return
 
-  // Only handle same-origin requests to prevent intercepting Supabase API or external calls
-  const url = new URL(e.request.url)
+  const url = new URL(event.request.url)
   if (url.origin !== self.location.origin) return
 
-  const isHtml = e.request.mode === 'navigate' || e.request.headers.get('accept')?.includes('text/html')
+  const isHtml = event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')
 
   if (isHtml) {
-    e.respondWith(
-      fetch(e.request)
+    event.respondWith(
+      fetch(event.request)
         .then(response => {
           const clone = response.clone()
-          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone))
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone))
           return response
         })
-        .catch(() => caches.match(e.request) || caches.match('/index.html'))
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('/index.html')))
     )
     return
   }
 
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => {
-      if (e.request.url.includes('/assets/')) {
-        return new Response('Asset not found', { status: 404 })
-      }
+  event.respondWith(
+    caches.match(event.request).then(cached => cached || fetch(event.request).catch(() => {
+      if (event.request.url.includes('/assets/')) return new Response('Asset not found', { status: 404 })
       return caches.match('/index.html')
     }))
   )
 })
 
-self.addEventListener('notificationclick', e => {
-  e.notification.close()
-  const targetUrl = e.notification.data || '/reminders'
-  e.waitUntil(
+self.addEventListener('notificationclick', event => {
+  event.notification.close()
+  const targetUrl = event.notification.data || '/reminders'
+  event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
-        if (client.url && 'focus' in client) {
-          if (client.url.includes(targetUrl) || targetUrl === '/') {
-            return client.focus()
-          }
+        if (client.url && 'focus' in client && (client.url.includes(targetUrl) || targetUrl === '/')) {
+          return client.focus()
         }
       }
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl)
-      }
+      return clients.openWindow ? clients.openWindow(targetUrl) : undefined
     })
   )
 })
 
-const seenPushes = new Set()
+self.addEventListener('push', event => {
+  let data = { title: 'Axon Notification', body: 'You have an update!' }
 
-self.addEventListener('push', e => {
-  let data = { title: '📚 Axon Notification', body: 'You have an update!' }
   try {
-    data = e.data ? e.data.json() : data
+    data = event.data ? { ...data, ...event.data.json() } : data
   } catch {
-    data = { title: '📚 Axon Notification', body: e.data ? e.data.text() : 'You have an update!' }
+    data = { ...data, body: event.data ? event.data.text() : data.body }
   }
 
-  const dupKey = `${data.title}|${data.body}`
-  
-  // 1. Synchronous In-Memory Deduplication Lock (instant thread-level mutual exclusion)
-  if (seenPushes.has(dupKey)) {
-    console.log('Skipping duplicate push (synchronous in-memory lock):', data.title, data.body)
-    return
-  }
-  seenPushes.add(dupKey)
-  setTimeout(() => {
-    seenPushes.delete(dupKey)
-  }, 60000) // retain for 60 seconds
-
-  const options = {
+  // The server persists an event id, and this tag makes a retry safe at the
+  // OS tray level. Avoid doing cache/network work before showNotification:
+  // a failed cache operation must never prevent a push from being displayed.
+  event.waitUntil(self.registration.showNotification(data.title, {
     body: data.body,
     icon: '/icons/logo-colored.png',
     badge: '/icons/badge.png',
     vibrate: data.vibrate || [200, 100, 200],
     data: data.url || '/reminders',
-    color: '#000000'
-  }
-
-  const dupKeyEncoded = encodeURIComponent(dupKey)
-  const lockUrl = `https://axon-notification-lock.local/${dupKeyEncoded}`
-  const LOCK_CACHE_NAME = 'axon-notification-locks-v1'
-
-  e.waitUntil(
-    caches.open(LOCK_CACHE_NAME).then(async cache => {
-      // 2. Persistent Cache-Based Lock check
-      const lockMatch = await cache.match(lockUrl)
-      if (lockMatch) {
-        console.log('Skipping duplicate push (persistent cache lock):', data.title, data.body)
-        return
-      }
-
-      // Write the lock to cache immediately
-      await cache.put(lockUrl, new Response('1', {
-        headers: { 'Date': new Date().toUTCString() }
-      }))
-
-      // 3. Double check active notifications on system tray
-      const notifications = await self.registration.getNotifications()
-      const isDuplicate = notifications.some(n => n.title === data.title && n.body === data.body)
-      if (isDuplicate) {
-        console.log('Skipping duplicate push notification (active tray):', data.title, data.body)
-        return
-      }
-
-      // 4. Display native system notification
-      await self.registration.showNotification(data.title, options)
-
-      // 5. Clean up old locks in the background (moved to end of flow to prevent blocking)
-      try {
-        const keys = await cache.keys()
-        for (const req of keys) {
-          const res = await cache.match(req)
-          if (res) {
-            const dateHeader = res.headers.get('Date')
-            if (dateHeader) {
-              const age = Date.now() - new Date(dateHeader).getTime()
-              if (age > 300000) { // 5 minutes in milliseconds
-                await cache.delete(req)
-              }
-            }
-          }
-        }
-      } catch (cleanErr) {
-        console.error('Error cleaning notification locks cache:', cleanErr)
-      }
-    })
-  )
+    color: '#000000',
+    tag: data.id || `${data.title}|${data.body}`,
+    renotify: true
+  }))
 })

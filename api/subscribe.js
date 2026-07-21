@@ -47,13 +47,33 @@ export default async function handler(req, res) {
       }
     }
 
-    // 2. Store or update subscription. We use an upsert matching on user_id and endpoint.
+    // 2. Preserve server-side delivery history when the app refreshes an
+    // existing browser subscription. The client intentionally sends only the
+    // Web Push keys and preferences, so it must not reset deduplication state.
+    const { data: existing, error: existingError } = await supabase
+      .from('push_subscriptions')
+      .select('subscription')
+      .eq('user_id', userId)
+      .eq('endpoint', endpoint)
+      .maybeSingle()
+
+    if (existingError) {
+      console.error('Supabase error reading existing push subscription:', existingError)
+      return res.status(500).json({ error: existingError.message })
+    }
+
+    const existingState = existing?.subscription?._notification_state
+    const subscriptionToStore = existingState && !subscription._notification_state
+      ? { ...subscription, _notification_state: existingState }
+      : subscription
+
+    // 3. Store or update subscription. We use an upsert matching on user_id and endpoint.
     const { error } = await supabase
       .from('push_subscriptions')
       .upsert({
         user_id: userId,
         endpoint: endpoint,
-        subscription: subscription,
+        subscription: subscriptionToStore,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id,endpoint' })
 

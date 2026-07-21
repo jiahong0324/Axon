@@ -3,28 +3,276 @@ import webpush from 'web-push'
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
-
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// Configure VAPID keys
+const TIME_ZONE = 'Asia/Kuala_Lumpur'
+// The cron job should run every minute. This window lets a delayed/cold-started
+// invocation catch up instead of losing a notification forever.
+const configuredLateMinutes = Number(process.env.PUSH_MAX_LATE_MINUTES || 10)
+const MAX_LATE_MINUTES = Number.isFinite(configuredLateMinutes) ? Math.max(1, configuredLateMinutes) : 10
+const NOTIFICATION_STATE_RETENTION_MS = 8 * 24 * 60 * 60 * 1000
+
 const vapidPublicKey = process.env.VITE_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
 
 if (vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(
-    'mailto:developer@axon-pwa.com',
-    vapidPublicKey,
-    vapidPrivateKey
-  )
+  webpush.setVapidDetails('mailto:developer@axon-pwa.com', vapidPublicKey, vapidPrivateKey)
+}
+
+function getZonedParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: TIME_ZONE,
+    hour12: false,
+    hourCycle: 'h23',
+    weekday: 'long',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).formatToParts(date)
+
+  const get = type => parts.find(part => part.type === type)?.value
+  const year = get('year')
+  const month = get('month')
+  const day = get('day')
+  const hour = get('hour')
+  const minute = get('minute')
+
+  return {
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    weekday: get('weekday'),
+    date: `${year}-${month}-${day}`,
+    time: `${hour}:${minute}`,
+    minutes: Number(hour) * 60 + Number(minute)
+  }
+}
+
+function zonedDate(dateString, timeString) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString || '') || !/^\d{2}:\d{2}$/.test(timeString || '')) {
+    return null
+  }
+
+  const date = new Date(`${dateString}T${timeString}:00+08:00`)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function isDue(nowMs, scheduledAt, maxLateMinutes = MAX_LATE_MINUTES) {
+  if (!scheduledAt) return false
+  const lateByMs = nowMs - scheduledAt.getTime()
+  return lateByMs >= 0 && lateByMs <= maxLateMinutes * 60 * 1000
+}
+
+function addDays(dateString, days) {
+  const [year, month, day] = dateString.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day + days))
+  return date.toISOString().slice(0, 10)
+}
+
+function preferenceEnabled(value, fallback = true) {
+  if (value === undefined || value === null) return fallback
+  return value !== false && value !== 'false'
+}
+
+function getNotificationState(subscription) {
+  const current = subscription._notification_state
+  const state = current && typeof current === 'object' && !Array.isArray(current) ? { ...current } : {}
+  const cutoff = Date.now() - NOTIFICATION_STATE_RETENTION_MS
+
+  Object.entries(state).forEach(([key, sentAt]) => {
+    if (!Number.isFinite(Number(sentAt)) || Number(sentAt) < cutoff) delete state[key]
+  })
+
+  return state
+}
+
+function notificationKey(id, date) {
+  return `${id}_${date}`
+}
+
+async function processSubscription(sub, context) {
+  const subObject = sub.subscription || {}
+  const prefs = subObject.preferences || {}
+  const notifyMinutes = Math.max(0, parseInt(prefs.axon_notify_minutes || '10', 10) || 10)
+  const attendanceMinutes = Math.max(0, parseInt(prefs.axon_attendance_minutes || '10', 10) || 10)
+  const classNotify = preferenceEnabled(prefs.axon_class_notify)
+  const examNotify = preferenceEnabled(prefs.axon_exam_notify)
+  const attendanceNotify = preferenceEnabled(prefs.axon_attendance_notify)
+  const subPayloads = []
+
+  const pushPayload = (payload, key) => subPayloads.push({ ...payload, key })
+
+  // A. Reminders: compare against a delivery window rather than an exact
+  // database time, so a cron invocation delayed by a few minutes catches up.
+  const userReminders = context.reminders.filter(reminder => reminder.user_id === sub.user_id)
+  userReminders.forEach(reminder => {
+    const reminderAt = zonedDate(context.todayDate, reminder.reminder_time)
+    if (!isDue(context.nowMs, reminderAt)) return
+
+    if ((reminder.repeat_type || '').toLowerCase() === 'weekly' && reminder.created_at) {
+      const createdWeekday = new Intl.DateTimeFormat('en-US', {
+        timeZone: TIME_ZONE,
+        weekday: 'long'
+      }).format(new Date(reminder.created_at))
+      if (createdWeekday !== context.todayDay) return
+    }
+
+    pushPayload({
+      title: '📚 Axon Reminder',
+      body: reminder.title,
+      url: '/reminders',
+      reminderObj: reminder
+    }, notificationKey(`reminder_${reminder.id}`, context.todayDate))
+  })
+
+  // B. Classes: notify when the scheduled lead time has passed, up to the
+  // configured late window.
+  if (classNotify) {
+    context.todayClasses
+      .filter(cls => cls.user_id === sub.user_id)
+      .forEach(cls => {
+        const classAt = zonedDate(context.todayDate, cls.start_time)
+        if (!classAt) return
+        const notifyAt = new Date(classAt.getTime() - notifyMinutes * 60 * 1000)
+        if (!isDue(context.nowMs, notifyAt)) return
+
+        pushPayload({
+          title: `Class starting in ${notifyMinutes} min!`,
+          body: `${cls.subject} [${cls.class_type}] at ${cls.classroom || 'TBA'}`,
+          url: '/'
+        }, notificationKey(`class_${cls.id}`, context.todayDate))
+      })
+  }
+
+  // C. Exams: use the configured start time, or 08:00 as the existing fallback.
+  if (examNotify) {
+    context.todayExams
+      .filter(exam => exam.user_id === sub.user_id)
+      .forEach(exam => {
+        const examAt = zonedDate(context.todayDate, exam.start_time || '08:00')
+        if (!examAt) return
+        const notifyAt = new Date(examAt.getTime() - notifyMinutes * 60 * 1000)
+        if (!isDue(context.nowMs, notifyAt)) return
+
+        pushPayload({
+          title: exam.start_time ? `Exam starting in ${notifyMinutes} min!` : 'Exam Today!',
+          body: `${exam.subject} ${exam.exam_type} at ${exam.venue || 'TBA'}`,
+          url: '/exams'
+        }, notificationKey(`exam_${exam.id}`, context.todayDate))
+      })
+  }
+
+  // D. Attendance reminders.
+  if (attendanceNotify) {
+    context.todayClasses
+      .filter(cls => cls.user_id === sub.user_id)
+      .forEach(cls => {
+        const classEndAt = zonedDate(context.todayDate, cls.end_time)
+        if (!classEndAt) return
+        const notifyAt = new Date(classEndAt.getTime() - attendanceMinutes * 60 * 1000)
+        if (!isDue(context.nowMs, notifyAt)) return
+
+        pushPayload({
+          title: 'Attendance Reminder!',
+          body: `${cls.subject} is ending in ${attendanceMinutes} min. Don't forget to take the attendance code!`,
+          url: '/'
+        }, notificationKey(`attendance_${cls.id}`, context.todayDate))
+      })
+  }
+
+  // E. Daily deadline countdowns. Keep the original 09:00 delivery time, but
+  // allow a delayed cron invocation to deliver within the late window.
+  const dailyDigestAt = zonedDate(context.todayDate, '09:00')
+  if (isDue(context.nowMs, dailyDigestAt)) {
+    const leadTime = prefs.reminderLeadTime || '3 days'
+    const leadDays = leadTime === '1 day' ? 1 : leadTime === '1 week' ? 7 : 3
+    const targetDate = addDays(context.todayDate, leadDays)
+
+    if (preferenceEnabled(prefs.assignmentReminders)) {
+      context.assignments
+        .filter(assignment => assignment.user_id === sub.user_id && assignment.deadline === targetDate)
+        .forEach(assignment => pushPayload({
+          title: `Assignment due in ${leadDays} ${leadDays === 1 ? 'day' : 'days'}!`,
+          body: `${assignment.title} (${assignment.subject})`,
+          url: '/assignments'
+        }, notificationKey(`assignment_due_${assignment.id}`, context.todayDate)))
+    }
+
+    if (preferenceEnabled(prefs.examAlerts)) {
+      context.upcomingExams
+        .filter(exam => exam.user_id === sub.user_id && exam.exam_date === targetDate)
+        .forEach(exam => pushPayload({
+          title: `Exam in ${leadDays} ${leadDays === 1 ? 'day' : 'days'}!`,
+          body: `${exam.subject} ${exam.exam_type} is coming up.`,
+          url: '/exams'
+        }, notificationKey(`exam_countdown_${exam.id}`, context.todayDate)))
+    }
+  }
+
+  const sentState = getNotificationState(subObject)
+  const unsentPayloads = subPayloads.filter(payload => !sentState[payload.key])
+  if (unsentPayloads.length === 0) return { sentCount: 0, expired: false }
+
+  let sentCount = 0
+  let expired = false
+
+  for (const payload of unsentPayloads) {
+    try {
+      await webpush.sendNotification(
+        subObject,
+        JSON.stringify({
+          id: payload.key,
+          title: payload.title,
+          body: payload.body,
+          url: payload.url
+        }),
+        // High urgency helps mobile push services wake a sleeping device. TTL
+        // also lets the provider deliver shortly after a temporary disconnect.
+        { TTL: 600, urgency: 'high' }
+      )
+
+      sentState[payload.key] = Date.now()
+      sentCount += 1
+
+      if (payload.reminderObj && (payload.reminderObj.repeat_type || '').toLowerCase() === 'once') {
+        await supabase
+          .from('reminders')
+          .update({ is_active: false })
+          .eq('id', payload.reminderObj.id)
+      }
+    } catch (error) {
+      console.error(`Failed to send push to subscription ${sub.id}:`, error)
+      if (error.statusCode === 404 || error.statusCode === 410) expired = true
+    }
+  }
+
+  if (expired) {
+    await supabase.from('push_subscriptions').delete().eq('id', sub.id)
+    return { sentCount, expired: true }
+  }
+
+  if (sentCount > 0) {
+    subObject._notification_state = sentState
+    const { error: updateError } = await supabase
+      .from('push_subscriptions')
+      .update({ subscription: subObject, updated_at: new Date().toISOString() })
+      .eq('id', sub.id)
+
+    if (updateError) console.error(`Failed to persist notification state for ${sub.id}:`, updateError)
+  }
+
+  return { sentCount, expired: false }
 }
 
 export default async function handler(req, res) {
-  // Allow trigger via GET or POST
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  // Security check - can verify an API token/secret to prevent unauthorized triggers
   const authHeader = req.headers.authorization
   const cronSecret = process.env.CRON_SECRET
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
@@ -36,285 +284,68 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Get current time in Malaysia timezone (GMT+8)
-    const options = { timeZone: 'Asia/Kuala_Lumpur', hour12: false }
-    const formatter = new Intl.DateTimeFormat('en-US', { ...options, weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' })
-    const timeFormatter = new Intl.DateTimeFormat('en-US', { ...options, hour: '2-digit', minute: '2-digit' })
-
-    const parts = formatter.formatToParts(new Date())
-    const year = parts.find(p => p.type === 'year').value
-    const month = parts.find(p => p.type === 'month').value
-    const day = parts.find(p => p.type === 'day').value
-
-    const todayDate = `${year}-${month}-${day}` // YYYY-MM-DD
-    const currentTime = timeFormatter.format(new Date()) // HH:MM
-    const todayDay = parts.find(p => p.type === 'weekday').value // Evaluated in Asia/Kuala_Lumpur timezone
-
-    // 2. Fetch all active push subscriptions
-    const { data: subscriptions, error: subErr } = await supabase
+    const now = new Date()
+    const nowParts = getZonedParts(now)
+    const { data: subscriptions, error: subError } = await supabase
       .from('push_subscriptions')
       .select('*')
 
-    if (subErr) {
-      console.error('Supabase error fetching subscriptions:', subErr)
-      return res.status(500).json({ error: subErr.message })
+    if (subError) {
+      console.error('Supabase error fetching subscriptions:', subError)
+      return res.status(500).json({ error: subError.message })
     }
 
-    if (!subscriptions || subscriptions.length === 0) {
-      return res.status(200).json({ success: true, message: 'No active push subscriptions found' })
+    if (!subscriptions?.length) {
+      return res.status(200).json({ success: true, sentCount: 0, message: 'No active push subscriptions found' })
     }
 
-    // 3. Fetch all active reminders, today's classes, and today's exams across all users
-    const { data: reminders } = await supabase
-      .from('reminders')
-      .select('*')
-      .eq('is_active', true)
-      .eq('reminder_time', currentTime)
+    const [remindersResult, classesResult, examsResult, assignmentsResult] = await Promise.all([
+      supabase.from('reminders').select('*').eq('is_active', true),
+      supabase.from('classes').select('*').eq('day', nowParts.weekday),
+      supabase.from('exams').select('*').eq('exam_date', nowParts.date),
+      supabase.from('assignments').select('*').neq('status', 'Done')
+    ])
 
-    const { data: todayClasses } = await supabase
-      .from('classes')
-      .select('*')
-      .eq('day', todayDay)
+    const queryError = [remindersResult, classesResult, examsResult, assignmentsResult]
+      .map(result => result.error)
+      .find(Boolean)
+    if (queryError) {
+      console.error('Supabase error fetching notification data:', queryError)
+      return res.status(500).json({ error: queryError.message })
+    }
 
-    const { data: todayExams } = await supabase
+    const { data: upcomingExams, error: upcomingExamError } = await supabase
       .from('exams')
       .select('*')
-      .eq('exam_date', todayDate)
-
-    let assignments = []
-    let upcomingExams = []
-    if (currentTime === '09:00') {
-      const { data: aData } = await supabase.from('assignments').select('*').neq('status', 'Done')
-      if (aData) assignments = aData
-      
-      const { data: eData } = await supabase.from('exams').select('*').gte('exam_date', todayDate)
-      if (eData) upcomingExams = eData
+      .gte('exam_date', nowParts.date)
+    if (upcomingExamError) {
+      console.error('Supabase error fetching upcoming exams:', upcomingExamError)
+      return res.status(500).json({ error: upcomingExamError.message })
     }
 
-    const pushPromises = []
-
-    // 4. Evaluate and dispatch tailored notifications for each subscription
-    for (const sub of subscriptions) {
-      const subObject = sub.subscription || {}
-      const prefs = subObject.preferences || {
-        axon_notify_minutes: '10',
-        axon_class_notify: true,
-        axon_exam_notify: true
-      }
-
-      const notifyMinutes = parseInt(prefs.axon_notify_minutes || '10', 10)
-      const classNotify = prefs.axon_class_notify !== false && prefs.axon_class_notify !== 'false'
-      const examNotify = prefs.axon_exam_notify !== false && prefs.axon_exam_notify !== 'false'
-
-      const subPayloads = []
-
-      // A. Reminders (always exact time matching, with weekday filtering for weekly repeats)
-      const userReminders = reminders?.filter(r => r.user_id === sub.user_id) || []
-      userReminders.forEach(r => {
-        if ((r.repeat_type || '').toLowerCase() === 'weekly' && r.created_at) {
-          try {
-            const createdWeekday = new Intl.DateTimeFormat('en-US', { ...options, weekday: 'long' }).format(new Date(r.created_at))
-            if (createdWeekday !== todayDay) return
-          } catch (e) {
-            console.error('Error formatting created_at date for weekly check:', e)
-          }
-        }
-
-        subPayloads.push({
-          id: `reminder_${r.id}`,
-          title: '📚 Axon Reminder',
-          body: r.title,
-          url: '/reminders',
-          reminderObj: r
-        })
-      })
-
-      // B. Classes (custom lead time)
-      if (classNotify) {
-        const userClasses = todayClasses?.filter(cls => cls.user_id === sub.user_id) || []
-        const nowTime = new Date()
-        const targetTime = new Date(nowTime.getTime() + notifyMinutes * 60000)
-        const targetTimeStr = timeFormatter.format(targetTime)
-
-        userClasses.forEach(cls => {
-          if (cls.start_time === targetTimeStr) {
-            subPayloads.push({
-              id: `class_${cls.id}`,
-              title: `Class starting in ${notifyMinutes} min!`,
-              body: `${cls.subject} [${cls.class_type}] at ${cls.classroom || 'TBA'}`,
-              url: '/'
-            })
-          }
-        })
-      }
-
-      // C. Exams (custom lead time from exam.start_time or 08:00 AM fallback)
-      if (examNotify) {
-        try {
-          const userExams = todayExams?.filter(exam => exam.user_id === sub.user_id) || []
-          
-          // Fallback time calculation
-          const fallbackExamTime = new Date(`${year}-${month}-${day}T08:00:00+08:00`)
-          const fallbackTargetTime = new Date(fallbackExamTime.getTime() - notifyMinutes * 60000)
-          const fallbackTargetTimeStr = timeFormatter.format(fallbackTargetTime)
-
-          // Standard time calculation
-          const nowTime = new Date()
-          const targetTime = new Date(nowTime.getTime() + notifyMinutes * 60000)
-          const targetTimeStr = timeFormatter.format(targetTime)
-
-          userExams.forEach(exam => {
-            const isFallbackMatch = !exam.start_time && currentTime === fallbackTargetTimeStr
-            const isStandardMatch = exam.start_time === targetTimeStr
-
-            if (isFallbackMatch || isStandardMatch) {
-              subPayloads.push({
-                id: `exam_${exam.id}`,
-                title: exam.start_time ? `Exam starting in ${notifyMinutes} min!` : `Exam Today!`,
-                body: `${exam.subject} ${exam.exam_type} at ${exam.venue || 'TBA'}`,
-                url: '/exams'
-              })
-            }
-          })
-        } catch (err) {
-          console.error(`Failed to evaluate exam time for sub ${sub.id}:`, err)
-        }
-      }
-
-      // E. Attendance Reminders
-      const attendanceNotify = prefs.axon_attendance_notify !== false && prefs.axon_attendance_notify !== 'false'
-      const attendanceMinutes = parseInt(prefs.axon_attendance_minutes || '10', 10)
-      
-      if (attendanceNotify) {
-        const userClasses = todayClasses?.filter(cls => cls.user_id === sub.user_id) || []
-        const nowTime = new Date()
-        const targetEndTime = new Date(nowTime.getTime() + attendanceMinutes * 60000)
-        const targetEndTimeStr = timeFormatter.format(targetEndTime)
-
-        userClasses.forEach(cls => {
-          if (cls.end_time === targetEndTimeStr) {
-            subPayloads.push({
-              id: `attendance_${cls.id}`,
-              title: `Attendance Reminder!`,
-              body: `${cls.subject} is ending in ${attendanceMinutes} min. Don't forget to take the attendance code!`,
-              url: '/'
-            })
-          }
-        })
-      }
-
-      // D. Daily Deadlines (09:00 AM)
-      if (currentTime === '09:00') {
-        const assignmentReminders = prefs.assignmentReminders !== false && prefs.assignmentReminders !== 'false'
-        const examAlerts = prefs.examAlerts !== false && prefs.examAlerts !== 'false'
-        const leadTimeStr = prefs.reminderLeadTime || '3 days'
-        const leadDays = leadTimeStr === '1 day' ? 1 : leadTimeStr === '1 week' ? 7 : 3
-        
-        // Calculate the target date string (YYYY-MM-DD)
-        const targetDateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day) + leadDays)
-        const ty = targetDateObj.getFullYear()
-        const tm = String(targetDateObj.getMonth() + 1).padStart(2, '0')
-        const td = String(targetDateObj.getDate()).padStart(2, '0')
-        const targetDateStr = `${ty}-${tm}-${td}`
-
-        if (assignmentReminders) {
-          const userAssignments = assignments.filter(a => a.user_id === sub.user_id)
-          userAssignments.forEach(a => {
-            if (a.deadline === targetDateStr) {
-              subPayloads.push({
-                id: `assignment_due_${a.id}_${todayDate}`,
-                title: `Assignment due in ${leadDays} ${leadDays === 1 ? 'day' : 'days'}!`,
-                body: `${a.title} (${a.subject})`,
-                url: '/assignments'
-              })
-            }
-          })
-        }
-
-        if (examAlerts) {
-          const userExams = upcomingExams.filter(e => e.user_id === sub.user_id)
-          userExams.forEach(e => {
-            if (e.exam_date === targetDateStr) {
-              subPayloads.push({
-                id: `exam_countdown_${e.id}_${todayDate}`,
-                title: `Exam in ${leadDays} ${leadDays === 1 ? 'day' : 'days'}!`,
-                body: `${e.subject} ${e.exam_type} is coming up.`,
-                url: '/exams'
-              })
-            }
-          })
-        }
-      }
-
-      if (subPayloads.length === 0) continue
-
-      const lastSent = subObject._last_sent || { date: '', minute: '', ids: [] }
-
-      // Reset tracking if date/minute changed
-      if (lastSent.date !== todayDate || lastSent.minute !== currentTime) {
-        lastSent.date = todayDate
-        lastSent.minute = currentTime
-        lastSent.ids = []
-      }
-
-      // Filter out payloads already sent to this subscription
-      const unsentPayloads = subPayloads.filter(p => !lastSent.ids.includes(p.id))
-      if (unsentPayloads.length === 0) {
-        console.log(`All payloads already sent to subscription ${sub.id} at ${currentTime}`)
-        continue
-      }
-
-      // Record as sent in the database immediately BEFORE sending to prevent race conditions
-      unsentPayloads.forEach(p => lastSent.ids.push(p.id))
-      subObject._last_sent = lastSent
-
-      try {
-        const { error: updateErr } = await supabase
-          .from('push_subscriptions')
-          .update({ subscription: subObject, updated_at: new Date().toISOString() })
-          .eq('id', sub.id)
-        
-        if (updateErr) {
-          console.error(`Failed to update subscription tracking for ${sub.id}:`, updateErr)
-          continue
-        }
-      } catch (dbErr) {
-        console.error(`DB Update catch for ${sub.id}:`, dbErr)
-        continue
-      }
-
-      for (const payload of unsentPayloads) {
-        if (payload.reminderObj && (payload.reminderObj.repeat_type || '').toLowerCase() === 'once') {
-          try {
-            await supabase
-              .from('reminders')
-              .update({ is_active: false })
-              .eq('id', payload.reminderObj.id)
-          } catch (err) {
-            console.error(`Failed to auto-close once reminder ${payload.reminderObj.id}:`, err)
-          }
-        }
-
-        const promise = webpush.sendNotification(
-          subObject,
-          JSON.stringify({
-            title: payload.title,
-            body: payload.body,
-            url: payload.url
-          })
-        ).catch(async (err) => {
-          console.error(`Failed to send push to subscription ${sub.id}:`, err)
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            await supabase.from('push_subscriptions').delete().eq('id', sub.id)
-            console.log(`Cleaned up expired subscription: ${sub.id}`)
-          }
-        })
-        pushPromises.push(promise)
-      }
+    const context = {
+      nowMs: now.getTime(),
+      todayDate: nowParts.date,
+      todayDay: nowParts.weekday,
+      reminders: remindersResult.data || [],
+      todayClasses: classesResult.data || [],
+      todayExams: examsResult.data || [],
+      upcomingExams: upcomingExams || [],
+      assignments: assignmentsResult.data || []
     }
 
-    await Promise.all(pushPromises)
-    return res.status(200).json({ success: true, sentCount: pushPromises.length })
+    const results = await Promise.all(subscriptions.map(sub => processSubscription(sub, context)))
+    const sentCount = results.reduce((total, result) => total + result.sentCount, 0)
+    const expiredCount = results.filter(result => result.expired).length
+
+    return res.status(200).json({
+      success: true,
+      sentCount,
+      expiredCount,
+      checkedAt: now.toISOString(),
+      timeZone: TIME_ZONE,
+      maxLateMinutes: MAX_LATE_MINUTES
+    })
   } catch (error) {
     console.error('Push notification cron failed:', error)
     return res.status(500).json({ error: error.message })
