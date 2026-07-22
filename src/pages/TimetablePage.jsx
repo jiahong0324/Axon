@@ -557,7 +557,7 @@ export default function TimetablePage() {
           )}
 
           {/* Desktop View */}
-          <section className="hidden md:grid gap-4 md:grid-cols-5">
+          <section className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {days.map((day, index) => {
               const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
               return (
@@ -614,7 +614,7 @@ function DesktopClassTile({ item, onDelete }) {
   const border = item.class_type === 'T' ? 'border-l-emerald-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-blue-500'
   return (
     <article className={`group relative rounded-xl border border-white/10 bg-[#192436] border-l-4 ${border} p-4 transition-colors hover:bg-[#202e45] shadow-sm`}>
-      <button className="btn-danger absolute right-1 top-1 opacity-0 group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
+      <button className="btn-danger absolute right-1 top-1 opacity-100 xl:opacity-0 xl:group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
       <div className="mb-2 pr-10 flex flex-wrap items-center gap-2">
         <ClassTypeBadge type={item.class_type} />
         {item.is_replacement && <span className="text-[10px] uppercase font-bold bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded-md border border-orange-500/20">Rep: {item.date}</span>}

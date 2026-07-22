@@ -991,9 +991,9 @@ function SemesterCard({
             {(semester.courses || []).map((course, idx) => (
               <div
                 key={course.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3.5 first:pt-0"
+                className="flex flex-col md:flex-row md:items-center justify-between gap-3 py-3.5 first:pt-0"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 flex-1 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 flex-1 w-full md:w-auto">
                   <input
                     className="w-full sm:w-28 bg-transparent text-xs sm:text-sm font-semibold text-slate-400 placeholder:text-slate-500 focus:outline-none"
                     placeholder="Code"
@@ -1008,7 +1008,7 @@ function SemesterCard({
                   />
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto shrink-0 pt-1 sm:pt-0 border-t sm:border-0 border-white/5">
+                <div className="flex items-center justify-between md:justify-end gap-2.5 w-full md:w-auto shrink-0 pt-1 md:pt-0 border-t md:border-0 border-white/5">
                   <div className="flex items-center gap-2.5">
                     <select
                       className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"

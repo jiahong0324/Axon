@@ -193,7 +193,7 @@ export default function HomePage() {
         <p className="muted tabular-nums">{format(currentTime, 'EEEE, dd MMMM yyyy · hh:mm:ss a')}</p>
       </header>
 
-      <section className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+      <section className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         <Summary icon={BookOpen} label={t('home.todayClasses')} value={todayClasses.length} tone="text-theme-600 dark:text-theme-400" border="border-l-theme-500" />
         <Summary icon={AlertCircle} label={t('home.dueSoon')} value={dueSoon.length} tone="text-amber-600 dark:text-yellow-400" border="border-l-yellow-500" />
         <Summary icon={Calendar} label={t('home.daysToExam')} value={nextExamValue} valueClass={nextExamDays === 0 ? 'text-red-500' : ''} tone="text-violet-600 dark:text-purple-400" border="border-l-purple-500" />

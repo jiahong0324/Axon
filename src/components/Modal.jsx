@@ -33,7 +33,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
       onTouchEnd={e => e.stopPropagation()}
       onWheel={e => e.stopPropagation()}
     >
-      <div className={`glass flex h-auto ${resolvedMaxHeight} sm:max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-3xl sm:rounded-2xl border border-white/10 pt-6 pb-6 px-5 sm:p-6 transition-transform overscroll-contain ${maxWidth}`}>
+      <div className={`glass flex h-auto ${resolvedMaxHeight} sm:max-h-[85dvh] sm:max-h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl sm:rounded-2xl border border-white/10 pt-6 pb-6 px-5 sm:p-6 transition-transform overscroll-contain ${maxWidth}`}>
         <div className="mb-4 flex shrink-0 items-center justify-between gap-4">
           <h2 className="text-lg font-semibold">{title}</h2>
           <button type="button" onClick={onClose} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">

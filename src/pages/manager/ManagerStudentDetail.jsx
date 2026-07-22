@@ -136,7 +136,7 @@ export default function ManagerStudentDetail() {
 }
 
 function TimetableTab({ classes }) {
-  return <section className="grid gap-4 md:grid-cols-5">{days.map(day => {
+  return <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">{days.map(day => {
     const items = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
     return <div key={day} className="card min-h-[320px]"><h2 className="mb-4 font-semibold">{day}</h2>{items.length === 0 ? <p className="muted">Free day</p> : <div className="space-y-3">{items.map(item => <article key={item.id} className="rounded-xl border border-white/10 p-3"><ClassTypeBadge type={item.class_type} /><p className="mt-2 font-semibold">{item.subject}</p><p className="muted">{formatTime(item.start_time)} - {formatTime(item.end_time)}</p><p className="muted">{item.classroom || 'TBA'} · {item.lecturer || 'TBA'}</p></article>)}</div>}</div>
   })}</section>

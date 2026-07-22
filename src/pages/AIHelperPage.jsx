@@ -372,8 +372,8 @@ export default function AIHelperPage({ role = 'student' }) {
   }
 
   return (
-    <main className="ai-helper-shell scrollbar-hide flex h-full flex-1 flex-col overflow-hidden pt-safe md:h-auto md:flex-row md:gap-5 md:overflow-y-auto md:p-6" style={{ background: 'var(--bg-primary)' }}>
-      <aside className="ai-helper-panel card hidden w-64 shrink-0 md:block">
+    <main className="ai-helper-shell scrollbar-hide flex h-full flex-1 flex-col overflow-hidden pt-safe md:h-full md:flex-row md:gap-5 md:overflow-hidden md:p-6" style={{ background: 'var(--bg-primary)' }}>
+      <aside className="ai-helper-panel card hidden w-64 shrink-0 md:flex md:flex-col md:h-full md:overflow-y-auto">
         <div className="mb-4 flex items-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-xl bg-theme-500/15 text-theme-300">
             <Sparkles className="h-4 w-4" />

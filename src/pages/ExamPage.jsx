@@ -310,7 +310,7 @@ function ExamCard({ exam, result, deleteExam, onEdit }) {
         </div>
       )}
 
-      <div className="pt-2 border-t border-white/5 flex justify-end items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+      <div className="pt-2 border-t border-white/5 flex justify-end items-center gap-1 opacity-100 xl:opacity-0 xl:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         <button 
           className="flex items-center justify-center w-[28px] h-[28px] text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all" 
           onClick={onEdit}

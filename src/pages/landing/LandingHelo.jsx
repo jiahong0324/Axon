@@ -32,7 +32,7 @@ const EcosystemScene = ({ progress }) => {
       <motion.div className="relative w-full h-full flex items-center justify-center will-change-transform" style={{ scale }}>
         
         {/* Core Frame (provides isometric tilt) */}
-        <div className="relative flex items-center justify-center w-0 h-0 transform scale-[0.35] sm:scale-[0.5] md:scale-100">
+        <div className="relative flex items-center justify-center w-0 h-0 transform scale-[0.35] sm:scale-[0.5] md:scale-[0.75] lg:scale-100">
           <div className="relative w-[800px] h-[800px] flex items-center justify-center perspective-[2000px]">
           
           {/* Tilted System */}

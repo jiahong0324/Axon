@@ -166,7 +166,7 @@ export default function AssignmentPage() {
           </div>
         </div>
       </div>
-      <section className={`${!loading && items.length === 0 ? 'hidden md:grid md:grid-cols-3 md:gap-6' : 'flex flex-col gap-6 md:grid md:grid-cols-3 md:gap-8'}`}>
+      <section className={`${!loading && items.length === 0 ? 'hidden lg:grid lg:grid-cols-3 lg:gap-6' : 'flex flex-col gap-6 lg:grid lg:grid-cols-3 lg:gap-8'}`}>
         {statuses.map(status => {
           const column = items.filter(i => i.status === status)
           const isPending = status === 'Pending';
@@ -196,7 +196,7 @@ export default function AssignmentPage() {
         })}
       </section>
       {!loading && items.length === 0 && (
-        <div className="mt-8 flex flex-col md:hidden items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
+        <div className="mt-8 flex flex-col lg:hidden items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
           <div className="w-16 h-16 bg-theme-500/20 text-theme-400 rounded-full flex items-center justify-center mb-6">
             <Sparkles className="h-8 w-8" />
           </div>
@@ -288,7 +288,7 @@ function AssignmentCard({ item, updateItem, deleteItem, onEdit }) {
             )
           })}
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 opacity-100 xl:opacity-0 xl:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <button 
             className="flex items-center justify-center w-[28px] h-[28px] text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 hover:shadow-[0_0_12px_rgba(59,130,246,0.2)] rounded-lg transition-all" 
             onClick={onEdit}
