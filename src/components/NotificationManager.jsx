@@ -34,6 +34,7 @@ export default function NotificationManager() {
       console.error('Error cleaning up historical notification keys:', e)
     }
 
+    let interval = null
     async function initPush() {
       // On load, only register if permission is already granted.
       // This prevents iOS Safari from blocking programmatic alerts on load.
@@ -44,10 +45,14 @@ export default function NotificationManager() {
         }
       }
     }
-    initPush()
+    
+    initPush().finally(() => {
+      interval = checkNotifications()
+    })
 
-    const interval = checkNotifications()
-    return () => clearInterval(interval)
+    return () => {
+      if (interval) clearInterval(interval)
+    }
   }, [])
 
   function checkNotifications() {
@@ -100,7 +105,8 @@ export default function NotificationManager() {
           body: r.title,
           icon: '/icons/logo.png',
           badge: '/icons/logo.png',
-          vibrate: [200, 100, 200]
+          vibrate: [200, 100, 200],
+          tag: `reminder_${r.id}_${todayDate}`
         })
         localStorage.setItem(key, '1')
 
@@ -139,7 +145,8 @@ export default function NotificationManager() {
             body: `${cls.subject} [${cls.class_type}] at ${cls.classroom || 'TBA'}`,
             icon: '/icons/logo.png',
             badge: '/icons/logo.png',
-            vibrate: [200, 100, 200]
+            vibrate: [200, 100, 200],
+            tag: `class_${cls.id}_${todayDate}`
           })
           localStorage.setItem(key, '1')
         })
@@ -165,7 +172,8 @@ export default function NotificationManager() {
             body: `${cls.subject} is ending in ${attendanceMinutes} min. Don't forget to take the attendance code!`,
             icon: '/icons/logo.png',
             badge: '/icons/logo.png',
-            vibrate: [200, 100, 200]
+            vibrate: [200, 100, 200],
+            tag: `attendance_${cls.id}_${todayDate}`
           })
           localStorage.setItem(key, '1')
         })
@@ -194,7 +202,8 @@ export default function NotificationManager() {
               body: `${exam.subject} ${exam.exam_type} at ${exam.venue || 'TBA'}`,
               icon: '/icons/logo.png',
               badge: '/icons/logo.png',
-              vibrate: [300, 100, 300, 100, 300]
+              vibrate: [300, 100, 300, 100, 300],
+              tag: `exam_${exam.id}_${todayDate}`
             })
             localStorage.setItem(key, '1')
           }
@@ -228,7 +237,8 @@ export default function NotificationManager() {
               body: `${a.title} (${a.subject})`,
               icon: '/icons/logo.png',
               badge: '/icons/logo.png',
-              vibrate: [200, 100, 200]
+              vibrate: [200, 100, 200],
+              tag: `assignment_due_${a.id}_${todayDate}`
             })
             localStorage.setItem(key, '1')
           })
@@ -248,7 +258,8 @@ export default function NotificationManager() {
               body: `${e.subject} ${e.exam_type} is coming up.`,
               icon: '/icons/logo.png',
               badge: '/icons/logo.png',
-              vibrate: [300, 100, 300, 100, 300]
+              vibrate: [300, 100, 300, 100, 300],
+              tag: `exam_countdown_${e.id}_${todayDate}`
             })
             localStorage.setItem(key, '1')
           })
@@ -256,7 +267,8 @@ export default function NotificationManager() {
       }
     }
 
-    setTimeout(runCheck, 2000)
+    // Delay first run slightly, then poll
+    setTimeout(runCheck, 500)
     return setInterval(runCheck, 60000)
   }
 
