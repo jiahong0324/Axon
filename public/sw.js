@@ -77,6 +77,6 @@ self.addEventListener('push', event => {
     data: data.url || '/reminders',
     color: '#000000',
     tag: data.id || `${data.title}|${data.body}`,
-    renotify: true
+    renotify: false
   }))
 })

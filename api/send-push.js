@@ -334,7 +334,20 @@ export default async function handler(req, res) {
       assignments: assignmentsResult.data || []
     }
 
-    const results = await Promise.all(subscriptions.map(sub => processSubscription(sub, context)))
+    // Deduplicate subscriptions: keep only the most recently updated subscription
+    // per user+device combination to prevent duplicate notifications.
+    const deduped = new Map()
+    for (const sub of subscriptions) {
+      const deviceId = sub.subscription?.deviceId || sub.endpoint || sub.id
+      const key = `${sub.user_id}_${deviceId}`
+      const existing = deduped.get(key)
+      if (!existing || (sub.updated_at || '') > (existing.updated_at || '')) {
+        deduped.set(key, sub)
+      }
+    }
+    const uniqueSubscriptions = Array.from(deduped.values())
+
+    const results = await Promise.all(uniqueSubscriptions.map(sub => processSubscription(sub, context)))
     const sentCount = results.reduce((total, result) => total + result.sentCount, 0)
     const expiredCount = results.filter(result => result.expired).length
 

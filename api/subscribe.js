@@ -37,14 +37,35 @@ export default async function handler(req, res) {
         .neq('endpoint', endpoint)
         .is('subscription->>deviceId', null)
 
-      const [resSame, resLegacy] = await Promise.all([deleteSameDevice, deleteLegacyDevices])
+      // Also clean up orphaned subscriptions from the same push service origin.
+      // When localStorage is cleared the client generates a fresh deviceId, so
+      // the old row (with the stale deviceId) escapes the above two queries.
+      // Two endpoints on the same push service for the same user almost
+      // certainly belong to the same browser/device, so it is safe to remove
+      // the older one.
+      let deleteOrphanedSameOrigin = null
+      try {
+        const endpointOrigin = new URL(endpoint).origin
+        deleteOrphanedSameOrigin = supabase
+          .from('push_subscriptions')
+          .delete()
+          .eq('user_id', userId)
+          .neq('endpoint', endpoint)
+          .neq('subscription->>deviceId', deviceId)
+          .like('endpoint', `${endpointOrigin}%`)
+      } catch (e) {
+        // endpoint wasn't a valid URL, skip orphan cleanup
+      }
 
-      if (resSame.error) {
-        console.error('Supabase error deleting same-device subscriptions:', resSame.error)
-      }
-      if (resLegacy.error) {
-        console.error('Supabase error deleting legacy subscriptions:', resLegacy.error)
-      }
+      const cleanupPromises = [deleteSameDevice, deleteLegacyDevices]
+      if (deleteOrphanedSameOrigin) cleanupPromises.push(deleteOrphanedSameOrigin)
+      const results = await Promise.all(cleanupPromises)
+
+      results.forEach((r, i) => {
+        if (r.error) {
+          console.error(`Supabase error in subscription cleanup step ${i}:`, r.error)
+        }
+      })
     }
 
     // 2. Preserve server-side delivery history when the app refreshes an
