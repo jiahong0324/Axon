@@ -100,7 +100,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Missing HF_TOKEN environment variable' })
       }
 
-      const makeRequest = async (modelName) => {
+      const makeHfRequest = async (modelName) => {
         const body = {
           model: modelName,
           messages: [
@@ -136,14 +136,18 @@ export default async function handler(req, res) {
         return { ok: res.ok, status: res.status, data: parsed }
       }
 
-      let result = await makeRequest('meta-llama/Llama-3.2-11B-Vision-Instruct')
+      let result = await makeHfRequest('Qwen/Qwen2-VL-7B-Instruct')
       if (!result.ok) {
-        // Fallback to 90B Vision model
-        result = await makeRequest('meta-llama/Llama-3.2-90B-Vision-Instruct')
+        // Fallback to Qwen 2.5 VL on Hugging Face
+        result = await makeHfRequest('Qwen/Qwen2.5-VL-7B-Instruct')
+      }
+      if (!result.ok) {
+        // Fallback to SmolVLM
+        result = await makeHfRequest('HuggingFaceTB/SmolVLM-Instruct')
       }
 
       if (!result.ok) {
-        return res.status(result.status || 500).json({ error: result.data.error?.message || result.data.error || 'Hugging Face API error' })
+        return res.status(result.status || 500).json({ error: result.data.error?.message || result.data.error || 'Hugging Face Vision API error' })
       }
 
       let content = result.data.choices?.[0]?.message?.content || ''
