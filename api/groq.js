@@ -95,12 +95,51 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ content })
     } else if (mode === 'vision') {
+      const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
       const hfToken = process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN || process.env.HUGGING_FACE_HUB_TOKEN
-      if (!hfToken) {
-        return res.status(500).json({ error: 'Missing HF_TOKEN environment variable' })
+
+      if (!geminiKey && !hfToken) {
+        return res.status(500).json({ error: 'Missing GEMINI_API_KEY or HF_TOKEN environment variable' })
+      }
+
+      const makeGeminiRequest = async (modelName) => {
+        const body = {
+          model: modelName,
+          messages: [
+            ...cleanHistory,
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt },
+                { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } }
+              ]
+            }
+          ],
+          max_tokens: 8192,
+          temperature: 0.2
+        }
+
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${geminiKey}`
+          },
+          body: JSON.stringify(body)
+        })
+
+        const text = await res.text()
+        let parsed = {}
+        try {
+          parsed = JSON.parse(text)
+        } catch (e) {
+          parsed = { error: { message: text || `HTTP ${res.status}` } }
+        }
+        return { ok: res.ok, status: res.status, data: parsed }
       }
 
       const makeHfRequest = async (modelName) => {
+        if (!hfToken) return { ok: false, status: 500, data: { error: { message: 'Missing HF_TOKEN' } } }
         const body = {
           model: modelName,
           messages: [
@@ -136,18 +175,20 @@ export default async function handler(req, res) {
         return { ok: res.ok, status: res.status, data: parsed }
       }
 
-      let result = await makeHfRequest('Qwen/Qwen2-VL-7B-Instruct')
-      if (!result.ok) {
-        // Fallback to Qwen 2.5 VL on Hugging Face
-        result = await makeHfRequest('Qwen/Qwen2.5-VL-7B-Instruct')
+      let result = { ok: false }
+      if (geminiKey) {
+        result = await makeGeminiRequest('gemini-1.5-flash')
+        if (!result.ok) {
+          result = await makeGeminiRequest('gemini-2.0-flash-exp')
+        }
       }
-      if (!result.ok) {
-        // Fallback to SmolVLM
-        result = await makeHfRequest('HuggingFaceTB/SmolVLM-Instruct')
+
+      if (!result.ok && hfToken) {
+        result = await makeHfRequest('Qwen/Qwen2-VL-7B-Instruct')
       }
 
       if (!result.ok) {
-        return res.status(result.status || 500).json({ error: result.data.error?.message || result.data.error || 'Hugging Face Vision API error' })
+        return res.status(result.status || 500).json({ error: result.data.error?.message || result.data.error || 'Vision API error. Please ensure GEMINI_API_KEY is set.' })
       }
 
       let content = result.data.choices?.[0]?.message?.content || ''
