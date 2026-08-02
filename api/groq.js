@@ -133,16 +133,27 @@ export default async function handler(req, res) {
         return { ok: res.ok && !!content, status: res.status, content, error: data.error?.message || `Gemini error (HTTP ${res.status})` }
       }
 
-      let result = await makeGeminiRequest('gemini-1.5-flash')
-      if (!result.ok) {
-        result = await makeGeminiRequest('gemini-2.0-flash')
-      }
-      if (!result.ok) {
-        result = await makeGeminiRequest('gemini-1.5-pro')
+      const modelsToTry = [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-pro-latest',
+        'gemini-2.0-flash-exp'
+      ]
+
+      let result = { ok: false }
+      let lastError = 'Gemini Vision API error'
+      let lastStatus = 500
+
+      for (const modelName of modelsToTry) {
+        result = await makeGeminiRequest(modelName)
+        if (result.ok) break
+        lastStatus = result.status || 500
+        lastError = result.error || lastError
       }
 
       if (!result.ok) {
-        return res.status(result.status || 500).json({ error: result.error || 'Gemini Vision API error' })
+        return res.status(lastStatus).json({ error: lastError })
       }
 
       let content = result.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
