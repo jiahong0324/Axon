@@ -95,9 +95,9 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ content })
     } else if (mode === 'vision') {
-      const githubToken = process.env.GITHUB_TOKEN
-      if (!githubToken) {
-        return res.status(500).json({ error: 'Missing GITHUB_TOKEN environment variable' })
+      const hfToken = process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN || process.env.HUGGING_FACE_HUB_TOKEN
+      if (!hfToken) {
+        return res.status(500).json({ error: 'Missing HF_TOKEN environment variable' })
       }
 
       const makeRequest = async (modelName) => {
@@ -113,15 +113,15 @@ export default async function handler(req, res) {
               ]
             }
           ],
-          max_tokens: 8192,
-          temperature: 0.0
+          max_tokens: 2048,
+          temperature: 0.2
         }
 
-        const res = await fetch('https://models.github.ai/inference/chat/completions', {
+        const res = await fetch('https://router.huggingface.co/hf-inference/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${githubToken}`
+            Authorization: `Bearer ${hfToken}`
           },
           body: JSON.stringify(body)
         })
@@ -136,14 +136,14 @@ export default async function handler(req, res) {
         return { ok: res.ok, status: res.status, data: parsed }
       }
 
-      let result = await makeRequest('gpt-4o')
+      let result = await makeRequest('meta-llama/Llama-3.2-11B-Vision-Instruct')
       if (!result.ok) {
-        // Fallback to gpt-4o-mini if gpt-4o is rate-limited or unavailable
-        result = await makeRequest('gpt-4o-mini')
+        // Fallback to 90B Vision model
+        result = await makeRequest('meta-llama/Llama-3.2-90B-Vision-Instruct')
       }
 
       if (!result.ok) {
-        return res.status(result.status).json({ error: result.data.error?.message || 'GitHub Models API error' })
+        return res.status(result.status || 500).json({ error: result.data.error?.message || result.data.error || 'Hugging Face API error' })
       }
 
       let content = result.data.choices?.[0]?.message?.content || ''
@@ -153,8 +153,7 @@ export default async function handler(req, res) {
     } else {
       const modelsToTry = [
         { model: CHAT_MODEL, maxTokens: 1024 },
-        { model: 'openai/gpt-oss-20b', maxTokens: 1500 },
-        { model: 'qwen/qwen-3.6-27b', maxTokens: 1500 }
+        { model: 'openai/gpt-oss-20b', maxTokens: 1500 }
       ]
 
       let lastError = 'Groq API error'
