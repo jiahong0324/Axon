@@ -96,11 +96,39 @@ export default async function handler(req, res) {
       return res.status(200).json({ content })
     } else if (mode === 'vision') {
       const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
-      if (!geminiKey) {
-        return res.status(500).json({ error: 'Missing GEMINI_API_KEY environment variable in Vercel settings.' })
+      const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID
+      const cfApiToken = process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN
+
+      if (!geminiKey && (!cfAccountId || !cfApiToken)) {
+        return res.status(500).json({ error: 'Missing GEMINI_API_KEY or Cloudflare credentials (CLOUDFLARE_ACCOUNT_ID & CLOUDFLARE_API_TOKEN) in Vercel settings.' })
+      }
+
+      const makeCloudflareRequest = async (modelName = '@cf/meta/llama-3.2-11b-vision-instruct') => {
+        if (!cfAccountId || !cfApiToken) return { ok: false, error: 'Missing Cloudflare credentials' }
+        const buffer = Buffer.from(cleanBase64, 'base64')
+        const imageArray = Array.from(buffer)
+
+        const body = {
+          image: imageArray,
+          prompt: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt
+        }
+
+        const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${modelName}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${cfApiToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        })
+
+        const data = await res.json().catch(() => ({}))
+        const content = data.result?.response || ''
+        return { ok: res.ok && !!content, status: res.status, content, error: data.errors?.[0]?.message || `Cloudflare error (HTTP ${res.status})` }
       }
 
       const makeGeminiRequest = async (modelName) => {
+        if (!geminiKey) return { ok: false, error: 'Missing GEMINI_API_KEY' }
         const body = {
           contents: [
             {
@@ -133,27 +161,34 @@ export default async function handler(req, res) {
         return { ok: res.ok && !!content, status: res.status, content, error: data.error?.message || `Gemini error (HTTP ${res.status})` }
       }
 
-      const modelsToTry = [
-        'gemini-2.5-flash',
-        'gemini-2.0-flash',
-        'gemini-1.5-flash-latest',
-        'gemini-1.5-pro-latest',
-        'gemini-2.0-flash-exp'
-      ]
-
       let result = { ok: false }
-      let lastError = 'Gemini Vision API error'
+      let lastError = 'Vision API error'
       let lastStatus = 500
 
-      for (const modelName of modelsToTry) {
-        result = await makeGeminiRequest(modelName)
-        if (result.ok) break
-        lastStatus = result.status || 500
-        lastError = result.error || lastError
+      if (cfAccountId && cfApiToken) {
+        result = await makeCloudflareRequest('@cf/meta/llama-3.2-11b-vision-instruct')
+        if (!result.ok) {
+          result = await makeCloudflareRequest('@cf/meta/llama-3.2-90b-vision-instruct')
+        }
+      }
+
+      if (!result.ok && geminiKey) {
+        const geminiModels = [
+          'gemini-2.5-flash',
+          'gemini-2.0-flash',
+          'gemini-1.5-flash-latest',
+          'gemini-1.5-pro-latest'
+        ]
+        for (const modelName of geminiModels) {
+          result = await makeGeminiRequest(modelName)
+          if (result.ok) break
+          lastStatus = result.status || lastStatus
+          lastError = result.error || lastError
+        }
       }
 
       if (!result.ok) {
-        return res.status(lastStatus).json({ error: lastError })
+        return res.status(lastStatus).json({ error: result.error || lastError })
       }
 
       let content = result.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
