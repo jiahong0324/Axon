@@ -102,54 +102,50 @@ export default async function handler(req, res) {
 
       const makeGeminiRequest = async (modelName) => {
         const body = {
-          model: modelName,
-          messages: [
-            ...cleanHistory,
+          contents: [
             {
               role: 'user',
-              content: [
-                { type: 'text', text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt },
-                { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } }
+              parts: [
+                { text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt },
+                {
+                  inline_data: {
+                    mime_type: safeMimeType,
+                    data: cleanBase64
+                  }
+                }
               ]
             }
           ],
-          max_tokens: 8192,
-          temperature: 0.2
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 8192
+          }
         }
 
-        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey}`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${geminiKey}`
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
         })
 
-        const text = await res.text()
-        let parsed = {}
-        try {
-          parsed = JSON.parse(text)
-        } catch (e) {
-          parsed = { error: { message: text || `HTTP ${res.status}` } }
-        }
-        return { ok: res.ok, status: res.status, data: parsed }
+        const data = await res.json().catch(() => ({}))
+        const content = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''
+        return { ok: res.ok && !!content, status: res.status, content, error: data.error?.message || `Gemini error (HTTP ${res.status})` }
       }
 
       let result = await makeGeminiRequest('gemini-1.5-flash')
       if (!result.ok) {
-        result = await makeGeminiRequest('gemini-2.0-flash-exp')
+        result = await makeGeminiRequest('gemini-2.0-flash')
       }
       if (!result.ok) {
         result = await makeGeminiRequest('gemini-1.5-pro')
       }
 
       if (!result.ok) {
-        return res.status(result.status || 500).json({ error: result.data.error?.message || result.data.error || 'Gemini Vision API error' })
+        return res.status(result.status || 500).json({ error: result.error || 'Gemini Vision API error' })
       }
 
-      let content = result.data.choices?.[0]?.message?.content || ''
-      content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+      let content = result.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
 
       return res.status(200).json({ content })
     } else {
