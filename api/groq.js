@@ -100,6 +100,9 @@ export default async function handler(req, res) {
       const cfAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '').trim().replace(/^["']|["']$/g, '')
       const cfApiToken = (process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || '').trim().replace(/^["']|["']$/g, '')
 
+      const rawBase64 = cleanBase64.replace(/^data:image\/[a-zA-Z]+;base64,/, '')
+      let lastErrorDetails = []
+
       // 1. Try OpenRouter Vision API (if OPENROUTER_API_KEY is configured)
       if (openrouterKey) {
         const openrouterModels = [
@@ -116,7 +119,7 @@ export default async function handler(req, res) {
                   role: 'user',
                   content: [
                     { type: 'text', text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt },
-                    { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } }
+                    { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${rawBase64}` } }
                   ]
                 }
               ],
@@ -135,15 +138,19 @@ export default async function handler(req, res) {
               body: JSON.stringify(body)
             })
 
+            const data = await openrouterRes.json().catch(() => ({}))
             if (openrouterRes.ok) {
-              const data = await openrouterRes.json().catch(() => ({}))
               let content = data.choices?.[0]?.message?.content || ''
               content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
               if (content) {
                 return res.status(200).json({ content })
               }
+            } else {
+              lastErrorDetails.push(`OpenRouter (${modelName}): ${data.error?.message || openrouterRes.status}`)
             }
-          } catch (err) {}
+          } catch (err) {
+            lastErrorDetails.push(`OpenRouter (${modelName}): ${err.message}`)
+          }
         }
       }
 
@@ -159,7 +166,7 @@ export default async function handler(req, res) {
                   role: 'user',
                   content: [
                     { type: 'text', text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt },
-                    { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } }
+                    { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${rawBase64}` } }
                   ]
                 }
               ],
@@ -176,22 +183,26 @@ export default async function handler(req, res) {
               body: JSON.stringify(body)
             })
 
+            const data = await groqRes.json().catch(() => ({}))
             if (groqRes.ok) {
-              const data = await groqRes.json().catch(() => ({}))
               let content = data.choices?.[0]?.message?.content || ''
               content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
               if (content) {
                 return res.status(200).json({ content })
               }
+            } else {
+              lastErrorDetails.push(`Groq (${modelName}): ${data.error?.message || groqRes.status}`)
             }
-          } catch (err) {}
+          } catch (err) {
+            lastErrorDetails.push(`Groq (${modelName}): ${err.message}`)
+          }
         }
       }
 
       // 3. Try Cloudflare Workers AI as fallback
       if (cfAccountId && cfApiToken) {
         const makeCloudflareRequest = async (modelName = '@cf/meta/llama-3.2-11b-vision-instruct') => {
-          const buffer = Buffer.from(cleanBase64, 'base64')
+          const buffer = Buffer.from(rawBase64, 'base64')
           const imageArray = Array.from(buffer)
 
           const body = {
@@ -222,10 +233,13 @@ export default async function handler(req, res) {
         if (result.ok) {
           let content = result.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
           return res.status(200).json({ content })
+        } else {
+          lastErrorDetails.push(`Cloudflare: ${result.error}`)
         }
       }
 
-      return res.status(500).json({ error: 'Vision API error: Unable to process image via OpenRouter, Groq Vision, or Cloudflare Workers AI.' })
+      const summaryError = lastErrorDetails.length > 0 ? lastErrorDetails.join(' | ') : 'No valid vision provider keys configured.'
+      return res.status(500).json({ error: `Vision API error: ${summaryError}` })
     } else {
       const modelsToTry = [
         { model: CHAT_MODEL, maxTokens: 1024 },
