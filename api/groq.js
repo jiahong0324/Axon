@@ -95,16 +95,14 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ content })
     } else if (mode === 'vision') {
-      const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
       const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID
       const cfApiToken = process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN
 
-      if (!geminiKey && (!cfAccountId || !cfApiToken)) {
-        return res.status(500).json({ error: 'Missing GEMINI_API_KEY or Cloudflare credentials (CLOUDFLARE_ACCOUNT_ID & CLOUDFLARE_API_TOKEN) in Vercel settings.' })
+      if (!cfAccountId || !cfApiToken) {
+        return res.status(500).json({ error: 'Missing Cloudflare credentials (CLOUDFLARE_ACCOUNT_ID & CLOUDFLARE_API_TOKEN) in Vercel settings.' })
       }
 
       const makeCloudflareRequest = async (modelName = '@cf/meta/llama-3.2-11b-vision-instruct') => {
-        if (!cfAccountId || !cfApiToken) return { ok: false, error: 'Missing Cloudflare credentials' }
         const buffer = Buffer.from(cleanBase64, 'base64')
         const imageArray = Array.from(buffer)
 
@@ -124,71 +122,17 @@ export default async function handler(req, res) {
 
         const data = await res.json().catch(() => ({}))
         const content = data.result?.response || ''
-        return { ok: res.ok && !!content, status: res.status, content, error: data.errors?.[0]?.message || `Cloudflare error (HTTP ${res.status})` }
+        const errorMessage = data.errors?.[0]?.message || `Cloudflare AI Error (HTTP ${res.status})`
+        return { ok: res.ok && !!content, status: res.status, content, error: errorMessage }
       }
 
-      const makeGeminiRequest = async (modelName) => {
-        if (!geminiKey) return { ok: false, error: 'Missing GEMINI_API_KEY' }
-        const body = {
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt },
-                {
-                  inline_data: {
-                    mime_type: safeMimeType,
-                    data: cleanBase64
-                  }
-                }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 8192
-          }
-        }
-
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        })
-
-        const data = await res.json().catch(() => ({}))
-        const content = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''
-        return { ok: res.ok && !!content, status: res.status, content, error: data.error?.message || `Gemini error (HTTP ${res.status})` }
-      }
-
-      let result = { ok: false }
-      let lastError = 'Vision API error'
-      let lastStatus = 500
-
-      if (cfAccountId && cfApiToken) {
-        result = await makeCloudflareRequest('@cf/meta/llama-3.2-11b-vision-instruct')
-        if (!result.ok) {
-          result = await makeCloudflareRequest('@cf/meta/llama-3.2-90b-vision-instruct')
-        }
-      }
-
-      if (!result.ok && geminiKey) {
-        const geminiModels = [
-          'gemini-2.5-flash',
-          'gemini-2.0-flash',
-          'gemini-1.5-flash-latest',
-          'gemini-1.5-pro-latest'
-        ]
-        for (const modelName of geminiModels) {
-          result = await makeGeminiRequest(modelName)
-          if (result.ok) break
-          lastStatus = result.status || lastStatus
-          lastError = result.error || lastError
-        }
+      let result = await makeCloudflareRequest('@cf/meta/llama-3.2-11b-vision-instruct')
+      if (!result.ok) {
+        result = await makeCloudflareRequest('@cf/meta/llama-3.2-90b-vision-instruct')
       }
 
       if (!result.ok) {
-        return res.status(lastStatus).json({ error: result.error || lastError })
+        return res.status(result.status || 500).json({ error: result.error || 'Cloudflare Vision API error' })
       }
 
       let content = result.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
