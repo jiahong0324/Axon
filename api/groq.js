@@ -104,7 +104,6 @@ export default async function handler(req, res) {
       if (openrouterKey) {
         const openrouterModels = [
           'meta-llama/llama-3.2-11b-vision-instruct:free',
-          'qwen/qwen-2.5-vl-7b-instruct:free',
           'meta-llama/llama-3.2-11b-vision-instruct',
           'google/gemini-2.0-flash-lite-001'
         ]
