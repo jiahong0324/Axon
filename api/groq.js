@@ -95,49 +95,89 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ content })
     } else if (mode === 'vision') {
-      const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID
-      const cfApiToken = process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN
+      const apiKey = process.env.GROQ_API_KEY
+      const cfAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '').trim().replace(/^["']|["']$/g, '')
+      const cfApiToken = (process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || '').trim().replace(/^["']|["']$/g, '')
 
-      if (!cfAccountId || !cfApiToken) {
-        return res.status(500).json({ error: 'Missing Cloudflare credentials (CLOUDFLARE_ACCOUNT_ID & CLOUDFLARE_API_TOKEN) in Vercel settings.' })
+      // 1. Try Groq Vision API (uses existing GROQ_API_KEY)
+      if (apiKey) {
+        const groqVisionModels = ['llama-3.2-11b-vision-preview', 'llama-3.2-90b-vision-preview']
+        for (const modelName of groqVisionModels) {
+          try {
+            const body = {
+              model: modelName,
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    { type: 'text', text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt },
+                    { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } }
+                  ]
+                }
+              ],
+              max_tokens: 2048,
+              temperature: 0.2
+            }
+
+            const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`
+              },
+              body: JSON.stringify(body)
+            })
+
+            if (groqRes.ok) {
+              const data = await groqRes.json().catch(() => ({}))
+              let content = data.choices?.[0]?.message?.content || ''
+              content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+              if (content) {
+                return res.status(200).json({ content })
+              }
+            }
+          } catch (err) {}
+        }
       }
 
-      const makeCloudflareRequest = async (modelName = '@cf/meta/llama-3.2-11b-vision-instruct') => {
-        const buffer = Buffer.from(cleanBase64, 'base64')
-        const imageArray = Array.from(buffer)
+      // 2. Try Cloudflare Workers AI as fallback
+      if (cfAccountId && cfApiToken) {
+        const makeCloudflareRequest = async (modelName = '@cf/meta/llama-3.2-11b-vision-instruct') => {
+          const buffer = Buffer.from(cleanBase64, 'base64')
+          const imageArray = Array.from(buffer)
 
-        const body = {
-          image: imageArray,
-          prompt: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt
+          const body = {
+            image: imageArray,
+            prompt: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt
+          }
+
+          const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${modelName}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${cfApiToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+          })
+
+          const data = await res.json().catch(() => ({}))
+          const content = data.result?.response || ''
+          const errorMessage = data.errors?.[0]?.message || `Cloudflare AI Error (HTTP ${res.status})`
+          return { ok: res.ok && !!content, status: res.status, content, error: errorMessage }
         }
 
-        const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${modelName}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${cfApiToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body)
-        })
+        let result = await makeCloudflareRequest('@cf/meta/llama-3.2-11b-vision-instruct')
+        if (!result.ok) {
+          result = await makeCloudflareRequest('@cf/meta/llama-3.2-90b-vision-instruct')
+        }
 
-        const data = await res.json().catch(() => ({}))
-        const content = data.result?.response || ''
-        const errorMessage = data.errors?.[0]?.message || `Cloudflare AI Error (HTTP ${res.status})`
-        return { ok: res.ok && !!content, status: res.status, content, error: errorMessage }
+        if (result.ok) {
+          let content = result.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+          return res.status(200).json({ content })
+        }
       }
 
-      let result = await makeCloudflareRequest('@cf/meta/llama-3.2-11b-vision-instruct')
-      if (!result.ok) {
-        result = await makeCloudflareRequest('@cf/meta/llama-3.2-90b-vision-instruct')
-      }
-
-      if (!result.ok) {
-        return res.status(result.status || 500).json({ error: result.error || 'Cloudflare Vision API error' })
-      }
-
-      let content = result.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
-
-      return res.status(200).json({ content })
+      return res.status(500).json({ error: 'Vision API error: Unable to process image via Groq Vision or Cloudflare Workers AI.' })
     } else {
       const modelsToTry = [
         { model: CHAT_MODEL, maxTokens: 1024 },
