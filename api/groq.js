@@ -97,18 +97,68 @@ export default async function handler(req, res) {
     } else if (mode === 'vision') {
       const apiKey = process.env.GROQ_API_KEY
       const openrouterKey = process.env.OPENROUTER_API_KEY
+      const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
       const cfAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '').trim().replace(/^["']|["']$/g, '')
       const cfApiToken = (process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || '').trim().replace(/^["']|["']$/g, '')
 
       const rawBase64 = cleanBase64.replace(/^data:image\/[a-zA-Z]+;base64,/, '')
       let lastErrorDetails = []
 
-      // 1. Try OpenRouter Vision API (if OPENROUTER_API_KEY is configured)
+      // 1. Try Google Gemini API (if GEMINI_API_KEY is configured)
+      if (geminiKey) {
+        const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
+        for (const modelName of geminiModels) {
+          try {
+            const body = {
+              contents: [
+                {
+                  role: 'user',
+                  parts: [
+                    { text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt },
+                    {
+                      inline_data: {
+                        mime_type: safeMimeType,
+                        data: rawBase64
+                      }
+                    }
+                  ]
+                }
+              ],
+              generationConfig: {
+                temperature: 0.2,
+                maxOutputTokens: 8192
+              }
+            }
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body)
+            })
+
+            const data = await res.json().catch(() => ({}))
+            if (res.ok) {
+              const content = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''
+              if (content) {
+                let cleanContent = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+                return res.status(200).json({ content: cleanContent })
+              }
+            } else {
+              lastErrorDetails.push(`Gemini (${modelName}): ${data.error?.message || res.status}`)
+            }
+          } catch (err) {
+            lastErrorDetails.push(`Gemini (${modelName}): ${err.message}`)
+          }
+        }
+      }
+
+      // 2. Try OpenRouter Vision API (if OPENROUTER_API_KEY is configured)
       if (openrouterKey) {
         const openrouterModels = [
-          'meta-llama/llama-3.2-11b-vision-instruct:free',
-          'meta-llama/llama-3.2-11b-vision-instruct',
-          'google/gemini-2.0-flash-lite-001'
+          'google/gemini-2.0-flash-001',
+          'google/gemini-flash-1.5',
+          'meta-llama/llama-3.2-90b-vision-instruct',
+          'openrouter/auto'
         ]
         for (const modelName of openrouterModels) {
           try {
@@ -154,51 +204,6 @@ export default async function handler(req, res) {
         }
       }
 
-      // 2. Try Groq Vision API (uses existing GROQ_API_KEY)
-      if (apiKey) {
-        const groqVisionModels = ['llama-3.2-11b-vision-preview', 'llama-3.2-90b-vision-preview']
-        for (const modelName of groqVisionModels) {
-          try {
-            const body = {
-              model: modelName,
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    { type: 'text', text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt },
-                    { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${rawBase64}` } }
-                  ]
-                }
-              ],
-              max_tokens: 2048,
-              temperature: 0.2
-            }
-
-            const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${apiKey}`
-              },
-              body: JSON.stringify(body)
-            })
-
-            const data = await groqRes.json().catch(() => ({}))
-            if (groqRes.ok) {
-              let content = data.choices?.[0]?.message?.content || ''
-              content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
-              if (content) {
-                return res.status(200).json({ content })
-              }
-            } else {
-              lastErrorDetails.push(`Groq (${modelName}): ${data.error?.message || groqRes.status}`)
-            }
-          } catch (err) {
-            lastErrorDetails.push(`Groq (${modelName}): ${err.message}`)
-          }
-        }
-      }
-
       // 3. Try Cloudflare Workers AI as fallback
       if (cfAccountId && cfApiToken) {
         const makeCloudflareRequest = async (modelName = '@cf/meta/llama-3.2-11b-vision-instruct') => {
@@ -238,7 +243,7 @@ export default async function handler(req, res) {
         }
       }
 
-      const summaryError = lastErrorDetails.length > 0 ? lastErrorDetails.join(' | ') : 'No valid vision provider keys configured.'
+      const summaryError = lastErrorDetails.length > 0 ? lastErrorDetails.join(' | ') : 'No valid vision provider API keys (GEMINI_API_KEY, OPENROUTER_API_KEY, or CLOUDFLARE_ACCOUNT_ID) configured in Vercel settings.'
       return res.status(500).json({ error: `Vision API error: ${summaryError}` })
     } else {
       const modelsToTry = [
