@@ -96,10 +96,59 @@ export default async function handler(req, res) {
       return res.status(200).json({ content })
     } else if (mode === 'vision') {
       const apiKey = process.env.GROQ_API_KEY
+      const openrouterKey = process.env.OPENROUTER_API_KEY
       const cfAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '').trim().replace(/^["']|["']$/g, '')
       const cfApiToken = (process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || '').trim().replace(/^["']|["']$/g, '')
 
-      // 1. Try Groq Vision API (uses existing GROQ_API_KEY)
+      // 1. Try OpenRouter Vision API (if OPENROUTER_API_KEY is configured)
+      if (openrouterKey) {
+        const openrouterModels = [
+          'meta-llama/llama-3.2-11b-vision-instruct:free',
+          'qwen/qwen-2.5-vl-7b-instruct:free',
+          'meta-llama/llama-3.2-11b-vision-instruct',
+          'google/gemini-2.0-flash-lite-001'
+        ]
+        for (const modelName of openrouterModels) {
+          try {
+            const body = {
+              model: modelName,
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    { type: 'text', text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + prompt },
+                    { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${cleanBase64}` } }
+                  ]
+                }
+              ],
+              max_tokens: 2048,
+              temperature: 0.2
+            }
+
+            const openrouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${openrouterKey}`,
+                'HTTP-Referer': 'https://axon.vercel.app',
+                'X-Title': 'Axon'
+              },
+              body: JSON.stringify(body)
+            })
+
+            if (openrouterRes.ok) {
+              const data = await openrouterRes.json().catch(() => ({}))
+              let content = data.choices?.[0]?.message?.content || ''
+              content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+              if (content) {
+                return res.status(200).json({ content })
+              }
+            }
+          } catch (err) {}
+        }
+      }
+
+      // 2. Try Groq Vision API (uses existing GROQ_API_KEY)
       if (apiKey) {
         const groqVisionModels = ['llama-3.2-11b-vision-preview', 'llama-3.2-90b-vision-preview']
         for (const modelName of groqVisionModels) {
@@ -140,7 +189,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // 2. Try Cloudflare Workers AI as fallback
+      // 3. Try Cloudflare Workers AI as fallback
       if (cfAccountId && cfApiToken) {
         const makeCloudflareRequest = async (modelName = '@cf/meta/llama-3.2-11b-vision-instruct') => {
           const buffer = Buffer.from(cleanBase64, 'base64')
@@ -177,7 +226,7 @@ export default async function handler(req, res) {
         }
       }
 
-      return res.status(500).json({ error: 'Vision API error: Unable to process image via Groq Vision or Cloudflare Workers AI.' })
+      return res.status(500).json({ error: 'Vision API error: Unable to process image via OpenRouter, Groq Vision, or Cloudflare Workers AI.' })
     } else {
       const modelsToTry = [
         { model: CHAT_MODEL, maxTokens: 1024 },
