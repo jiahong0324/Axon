@@ -86,12 +86,39 @@ export function getSemesterProgress(startDateStr, endDateStr) {
 
   const clampedWeek = Math.min(currentWeek, totalWeeks)
   const remainingWeeks = Math.max(0, totalWeeks - clampedWeek)
+  const percentage = Math.min(100, Math.max(0, Math.round((clampedWeek / totalWeeks) * 100)))
 
   return {
     isOngoing: true,
     currentWeek: clampedWeek,
     totalWeeks,
-    remainingWeeks
+    remainingWeeks,
+    percentage
+  }
+}
+
+export function inferDatesFromCurrentWeek(weekNumber, totalWeeks = 14) {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+  
+  const day = today.getDay()
+  const diffToMonday = day === 0 ? -6 : 1 - day
+  const thisMonday = new Date(today)
+  thisMonday.setDate(today.getDate() + diffToMonday)
+
+  // Start date = thisMonday - (weekNumber - 1) * 7 days
+  const startDate = new Date(thisMonday)
+  startDate.setDate(thisMonday.getDate() - (weekNumber - 1) * 7)
+
+  // End date = startDate + totalWeeks * 7 - 3 days (Friday of last week)
+  const endDate = new Date(startDate)
+  endDate.setDate(startDate.getDate() + totalWeeks * 7 - 3)
+
+  const fmt = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+  return {
+    startDateStr: fmt(startDate),
+    endDateStr: fmt(endDate)
   }
 }
 
@@ -749,52 +776,76 @@ export default function TimetablePage() {
                 )}
               </div>
 
-              {/* Compact Semester Week Badge */}
+              {/* Compact Aesthetic Semester Badge */}
               {isLiveProfile && (
-                <button
-                  type="button"
-                  onClick={openSemesterModal}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                    progressInfo?.isOngoing
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20 hover:border-emerald-500/40 shadow-sm shadow-emerald-500/5'
-                      : progressInfo?.isUpcoming
-                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/25 hover:bg-blue-500/20'
-                      : progressInfo?.isEnded
-                      ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25'
-                      : 'text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-dashed border-white/15'
-                  }`}
-                  title={t('timetable.semesterSettings')}
-                >
-                  {progressInfo?.isOngoing ? (
-                    <>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                      <span className="font-semibold">
-                        <span className="hidden sm:inline">{t('timetable.weekOf', { week: progressInfo.currentWeek, total: progressInfo.totalWeeks })}</span>
-                        <span className="sm:hidden">{t('timetable.week', { week: progressInfo.currentWeek })}</span>
-                      </span>
-                      {progressInfo.remainingWeeks > 0 && (
-                        <span className="text-[11px] text-emerald-400/70 hidden sm:inline">
-                          · {t('timetable.weeksLeft', { count: progressInfo.remainingWeeks })}
-                        </span>
-                      )}
-                    </>
-                  ) : progressInfo?.isUpcoming ? (
-                    <>
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-                      <span>{t('timetable.semesterUpcoming', { days: progressInfo.daysUntil })}</span>
-                    </>
-                  ) : progressInfo?.isEnded ? (
-                    <>
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                      <span>{t('timetable.semesterEnded')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                      <span>{t('timetable.setSemesterDates')}</span>
-                    </>
-                  )}
-                </button>
+                progressInfo?.isOngoing ? (
+                  <button
+                    type="button"
+                    onClick={openSemesterModal}
+                    className="group inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/80 hover:bg-slate-800/90 border border-emerald-500/30 hover:border-emerald-400/60 shadow-lg shadow-emerald-500/5 backdrop-blur-md transition-all cursor-pointer"
+                    title={t('timetable.semesterSettings')}
+                  >
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                    </span>
+                    <span className="text-xs font-semibold text-white tracking-tight flex items-baseline gap-1">
+                      <span>{t('timetable.week', { week: progressInfo.currentWeek })}</span>
+                      <span className="text-[11px] font-normal text-slate-400">/ {progressInfo.totalWeeks}</span>
+                    </span>
+                    <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden hidden sm:block shrink-0">
+                      <div 
+                        className="h-full bg-gradient-to-r from-theme-500 to-emerald-400 rounded-full transition-all duration-500"
+                        style={{ width: `${progressInfo.percentage || 0}%` }}
+                      />
+                    </div>
+                    <span className="text-[11px] text-emerald-400/80 group-hover:text-emerald-300 transition-colors hidden md:inline">
+                      {progressInfo.remainingWeeks > 0
+                        ? t('timetable.weeksLeft', { count: progressInfo.remainingWeeks })
+                        : t('timetable.lastWeek')}
+                    </span>
+                  </button>
+                ) : isSemesterEnded ? (
+                  <button
+                    type="button"
+                    onClick={openNewSemesterModal}
+                    className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/30 hover:border-amber-400/60 shadow-lg shadow-amber-500/5 backdrop-blur-md transition-all cursor-pointer"
+                    title={t('timetable.startNewSemester')}
+                  >
+                    <span className="text-sm">🌴</span>
+                    <span className="text-xs font-medium text-amber-200 group-hover:text-white transition-colors">
+                      {t('timetable.semesterBreak')}
+                    </span>
+                    <span className="text-[11px] text-amber-300/90 group-hover:text-amber-100 flex items-center gap-1 font-medium bg-amber-500/15 group-hover:bg-amber-500/25 px-2 py-0.5 rounded-full transition-colors ml-0.5">
+                      <span>{t('timetable.startNewSemester')}</span>
+                      <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                    </span>
+                  </button>
+                ) : progressInfo?.isUpcoming ? (
+                  <button
+                    type="button"
+                    onClick={openSemesterModal}
+                    className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800/90 border border-blue-500/30 hover:border-blue-400/60 shadow-lg shadow-blue-500/5 backdrop-blur-md transition-all cursor-pointer"
+                    title={t('timetable.semesterSettings')}
+                  >
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
+                    </span>
+                    <span className="text-xs font-medium text-blue-300 group-hover:text-white transition-colors">
+                      {t('timetable.semesterUpcoming', { days: progressInfo.daysUntil })}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openSemesterModal}
+                    className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-dashed border-white/20 hover:border-theme-400/50 backdrop-blur-md transition-all text-xs text-slate-400 hover:text-white cursor-pointer"
+                    title={t('timetable.quickWeekTip')}
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-theme-400 group-hover:rotate-12 transition-transform" />
+                    <span>{t('timetable.setAcademicWeek')}</span>
+                  </button>
+                )
               )}
             </div>
           ) : (
@@ -838,25 +889,6 @@ export default function TimetablePage() {
           </div>
         </div>
 
-        {/* Slim Notice only when ended */}
-        {!loading && isLiveProfile && isSemesterEnded && (
-          <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 animate-in fade-in duration-200">
-            <div className="flex items-center gap-2 truncate">
-              <CalendarOff className="h-3.5 w-3.5 shrink-0 text-amber-400" />
-              <span className="truncate">
-                {t('timetable.semesterEndedBanner', { date: semesterEndDate })}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={openNewSemesterModal}
-              className="shrink-0 font-medium text-amber-200 hover:text-white underline underline-offset-2 transition-colors ml-auto"
-            >
-              {t('timetable.startNewSemester')} →
-            </button>
-          </div>
-        )}
-
         {/* Slim Notice when viewing archived timetable */}
         {!loading && !isLiveProfile && (
           <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-200 animate-in fade-in duration-200">
@@ -899,6 +931,43 @@ export default function TimetablePage() {
             />
           </Field>
 
+          {/* Quick Week Inferrer */}
+          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-theme-300 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-theme-400" />
+                {t('timetable.quickWeekSelect')}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">{t('timetable.quickWeekTip')}</p>
+            <div className="grid grid-cols-7 gap-1 pt-1">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(w => {
+                const isSelected = previewProgress?.currentWeek === w && !previewProgress?.isEnded && !previewProgress?.isUpcoming
+                return (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() => {
+                      const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(w, 14)
+                      setSemesterForm(prev => ({
+                        ...prev,
+                        start_date: startDateStr,
+                        end_date: endDateStr
+                      }))
+                    }}
+                    className={`py-1.5 text-xs rounded-lg font-medium transition-all ${
+                      isSelected
+                        ? 'bg-theme-500 text-white shadow-sm shadow-theme-500/30 font-semibold'
+                        : 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5'
+                    }`}
+                  >
+                    W{w}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label={t('timetable.semesterStartDate')}>
               <input
@@ -919,7 +988,7 @@ export default function TimetablePage() {
           </div>
 
           {previewProgress && !previewProgress.isInvalid && (
-            <div className="p-3 rounded-xl bg-theme-500/10 border border-theme-500/20 text-xs text-slate-300 flex items-center justify-between">
+            <div className="p-3 rounded-xl bg-slate-900/60 border border-white/10 text-xs text-slate-300 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-theme-400 shrink-0" />
                 <span>
@@ -934,7 +1003,7 @@ export default function TimetablePage() {
                 </span>
               </div>
               {previewProgress.remainingWeeks > 0 && !previewProgress.isEnded && !previewProgress.isUpcoming && (
-                <span className="text-theme-400 font-medium">
+                <span className="text-emerald-400 font-medium">
                   {t('timetable.weeksLeft', { count: previewProgress.remainingWeeks })}
                 </span>
               )}
@@ -983,6 +1052,43 @@ export default function TimetablePage() {
             />
           </Field>
 
+          {/* Quick Week for new semester */}
+          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-theme-300 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-theme-400" />
+                {t('timetable.quickWeekSelect')}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">{t('timetable.quickWeekTip')}</p>
+            <div className="grid grid-cols-7 gap-1 pt-1">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(w => {
+                const isSelected = newSemesterPreview?.currentWeek === w && !newSemesterPreview?.isEnded && !newSemesterPreview?.isUpcoming
+                return (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() => {
+                      const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(w, 14)
+                      setNewSemesterForm(prev => ({
+                        ...prev,
+                        newStartDate: startDateStr,
+                        newEndDate: endDateStr
+                      }))
+                    }}
+                    className={`py-1.5 text-xs rounded-lg font-medium transition-all ${
+                      isSelected
+                        ? 'bg-theme-500 text-white shadow-sm shadow-theme-500/30 font-semibold'
+                        : 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5'
+                    }`}
+                  >
+                    W{w}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label={t('timetable.newSemesterStartDateLabel')}>
               <input
@@ -1003,7 +1109,7 @@ export default function TimetablePage() {
           </div>
 
           {newSemesterPreview && !newSemesterPreview.isInvalid && (
-            <div className="p-3 rounded-xl bg-theme-500/10 border border-theme-500/20 text-xs text-slate-300 flex items-center justify-between">
+            <div className="p-3 rounded-xl bg-slate-900/60 border border-white/10 text-xs text-slate-300 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-theme-400 shrink-0" />
                 <span>
@@ -1018,7 +1124,7 @@ export default function TimetablePage() {
                 </span>
               </div>
               {newSemesterPreview.remainingWeeks > 0 && !newSemesterPreview.isEnded && !newSemesterPreview.isUpcoming && (
-                <span className="text-theme-400 font-medium">
+                <span className="text-emerald-400 font-medium">
                   {t('timetable.weeksLeft', { count: newSemesterPreview.remainingWeeks })}
                 </span>
               )}
