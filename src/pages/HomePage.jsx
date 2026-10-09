@@ -32,10 +32,14 @@ export default function HomePage() {
   const todayName = format(currentTime, 'EEEE')
 
   const [exerciseLogs, setExerciseLogs] = useState([])
-  const [exerciseFreezes, setExerciseFreezes] = useState(1)
+  const [exerciseFreezes, setExerciseFreezes] = useState(0)
+  const [exerciseFrozenDates, setExerciseFrozenDates] = useState([])
 
   const exTodayStr = getTodayStr()
-  const exStats = useMemo(() => calculateStreakAndStats(exerciseLogs, 4, exerciseFreezes, exTodayStr), [exerciseLogs, exerciseFreezes, exTodayStr])
+  const exStats = useMemo(
+    () => calculateStreakAndStats(exerciseLogs, 4, exerciseFreezes, exTodayStr, 0, exerciseFrozenDates),
+    [exerciseLogs, exerciseFreezes, exTodayStr, exerciseFrozenDates]
+  )
 
   useEffect(() => { fetchDashboard() }, [])
   useEffect(() => { if (localStorage.getItem('dailyTipEnabled') !== 'false') refreshTip() }, [])
@@ -100,7 +104,8 @@ export default function HomePage() {
 
       const exData = await fetchExerciseData(activeUser.id)
       setExerciseLogs(exData.logs || [])
-      setExerciseFreezes(exData.freezesAvailable || 1)
+      setExerciseFreezes(exData.freezesAvailable || 0)
+      setExerciseFrozenDates(exData.frozenDates || [])
 
       writeCache(`axon_home_dashboard_${activeUser.id}`, {
         classes: activeClasses,

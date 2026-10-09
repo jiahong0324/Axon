@@ -212,7 +212,8 @@ function ExerciseManagerTab({ studentId }) {
   const [logs, setLogs] = useState([])
   const [weeklyGoal, setWeeklyGoal] = useState(4)
   const [xpTotal, setXpTotal] = useState(0)
-  const [freezesAvailable, setFreezesAvailable] = useState(1)
+  const [freezesAvailable, setFreezesAvailable] = useState(0)
+  const [frozenDates, setFrozenDates] = useState([])
 
   useEffect(() => {
     let active = true
@@ -223,7 +224,8 @@ function ExerciseManagerTab({ studentId }) {
       setLogs(data.logs || [])
       setWeeklyGoal(data.weeklyGoal || 4)
       setXpTotal(data.xpTotal || 0)
-      setFreezesAvailable(data.freezesAvailable || 1)
+      setFreezesAvailable(data.freezesAvailable || 0)
+      setFrozenDates(data.frozenDates || [])
       setLoading(false)
     }
     loadExercise()
@@ -231,8 +233,8 @@ function ExerciseManagerTab({ studentId }) {
   }, [studentId])
 
   const stats = useMemo(
-    () => calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, getTodayStr(), xpTotal),
-    [logs, weeklyGoal, freezesAvailable, xpTotal]
+    () => calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, getTodayStr(), xpTotal, frozenDates),
+    [logs, weeklyGoal, freezesAvailable, xpTotal, frozenDates]
   )
   const levelInfo = useMemo(() => getLevelInfo(xpTotal, t), [xpTotal, t])
 

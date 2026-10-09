@@ -55,7 +55,8 @@ export default function ExercisePage() {
   const [logs, setLogs] = useState([])
   const [weeklyGoal, setWeeklyGoal] = useState(4)
   const [xpTotal, setXpTotal] = useState(0)
-  const [freezesAvailable, setFreezesAvailable] = useState(1)
+  const [freezesAvailable, setFreezesAvailable] = useState(0)
+  const [frozenDates, setFrozenDates] = useState([])
 
   // Check-in state
   const [selectedTag, setSelectedTag] = useState('Gym')
@@ -120,7 +121,8 @@ export default function ExercisePage() {
     setLogs(data.logs || [])
     setWeeklyGoal(data.weeklyGoal || 4)
     setXpTotal(data.xpTotal || 0)
-    setFreezesAvailable(data.freezesAvailable || 1)
+    setFreezesAvailable(data.freezesAvailable || 0)
+    setFrozenDates(data.frozenDates || [])
     if (showLoading) {
       setLoading(false)
       window.hidePrerenderSplash?.()
@@ -128,8 +130,8 @@ export default function ExercisePage() {
   }
 
   const stats = useMemo(
-    () => calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, todayStr, xpTotal),
-    [logs, weeklyGoal, freezesAvailable, todayStr, xpTotal]
+    () => calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, todayStr, xpTotal, frozenDates),
+    [logs, weeklyGoal, freezesAvailable, todayStr, xpTotal, frozenDates]
   )
 
   const levelInfo = useMemo(
@@ -145,6 +147,8 @@ export default function ExercisePage() {
     if (stats.isCheckedInToday || checkingIn) return
     setCheckingIn(true)
 
+    const isNewFreezeEarned = ((logs.length + 1) % 5 === 0)
+
     // 1. Optimistic Instant UI Update (0ms delay)
     const optimisticLog = {
       id: `local-${Date.now()}`,
@@ -158,10 +162,11 @@ export default function ExercisePage() {
     setLogs(optimisticLogs)
     setXpTotal(optimisticXp)
 
-    showToast(t('exercise.checkedInToday'), 'success')
+    showToast(isNewFreezeEarned ? 'Checked in! +1 Streak Freeze earned! 🛡️' : t('exercise.checkedInToday'), 'success')
     setCelebrationModal({
       xpEarned: 20,
       message: dailyMsg,
+      earnedFreeze: isNewFreezeEarned,
       unlockedBadges: []
     })
 
@@ -174,6 +179,7 @@ export default function ExercisePage() {
         currentWeeklyGoal: weeklyGoal,
         currentXpTotal: xpTotal,
         currentFreezes: freezesAvailable,
+        currentFrozenDates: frozenDates,
         logs
       })
 
@@ -181,13 +187,14 @@ export default function ExercisePage() {
         setLogs(result.updatedLogs)
         setXpTotal(result.newXpTotal)
         setFreezesAvailable(result.newFreezes)
-        if (result.unlockedBadges && result.unlockedBadges.length > 0) {
-          setCelebrationModal({
-            xpEarned: result.xpEarned,
-            message: dailyMsg,
-            unlockedBadges: result.unlockedBadges
-          })
-        }
+        if (result.newFrozenDates) setFrozenDates(result.newFrozenDates)
+        setCelebrationModal(prev => prev ? {
+          ...prev,
+          xpEarned: result.xpEarned,
+          message: dailyMsg,
+          earnedFreeze: result.earnedFreeze,
+          unlockedBadges: result.unlockedBadges || []
+        } : null)
       }
     } catch {
       // Background sync error ignored if local state succeeded
@@ -207,7 +214,8 @@ export default function ExercisePage() {
       logs,
       weeklyGoal: tempGoal,
       xpTotal,
-      freezesAvailable
+      freezesAvailable,
+      frozenDates
     }
     try {
       localStorage.setItem(cacheKey, JSON.stringify(updatedData))
@@ -276,6 +284,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
   const heatmapDays = useMemo(() => {
     const daysArr = []
     const loggedSet = new Set(logs.map(l => l.log_date))
+    const frozenSet = new Set(stats.frozenDates || [])
     const now = new Date()
     for (let i = 27; i >= 0; i--) {
       const d = new Date(now)
@@ -289,11 +298,12 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
         dateStr: ds,
         label: `${m}/${day}`,
         logged: loggedSet.has(ds),
+        isFrozen: frozenSet.has(ds),
         activity: log?.activity_type || null
       })
     }
     return daysArr
-  }, [logs])
+  }, [logs, stats.frozenDates])
 
   if (loading) {
     return (
@@ -356,14 +366,31 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
             </div>
           </div>
 
-          <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Shield className="h-4 w-4 text-cyan-400" />
-              <span className="text-xs font-bold text-slate-300">Streak Protection</span>
+          <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Shield className="h-4 w-4 text-cyan-400" />
+                <span className="text-xs font-bold text-slate-300">Streak Protection</span>
+              </div>
+              <span className="text-xs font-bold text-cyan-400">
+                {stats.freezesAvailable} {stats.freezesAvailable === 1 ? 'Freeze' : 'Freezes'} Available
+              </span>
             </div>
-            <span className="text-xs font-bold text-cyan-400">
-              {stats.freezesAvailable} Freezes Available
-            </span>
+
+            <div className="pt-2 border-t border-white/5 space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400">
+                <span>Earn +1 Freeze: {stats.freezeProgress} / 5 check-ins</span>
+                <span className="text-cyan-400 font-bold">
+                  {stats.freezeProgress === 0 && logs.length > 0 ? 'Freeze earned! 🛡️' : `${5 - stats.freezeProgress} more needed`}
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-cyan-400 transition-all duration-500"
+                  style={{ width: `${(stats.freezeProgress / 5) * 100}%` }}
+                />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -430,6 +457,8 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
                   className={`flex flex-col items-center justify-center rounded-xl p-2 sm:p-3.5 transition-all min-h-[64px] border ${
                     day.logged
                       ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 font-bold'
+                      : day.isFrozen
+                      ? 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400 font-bold'
                       : isToday
                       ? 'bg-blue-500/15 border-blue-500/30 text-blue-400 font-bold'
                       : 'bg-[#0e1626] border-white/5 text-slate-400'
@@ -438,6 +467,8 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
                   <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">{day.dayName}</span>
                   {day.logged ? (
                     <span className="mt-1.5 text-base sm:text-lg">{ACTIVITY_ICONS[day.activityType] || '✅'}</span>
+                  ) : day.isFrozen ? (
+                    <span className="mt-1.5 text-base sm:text-lg" title="Protected by Streak Freeze">🧊</span>
                   ) : (
                     <span className="mt-2.5 h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full border border-current opacity-30" />
                   )}
@@ -463,25 +494,37 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
             {heatmapDays.map(day => (
               <div
                 key={day.dateStr}
-                title={`${day.dateStr} (${day.activity || 'No workout'})`}
+                title={`${day.dateStr} (${day.isFrozen ? 'Protected by Streak Freeze 🧊' : day.activity || 'No workout'})`}
                 className={`flex flex-col items-center justify-center rounded-lg sm:rounded-xl p-1 sm:p-2 min-h-[42px] sm:min-h-[48px] border transition-colors ${
                   day.logged
                     ? 'bg-emerald-500/20 border-emerald-500/35 text-emerald-400 font-bold'
+                    : day.isFrozen
+                    ? 'bg-cyan-500/20 border-cyan-500/35 text-cyan-400 font-bold'
                     : 'bg-[#0e1626] border-white/5 text-slate-400'
                 }`}
               >
                 <span className="text-[9px] sm:text-[10px] font-mono">{day.label}</span>
-                {day.logged && <span className="text-[11px] sm:text-xs mt-0.5">{ACTIVITY_ICONS[day.activity] || '⚡'}</span>}
+                {day.logged ? (
+                  <span className="text-[11px] sm:text-xs mt-0.5">{ACTIVITY_ICONS[day.activity] || '⚡'}</span>
+                ) : day.isFrozen ? (
+                  <span className="text-[11px] sm:text-xs mt-0.5">🧊</span>
+                ) : null}
               </div>
             ))}
           </div>
 
-          <div className="mt-4 flex items-center justify-end gap-2 text-xs text-slate-400">
-            <span>{t('exercise.less')}</span>
-            <span className="h-3 w-3 rounded bg-[#0e1626] border border-white/10" />
-            <span className="h-3 w-3 rounded bg-emerald-500/30" />
-            <span className="h-3 w-3 rounded bg-emerald-500" />
-            <span>{t('exercise.more')}</span>
+          <div className="mt-4 flex flex-wrap items-center justify-end gap-3 text-xs text-slate-400">
+            <div className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded bg-cyan-500/30 border border-cyan-500/50" />
+              <span>Frozen 🧊</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span>{t('exercise.less')}</span>
+              <span className="h-3 w-3 rounded bg-[#0e1626] border border-white/10" />
+              <span className="h-3 w-3 rounded bg-emerald-500/30" />
+              <span className="h-3 w-3 rounded bg-emerald-500" />
+              <span>{t('exercise.more')}</span>
+            </div>
           </div>
         </section>
 
@@ -713,6 +756,17 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
               <Zap className="h-5 w-5 stroke-[1.5]" />
               <span>+{celebrationModal.xpEarned} XP earned today!</span>
             </div>
+            {celebrationModal.earnedFreeze && (
+              <div className="rounded-[16px] bg-cyan-500/15 border border-cyan-500/30 p-3.5 text-center space-y-1">
+                <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-center gap-1.5">
+                  <Shield className="h-4 w-4" />
+                  Streak Freeze Unlocked!
+                </p>
+                <p className="text-xs sm:text-sm font-medium text-cyan-200">
+                  You marked done 5 times and earned 1 Streak Freeze to protect your streak!
+                </p>
+              </div>
+            )}
             {celebrationModal.unlockedBadges.length > 0 && (
               <div className="rounded-[16px] bg-amber-500/10 border border-amber-500/25 p-3 text-center">
                 <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">Milestone Unlocked!</p>

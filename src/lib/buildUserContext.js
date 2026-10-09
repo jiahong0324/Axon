@@ -191,7 +191,7 @@ ${faqs.map(f => `- Q: ${f.question}\n  A: ${f.answer}`).join('\n\n')}
   const blogPosts = blogRes.data || []
   const todayClasses = classes.filter(c => c.is_replacement ? c.date === todayStr : c.day === dayName)
 
-  const exerciseStats = calculateStreakAndStats(exerciseData.logs, exerciseData.weeklyGoal, exerciseData.freezesAvailable, todayStr, exerciseData.xpTotal)
+  const exerciseStats = calculateStreakAndStats(exerciseData.logs, exerciseData.weeklyGoal, exerciseData.freezesAvailable, todayStr, exerciseData.xpTotal, exerciseData.frozenDates || [])
   const exerciseLevel = getLevelInfo(exerciseData.xpTotal, (key) => translations.en[key] || key)
   const unlockedBadges = exerciseStats.badgeStatuses.filter(b => b.unlocked)
 

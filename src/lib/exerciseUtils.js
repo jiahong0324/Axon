@@ -95,15 +95,24 @@ export function getLevelInfo(xpTotal, t) {
   }
 }
 
-export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes = 1, todayStr = getTodayStr(), xpTotal = 0) {
+export function calculateStreakAndStats(
+  logs = [],
+  weeklyGoal = 4,
+  storedFreezes = 0,
+  todayStr = getTodayStr(),
+  xpTotal = 0,
+  storedFrozenDates = []
+) {
   const loggedDatesSet = new Set(logs.map(log => log.log_date))
   const isCheckedInToday = loggedDatesSet.has(todayStr)
 
-  // Compute weekly count (Monday to Sunday containing todayStr)
+  // 1. Compute weekly count (Monday to Sunday containing todayStr)
   const todayDate = new Date(todayStr + 'T00:00:00')
   const dayOfWeek = (todayDate.getDay() + 6) % 7 // Monday = 0, Sunday = 6
   const mondayDate = new Date(todayDate)
   mondayDate.setDate(todayDate.getDate() - dayOfWeek)
+
+  const frozenDatesSet = new Set(Array.isArray(storedFrozenDates) ? storedFrozenDates : [])
 
   let weeklyCount = 0
   const currentWeekDays = []
@@ -115,11 +124,13 @@ export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes
     const day = String(d.getDate()).padStart(2, '0')
     const ds = `${y}-${m}-${day}`
     const logged = loggedDatesSet.has(ds)
+    const isFrozen = frozenDatesSet.has(ds)
     const logItem = logs.find(l => l.log_date === ds)
     currentWeekDays.push({
       dateStr: ds,
       dayName: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
       logged,
+      isFrozen,
       activityType: logItem?.activity_type || null
     })
     if (logged) weeklyCount++
@@ -130,53 +141,74 @@ export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes
     ? logs.reduce((min, l) => (l.log_date < min ? l.log_date : min), logs[0].log_date)
     : null
 
-  // Calculate current streak backwards
-  let currentStreak = 0
-  let freezesAvailable = Number(storedFreezes) >= 0 ? Number(storedFreezes) : 1
-  if (storedFreezes === 0 && logs.length > 0) {
-    const sortedLogDates = Array.from(loggedDatesSet).sort()
-    let hasActualGap = false
-    for (let i = 1; i < sortedLogDates.length; i++) {
-      const prev = new Date(sortedLogDates[i - 1] + 'T00:00:00')
-      const curr = new Date(sortedLogDates[i] + 'T00:00:00')
-      const diff = Math.round((curr - prev) / (1000 * 60 * 60 * 24))
-      if (diff > 1) {
-        hasActualGap = true
-        break
-      }
-    }
-    if (!hasActualGap) {
-      freezesAvailable = 1
-    }
-  }
+  // 2. Rule: Earn 1 streak freeze for every 5 check-ins (mark today done 5 times)
+  const earnedFromCheckIns = Math.floor(logs.length / 5)
+  const freezeProgress = logs.length % 5
+  // If storedFreezes + historical frozen count is higher (migration compatibility), use the higher total
+  const totalFreezesEarned = Math.max(earnedFromCheckIns, (Number(storedFreezes) || 0) + frozenDatesSet.size)
+  let availableFreezes = Math.max(0, totalFreezesEarned - frozenDatesSet.size)
 
+  const newlyFrozenDates = []
+  let currentStreak = 0
   let freezeUsedThisStreak = false
 
-  const cursorDate = new Date(todayStr + 'T00:00:00')
-  if (!isCheckedInToday) {
-    cursorDate.setDate(cursorDate.getDate() - 1)
-  }
+  if (logs.length > 0) {
+    // Start examining from today if checked in, or from yesterday if not yet checked in today
+    const cursorDate = new Date(todayStr + 'T00:00:00')
+    if (!isCheckedInToday) {
+      cursorDate.setDate(cursorDate.getDate() - 1)
+    }
 
-  for (let step = 0; step < 3650; step++) {
-    const y = cursorDate.getFullYear()
-    const m = String(cursorDate.getMonth() + 1).padStart(2, '0')
-    const day = String(cursorDate.getDate()).padStart(2, '0')
-    const ds = `${y}-${m}-${day}`
+    let broken = false
+    for (let step = 0; step < 3650; step++) {
+      const y = cursorDate.getFullYear()
+      const m = String(cursorDate.getMonth() + 1).padStart(2, '0')
+      const day = String(cursorDate.getDate()).padStart(2, '0')
+      const ds = `${y}-${m}-${day}`
 
-    if (loggedDatesSet.has(ds)) {
-      currentStreak++
-    } else {
-      if (freezesAvailable > 0 && currentStreak > 0 && earliestLogDate && earliestLogDate < ds) {
-        freezesAvailable--
-        freezeUsedThisStreak = true
-      } else {
+      if (ds < earliestLogDate) {
         break
       }
+
+      if (loggedDatesSet.has(ds)) {
+        currentStreak++
+      } else if (frozenDatesSet.has(ds)) {
+        // Missed day was previously frozen — streak remains protected
+        freezeUsedThisStreak = true
+      } else {
+        // Missed day encountered!
+        if (availableFreezes > 0) {
+          // Use 1 streak freeze to avoid returning to zero
+          availableFreezes--
+          frozenDatesSet.add(ds)
+          newlyFrozenDates.push(ds)
+          freezeUsedThisStreak = true
+        } else {
+          // Missed and don't have any streak freeze left -> return to zero!
+          if (!isCheckedInToday) {
+            currentStreak = 0
+          }
+          broken = true
+          break
+        }
+      }
+
+      cursorDate.setDate(cursorDate.getDate() - 1)
     }
-    cursorDate.setDate(cursorDate.getDate() - 1)
+
+    if (broken && !isCheckedInToday) {
+      currentStreak = 0
+    }
   }
 
-  // Calculate longest streak historically
+  // Update currentWeekDays if newly frozen dates fall into current week
+  for (const day of currentWeekDays) {
+    if (frozenDatesSet.has(day.dateStr)) {
+      day.isFrozen = true
+    }
+  }
+
+  // 3. Calculate longest streak historically (counting protected frozen days)
   const sortedDates = Array.from(loggedDatesSet).sort()
   let longestStreak = 0
   let tempStreak = 0
@@ -190,10 +222,28 @@ export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes
       const diffDays = Math.round((curr - prevDate) / (1000 * 60 * 60 * 24))
       if (diffDays === 1) {
         tempStreak++
-      } else if (diffDays === 2) {
-        tempStreak += 1
       } else {
-        tempStreak = 1
+        // Check if all missed days in between were protected by streak freezes
+        let allFrozen = true
+        const checkD = new Date(prevDate)
+        checkD.setDate(checkD.getDate() + 1)
+        while (checkD < curr) {
+          const cy = checkD.getFullYear()
+          const cm = String(checkD.getMonth() + 1).padStart(2, '0')
+          const cd = String(checkD.getDate()).padStart(2, '0')
+          const cds = `${cy}-${cm}-${cd}`
+          if (!frozenDatesSet.has(cds)) {
+            allFrozen = false
+            break
+          }
+          checkD.setDate(checkD.getDate() + 1)
+        }
+
+        if (allFrozen && diffDays > 1) {
+          tempStreak++
+        } else {
+          tempStreak = 1
+        }
       }
     }
     prevDate = curr
@@ -318,7 +368,11 @@ export function calculateStreakAndStats(logs = [], weeklyGoal = 4, storedFreezes
     weeklyGoal,
     isCheckedInToday,
     currentWeekDays,
-    freezesAvailable,
+    freezesAvailable: availableFreezes,
+    frozenDates: Array.from(frozenDatesSet),
+    newlyFrozenDates,
+    freezeProgress,
+    totalFreezesEarned,
     freezeUsedThisStreak,
     badgeStatuses
   }
@@ -329,7 +383,8 @@ export async function fetchExerciseData(userId) {
   let logs = []
   let weeklyGoal = 4
   let xpTotal = 0
-  let freezesAvailable = 1
+  let freezesAvailable = 0
+  let frozenDates = []
 
   let currentUser = null
   try {
@@ -349,10 +404,21 @@ export async function fetchExerciseData(userId) {
       if (typeof cached.weeklyGoal === 'number') weeklyGoal = cached.weeklyGoal
       if (typeof cached.xpTotal === 'number') xpTotal = cached.xpTotal
       if (typeof cached.freezesAvailable === 'number') freezesAvailable = cached.freezesAvailable
+      if (Array.isArray(cached.frozenDates)) frozenDates = cached.frozenDates
     }
   } catch (e) {}
 
-  if (!userId) return { logs, weeklyGoal, xpTotal, freezesAvailable }
+  if (!userId) {
+    const calculatedStats = calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, getTodayStr(), xpTotal, frozenDates)
+    return {
+      logs,
+      weeklyGoal,
+      xpTotal,
+      freezesAvailable: calculatedStats.freezesAvailable,
+      frozenDates: calculatedStats.frozenDates,
+      freezeProgress: calculatedStats.freezeProgress
+    }
+  }
 
   // 2. Read from Supabase profile, auth user_metadata, and exercise_logs table
   try {
@@ -365,12 +431,15 @@ export async function fetchExerciseData(userId) {
     if (profileRes.data) {
       if (typeof profileRes.data.weekly_exercise_goal === 'number') weeklyGoal = profileRes.data.weekly_exercise_goal
       if (typeof profileRes.data.xp_total === 'number') xpTotal = Math.max(xpTotal, profileRes.data.xp_total)
-      if (typeof profileRes.data.streak_freezes_available === 'number') freezesAvailable = Math.max(freezesAvailable, profileRes.data.streak_freezes_available)
+      if (typeof profileRes.data.streak_freezes_available === 'number') freezesAvailable = profileRes.data.streak_freezes_available
     }
 
     const meta = isSelf ? (currentUser?.user_metadata || {}) : {}
     const metaLogs = Array.isArray(meta.axon_exercise_logs) ? meta.axon_exercise_logs : []
     const tableLogs = (logsRes.data && Array.isArray(logsRes.data)) ? logsRes.data : []
+    if (Array.isArray(meta.axon_frozen_dates)) {
+      frozenDates = Array.from(new Set([...frozenDates, ...meta.axon_frozen_dates]))
+    }
 
     const activityLogs = (activityRes.data && Array.isArray(activityRes.data)) ? activityRes.data.map(a => {
       const d = new Date(a.created_at)
@@ -438,39 +507,48 @@ export async function fetchExerciseData(userId) {
             } catch {}
           }
         })).catch(() => {})
-
-        try {
-          await supabase.from('profiles').update({
-            xp_total: xpTotal,
-            streak_freezes_available: freezesAvailable
-          }).eq('id', userId)
-        } catch {}
-      } else if (profileRes.data && (profileRes.data.xp_total < xpTotal || profileRes.data.streak_freezes_available !== freezesAvailable)) {
-        try {
-          await supabase.from('profiles').update({
-            xp_total: xpTotal,
-            streak_freezes_available: freezesAvailable
-          }).eq('id', userId)
-        } catch {}
       }
     }
   } catch (e) {}
 
-  // Weekly freeze reward: +1 freeze per week, accumulates if not used
-  if (isSelf) {
-    const checkWeekKey = `axon_freeze_awarded_week_${userId}`
-    const todayDate = new Date()
-    const weekNo = getWeekNumber(todayDate)
-    if (localStorage.getItem(checkWeekKey) !== String(weekNo)) {
-      freezesAvailable += 1
-      localStorage.setItem(checkWeekKey, String(weekNo))
+  // 3. Evaluate streak and automatic streak freeze protection on missed days
+  const currentStats = calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, getTodayStr(), xpTotal, frozenDates)
+  freezesAvailable = currentStats.freezesAvailable
+  frozenDates = currentStats.frozenDates
+
+  // If new missed days were frozen during calculation, persist the consumed freeze immediately
+  if (currentStats.newlyFrozenDates && currentStats.newlyFrozenDates.length > 0) {
+    if (isSelf) {
       try {
-        await supabase.from('profiles').update({ streak_freezes_available: freezesAvailable }).eq('id', userId)
+        await supabase.auth.updateUser({
+          data: {
+            axon_freezes: freezesAvailable,
+            axon_frozen_dates: frozenDates
+          }
+        })
       } catch {}
+      try {
+        await supabase.from('profiles').update({
+          streak_freezes_available: freezesAvailable
+        }).eq('id', userId)
+      } catch {}
+      for (const fDate of currentStats.newlyFrozenDates) {
+        try {
+          await logActivity(`Streak freeze used for missed day ${fDate}`, 'exercise', 'Streak Freeze', userId)
+        } catch {}
+      }
     }
   }
 
-  const result = { logs, weeklyGoal, xpTotal, freezesAvailable }
+  const result = {
+    logs,
+    weeklyGoal,
+    xpTotal,
+    freezesAvailable,
+    frozenDates,
+    freezeProgress: currentStats.freezeProgress
+  }
+
   try {
     if (userId) localStorage.setItem(cacheKey, JSON.stringify(result))
     if (isSelf) localStorage.setItem('axon_exercise_data_global', JSON.stringify(result))
@@ -479,17 +557,19 @@ export async function fetchExerciseData(userId) {
   return result
 }
 
-function getWeekNumber(d) {
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7))
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
-  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7)
-}
-
-export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), activityType = 'Gym', currentWeeklyGoal = 4, currentXpTotal = 0, currentFreezes = 1, logs = [] }) {
+export async function logExerciseCheckIn({
+  userId,
+  logDate = getTodayStr(),
+  activityType = 'Gym',
+  currentWeeklyGoal = 4,
+  currentXpTotal = 0,
+  currentFreezes = 0,
+  currentFrozenDates = [],
+  logs = []
+}) {
   if (!userId) return { error: 'No user' }
 
-  // Check if already checked in
+  // Check if already checked in today
   if (logs.some(l => l.log_date === logDate)) {
     return { error: 'Already checked in today' }
   }
@@ -505,9 +585,12 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
 
   const updatedLogs = [newLog, ...logs]
 
-  // Calculate stats before and after to see badges unlocked
-  const beforeStats = calculateStreakAndStats(logs, currentWeeklyGoal, currentFreezes, logDate)
-  const afterStats = calculateStreakAndStats(updatedLogs, currentWeeklyGoal, currentFreezes, logDate)
+  // Rule: Earn 1 streak freeze if user marks today done for 5 times (every 5 check-ins = +1 freeze)
+  const earnedFreeze = (updatedLogs.length % 5 === 0)
+
+  // Calculate stats before and after to see badges unlocked and new freezes
+  const beforeStats = calculateStreakAndStats(logs, currentWeeklyGoal, currentFreezes, logDate, currentXpTotal, currentFrozenDates)
+  const afterStats = calculateStreakAndStats(updatedLogs, currentWeeklyGoal, currentFreezes, logDate, currentXpTotal, currentFrozenDates)
 
   let bonusXP = 0
   const unlockedNow = []
@@ -545,13 +628,16 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
   newLog.xp_earned = xpEarned
   const newXpTotal = currentXpTotal + xpEarned
   const newFreezes = afterStats.freezesAvailable
+  const newFrozenDates = afterStats.frozenDates
 
   // 1. Update local cache immediately
   const resultData = {
     logs: updatedLogs,
     weeklyGoal: currentWeeklyGoal,
     xpTotal: newXpTotal,
-    freezesAvailable: newFreezes
+    freezesAvailable: newFreezes,
+    frozenDates: newFrozenDates,
+    freezeProgress: afterStats.freezeProgress
   }
   try {
     localStorage.setItem(`axon_exercise_data_${userId}`, JSON.stringify(resultData))
@@ -564,7 +650,8 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
       data: {
         axon_exercise_logs: updatedLogs,
         axon_xp_total: newXpTotal,
-        axon_freezes: newFreezes
+        axon_freezes: newFreezes,
+        axon_frozen_dates: newFrozenDates
       }
     })
   } catch {}
@@ -584,6 +671,9 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
 
   try {
     await logActivity(`Exercise check-in (${activityType})`, 'exercise', activityType, userId)
+    if (earnedFreeze) {
+      await logActivity('Earned +1 Streak Freeze (5 workouts milestone)', 'exercise', 'Streak Freeze', userId)
+    }
   } catch {}
 
   return {
@@ -592,6 +682,8 @@ export async function logExerciseCheckIn({ userId, logDate = getTodayStr(), acti
     xpEarned,
     newXpTotal,
     newFreezes,
+    newFrozenDates,
+    earnedFreeze,
     unlockedBadges: unlockedNow,
     updatedLogs
   }
