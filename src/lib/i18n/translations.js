@@ -303,7 +303,6 @@ export const translations = {
     'exams.Practical': 'Practical',
 
     'results.title': 'Results',
-    'results.subtitle': 'Track semester grades, calculate GPA, and monitor CGPA progress',
     'results.mySemesters': 'My Semesters',
     'results.quickCalc': 'Quick Calculator',
     'results.overallCgpa': 'Overall CGPA',
@@ -832,7 +831,6 @@ export const translations = {
     'exams.Practical': '实践',
 
     'results.title': '成绩与绩点',
-    'results.subtitle': '记录各学期成绩、模拟计算 GPA 并追踪 CGPA 进度',
     'results.mySemesters': '学期成绩单',
     'results.quickCalc': '快速模拟计算器',
     'results.overallCgpa': '总 CGPA',
