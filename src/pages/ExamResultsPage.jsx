@@ -15,8 +15,30 @@ function createDefaultThreeCourses(semId) {
   ]
 }
 
+const DEFAULT_CALC_ROWS = [
+  { id: 1, name: '', credits: '', grade: '' },
+  { id: 2, name: '', credits: '', grade: '' },
+  { id: 3, name: '', credits: '', grade: '' }
+]
+
+function getInitialCalcRows() {
+  try {
+    const cached = localStorage.getItem('axon_quick_calculator_rows')
+    if (cached) {
+      const parsed = JSON.parse(cached)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
+  } catch (e) {}
+  return DEFAULT_CALC_ROWS
+}
+
 export default function ExamResultsPage() {
-  const [activeTab, setActiveTab] = useState('records') // 'records' | 'calculator'
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      return localStorage.getItem('axon_exam_results_active_tab') || 'records'
+    } catch (e) {}
+    return 'records'
+  })
   const [semesters, setSemesters] = useState(() => {
     try {
       const cached = localStorage.getItem('axon_exam_results_semesters')
@@ -33,18 +55,51 @@ export default function ExamResultsPage() {
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [targetSemesterId, setTargetSemesterId] = useState(null)
 
-  // Quick Calculator State
-  const [calcRows, setCalcRows] = useState([
-    { id: 1, name: '', credits: '', grade: '' },
-    { id: 2, name: '', credits: '', grade: '' },
-    { id: 3, name: '', credits: '', grade: '' }
-  ])
-  const [showCalcResult, setShowCalcResult] = useState(false)
+  // Quick Calculator State with synchronous local hydration
+  const [calcRows, setCalcRows] = useState(getInitialCalcRows)
+  const [showCalcResult, setShowCalcResult] = useState(() => {
+    try {
+      return localStorage.getItem('axon_quick_calculator_show_result') === 'true'
+    } catch (e) {}
+    return false
+  })
 
   const syncTimerRef = useRef(null)
+  const calcSyncTimerRef = useRef(null)
   const isSyncingRef = useRef(false)
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
+
+  // Auto-persist quick calculator rows locally and debounce cloud sync to Supabase user_metadata
+  useEffect(() => {
+    try {
+      localStorage.setItem('axon_quick_calculator_rows', JSON.stringify(calcRows))
+    } catch (e) {}
+
+    if (calcSyncTimerRef.current) clearTimeout(calcSyncTimerRef.current)
+    calcSyncTimerRef.current = setTimeout(async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          await supabase.auth.updateUser({
+            data: { axon_quick_calculator_rows: calcRows }
+          })
+        }
+      } catch (err) {
+        console.warn('Failed to sync quick calculator rows to cloud:', err)
+      }
+    }, 1000)
+
+    return () => {
+      if (calcSyncTimerRef.current) clearTimeout(calcSyncTimerRef.current)
+    }
+  }, [calcRows])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('axon_quick_calculator_show_result', String(showCalcResult))
+    } catch (e) {}
+  }, [showCalcResult])
 
   useEffect(() => {
     loadSemesters()
@@ -69,6 +124,7 @@ export default function ExamResultsPage() {
       window.removeEventListener('visibilitychange', handleAutoRefresh)
       window.removeEventListener('focus', handleAutoRefresh)
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
+      if (calcSyncTimerRef.current) clearTimeout(calcSyncTimerRef.current)
     }
   }, [])
 
@@ -245,6 +301,25 @@ export default function ExamResultsPage() {
     const hasRealSemester = merged.some(s => s.name !== 'Year 1 Semester 1' || (s.courses || []).some(c => c.grade && c.grade !== ''))
     if (hasRealSemester) {
       merged = merged.filter(s => !(s.name === 'Year 1 Semester 1' && (s.courses || []).every(c => !c.grade || c.grade === '')))
+    }
+
+    // 5. Quick Calculator cloud sync: Hydrate from user_metadata if local is empty/default
+    const cloudCalc = user?.user_metadata?.axon_quick_calculator_rows
+    if (Array.isArray(cloudCalc) && cloudCalc.length > 0) {
+      const cachedCalc = localStorage.getItem('axon_quick_calculator_rows')
+      let localHasData = false
+      if (cachedCalc) {
+        try {
+          const parsed = JSON.parse(cachedCalc)
+          localHasData = Array.isArray(parsed) && parsed.some(r => (r.name && r.name.trim() !== '') || r.credits !== '' || r.grade !== '')
+        } catch (e) {}
+      }
+      if (!localHasData) {
+        setCalcRows(cloudCalc)
+        try {
+          localStorage.setItem('axon_quick_calculator_rows', JSON.stringify(cloudCalc))
+        } catch (e) {}
+      }
     }
 
     setSemesters(merged)
@@ -455,6 +530,66 @@ export default function ExamResultsPage() {
     showToast(`Successfully imported & submitted ${extractedItems.length} courses!`, 'success')
   }
 
+  function handleTabChange(tab) {
+    setActiveTab(tab)
+    try {
+      localStorage.setItem('axon_exam_results_active_tab', tab)
+    } catch (e) {}
+  }
+
+  function handleUpdateCalcRow(rowId, field, value) {
+    setCalcRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: value } : r))
+  }
+
+  function handleAddCalcRow() {
+    setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])
+  }
+
+  function handleDeleteCalcRow(rowId) {
+    setCalcRows(prev => {
+      const next = prev.filter(r => r.id !== rowId)
+      if (next.length === 0) {
+        return [{ id: Date.now(), name: '', credits: '', grade: '' }]
+      }
+      return next
+    })
+  }
+
+  async function handleResetCalcRows() {
+    const hasData = calcRows.some(r => (r.name && r.name.trim() !== '') || r.credits !== '' || r.grade !== '')
+    if (hasData) {
+      const ok = await confirm({
+        title: 'Reset Quick Calculator?',
+        message: 'This will clear all your simulated course names, credit hours, and grades. Are you sure you want to delete them?',
+        confirmText: 'Reset Calculator',
+        cancelText: 'Keep My Data',
+        variant: 'danger'
+      })
+      if (!ok) return
+    }
+    const defaultRows = [
+      { id: 1, name: '', credits: '', grade: '' },
+      { id: 2, name: '', credits: '', grade: '' },
+      { id: 3, name: '', credits: '', grade: '' }
+    ]
+    setCalcRows(defaultRows)
+    setShowCalcResult(false)
+    try {
+      localStorage.setItem('axon_quick_calculator_rows', JSON.stringify(defaultRows))
+      localStorage.setItem('axon_quick_calculator_show_result', 'false')
+    } catch (e) {}
+    showToast('Quick calculator reset', 'info')
+  }
+
+  function handleCalculateGPA() {
+    const hasFilled = calcRows.some(r => r.credits !== '' && r.grade !== '')
+    if (!hasFilled) {
+      showToast('Please select at least one Credit & Grade first.', 'warning')
+      return
+    }
+    setShowCalcResult(true)
+  }
+
   const overall = calculateOverallCGPA(semesters)
   const standing = getAcademicStanding(overall.cgpa, overall.overallCredits)
   const calcGPA = calculateSemesterGPA(
@@ -519,7 +654,7 @@ export default function ExamResultsPage() {
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div className="inline-flex rounded-xl bg-[#111827] p-1.5 shadow-md">
           <button
-            onClick={() => setActiveTab('records')}
+            onClick={() => handleTabChange('records')}
             className={`flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-bold transition-all ${
               activeTab === 'records'
                 ? 'bg-blue-500 text-white shadow-md'
@@ -530,9 +665,7 @@ export default function ExamResultsPage() {
             <span>My Semesters</span>
           </button>
           <button
-            onClick={() => {
-              setActiveTab('calculator')
-            }}
+            onClick={() => handleTabChange('calculator')}
             className={`flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-bold transition-all ${
               activeTab === 'calculator'
                 ? 'bg-blue-500 text-white shadow-md'
@@ -661,7 +794,7 @@ export default function ExamResultsPage() {
               </div>
 
               {/* VIEW MODE 1: DEDICATED RESULT SCREEN AFTER CALCULATE */}
-              {showCalcResult ? (
+              {showCalcResult && calcRows.some(r => r.credits !== '' && r.grade !== '') ? (
                 <div className="space-y-6 py-4 animate-fadeIn">
                   <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-8 text-center border border-white/5">
                     <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Calculated GPA</span>
@@ -687,7 +820,7 @@ export default function ExamResultsPage() {
                         .map((r, i) => (
                           <div key={r.id} className="flex items-start sm:items-center justify-between gap-3 py-3 text-sm">
                             <span className="font-semibold text-white break-words leading-snug pr-2">
-                              {r.name || 'Course'}
+                              {r.name || `Course ${i + 1}`}
                             </span>
                             <div className="flex items-center gap-2 sm:gap-4 shrink-0 pt-0.5 sm:pt-0">
                               <span className="text-right text-xs font-medium text-slate-400 shrink-0">{r.credits} Credits</span>
@@ -709,14 +842,7 @@ export default function ExamResultsPage() {
                       <span>Recalculate / Edit Courses</span>
                     </button>
                     <button
-                      onClick={() => {
-                        setCalcRows([
-                          { id: 1, name: '', credits: '', grade: '' },
-                          { id: 2, name: '', credits: '', grade: '' },
-                          { id: 3, name: '', credits: '', grade: '' }
-                        ])
-                        setShowCalcResult(false)
-                      }}
+                      onClick={handleResetCalcRows}
                       className="flex items-center justify-center gap-2 rounded-xl bg-[#1e293b] px-6 py-3.5 text-sm font-bold text-slate-300 hover:bg-[#283548] transition-all"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -728,7 +854,7 @@ export default function ExamResultsPage() {
                 /* VIEW MODE 2: COURSE INPUT TABLE BEFORE CALCULATE */
                 <>
                   <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
-                    {calcRows.map(row => (
+                    {calcRows.map((row, index) => (
                       <div
                         key={row.id}
                         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
@@ -736,12 +862,9 @@ export default function ExamResultsPage() {
                         <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
                           <input
                             className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0 w-full"
-                            placeholder="Course"
+                            placeholder={`Course ${index + 1}`}
                             value={row.name}
-                            onChange={e => {
-                              const val = e.target.value
-                              setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, name: val } : r))
-                            }}
+                            onChange={e => handleUpdateCalcRow(row.id, 'name', e.target.value)}
                           />
                         </div>
 
@@ -749,10 +872,7 @@ export default function ExamResultsPage() {
                           <select
                             className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
                             value={row.credits}
-                            onChange={e => {
-                              const val = e.target.value
-                              setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, credits: val } : r))
-                            }}
+                            onChange={e => handleUpdateCalcRow(row.id, 'credits', e.target.value)}
                           >
                             <option value="">Credit</option>
                             {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c} Credits</option>)}
@@ -761,17 +881,14 @@ export default function ExamResultsPage() {
                           <select
                             className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
                             value={row.grade}
-                            onChange={e => {
-                              const val = e.target.value
-                              setCalcRows(prev => prev.map(r => r.id === row.id ? { ...r, grade: val } : r))
-                            }}
+                            onChange={e => handleUpdateCalcRow(row.id, 'grade', e.target.value)}
                           >
                             <option value="">Grade</option>
                             {TARUMT_GRADES.map(g => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
                           </select>
 
                           <button
-                            onClick={() => setCalcRows(prev => prev.filter(r => r.id !== row.id))}
+                            onClick={() => handleDeleteCalcRow(row.id)}
                             className="p-2 text-slate-500 hover:text-red-400 transition-colors ml-auto"
                             title="Remove row"
                           >
@@ -782,23 +899,28 @@ export default function ExamResultsPage() {
                     ))}
                   </div>
 
-                  <button
-                    onClick={() => setCalcRows(prev => [...prev, { id: Date.now(), name: '', credits: '', grade: '' }])}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Add Row</span>
-                  </button>
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      onClick={handleAddCalcRow}
+                      className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Add Row</span>
+                    </button>
+                    {calcRows.some(r => (r.name && r.name.trim() !== '') || r.credits !== '' || r.grade !== '') && (
+                      <button
+                        onClick={handleResetCalcRows}
+                        className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent px-4 py-3 text-xs sm:text-sm font-semibold text-slate-400 hover:text-red-400 hover:border-red-500/30 transition-all"
+                        title="Clear all courses"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span>Reset</span>
+                      </button>
+                    )}
+                  </div>
 
                   <button
-                    onClick={() => {
-                      const hasFilled = calcRows.some(r => r.credits !== '' && r.grade !== '')
-                      if (!hasFilled) {
-                        showToast('Please select at least one Credit & Grade first.', 'warning')
-                        return
-                      }
-                      setShowCalcResult(true)
-                    }}
+                    onClick={handleCalculateGPA}
                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-4 text-base font-extrabold text-white hover:bg-blue-600 transition-all shadow-lg"
                   >
                     <Calculator className="h-5 w-5" />
