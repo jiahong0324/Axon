@@ -15,6 +15,30 @@ import { SkeletonList } from '../components/SkeletonLoader'
 
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
 
+export function isExamPast(exam) {
+  if (!exam || !exam.exam_date) return false
+  const days = daysFromToday(exam.exam_date)
+  if (days < 0) return true
+  if (days === 0 && exam.end_time) {
+    try {
+      const now = new Date()
+      const parts = String(exam.end_time).split(':')
+      if (parts.length >= 2) {
+        const h = parseInt(parts[0], 10)
+        const m = parseInt(parts[1], 10)
+        if (!isNaN(h) && !isNaN(m)) {
+          const examEndTime = new Date()
+          examEndTime.setHours(h, m, 0, 0)
+          return now > examEndTime
+        }
+      }
+    } catch {
+      return false
+    }
+  }
+  return false
+}
+
 export default function ExamPage() {
   const [exams, setExams] = useState([])
   const [results, setResults] = useState([])
@@ -107,22 +131,6 @@ export default function ExamPage() {
     setExams([])
     showToast('Exams cleared.', 'success')
   }
-
-function isExamPast(exam) {
-  const days = daysFromToday(exam.exam_date)
-  if (days < 0) return true
-  if (days === 0 && exam.end_time) {
-    const now = new Date()
-    const [h, m] = exam.end_time.split(':').map(Number)
-    if (!isNaN(h) && !isNaN(m)) {
-      const examEndTime = new Date()
-      examEndTime.setHours(h, m, 0, 0)
-      return now > examEndTime
-    }
-  }
-  return false
-}
-
   const upcoming = exams.filter(e => !isExamPast(e))
   const past = exams.filter(e => isExamPast(e))
 
