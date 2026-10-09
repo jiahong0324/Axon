@@ -61,10 +61,10 @@ export default function TimetablePage() {
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { t } = useLanguage()
-  const activeProfile = activeProfileId === LIVE_PROFILE_ID
-    ? { id: LIVE_PROFILE_ID, name: isLiveProfile && semesterName ? semesterName : t('timetable.liveProfile'), source: 'live' }
-    : linkedProfiles.find(profile => profile.id === activeProfileId)
   const isLiveProfile = activeProfileId === LIVE_PROFILE_ID
+  const activeProfile = isLiveProfile
+    ? { id: LIVE_PROFILE_ID, name: semesterName ? semesterName : t('timetable.liveProfile'), source: 'live' }
+    : linkedProfiles.find(profile => profile.id === activeProfileId)
   const today = new Date()
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
   const isSemesterEnded = isLiveProfile && Boolean(semesterEndDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterEndDate) && todayString > semesterEndDate)
