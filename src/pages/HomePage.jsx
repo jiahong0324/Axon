@@ -134,12 +134,17 @@ export default function HomePage() {
   }
 
   const todayStr = format(currentTime, 'yyyy-MM-dd')
-  const todayClasses = useMemo(() => classes.filter(c => {
-    if (c.is_replacement) {
-      return c.date === todayStr
-    }
-    return c.day === todayName
-  }).sort((a, b) => a.start_time.localeCompare(b.start_time)), [classes, todayName, todayStr])
+  const todayClasses = useMemo(() => {
+    const semesterEndDate = (localStorage.getItem('axon_semester_end_date') || '').trim()
+    const isSemesterEnded = Boolean(semesterEndDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterEndDate) && todayStr > semesterEndDate)
+    if (isSemesterEnded) return []
+    return classes.filter(c => {
+      if (c.is_replacement) {
+        return c.date === todayStr
+      }
+      return c.day === todayName
+    }).sort((a, b) => a.start_time.localeCompare(b.start_time))
+  }, [classes, todayName, todayStr])
   const dueSoon = assignments.filter(a => a.status !== 'Done').slice(0, 3)
   const nextExamDays = exams[0] ? daysFromToday(exams[0].exam_date) : null
   const nextExamValue = nextExamDays === null ? '-' : nextExamDays === 0 ? 'Today!' : nextExamDays

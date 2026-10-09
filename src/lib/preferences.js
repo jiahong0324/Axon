@@ -17,7 +17,9 @@ export const DEFAULT_PREFERENCES = {
   accentColor: 'blue',
   fontSize: 'medium',
   compactMode: 'false',
-  appLanguage: 'en'
+  appLanguage: 'en',
+  axon_semester_name: '',
+  axon_semester_end_date: ''
 }
 
 export async function syncPreferences(user) {
@@ -111,7 +113,7 @@ export async function updatePreference(user, key, value) {
     }
 
     // 4. Update the push notification server if notification-related settings change
-    if (['axon_notify_minutes', 'axon_class_notify', 'axon_exam_notify'].includes(key)) {
+    if (['axon_notify_minutes', 'axon_class_notify', 'axon_exam_notify', 'axon_semester_end_date'].includes(key)) {
       try {
         if ('Notification' in window && Notification.permission === 'granted') {
           await registerPushSubscription(currentUser)

@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronsUpDown, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
+import { ArrowRightLeft, Calendar, CalendarOff, ChevronDown, ChevronsUpDown, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import ClassTypeBadge from '../components/ClassTypeBadge'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -12,6 +12,7 @@ import { classColors, days, formatTime } from '../lib/utils'
 import { SkeletonTimetable } from '../components/SkeletonLoader'
 import { useLanguage } from '../components/LanguageProvider'
 import { clearCache, readCache, writeCache } from '../lib/cache'
+import { updatePreference } from '../lib/preferences'
 
 const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue', is_replacement: false, date: '' }
 const LIVE_PROFILE_ID = 'account'
@@ -43,6 +44,12 @@ export default function TimetablePage() {
   const [newProfileName, setNewProfileName] = useState('')
   const [showAddProfileModal, setShowAddProfileModal] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [semesterName, setSemesterName] = useState(() => localStorage.getItem('axon_semester_name') || '')
+  const [semesterEndDate, setSemesterEndDate] = useState(() => localStorage.getItem('axon_semester_end_date') || '')
+  const [showSemesterModal, setShowSemesterModal] = useState(false)
+  const [semesterForm, setSemesterForm] = useState({ name: '', end_date: '' })
+  const [showNewSemesterModal, setShowNewSemesterModal] = useState(false)
+  const [newSemesterForm, setNewSemesterForm] = useState({ archiveName: '', newName: '', newEndDate: '' })
   const [mobileDay, setMobileDay] = useState(() => {
     const day = new Date().getDay()
     return day >= 1 && day <= 5 ? day - 1 : 0
@@ -55,9 +62,12 @@ export default function TimetablePage() {
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { t } = useLanguage()
   const activeProfile = activeProfileId === LIVE_PROFILE_ID
-    ? { id: LIVE_PROFILE_ID, name: t('timetable.liveProfile'), source: 'live' }
+    ? { id: LIVE_PROFILE_ID, name: isLiveProfile && semesterName ? semesterName : t('timetable.liveProfile'), source: 'live' }
     : linkedProfiles.find(profile => profile.id === activeProfileId)
   const isLiveProfile = activeProfileId === LIVE_PROFILE_ID
+  const today = new Date()
+  const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const isSemesterEnded = isLiveProfile && Boolean(semesterEndDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterEndDate) && todayString > semesterEndDate)
 
   useEffect(() => { initializeTimetables() }, [])
   useEffect(() => {
@@ -99,6 +109,16 @@ export default function TimetablePage() {
     setLinkedProfiles(profiles)
     const savedActive = localStorage.getItem(activeKey(currentUser.id)) || LIVE_PROFILE_ID
     setActiveProfileId(savedActive === LIVE_PROFILE_ID || profiles.some(profile => profile.id === savedActive) ? savedActive : LIVE_PROFILE_ID)
+
+    const metaSemesterName = currentUser.user_metadata?.semester_name || currentUser.user_metadata?.preferences?.axon_semester_name || ''
+    const metaSemesterEndDate = currentUser.user_metadata?.semester_end_date || currentUser.user_metadata?.preferences?.axon_semester_end_date || ''
+    const initialName = metaSemesterName || localStorage.getItem('axon_semester_name') || ''
+    const initialEndDate = metaSemesterEndDate || localStorage.getItem('axon_semester_end_date') || ''
+
+    setSemesterName(initialName)
+    setSemesterEndDate(initialEndDate)
+    if (initialName) localStorage.setItem('axon_semester_name', initialName)
+    if (initialEndDate) localStorage.setItem('axon_semester_end_date', initialEndDate)
   }
 
   async function fetchClasses() {
@@ -224,6 +244,172 @@ export default function TimetablePage() {
       switchProfile(LIVE_PROFILE_ID)
     }
     showToast(t('timetable.profileDeleted'), 'success')
+  }
+
+  function openSemesterModal() {
+    setSemesterForm({
+      name: semesterName,
+      end_date: semesterEndDate
+    })
+    setShowSemesterModal(true)
+  }
+
+  function openNewSemesterModal() {
+    setNewSemesterForm({
+      archiveName: semesterName || t('timetable.previousSemester'),
+      newName: '',
+      newEndDate: ''
+    })
+    setShowNewSemesterModal(true)
+  }
+
+  async function handleSaveSemesterSettings(e) {
+    e?.preventDefault()
+    if (!user) return
+    setIsSubmitting(true)
+    const nextName = semesterForm.name.trim()
+    const nextEndDate = semesterForm.end_date.trim()
+
+    setSemesterName(nextName)
+    setSemesterEndDate(nextEndDate)
+    localStorage.setItem('axon_semester_name', nextName)
+    localStorage.setItem('axon_semester_end_date', nextEndDate)
+
+    await Promise.all([
+      updatePreference(user, 'axon_semester_name', nextName),
+      updatePreference(user, 'axon_semester_end_date', nextEndDate),
+      supabase.auth.updateUser({
+        data: {
+          ...user.user_metadata,
+          semester_name: nextName,
+          semester_end_date: nextEndDate
+        }
+      })
+    ])
+
+    setShowSemesterModal(false)
+    setIsSubmitting(false)
+    showToast(t('timetable.semesterSaved'), 'success')
+  }
+
+  async function handleStartNewSemester(e) {
+    e?.preventDefault()
+    if (!user) return
+    setIsSubmitting(true)
+
+    const freshProfiles = readLinkedProfiles(user.id)
+    let updatedProfiles = [...freshProfiles]
+
+    // 1. If live profile has classes, automatically archive them into linkedProfiles
+    if (classes.length > 0) {
+      if (freshProfiles.length >= 10) {
+        setIsSubmitting(false)
+        return showToast('Maximum saved timetables reached. Please remove one first.', 'error')
+      }
+      const archiveLabel = newSemesterForm.archiveName.trim() || semesterName || t('timetable.previousSemester')
+      const profileId = `profile-${Date.now()}`
+      const archivedProfile = {
+        id: profileId,
+        name: archiveLabel,
+        classes: classes.map(c => ({ ...c, profile_id: profileId }))
+      }
+      updatedProfiles.push(archivedProfile)
+      persistLinkedProfiles(updatedProfiles)
+    }
+
+    // 2. Clear live classes in Supabase
+    const { error } = await supabase.from('classes').delete().eq('user_id', user.id)
+    if (error) {
+      console.error('Error clearing live classes for new semester:', error)
+      setIsSubmitting(false)
+      return showToast(t('timetable.startNewSemesterFailed'), 'error')
+    }
+
+    // Clear live replacements in auth
+    const replacements = user.user_metadata?.replacement_classes || []
+    const remainingReplacements = replacements.filter(r => r.profile_id && r.profile_id !== 'account' && r.profile_id !== LIVE_PROFILE_ID)
+
+    // 3. Set new semester name & end date
+    const nextName = newSemesterForm.newName.trim()
+    const nextEndDate = newSemesterForm.newEndDate.trim()
+
+    setSemesterName(nextName)
+    setSemesterEndDate(nextEndDate)
+    localStorage.setItem('axon_semester_name', nextName)
+    localStorage.setItem('axon_semester_end_date', nextEndDate)
+
+    await Promise.all([
+      updatePreference(user, 'axon_semester_name', nextName),
+      updatePreference(user, 'axon_semester_end_date', nextEndDate),
+      supabase.auth.updateUser({
+        data: {
+          ...user.user_metadata,
+          replacement_classes: remainingReplacements,
+          semester_name: nextName,
+          semester_end_date: nextEndDate
+        }
+      })
+    ])
+
+    clearCache(classesCacheKey(user.id))
+    setClasses([])
+    setIsSubmitting(false)
+    setShowNewSemesterModal(false)
+
+    showToast(t('timetable.newSemesterStarted'), 'success')
+    setAnalyzerOpen(true)
+  }
+
+  async function promoteToMain(profileId) {
+    if (!user || isLiveProfile) return
+    const freshProfiles = readLinkedProfiles(user.id)
+    const targetProfile = freshProfiles.find(p => p.id === profileId)
+    if (!targetProfile) return
+
+    if (!await confirm({
+      title: t('timetable.promoteTitle'),
+      message: t('timetable.promoteMessage', { name: targetProfile.name }),
+      confirmText: t('timetable.promoteConfirm')
+    })) return
+
+    setIsSubmitting(true)
+    setLoading(true)
+
+    // Fetch current live classes from DB
+    const { data: currentLiveClasses } = await supabase.from('classes').select('*').eq('user_id', user.id)
+
+    // If current live has classes, archive them as a profile
+    let nextProfiles = freshProfiles.filter(p => p.id !== profileId)
+    if (currentLiveClasses && currentLiveClasses.length > 0) {
+      const liveArchiveName = semesterName || t('timetable.previousSemester')
+      const newArchivedId = `profile-${Date.now()}`
+      nextProfiles.push({
+        id: newArchivedId,
+        name: liveArchiveName,
+        classes: currentLiveClasses.map(c => ({ ...c, profile_id: newArchivedId }))
+      })
+    }
+    persistLinkedProfiles(nextProfiles)
+
+    // Clear live classes and insert targetProfile classes
+    await supabase.from('classes').delete().eq('user_id', user.id)
+    if (targetProfile.classes && targetProfile.classes.length > 0) {
+      const liveRows = targetProfile.classes.map(({ id, profile_id, ...item }) => ({
+        ...item,
+        user_id: user.id
+      }))
+      await supabase.from('classes').insert(liveRows)
+    }
+
+    clearCache(classesCacheKey(user.id))
+    setSemesterName(targetProfile.name)
+    localStorage.setItem('axon_semester_name', targetProfile.name)
+    await updatePreference(user, 'axon_semester_name', targetProfile.name)
+
+    switchProfile(LIVE_PROFILE_ID)
+    setIsSubmitting(false)
+    showToast(t('timetable.promotedSuccess'), 'success')
+    fetchClasses()
   }
 
   async function addClass(e) {
@@ -486,8 +672,216 @@ export default function TimetablePage() {
           </div>
         </div>
 
+        {/* Semester Status Banner / Card */}
+        {!loading && isLiveProfile && (
+          isSemesterEnded ? (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-400 shrink-0">
+                  <CalendarOff className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="font-semibold text-amber-200 text-sm sm:text-base">
+                      {semesterName || t('timetable.currentSemester')} · {t('timetable.semesterEnded')}
+                    </h2>
+                    <span className="text-[11px] font-medium bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
+                      {t('timetable.notificationsPaused')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-300/80 mt-0.5">
+                    {t('timetable.endedOnDesc', { date: semesterEndDate })}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                <button
+                  type="button"
+                  onClick={openSemesterModal}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-500/30 text-amber-300 hover:bg-amber-500/10 transition-colors"
+                >
+                  {t('timetable.editDate')}
+                </button>
+                <button
+                  type="button"
+                  onClick={openNewSemesterModal}
+                  className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t('timetable.startNewSemester')}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2.5 bg-theme-500/10 rounded-xl text-theme-400 shrink-0">
+                  <Calendar className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="font-semibold text-white text-sm sm:text-base truncate">
+                      {semesterName || t('timetable.currentSemester')}
+                    </h2>
+                    {semesterEndDate ? (
+                      <span className="text-[11px] font-medium bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                        {t('timetable.activeUntil', { date: semesterEndDate })}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-medium bg-white/10 text-slate-300 px-2 py-0.5 rounded-full">
+                        {t('timetable.noEndDateSet')}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {semesterEndDate
+                      ? t('timetable.autoPauseDesc')
+                      : t('timetable.setEndDateTip')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                <button
+                  type="button"
+                  onClick={openSemesterModal}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-white/10 text-slate-300 hover:bg-white/5 transition-colors flex items-center gap-1.5"
+                >
+                  <Calendar className="h-3.5 w-3.5" />
+                  {semesterEndDate ? t('timetable.editDate') : t('timetable.setEndDate')}
+                </button>
+                <button
+                  type="button"
+                  onClick={openNewSemesterModal}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-theme-500/15 border border-theme-500/30 text-theme-300 hover:bg-theme-500/25 transition-colors flex items-center gap-1.5"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t('timetable.newSemester')}
+                </button>
+              </div>
+            </div>
+          )
+        )}
 
+        {/* When viewing linked / archived profile */}
+        {!loading && !isLiveProfile && (
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-blue-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-blue-500/20 rounded-xl text-blue-400 shrink-0">
+                <ArrowRightLeft className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-blue-200 text-sm sm:text-base">
+                  {t('timetable.viewingArchived')}: {activeProfile?.name}
+                </h2>
+                <p className="text-xs text-blue-300/80 mt-0.5">
+                  {t('timetable.viewingArchivedDesc')}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+              <button
+                type="button"
+                onClick={() => promoteToMain(activeProfileId)}
+                disabled={isSubmitting}
+                className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+              >
+                <ArrowRightLeft className="h-3.5 w-3.5" />
+                {t('timetable.setAsMain')}
+              </button>
+              <button
+                type="button"
+                onClick={() => switchProfile(LIVE_PROFILE_ID)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-blue-500/30 text-blue-300 hover:bg-blue-500/10 transition-colors"
+              >
+                {t('timetable.liveProfile')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Semester Settings Modal */}
+      <Modal isOpen={showSemesterModal} onClose={() => setShowSemesterModal(false)} title={t('timetable.editSemesterTitle')}>
+        <form onSubmit={handleSaveSemesterSettings} className="space-y-4">
+          <Field label={t('timetable.semesterName')}>
+            <input
+              className="input"
+              placeholder="e.g. 2026 Semester 1"
+              value={semesterForm.name}
+              onChange={e => setSemesterForm(prev => ({ ...prev, name: e.target.value }))}
+            />
+          </Field>
+          <Field label={t('timetable.semesterEndDate')}>
+            <input
+              type="date"
+              className="input"
+              value={semesterForm.end_date}
+              onChange={e => setSemesterForm(prev => ({ ...prev, end_date: e.target.value }))}
+            />
+            <p className="text-xs text-slate-400 mt-1.5">{t('timetable.autoPauseDesc')}</p>
+          </Field>
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={() => setShowSemesterModal(false)} className="btn-secondary flex-1">
+              {t('common.cancel')}
+            </button>
+            <button type="submit" disabled={isSubmitting} className="btn-primary flex-1">
+              {isSubmitting ? t('common.saving') : t('timetable.saveSemester')}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Start New Semester Modal */}
+      <Modal isOpen={showNewSemesterModal} onClose={() => setShowNewSemesterModal(false)} title={t('timetable.startNewSemesterTitle')}>
+        <form onSubmit={handleStartNewSemester} className="space-y-4">
+          {classes.length > 0 && (
+            <div className="bg-theme-500/10 border border-theme-500/20 rounded-xl p-3 text-xs text-slate-300 space-y-2">
+              <p className="font-semibold text-theme-300">
+                💾 {t('timetable.archiveCurrentNotice')}
+              </p>
+              <Field label={t('timetable.archiveNameLabel')}>
+                <input
+                  className="input text-sm"
+                  required
+                  placeholder="e.g. Year 1 Sem 1"
+                  value={newSemesterForm.archiveName}
+                  onChange={e => setNewSemesterForm(prev => ({ ...prev, archiveName: e.target.value }))}
+                />
+              </Field>
+            </div>
+          )}
+
+          <Field label={t('timetable.newSemesterNameLabel')}>
+            <input
+              className="input"
+              placeholder="e.g. Year 1 Sem 2"
+              value={newSemesterForm.newName}
+              onChange={e => setNewSemesterForm(prev => ({ ...prev, newName: e.target.value }))}
+            />
+          </Field>
+
+          <Field label={t('timetable.newSemesterEndDateLabel')}>
+            <input
+              type="date"
+              className="input"
+              min={todayString}
+              value={newSemesterForm.newEndDate}
+              onChange={e => setNewSemesterForm(prev => ({ ...prev, newEndDate: e.target.value }))}
+            />
+            <p className="text-xs text-slate-400 mt-1">{t('timetable.newSemesterEndDateTip')}</p>
+          </Field>
+
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={() => setShowNewSemesterModal(false)} className="btn-secondary flex-1">
+              {t('common.cancel')}
+            </button>
+            <button type="submit" disabled={isSubmitting} className="btn-primary flex-1">
+              {isSubmitting ? t('common.saving') : t('timetable.startAndImport')}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
       <Modal isOpen={showAddProfileModal} onClose={() => setShowAddProfileModal(false)} title={t('timetable.addProfile')}>
         <div className="space-y-4">
           <Field label={t('timetable.profileName')}>

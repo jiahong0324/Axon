@@ -102,6 +102,8 @@ async function processSubscription(sub, context) {
   const classNotify = preferenceEnabled(prefs.axon_class_notify)
   const examNotify = preferenceEnabled(prefs.axon_exam_notify)
   const attendanceNotify = preferenceEnabled(prefs.axon_attendance_notify)
+  const semesterEndDate = (prefs.axon_semester_end_date || '').trim()
+  const isSemesterEnded = Boolean(semesterEndDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterEndDate) && context.todayDate > semesterEndDate)
   const subPayloads = []
 
   const pushPayload = (payload, key) => subPayloads.push({ ...payload, key })
@@ -130,8 +132,8 @@ async function processSubscription(sub, context) {
   })
 
   // B. Classes: notify when the scheduled lead time has passed, up to the
-  // configured late window.
-  if (classNotify) {
+  // configured late window. Skip if semester has already ended.
+  if (classNotify && !isSemesterEnded) {
     context.todayClasses
       .filter(cls => cls.user_id === sub.user_id)
       .forEach(cls => {
@@ -166,8 +168,8 @@ async function processSubscription(sub, context) {
       })
   }
 
-  // D. Attendance reminders.
-  if (attendanceNotify) {
+  // D. Attendance reminders. Skip if semester has already ended.
+  if (attendanceNotify && !isSemesterEnded) {
     context.todayClasses
       .filter(cls => cls.user_id === sub.user_id)
       .forEach(cls => {
