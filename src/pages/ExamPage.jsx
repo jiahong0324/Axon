@@ -108,8 +108,23 @@ export default function ExamPage() {
     showToast('Exams cleared.', 'success')
   }
 
-  const upcoming = exams.filter(e => daysFromToday(e.exam_date) >= 0)
-  const past = exams.filter(e => daysFromToday(e.exam_date) < 0)
+function isExamPast(exam) {
+  const days = daysFromToday(exam.exam_date)
+  if (days < 0) return true
+  if (days === 0 && exam.end_time) {
+    const now = new Date()
+    const [h, m] = exam.end_time.split(':').map(Number)
+    if (!isNaN(h) && !isNaN(m)) {
+      const examEndTime = new Date()
+      examEndTime.setHours(h, m, 0, 0)
+      return now > examEndTime
+    }
+  }
+  return false
+}
+
+  const upcoming = exams.filter(e => !isExamPast(e))
+  const past = exams.filter(e => isExamPast(e))
 
   return (
     <main className="main-content">
@@ -227,10 +242,10 @@ function ExamSection({ title, exams, results, deleteExam, onEdit, emptyMsg, load
 
 function ExamCard({ exam, result, deleteExam, onEdit }) {
   const days = daysFromToday(exam.exam_date)
-  const isPast = days < 0;
+  const isPast = isExamPast(exam)
   
   // Status Pill styling
-  const statusColor = isPast ? 'bg-white/10 text-slate-300 border-white/10' : days <= 7 ? 'bg-red-500/10 text-red-400 border-red-500/20' : days <= 14 ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+  const statusColor = isPast ? 'bg-white/5 text-slate-400 border-white/10' : days <= 7 ? 'bg-red-500/10 text-red-400 border-red-500/20' : days <= 14 ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
   const label = isPast ? 'Completed' : days === 0 ? 'Today' : `${days} days`;
 
   // Exam Type Badge styling
@@ -241,14 +256,14 @@ function ExamCard({ exam, result, deleteExam, onEdit }) {
     'Test 1': 'bg-blue-500/10 text-blue-400 border-blue-500/30',
     'Test 2': 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
   }
-  const typeColor = typeMap[exam.exam_type] || 'bg-slate-500/10 text-slate-300 border-slate-500/30';
+  const typeColor = isPast ? 'bg-white/5 text-slate-400 border-white/10' : (typeMap[exam.exam_type] || 'bg-slate-500/10 text-slate-300 border-slate-500/30');
 
   return (
-    <article className={`group relative rounded-[20px] border p-4 sm:p-5 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.3)] ${isPast ? 'bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.04]' : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'}`}>
+    <article className={`group relative rounded-[20px] border p-4 sm:p-5 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.3)] ${isPast ? 'bg-white/[0.01] border-white/5 opacity-60 hover:opacity-90 grayscale-[0.35] hover:grayscale-0' : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'}`}>
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h3 className={`font-bold text-base sm:text-lg tracking-tight leading-snug break-words ${isPast ? 'text-slate-400' : 'text-white'}`}>{exam.subject}</h3>
+            <h3 className={`font-bold text-base sm:text-lg tracking-tight leading-snug break-words ${isPast ? 'text-slate-400 group-hover:text-slate-300' : 'text-white'}`}>{exam.subject}</h3>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-bold uppercase tracking-wider shrink-0 ${typeColor}`}>{exam.exam_type}</span>
           </div>
         </div>
@@ -260,47 +275,47 @@ function ExamCard({ exam, result, deleteExam, onEdit }) {
       </div>
       
       <div className="grid grid-cols-2 gap-2 sm:gap-2.5 mb-3">
-        <div className="flex items-center gap-2 text-slate-400 bg-black/20 rounded-xl p-2 sm:p-2.5 border border-white/5 transition-colors hover:bg-black/30">
+        <div className={`flex items-center gap-2 rounded-xl p-2 sm:p-2.5 border transition-colors ${isPast ? 'bg-black/15 text-slate-500 border-white/[0.03]' : 'bg-black/20 text-slate-400 border-white/5 hover:bg-black/30'}`}>
            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-             <span className="text-xs sm:text-sm">📅</span>
+             <span className={`text-xs sm:text-sm ${isPast ? 'grayscale opacity-60' : ''}`}>📅</span>
            </div>
            <div className="min-w-0 flex-1">
              <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Date</p>
-             <p className="text-xs sm:text-[13px] font-semibold text-slate-200 break-words leading-tight">{dateLabel(exam.exam_date)}</p>
+             <p className={`text-xs sm:text-[13px] font-semibold break-words leading-tight ${isPast ? 'text-slate-400' : 'text-slate-200'}`}>{dateLabel(exam.exam_date)}</p>
            </div>
         </div>
 
-        <div className="flex items-center gap-2 text-slate-400 bg-black/20 rounded-xl p-2 sm:p-2.5 border border-white/5 transition-colors hover:bg-black/30">
+        <div className={`flex items-center gap-2 rounded-xl p-2 sm:p-2.5 border transition-colors ${isPast ? 'bg-black/15 text-slate-500 border-white/[0.03]' : 'bg-black/20 text-slate-400 border-white/5 hover:bg-black/30'}`}>
            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-             <span className="text-xs sm:text-sm">🕒</span>
+             <span className={`text-xs sm:text-sm ${isPast ? 'grayscale opacity-60' : ''}`}>🕒</span>
            </div>
            <div className="min-w-0 flex-1">
              <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Time</p>
-             <p className="text-xs sm:text-[13px] font-semibold text-slate-200 break-words leading-tight">{exam.start_time && exam.end_time ? `${formatTime(exam.start_time)} \u2013 ${formatTime(exam.end_time)}` : 'TBA'}</p>
+             <p className={`text-xs sm:text-[13px] font-semibold break-words leading-tight ${isPast ? 'text-slate-400' : 'text-slate-200'}`}>{exam.start_time && exam.end_time ? `${formatTime(exam.start_time)} \u2013 ${formatTime(exam.end_time)}` : 'TBA'}</p>
            </div>
         </div>
         
-        <div className="col-span-2 flex items-center gap-2 text-slate-400 bg-black/20 rounded-xl p-2 sm:p-2.5 border border-white/5 transition-colors hover:bg-black/30">
+        <div className={`col-span-2 flex items-center gap-2 rounded-xl p-2 sm:p-2.5 border transition-colors ${isPast ? 'bg-black/15 text-slate-500 border-white/[0.03]' : 'bg-black/20 text-slate-400 border-white/5 hover:bg-black/30'}`}>
            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-             <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-theme-400" />
+             <MapPin className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isPast ? 'text-slate-500' : 'text-theme-400'}`} />
            </div>
            <div className="min-w-0 flex-1">
              <p className="text-[9px] uppercase font-bold tracking-widest text-slate-500 mb-0.5">Venue</p>
-             <p className="text-xs sm:text-[13px] font-semibold text-slate-200 break-words leading-tight">{exam.venue || 'TBA'}</p>
+             <p className={`text-xs sm:text-[13px] font-semibold break-words leading-tight ${isPast ? 'text-slate-400' : 'text-slate-200'}`}>{exam.venue || 'TBA'}</p>
            </div>
         </div>
       </div>
 
       {exam.notes && (
-        <div className="mb-3 rounded-xl bg-theme-500/5 px-3 py-2 border border-theme-500/10 relative overflow-hidden">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-theme-500/50"></div>
-          <p className="text-xs sm:text-[13px] text-theme-100/80 line-clamp-2 leading-relaxed pl-1.5">{exam.notes}</p>
+        <div className={`mb-3 rounded-xl px-3 py-2 border relative overflow-hidden ${isPast ? 'bg-white/[0.02] border-white/5' : 'bg-theme-500/5 border-theme-500/10'}`}>
+          <div className={`absolute left-0 top-0 bottom-0 w-1 ${isPast ? 'bg-slate-600/50' : 'bg-theme-500/50'}`}></div>
+          <p className={`text-xs sm:text-[13px] line-clamp-2 leading-relaxed pl-1.5 ${isPast ? 'text-slate-400' : 'text-theme-100/80'}`}>{exam.notes}</p>
         </div>
       )}
       
       {result && (
-        <div className="mb-3 flex items-center justify-between rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2.5 relative overflow-hidden">
-           <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500/50"></div>
+        <div className={`mb-3 flex items-center justify-between rounded-xl px-3 py-2.5 relative overflow-hidden ${isPast ? 'bg-emerald-500/5 border border-emerald-500/15' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
+           <div className={`absolute left-0 top-0 bottom-0 w-1 ${isPast ? 'bg-emerald-500/35' : 'bg-emerald-500/50'}`}></div>
            <div className="pl-1 flex items-center gap-2">
              <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-500/70">Result:</span>
              <span className="text-lg sm:text-xl font-black text-emerald-400 tracking-tight">{result.score}</span>

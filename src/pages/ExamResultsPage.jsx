@@ -3,6 +3,7 @@ import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, Edit2, Check, Rota
 import { supabase } from '../lib/supabase'
 import { useToast } from '../components/Toast'
 import { useConfirmDialog } from '../components/ConfirmModal'
+import { useLanguage } from '../components/LanguageProvider'
 import Modal from '../components/Modal'
 import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
 import { TARUMT_GRADES, getGradePoint, calculateSemesterGPA, calculateOverallCGPA, getAcademicStanding, getGradeBadgeStyle } from '../lib/tarumtGrading'
@@ -33,6 +34,7 @@ function getInitialCalcRows() {
 }
 
 export default function ExamResultsPage() {
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState(() => {
     try {
       return localStorage.getItem('axon_exam_results_active_tab') || 'records'
@@ -603,48 +605,55 @@ export default function ExamResultsPage() {
     <main className="main-content">
       {/* Page Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center justify-between">
-          <h1 className="page-title mb-1">Results</h1>
-          <div className="flex items-center gap-1 sm:gap-2 md:hidden">
-            <button
-              className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors flex items-center justify-center shrink-0"
-              onClick={() => {
-                setTargetSemesterId(null)
-                setAnalyzerOpen(true)
-              }}
-              title="AI Import Screenshot"
-            >
-              <Sparkles className="h-5 w-5" />
-            </button>
-            <button
-              className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors flex items-center justify-center shrink-0"
-              onClick={() => setShowAddSemModal(true)}
-              title="Add Semester"
-            >
-              <Plus className="h-5 w-5" />
-            </button>
-            {semesters.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between sm:justify-start gap-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-heading text-white tracking-tight">
+              {t('results.title')}
+            </h1>
+            <div className="flex items-center gap-1 sm:gap-2 md:hidden">
               <button
-                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0"
-                onClick={handleClearAllSemesters}
-                title="Clear All Semesters"
+                className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors flex items-center justify-center shrink-0"
+                onClick={() => {
+                  setTargetSemesterId(null)
+                  setAnalyzerOpen(true)
+                }}
+                title="AI Import Screenshot"
               >
-                <Trash2 className="h-5 w-5" />
+                <Sparkles className="h-5 w-5" />
               </button>
-            )}
+              <button
+                className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors flex items-center justify-center shrink-0"
+                onClick={() => setShowAddSemModal(true)}
+                title="Add Semester"
+              >
+                <Plus className="h-5 w-5" />
+              </button>
+              {semesters.length > 0 && (
+                <button
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0"
+                  onClick={handleClearAllSemesters}
+                  title="Clear All Semesters"
+                >
+                  <Trash2 className="h-5 w-5" />
+                </button>
+              )}
+            </div>
           </div>
+          <p className="mt-1 text-xs sm:text-sm text-slate-400">
+            {t('results.subtitle')}
+          </p>
         </div>
 
         {/* Overall CGPA Banner */}
-        <div className="flex items-center gap-4 rounded-2xl bg-[#131b2e] px-5 py-3 shadow-md">
+        <div className="flex items-center gap-4 rounded-2xl bg-[#131b2e] px-5 py-3 shadow-md border border-white/5 shrink-0">
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-500/15">
             <Award className="h-6 w-6 text-blue-400" />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Overall CGPA</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('results.overallCgpa')}</p>
             <div className="flex items-baseline gap-2 mt-0.5">
               <span className="text-3xl font-extrabold text-white tracking-tight">{overall.cgpa}</span>
-              <span className="text-xs font-semibold text-slate-400">({overall.overallCredits} Credits)</span>
+              <span className="text-xs font-semibold text-slate-400">({overall.overallCredits} {t('results.credits')})</span>
             </div>
           </div>
         </div>
@@ -662,7 +671,7 @@ export default function ExamResultsPage() {
             }`}
           >
             <BookOpen className="h-4 w-4 shrink-0" />
-            <span>My Semesters</span>
+            <span>{t('results.mySemesters')}</span>
           </button>
           <button
             onClick={() => handleTabChange('calculator')}
@@ -673,7 +682,7 @@ export default function ExamResultsPage() {
             }`}
           >
             <Calculator className="h-4 w-4 shrink-0" />
-            <span>Quick Calculator</span>
+            <span>{t('results.quickCalc')}</span>
           </button>
         </div>
 

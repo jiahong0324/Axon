@@ -847,6 +847,33 @@ export default function TimetablePage() {
                   </button>
                 )
               )}
+
+              {/* Inline Capsule when viewing archived timetable */}
+              {!isLiveProfile && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-blue-500/25 backdrop-blur-md shadow-sm">
+                  <span className="text-xs text-blue-300 font-medium flex items-center gap-1">
+                    <span>📁</span>
+                    <span>{t('timetable.archivedBadge')}</span>
+                  </span>
+                  <span className="h-3 w-px bg-white/10" />
+                  <button
+                    type="button"
+                    onClick={() => promoteToMain(activeProfileId)}
+                    className="text-xs text-blue-300 hover:text-white font-medium hover:underline flex items-center gap-0.5 transition-colors cursor-pointer"
+                  >
+                    <span>{t('timetable.setAsMain')}</span>
+                    <span>→</span>
+                  </button>
+                  <span className="h-3 w-px bg-white/10" />
+                  <button
+                    type="button"
+                    onClick={() => switchProfile(LIVE_PROFILE_ID)}
+                    className="text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {t('timetable.backToLive')}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <h1 className="page-title mb-0">{t('timetable.title')}</h1>
@@ -888,35 +915,6 @@ export default function TimetablePage() {
             )}
           </div>
         </div>
-
-        {/* Slim Notice when viewing archived timetable */}
-        {!loading && !isLiveProfile && (
-          <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-200 animate-in fade-in duration-200">
-            <div className="flex items-center gap-2 truncate">
-              <ArrowRightLeft className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-              <span className="truncate">
-                {t('timetable.viewingArchived')}: <strong className="font-semibold text-white">{activeProfile?.name}</strong>
-              </span>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => promoteToMain(activeProfileId)}
-                className="font-medium text-blue-200 hover:text-white underline underline-offset-2 transition-colors"
-              >
-                {t('timetable.setAsMain')}
-              </button>
-              <span className="text-blue-400/40">·</span>
-              <button
-                type="button"
-                onClick={() => switchProfile(LIVE_PROFILE_ID)}
-                className="text-blue-300/80 hover:text-white transition-colors"
-              >
-                {t('timetable.liveProfile')}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Semester Settings Modal */}
