@@ -55,7 +55,7 @@ export default function ExercisePage() {
   const [logs, setLogs] = useState([])
   const [weeklyGoal, setWeeklyGoal] = useState(4)
   const [xpTotal, setXpTotal] = useState(0)
-  const [freezesAvailable, setFreezesAvailable] = useState(0)
+  const [freezesAvailable, setFreezesAvailable] = useState(5)
   const [frozenDates, setFrozenDates] = useState([])
 
   // Check-in state

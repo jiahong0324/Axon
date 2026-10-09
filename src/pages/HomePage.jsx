@@ -32,7 +32,7 @@ export default function HomePage() {
   const todayName = format(currentTime, 'EEEE')
 
   const [exerciseLogs, setExerciseLogs] = useState([])
-  const [exerciseFreezes, setExerciseFreezes] = useState(0)
+  const [exerciseFreezes, setExerciseFreezes] = useState(5)
   const [exerciseFrozenDates, setExerciseFrozenDates] = useState([])
 
   const exTodayStr = getTodayStr()

@@ -98,7 +98,7 @@ export function getLevelInfo(xpTotal, t) {
 export function calculateStreakAndStats(
   logs = [],
   weeklyGoal = 4,
-  storedFreezes = 0,
+  storedFreezes = 5,
   todayStr = getTodayStr(),
   xpTotal = 0,
   storedFrozenDates = []
@@ -141,11 +141,14 @@ export function calculateStreakAndStats(
     ? logs.reduce((min, l) => (l.log_date < min ? l.log_date : min), logs[0].log_date)
     : null
 
-  // 2. Rule: Earn 1 streak freeze for every 5 check-ins (mark today done 5 times)
+  // 2. Rule: Give user 5 streak protection freezes for the first time, + 1 more for every 5 check-ins
+  const INITIAL_FREEZES = 5
   const earnedFromCheckIns = Math.floor(logs.length / 5)
   const freezeProgress = logs.length % 5
-  // If storedFreezes + historical frozen count is higher (migration compatibility), use the higher total
-  const totalFreezesEarned = Math.max(earnedFromCheckIns, (Number(storedFreezes) || 0) + frozenDatesSet.size)
+  const totalFreezesEarned = Math.max(
+    INITIAL_FREEZES + earnedFromCheckIns,
+    (Number(storedFreezes) || 0) + frozenDatesSet.size
+  )
   let availableFreezes = Math.max(0, totalFreezesEarned - frozenDatesSet.size)
 
   const newlyFrozenDates = []
@@ -154,13 +157,14 @@ export function calculateStreakAndStats(
 
   if (logs.length > 0) {
     // Start examining from today if checked in, or from yesterday if not yet checked in today
-    const cursorDate = new Date(todayStr + 'T00:00:00')
+    let cursorDate = new Date(todayStr + 'T00:00:00')
     if (!isCheckedInToday) {
       cursorDate.setDate(cursorDate.getDate() - 1)
     }
 
-    let broken = false
-    for (let step = 0; step < 3650; step++) {
+    let streakBroken = false
+
+    while (true) {
       const y = cursorDate.getFullYear()
       const m = String(cursorDate.getMonth() + 1).padStart(2, '0')
       const day = String(cursorDate.getDate()).padStart(2, '0')
@@ -172,31 +176,70 @@ export function calculateStreakAndStats(
 
       if (loggedDatesSet.has(ds)) {
         currentStreak++
+        cursorDate.setDate(cursorDate.getDate() - 1)
       } else if (frozenDatesSet.has(ds)) {
         // Missed day was previously frozen — streak remains protected
         freezeUsedThisStreak = true
+        cursorDate.setDate(cursorDate.getDate() - 1)
       } else {
         // Missed day encountered!
-        if (availableFreezes > 0) {
-          // Use 1 streak freeze to avoid returning to zero
-          availableFreezes--
-          frozenDatesSet.add(ds)
-          newlyFrozenDates.push(ds)
-          freezeUsedThisStreak = true
-        } else {
-          // Missed and don't have any streak freeze left -> return to zero!
-          if (!isCheckedInToday) {
-            currentStreak = 0
+        // Measure the length of this consecutive missed gap
+        let gapLength = 0
+        const probeDate = new Date(cursorDate)
+        while (probeDate >= new Date(earliestLogDate + 'T00:00:00')) {
+          const py = probeDate.getFullYear()
+          const pm = String(probeDate.getMonth() + 1).padStart(2, '0')
+          const pd = String(probeDate.getDate()).padStart(2, '0')
+          const pds = `${py}-${pm}-${pd}`
+          if (loggedDatesSet.has(pds) || frozenDatesSet.has(pds)) {
+            break
           }
-          broken = true
+          gapLength++
+          probeDate.setDate(probeDate.getDate() - 1)
+        }
+
+        // Check if there is an earlier workout log after this gap
+        let hasEarlierLog = false
+        const checkEarlier = new Date(cursorDate)
+        checkEarlier.setDate(checkEarlier.getDate() - gapLength)
+        while (checkEarlier >= new Date(earliestLogDate + 'T00:00:00')) {
+          const ey = checkEarlier.getFullYear()
+          const em = String(checkEarlier.getMonth() + 1).padStart(2, '0')
+          const ed = String(checkEarlier.getDate()).padStart(2, '0')
+          const eds = `${ey}-${em}-${ed}`
+          if (loggedDatesSet.has(eds)) {
+            hasEarlierLog = true
+            break
+          }
+          checkEarlier.setDate(checkEarlier.getDate() - 1)
+        }
+
+        // If available freezes can cover this entire gap AND there's an earlier streak to connect to:
+        if (hasEarlierLog && gapLength > 0 && availableFreezes >= gapLength) {
+          for (let g = 0; g < gapLength; g++) {
+            const gy = cursorDate.getFullYear()
+            const gm = String(cursorDate.getMonth() + 1).padStart(2, '0')
+            const gd = String(cursorDate.getDate()).padStart(2, '0')
+            const gds = `${gy}-${gm}-${gd}`
+            availableFreezes--
+            frozenDatesSet.add(gds)
+            newlyFrozenDates.push(gds)
+            freezeUsedThisStreak = true
+            cursorDate.setDate(cursorDate.getDate() - 1)
+          }
+        } else {
+          // The streak returned to zero here!
+          // Stop counting backwards immediately.
+          // If the user marked today as done, the streak starts from 1 (or the current continuous run after the break).
+          // It does NOT continue their streak from before the break.
+          streakBroken = true
           break
         }
       }
-
-      cursorDate.setDate(cursorDate.getDate() - 1)
     }
 
-    if (broken && !isCheckedInToday) {
+    // If the streak was broken and today is NOT checked in, active streak is 0
+    if (streakBroken && !isCheckedInToday) {
       currentStreak = 0
     }
   }
@@ -383,7 +426,7 @@ export async function fetchExerciseData(userId) {
   let logs = []
   let weeklyGoal = 4
   let xpTotal = 0
-  let freezesAvailable = 0
+  let freezesAvailable = 5
   let frozenDates = []
 
   let currentUser = null
@@ -563,7 +606,7 @@ export async function logExerciseCheckIn({
   activityType = 'Gym',
   currentWeeklyGoal = 4,
   currentXpTotal = 0,
-  currentFreezes = 0,
+  currentFreezes = 5,
   currentFrozenDates = [],
   logs = []
 }) {
