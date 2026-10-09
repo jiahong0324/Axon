@@ -127,12 +127,15 @@ export default function NotificationManager() {
       const classNotify = localStorage.getItem('axon_class_notify') !== 'false'
       const examNotify = localStorage.getItem('axon_exam_notify') !== 'false'
       const semesterEndDate = (localStorage.getItem('axon_semester_end_date') || '').trim()
+      const semesterStartDate = (localStorage.getItem('axon_semester_start_date') || '').trim()
       const isSemesterEnded = Boolean(semesterEndDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterEndDate) && todayDate > semesterEndDate)
+      const isSemesterUpcoming = Boolean(semesterStartDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterStartDate) && todayDate < semesterStartDate)
+      const isSemesterActive = !isSemesterEnded && !isSemesterUpcoming
       const targetTime = new Date(now.getTime() + notifyMinutes * 60000)
       const targetTimeStr = `${String(targetTime.getHours()).padStart(2, '0')}:${String(targetTime.getMinutes()).padStart(2, '0')}`
       const todayDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]
 
-      if (classNotify && !isSemesterEnded) {
+      if (classNotify && isSemesterActive) {
         const { data: upcomingClasses } = await supabase
           .from('classes')
           .select('*')
@@ -159,7 +162,7 @@ export default function NotificationManager() {
       const targetEndTime = new Date(now.getTime() + attendanceMinutes * 60000)
       const targetEndTimeStr = `${String(targetEndTime.getHours()).padStart(2, '0')}:${String(targetEndTime.getMinutes()).padStart(2, '0')}`
 
-      if (attendanceNotify && !isSemesterEnded) {
+      if (attendanceNotify && isSemesterActive) {
         const { data: endingClasses } = await supabase
           .from('classes')
           .select('*')

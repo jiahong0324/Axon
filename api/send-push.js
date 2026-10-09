@@ -103,7 +103,10 @@ async function processSubscription(sub, context) {
   const examNotify = preferenceEnabled(prefs.axon_exam_notify)
   const attendanceNotify = preferenceEnabled(prefs.axon_attendance_notify)
   const semesterEndDate = (prefs.axon_semester_end_date || '').trim()
+  const semesterStartDate = (prefs.axon_semester_start_date || '').trim()
   const isSemesterEnded = Boolean(semesterEndDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterEndDate) && context.todayDate > semesterEndDate)
+  const isSemesterUpcoming = Boolean(semesterStartDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterStartDate) && context.todayDate < semesterStartDate)
+  const isSemesterActive = !isSemesterEnded && !isSemesterUpcoming
   const subPayloads = []
 
   const pushPayload = (payload, key) => subPayloads.push({ ...payload, key })
@@ -132,8 +135,8 @@ async function processSubscription(sub, context) {
   })
 
   // B. Classes: notify when the scheduled lead time has passed, up to the
-  // configured late window. Skip if semester has already ended.
-  if (classNotify && !isSemesterEnded) {
+  // configured late window. Skip if semester is not currently active.
+  if (classNotify && isSemesterActive) {
     context.todayClasses
       .filter(cls => cls.user_id === sub.user_id)
       .forEach(cls => {
@@ -168,8 +171,8 @@ async function processSubscription(sub, context) {
       })
   }
 
-  // D. Attendance reminders. Skip if semester has already ended.
-  if (attendanceNotify && !isSemesterEnded) {
+  // D. Attendance reminders. Skip if semester is not currently active.
+  if (attendanceNotify && isSemesterActive) {
     context.todayClasses
       .filter(cls => cls.user_id === sub.user_id)
       .forEach(cls => {

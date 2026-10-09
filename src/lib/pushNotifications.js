@@ -39,6 +39,7 @@ function getPushPreferences() {
     assignmentReminders: localStorage.getItem('assignmentReminders') !== 'false',
     examAlerts: localStorage.getItem('examAlerts') !== 'false',
     reminderLeadTime: localStorage.getItem('reminderLeadTime') || '3 days',
+    axon_semester_start_date: localStorage.getItem('axon_semester_start_date') || '',
     axon_semester_end_date: localStorage.getItem('axon_semester_end_date') || ''
   }
 }

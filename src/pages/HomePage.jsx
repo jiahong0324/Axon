@@ -136,8 +136,10 @@ export default function HomePage() {
   const todayStr = format(currentTime, 'yyyy-MM-dd')
   const todayClasses = useMemo(() => {
     const semesterEndDate = (localStorage.getItem('axon_semester_end_date') || '').trim()
+    const semesterStartDate = (localStorage.getItem('axon_semester_start_date') || '').trim()
     const isSemesterEnded = Boolean(semesterEndDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterEndDate) && todayStr > semesterEndDate)
-    if (isSemesterEnded) return []
+    const isSemesterUpcoming = Boolean(semesterStartDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterStartDate) && todayStr < semesterStartDate)
+    if (isSemesterEnded || isSemesterUpcoming) return []
     return classes.filter(c => {
       if (c.is_replacement) {
         return c.date === todayStr

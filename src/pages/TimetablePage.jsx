@@ -1,5 +1,5 @@
 import { ArrowRightLeft, Calendar, CalendarOff, ChevronDown, ChevronsUpDown, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import ClassTypeBadge from '../components/ClassTypeBadge'
 import { useConfirmDialog } from '../components/ConfirmModal'
 import EmptyState from '../components/EmptyState'
@@ -32,6 +32,69 @@ function saveLinkedProfiles(userId, profiles) {
   localStorage.setItem(linkedKey(userId), JSON.stringify(profiles))
 }
 
+export function getSemesterProgress(startDateStr, endDateStr) {
+  if (!endDateStr && !startDateStr) return null
+
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+
+  let end = null
+  if (endDateStr && /^\d{4}-\d{2}-\d{2}$/.test(endDateStr)) {
+    const [ey, em, ed] = endDateStr.split('-').map(Number)
+    end = new Date(ey, em - 1, ed, 23, 59, 59, 999)
+  }
+
+  let start = null
+  if (startDateStr && /^\d{4}-\d{2}-\d{2}$/.test(startDateStr)) {
+    const [sy, sm, sd] = startDateStr.split('-').map(Number)
+    start = new Date(sy, sm - 1, sd, 0, 0, 0, 0)
+  } else if (end) {
+    // Default fallback: 14 weeks (98 days) before end date
+    start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 97, 0, 0, 0, 0)
+  } else {
+    const [sy, sm, sd] = startDateStr.split('-').map(Number)
+    start = new Date(sy, sm - 1, sd, 0, 0, 0, 0)
+    end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 97, 23, 59, 59, 999)
+  }
+
+  if (start && end && start > end) {
+    return { isInvalid: true }
+  }
+
+  if (end && today > end) {
+    return { isEnded: true }
+  }
+
+  // Align start date to the Monday of that week
+  const startDay = start.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
+  const diffToMonday = startDay === 0 ? -6 : 1 - startDay
+  const mondayStart = new Date(start)
+  mondayStart.setDate(start.getDate() + diffToMonday)
+  mondayStart.setHours(0, 0, 0, 0)
+
+  if (today < mondayStart) {
+    const msDiff = mondayStart.getTime() - today.getTime()
+    const daysUntil = Math.max(1, Math.ceil(msDiff / (1000 * 60 * 60 * 24)))
+    return { isUpcoming: true, daysUntil }
+  }
+
+  const daysDiff = Math.floor((today.getTime() - mondayStart.getTime()) / (1000 * 60 * 60 * 24))
+  const currentWeek = Math.floor(daysDiff / 7) + 1
+
+  const totalDays = Math.floor((end.getTime() - mondayStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7))
+
+  const clampedWeek = Math.min(currentWeek, totalWeeks)
+  const remainingWeeks = Math.max(0, totalWeeks - clampedWeek)
+
+  return {
+    isOngoing: true,
+    currentWeek: clampedWeek,
+    totalWeeks,
+    remainingWeeks
+  }
+}
+
 export default function TimetablePage() {
   const [user, setUser] = useState(null)
   const [classes, setClasses] = useState([])
@@ -45,11 +108,12 @@ export default function TimetablePage() {
   const [showAddProfileModal, setShowAddProfileModal] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [semesterName, setSemesterName] = useState(() => localStorage.getItem('axon_semester_name') || '')
+  const [semesterStartDate, setSemesterStartDate] = useState(() => localStorage.getItem('axon_semester_start_date') || '')
   const [semesterEndDate, setSemesterEndDate] = useState(() => localStorage.getItem('axon_semester_end_date') || '')
   const [showSemesterModal, setShowSemesterModal] = useState(false)
-  const [semesterForm, setSemesterForm] = useState({ name: '', end_date: '' })
+  const [semesterForm, setSemesterForm] = useState({ name: '', start_date: '', end_date: '' })
   const [showNewSemesterModal, setShowNewSemesterModal] = useState(false)
-  const [newSemesterForm, setNewSemesterForm] = useState({ archiveName: '', newName: '', newEndDate: '' })
+  const [newSemesterForm, setNewSemesterForm] = useState({ archiveName: '', newName: '', newStartDate: '', newEndDate: '' })
   const [mobileDay, setMobileDay] = useState(() => {
     const day = new Date().getDay()
     return day >= 1 && day <= 5 ? day - 1 : 0
@@ -67,6 +131,18 @@ export default function TimetablePage() {
     : linkedProfiles.find(profile => profile.id === activeProfileId)
   const today = new Date()
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const progressInfo = useMemo(() => {
+    if (!isLiveProfile) return null
+    return getSemesterProgress(semesterStartDate, semesterEndDate)
+  }, [isLiveProfile, semesterStartDate, semesterEndDate])
+  const previewProgress = useMemo(() => {
+    if (!semesterForm.start_date && !semesterForm.end_date) return null
+    return getSemesterProgress(semesterForm.start_date, semesterForm.end_date)
+  }, [semesterForm.start_date, semesterForm.end_date])
+  const newSemesterPreview = useMemo(() => {
+    if (!newSemesterForm.newStartDate && !newSemesterForm.newEndDate) return null
+    return getSemesterProgress(newSemesterForm.newStartDate, newSemesterForm.newEndDate)
+  }, [newSemesterForm.newStartDate, newSemesterForm.newEndDate])
   const isSemesterEnded = isLiveProfile && Boolean(semesterEndDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterEndDate) && todayString > semesterEndDate)
 
   useEffect(() => { initializeTimetables() }, [])
@@ -111,13 +187,17 @@ export default function TimetablePage() {
     setActiveProfileId(savedActive === LIVE_PROFILE_ID || profiles.some(profile => profile.id === savedActive) ? savedActive : LIVE_PROFILE_ID)
 
     const metaSemesterName = currentUser.user_metadata?.semester_name || currentUser.user_metadata?.preferences?.axon_semester_name || ''
+    const metaSemesterStartDate = currentUser.user_metadata?.semester_start_date || currentUser.user_metadata?.preferences?.axon_semester_start_date || ''
     const metaSemesterEndDate = currentUser.user_metadata?.semester_end_date || currentUser.user_metadata?.preferences?.axon_semester_end_date || ''
     const initialName = metaSemesterName || localStorage.getItem('axon_semester_name') || ''
+    const initialStartDate = metaSemesterStartDate || localStorage.getItem('axon_semester_start_date') || ''
     const initialEndDate = metaSemesterEndDate || localStorage.getItem('axon_semester_end_date') || ''
 
     setSemesterName(initialName)
+    setSemesterStartDate(initialStartDate)
     setSemesterEndDate(initialEndDate)
     if (initialName) localStorage.setItem('axon_semester_name', initialName)
+    if (initialStartDate) localStorage.setItem('axon_semester_start_date', initialStartDate)
     if (initialEndDate) localStorage.setItem('axon_semester_end_date', initialEndDate)
   }
 
@@ -249,6 +329,7 @@ export default function TimetablePage() {
   function openSemesterModal() {
     setSemesterForm({
       name: semesterName,
+      start_date: semesterStartDate,
       end_date: semesterEndDate
     })
     setShowSemesterModal(true)
@@ -258,6 +339,7 @@ export default function TimetablePage() {
     setNewSemesterForm({
       archiveName: semesterName || t('timetable.previousSemester'),
       newName: '',
+      newStartDate: '',
       newEndDate: ''
     })
     setShowNewSemesterModal(true)
@@ -268,20 +350,25 @@ export default function TimetablePage() {
     if (!user) return
     setIsSubmitting(true)
     const nextName = semesterForm.name.trim()
+    const nextStartDate = semesterForm.start_date.trim()
     const nextEndDate = semesterForm.end_date.trim()
 
     setSemesterName(nextName)
+    setSemesterStartDate(nextStartDate)
     setSemesterEndDate(nextEndDate)
     localStorage.setItem('axon_semester_name', nextName)
+    localStorage.setItem('axon_semester_start_date', nextStartDate)
     localStorage.setItem('axon_semester_end_date', nextEndDate)
 
     await Promise.all([
       updatePreference(user, 'axon_semester_name', nextName),
+      updatePreference(user, 'axon_semester_start_date', nextStartDate),
       updatePreference(user, 'axon_semester_end_date', nextEndDate),
       supabase.auth.updateUser({
         data: {
           ...user.user_metadata,
           semester_name: nextName,
+          semester_start_date: nextStartDate,
           semester_end_date: nextEndDate
         }
       })
@@ -329,23 +416,28 @@ export default function TimetablePage() {
     const replacements = user.user_metadata?.replacement_classes || []
     const remainingReplacements = replacements.filter(r => r.profile_id && r.profile_id !== 'account' && r.profile_id !== LIVE_PROFILE_ID)
 
-    // 3. Set new semester name & end date
+    // 3. Set new semester name & dates
     const nextName = newSemesterForm.newName.trim()
+    const nextStartDate = newSemesterForm.newStartDate.trim()
     const nextEndDate = newSemesterForm.newEndDate.trim()
 
     setSemesterName(nextName)
+    setSemesterStartDate(nextStartDate)
     setSemesterEndDate(nextEndDate)
     localStorage.setItem('axon_semester_name', nextName)
+    localStorage.setItem('axon_semester_start_date', nextStartDate)
     localStorage.setItem('axon_semester_end_date', nextEndDate)
 
     await Promise.all([
       updatePreference(user, 'axon_semester_name', nextName),
+      updatePreference(user, 'axon_semester_start_date', nextStartDate),
       updatePreference(user, 'axon_semester_end_date', nextEndDate),
       supabase.auth.updateUser({
         data: {
           ...user.user_metadata,
           replacement_classes: remainingReplacements,
           semester_name: nextName,
+          semester_start_date: nextStartDate,
           semester_end_date: nextEndDate
         }
       })
@@ -586,49 +678,123 @@ export default function TimetablePage() {
       onTouchEnd={onTouchEndHandler}
     >
       <div className="mb-6 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           {!loading ? (
-            <div className="relative flex items-center group">
-              <button 
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-1.5 focus:outline-none group"
-              >
-                <h1 className="page-title mb-0 text-white group-hover:opacity-80 transition-opacity">{isLiveProfile ? t('timetable.title') : activeProfile?.name}</h1>
-                <ChevronDown className={`h-5 w-5 text-slate-400 group-hover:text-white transition-all duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
-              </button>
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <div className="relative flex items-center group">
+                <button 
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-1.5 focus:outline-none group"
+                >
+                  <h1 className="page-title mb-0 text-white group-hover:opacity-80 transition-opacity">
+                    {isLiveProfile ? (semesterName || t('timetable.title')) : activeProfile?.name}
+                  </h1>
+                  <ChevronDown className={`h-5 w-5 text-slate-400 group-hover:text-white transition-all duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
+                </button>
 
-              {isDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-                  <div className="absolute top-full left-0 mt-2 w-56 bg-slate-900 border border-white/10 shadow-xl shadow-black/50 rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="p-1.5 flex flex-col gap-1">
-                      <button 
-                        onClick={() => { switchProfile(LIVE_PROFILE_ID); setIsDropdownOpen(false); }}
-                        className={`flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${isLiveProfile ? 'bg-theme-500/20 text-theme-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
-                      >
-                        {t('timetable.liveProfile')} {t('timetable.title')}
-                      </button>
-                      {linkedProfiles.map(p => (
+                {isDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+                    <div className="absolute top-full left-0 mt-2 w-60 bg-slate-900 border border-white/10 shadow-xl shadow-black/50 rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="p-1.5 flex flex-col gap-1">
+                        <div className="px-2.5 py-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+                          {t('timetable.timetables')}
+                        </div>
                         <button 
-                          key={p.id}
-                          onClick={() => { switchProfile(p.id); setIsDropdownOpen(false); }}
-                          className={`flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${activeProfileId === p.id ? 'bg-theme-500/20 text-theme-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                          onClick={() => { switchProfile(LIVE_PROFILE_ID); setIsDropdownOpen(false); }}
+                          className={`flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${isLiveProfile ? 'bg-theme-500/20 text-theme-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
                         >
-                          {p.name}
+                          <span className="truncate">{semesterName || t('timetable.liveProfile')}</span>
+                          {isLiveProfile && <span className="text-[10px] bg-theme-500/30 text-theme-200 px-1.5 py-0.5 rounded font-mono ml-2">Active</span>}
                         </button>
-                      ))}
-                      
-                      <div className="h-px w-full bg-white/5 my-1" />
-                      
-                      <button 
-                        onClick={() => { setShowAddProfileModal(true); setIsDropdownOpen(false); }}
-                        className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-theme-400 hover:bg-theme-500/10 transition-colors gap-2"
-                      >
-                        <Plus className="h-4 w-4" /> {t('timetable.addProfile')}
-                      </button>
+                        {linkedProfiles.map(p => (
+                          <button 
+                            key={p.id}
+                            onClick={() => { switchProfile(p.id); setIsDropdownOpen(false); }}
+                            className={`flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeProfileId === p.id ? 'bg-theme-500/20 text-theme-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                          >
+                            <span className="truncate">{p.name}</span>
+                          </button>
+                        ))}
+                        
+                        <div className="h-px w-full bg-white/5 my-1" />
+
+                        {isLiveProfile && (
+                          <>
+                            <button 
+                              onClick={() => { openSemesterModal(); setIsDropdownOpen(false); }}
+                              className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
+                            >
+                              <Calendar className="h-4 w-4 text-slate-400" /> {t('timetable.semesterSettings')}
+                            </button>
+                            <button 
+                              onClick={() => { openNewSemesterModal(); setIsDropdownOpen(false); }}
+                              className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-theme-400 hover:bg-theme-500/10 transition-colors gap-2"
+                            >
+                              <Sparkles className="h-4 w-4" /> {t('timetable.startNewSemester')}
+                            </button>
+                            <div className="h-px w-full bg-white/5 my-1" />
+                          </>
+                        )}
+                        
+                        <button 
+                          onClick={() => { setShowAddProfileModal(true); setIsDropdownOpen(false); }}
+                          className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-400 hover:bg-white/5 hover:text-white transition-colors gap-2"
+                        >
+                          <Plus className="h-4 w-4" /> {t('timetable.addProfile')}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </>
+                  </>
+                )}
+              </div>
+
+              {/* Compact Semester Week Badge */}
+              {isLiveProfile && (
+                <button
+                  type="button"
+                  onClick={openSemesterModal}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    progressInfo?.isOngoing
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20 hover:border-emerald-500/40 shadow-sm shadow-emerald-500/5'
+                      : progressInfo?.isUpcoming
+                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/25 hover:bg-blue-500/20'
+                      : progressInfo?.isEnded
+                      ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25'
+                      : 'text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-dashed border-white/15'
+                  }`}
+                  title={t('timetable.semesterSettings')}
+                >
+                  {progressInfo?.isOngoing ? (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                      <span className="font-semibold">
+                        <span className="hidden sm:inline">{t('timetable.weekOf', { week: progressInfo.currentWeek, total: progressInfo.totalWeeks })}</span>
+                        <span className="sm:hidden">{t('timetable.week', { week: progressInfo.currentWeek })}</span>
+                      </span>
+                      {progressInfo.remainingWeeks > 0 && (
+                        <span className="text-[11px] text-emerald-400/70 hidden sm:inline">
+                          · {t('timetable.weeksLeft', { count: progressInfo.remainingWeeks })}
+                        </span>
+                      )}
+                    </>
+                  ) : progressInfo?.isUpcoming ? (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                      <span>{t('timetable.semesterUpcoming', { days: progressInfo.daysUntil })}</span>
+                    </>
+                  ) : progressInfo?.isEnded ? (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                      <span>{t('timetable.semesterEnded')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <span>{t('timetable.setSemesterDates')}</span>
+                    </>
+                  )}
+                </button>
               )}
             </div>
           ) : (
@@ -672,126 +838,47 @@ export default function TimetablePage() {
           </div>
         </div>
 
-        {/* Semester Status Banner / Card */}
-        {!loading && isLiveProfile && (
-          isSemesterEnded ? (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-200">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-400 shrink-0">
-                  <CalendarOff className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="font-semibold text-amber-200 text-sm sm:text-base">
-                      {semesterName || t('timetable.currentSemester')} · {t('timetable.semesterEnded')}
-                    </h2>
-                    <span className="text-[11px] font-medium bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
-                      {t('timetable.notificationsPaused')}
-                    </span>
-                  </div>
-                  <p className="text-xs text-amber-300/80 mt-0.5">
-                    {t('timetable.endedOnDesc', { date: semesterEndDate })}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
-                <button
-                  type="button"
-                  onClick={openSemesterModal}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-500/30 text-amber-300 hover:bg-amber-500/10 transition-colors"
-                >
-                  {t('timetable.editDate')}
-                </button>
-                <button
-                  type="button"
-                  onClick={openNewSemesterModal}
-                  className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {t('timetable.startNewSemester')}
-                </button>
-              </div>
+        {/* Slim Notice only when ended */}
+        {!loading && isLiveProfile && isSemesterEnded && (
+          <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 truncate">
+              <CalendarOff className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+              <span className="truncate">
+                {t('timetable.semesterEndedBanner', { date: semesterEndDate })}
+              </span>
             </div>
-          ) : (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 bg-theme-500/10 rounded-xl text-theme-400 shrink-0">
-                  <Calendar className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="font-semibold text-white text-sm sm:text-base truncate">
-                      {semesterName || t('timetable.currentSemester')}
-                    </h2>
-                    {semesterEndDate ? (
-                      <span className="text-[11px] font-medium bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                        {t('timetable.activeUntil', { date: semesterEndDate })}
-                      </span>
-                    ) : (
-                      <span className="text-[11px] font-medium bg-white/10 text-slate-300 px-2 py-0.5 rounded-full">
-                        {t('timetable.noEndDateSet')}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {semesterEndDate
-                      ? t('timetable.autoPauseDesc')
-                      : t('timetable.setEndDateTip')}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
-                <button
-                  type="button"
-                  onClick={openSemesterModal}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-white/10 text-slate-300 hover:bg-white/5 transition-colors flex items-center gap-1.5"
-                >
-                  <Calendar className="h-3.5 w-3.5" />
-                  {semesterEndDate ? t('timetable.editDate') : t('timetable.setEndDate')}
-                </button>
-                <button
-                  type="button"
-                  onClick={openNewSemesterModal}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-theme-500/15 border border-theme-500/30 text-theme-300 hover:bg-theme-500/25 transition-colors flex items-center gap-1.5"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {t('timetable.newSemester')}
-                </button>
-              </div>
-            </div>
-          )
+            <button
+              type="button"
+              onClick={openNewSemesterModal}
+              className="shrink-0 font-medium text-amber-200 hover:text-white underline underline-offset-2 transition-colors ml-auto"
+            >
+              {t('timetable.startNewSemester')} →
+            </button>
+          </div>
         )}
 
-        {/* When viewing linked / archived profile */}
+        {/* Slim Notice when viewing archived timetable */}
         {!loading && !isLiveProfile && (
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-blue-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-blue-500/20 rounded-xl text-blue-400 shrink-0">
-                <ArrowRightLeft className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-blue-200 text-sm sm:text-base">
-                  {t('timetable.viewingArchived')}: {activeProfile?.name}
-                </h2>
-                <p className="text-xs text-blue-300/80 mt-0.5">
-                  {t('timetable.viewingArchivedDesc')}
-                </p>
-              </div>
+          <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-200 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 truncate">
+              <ArrowRightLeft className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+              <span className="truncate">
+                {t('timetable.viewingArchived')}: <strong className="font-semibold text-white">{activeProfile?.name}</strong>
+              </span>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => promoteToMain(activeProfileId)}
-                disabled={isSubmitting}
-                className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+                className="font-medium text-blue-200 hover:text-white underline underline-offset-2 transition-colors"
               >
-                <ArrowRightLeft className="h-3.5 w-3.5" />
                 {t('timetable.setAsMain')}
               </button>
+              <span className="text-blue-400/40">·</span>
               <button
                 type="button"
                 onClick={() => switchProfile(LIVE_PROFILE_ID)}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-blue-500/30 text-blue-300 hover:bg-blue-500/10 transition-colors"
+                className="text-blue-300/80 hover:text-white transition-colors"
               >
                 {t('timetable.liveProfile')}
               </button>
@@ -811,15 +898,51 @@ export default function TimetablePage() {
               onChange={e => setSemesterForm(prev => ({ ...prev, name: e.target.value }))}
             />
           </Field>
-          <Field label={t('timetable.semesterEndDate')}>
-            <input
-              type="date"
-              className="input"
-              value={semesterForm.end_date}
-              onChange={e => setSemesterForm(prev => ({ ...prev, end_date: e.target.value }))}
-            />
-            <p className="text-xs text-slate-400 mt-1.5">{t('timetable.autoPauseDesc')}</p>
-          </Field>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label={t('timetable.semesterStartDate')}>
+              <input
+                type="date"
+                className="input"
+                value={semesterForm.start_date}
+                onChange={e => setSemesterForm(prev => ({ ...prev, start_date: e.target.value }))}
+              />
+            </Field>
+            <Field label={t('timetable.semesterEndDate')}>
+              <input
+                type="date"
+                className="input"
+                value={semesterForm.end_date}
+                onChange={e => setSemesterForm(prev => ({ ...prev, end_date: e.target.value }))}
+              />
+            </Field>
+          </div>
+
+          {previewProgress && !previewProgress.isInvalid && (
+            <div className="p-3 rounded-xl bg-theme-500/10 border border-theme-500/20 text-xs text-slate-300 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-theme-400 shrink-0" />
+                <span>
+                  {previewProgress.isEnded
+                    ? t('timetable.semesterEnded')
+                    : previewProgress.isUpcoming
+                    ? t('timetable.semesterUpcoming', { days: previewProgress.daysUntil })
+                    : t('timetable.semesterProgressPreview', {
+                        total: previewProgress.totalWeeks,
+                        current: t('timetable.week', { week: previewProgress.currentWeek })
+                      })}
+                </span>
+              </div>
+              {previewProgress.remainingWeeks > 0 && !previewProgress.isEnded && !previewProgress.isUpcoming && (
+                <span className="text-theme-400 font-medium">
+                  {t('timetable.weeksLeft', { count: previewProgress.remainingWeeks })}
+                </span>
+              )}
+            </div>
+          )}
+
+          <p className="text-xs text-slate-400">{t('timetable.autoPauseDesc')}</p>
+
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={() => setShowSemesterModal(false)} className="btn-secondary flex-1">
               {t('common.cancel')}
@@ -860,16 +983,49 @@ export default function TimetablePage() {
             />
           </Field>
 
-          <Field label={t('timetable.newSemesterEndDateLabel')}>
-            <input
-              type="date"
-              className="input"
-              min={todayString}
-              value={newSemesterForm.newEndDate}
-              onChange={e => setNewSemesterForm(prev => ({ ...prev, newEndDate: e.target.value }))}
-            />
-            <p className="text-xs text-slate-400 mt-1">{t('timetable.newSemesterEndDateTip')}</p>
-          </Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label={t('timetable.newSemesterStartDateLabel')}>
+              <input
+                type="date"
+                className="input"
+                value={newSemesterForm.newStartDate}
+                onChange={e => setNewSemesterForm(prev => ({ ...prev, newStartDate: e.target.value }))}
+              />
+            </Field>
+            <Field label={t('timetable.newSemesterEndDateLabel')}>
+              <input
+                type="date"
+                className="input"
+                value={newSemesterForm.newEndDate}
+                onChange={e => setNewSemesterForm(prev => ({ ...prev, newEndDate: e.target.value }))}
+              />
+            </Field>
+          </div>
+
+          {newSemesterPreview && !newSemesterPreview.isInvalid && (
+            <div className="p-3 rounded-xl bg-theme-500/10 border border-theme-500/20 text-xs text-slate-300 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-theme-400 shrink-0" />
+                <span>
+                  {newSemesterPreview.isEnded
+                    ? t('timetable.semesterEnded')
+                    : newSemesterPreview.isUpcoming
+                    ? t('timetable.semesterUpcoming', { days: newSemesterPreview.daysUntil })
+                    : t('timetable.semesterProgressPreview', {
+                        total: newSemesterPreview.totalWeeks,
+                        current: t('timetable.week', { week: newSemesterPreview.currentWeek })
+                      })}
+                </span>
+              </div>
+              {newSemesterPreview.remainingWeeks > 0 && !newSemesterPreview.isEnded && !newSemesterPreview.isUpcoming && (
+                <span className="text-theme-400 font-medium">
+                  {t('timetable.weeksLeft', { count: newSemesterPreview.remainingWeeks })}
+                </span>
+              )}
+            </div>
+          )}
+
+          <p className="text-xs text-slate-400">{t('timetable.newSemesterEndDateTip')}</p>
 
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={() => setShowNewSemesterModal(false)} className="btn-secondary flex-1">
