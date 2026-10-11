@@ -148,6 +148,8 @@ export default function ExercisePage() {
     setCheckingIn(true)
 
     const isNewFreezeEarned = ((logs.length + 1) % 5 === 0)
+    const preCheckInFreezes = stats.freezesAvailable
+    const preCheckInFrozenDates = stats.frozenDates
 
     // 1. Optimistic Instant UI Update (0ms delay)
     const optimisticLog = {
@@ -159,6 +161,8 @@ export default function ExercisePage() {
     }
     const optimisticLogs = [optimisticLog, ...logs]
     const optimisticXp = xpTotal + 20
+    setFrozenDates(preCheckInFrozenDates)
+    if (isNewFreezeEarned) setFreezesAvailable(preCheckInFreezes + 1)
     setLogs(optimisticLogs)
     setXpTotal(optimisticXp)
 
@@ -178,8 +182,8 @@ export default function ExercisePage() {
         activityType: selectedTag,
         currentWeeklyGoal: weeklyGoal,
         currentXpTotal: xpTotal,
-        currentFreezes: freezesAvailable,
-        currentFrozenDates: frozenDates,
+        currentFreezes: preCheckInFreezes,
+        currentFrozenDates: preCheckInFrozenDates,
         logs
       })
 

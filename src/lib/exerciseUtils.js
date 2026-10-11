@@ -143,13 +143,18 @@ export function calculateStreakAndStats(
 
   // 2. Rule: Give user 5 streak protection freezes for the first time, + 1 more for every 5 check-ins
   const INITIAL_FREEZES = 5
-  const earnedFromCheckIns = Math.floor(logs.length / 5)
+  const logsBeforeTodayCount = isCheckedInToday ? Math.max(0, logs.length - 1) : logs.length
+  const earnedBeforeToday = Math.floor(logsBeforeTodayCount / 5)
+  const earnedToday = Math.floor(logs.length / 5) - earnedBeforeToday
   const freezeProgress = logs.length % 5
-  const totalFreezesEarned = Math.max(
-    INITIAL_FREEZES + earnedFromCheckIns,
-    (Number(storedFreezes) || 0) + frozenDatesSet.size
-  )
-  let availableFreezes = Math.max(0, totalFreezesEarned - frozenDatesSet.size)
+  const totalFreezesEarnedBeforeToday = INITIAL_FREEZES + earnedBeforeToday
+  const formulaFreezesBeforeToday = Math.max(0, totalFreezesEarnedBeforeToday - frozenDatesSet.size)
+  const hasExplicitZeroBeforeToday =
+    storedFreezes !== undefined &&
+    storedFreezes !== null &&
+    (isCheckedInToday ? Number(storedFreezes) - earnedToday <= 0 && Number(storedFreezes) <= earnedToday : Number(storedFreezes) === 0)
+  let availableFreezes = hasExplicitZeroBeforeToday ? 0 : formulaFreezesBeforeToday
+  const totalFreezesEarned = totalFreezesEarnedBeforeToday + earnedToday
 
   const newlyFrozenDates = []
   let currentStreak = 0
@@ -162,7 +167,7 @@ export function calculateStreakAndStats(
       cursorDate.setDate(cursorDate.getDate() - 1)
     }
 
-    let streakBroken = false
+    let seenPastWorkout = false
 
     while (true) {
       const y = cursorDate.getFullYear()
@@ -176,6 +181,9 @@ export function calculateStreakAndStats(
 
       if (loggedDatesSet.has(ds)) {
         currentStreak++
+        if (ds < todayStr) {
+          seenPastWorkout = true
+        }
         cursorDate.setDate(cursorDate.getDate() - 1)
       } else if (frozenDatesSet.has(ds)) {
         // Missed day was previously frozen — streak remains protected
@@ -214,8 +222,9 @@ export function calculateStreakAndStats(
           checkEarlier.setDate(checkEarlier.getDate() - 1)
         }
 
-        // If available freezes can cover this entire gap AND there's an earlier streak to connect to:
-        if (hasEarlierLog && gapLength > 0 && availableFreezes >= gapLength) {
+        // Only auto-freeze if today is not yet checked in, this gap is before any past workout (!seenPastWorkout),
+        // AND freezes available BEFORE today can cover this entire gap:
+        if (!isCheckedInToday && !seenPastWorkout && hasEarlierLog && gapLength > 0 && availableFreezes >= gapLength) {
           for (let g = 0; g < gapLength; g++) {
             const gy = cursorDate.getFullYear()
             const gm = String(cursorDate.getMonth() + 1).padStart(2, '0')
@@ -228,21 +237,17 @@ export function calculateStreakAndStats(
             cursorDate.setDate(cursorDate.getDate() - 1)
           }
         } else {
-          // The streak returned to zero here!
           // Stop counting backwards immediately.
-          // If the user marked today as done, the streak starts from 1 (or the current continuous run after the break).
-          // It does NOT continue their streak from before the break.
-          streakBroken = true
+          // If the user marked today as done after a broken gap, the streak starts from 1.
+          // If the user had an active streak up to yesterday and we hit an older historical gap, the active streak is preserved.
           break
         }
       }
     }
-
-    // If the streak was broken and today is NOT checked in, active streak is 0
-    if (streakBroken && !isCheckedInToday) {
-      currentStreak = 0
-    }
   }
+
+  // Add any freeze earned from today's check-in AFTER evaluating past gaps so it cannot retroactively revive a broken streak
+  availableFreezes += earnedToday
 
   // Update currentWeekDays if newly frozen dates fall into current week
   for (const day of currentWeekDays) {
@@ -633,7 +638,7 @@ export async function logExerciseCheckIn({
 
   // Calculate stats before and after to see badges unlocked and new freezes
   const beforeStats = calculateStreakAndStats(logs, currentWeeklyGoal, currentFreezes, logDate, currentXpTotal, currentFrozenDates)
-  const afterStats = calculateStreakAndStats(updatedLogs, currentWeeklyGoal, currentFreezes, logDate, currentXpTotal, currentFrozenDates)
+  const afterStats = calculateStreakAndStats(updatedLogs, currentWeeklyGoal, beforeStats.freezesAvailable, logDate, currentXpTotal, beforeStats.frozenDates)
 
   let bonusXP = 0
   const unlockedNow = []
