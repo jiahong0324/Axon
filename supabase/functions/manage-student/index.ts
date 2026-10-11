@@ -20,17 +20,8 @@ Deno.serve(async req => {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) return json({ error: 'Unauthorized' }, 401)
 
-    const callerClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    )
-
-    const { data: { user: caller }, error: callerError } = await callerClient.auth.getUser()
-    if (callerError || !caller) return json({ error: 'Unauthorized' }, 401)
-
-    const { data: profile } = await callerClient.from('profiles').select('role').eq('id', caller.id).single()
-    const callerRole = profile?.role || 'student'
+    const body = await req.json()
+    const { action, studentId, data, userToken } = body
 
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -38,8 +29,12 @@ Deno.serve(async req => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const body = await req.json()
-    const { action, studentId, data } = body
+    const jwt = userToken || authHeader.replace(/^Bearer\s+/i, '')
+    const { data: { user: caller }, error: callerError } = await adminClient.auth.getUser(jwt)
+    if (callerError || !caller) return json({ error: 'Unauthorized' }, 401)
+
+    const { data: profile } = await adminClient.from('profiles').select('role').eq('id', caller.id).single()
+    const callerRole = profile?.role || 'student'
 
     if (!action) return json({ error: 'Missing action' }, 400)
     if (!['create_student', 'invite_user', 'send_promotional_email'].includes(action) && !studentId) return json({ error: 'Missing studentId' }, 400)

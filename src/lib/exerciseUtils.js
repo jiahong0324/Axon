@@ -696,7 +696,11 @@ export async function logExerciseCheckIn({
   try {
     await supabase.auth.updateUser({
       data: {
-        axon_exercise_logs: updatedLogs,
+        axon_exercise_logs: updatedLogs.map(l => ({
+          log_date: l.log_date,
+          activity_type: l.activity_type || 'Gym',
+          xp_earned: l.xp_earned || 20
+        })),
         axon_xp_total: newXpTotal,
         axon_freezes: newFreezes,
         axon_frozen_dates: newFrozenDates

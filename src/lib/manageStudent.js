@@ -6,13 +6,14 @@ async function call(action, studentId, data = {}) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Not authenticated')
 
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
   const res = await fetch(EDGE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`
+      Authorization: `Bearer ${anonKey || session.access_token}`
     },
-    body: JSON.stringify({ action, studentId, data })
+    body: JSON.stringify({ action, studentId, data, userToken: session.access_token })
   })
   const result = await res.json()
   if (!res.ok || result.error) throw new Error(result.error || 'Operation failed')
