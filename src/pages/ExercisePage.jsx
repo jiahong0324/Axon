@@ -9,8 +9,10 @@ import { buildUserContext } from '../lib/buildUserContext'
 import {
   ACTIVITY_ICONS,
   ACTIVITY_TYPES,
+  MAX_FREEZES,
   calculateStreakAndStats,
   fetchExerciseData,
+  formatDateYMD,
   getDailyMessage,
   getLevelInfo,
   getTodayStr,
@@ -48,6 +50,7 @@ export default function ExercisePage() {
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const lastLoadedRef = useRef(Date.now())
+  const currentUserIdRef = useRef(null)
   const isAndroid = useMemo(() => typeof navigator !== 'undefined' && /Android/i.test(navigator?.userAgent || ''), [])
 
   const [userId, setUserId] = useState(null)
@@ -55,7 +58,7 @@ export default function ExercisePage() {
   const [logs, setLogs] = useState([])
   const [weeklyGoal, setWeeklyGoal] = useState(4)
   const [xpTotal, setXpTotal] = useState(0)
-  const [freezesAvailable, setFreezesAvailable] = useState(5)
+  const [freezesAvailable, setFreezesAvailable] = useState(MAX_FREEZES)
   const [frozenDates, setFrozenDates] = useState([])
 
   // Check-in state
@@ -76,7 +79,7 @@ export default function ExercisePage() {
   const [aiPlan, setAiPlan] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
 
-  const todayStr = getTodayStr()
+  const [todayStr, setTodayStr] = useState(() => getTodayStr())
 
   useEffect(() => {
     loadInitialData(true)
@@ -90,20 +93,37 @@ export default function ExercisePage() {
       setAiPlan('')
     }
 
-    const { data: authSub } = supabase.auth.onAuthStateChange(() => {
-      loadInitialData(false)
+    const { data: authSub } = supabase.auth.onAuthStateChange((event, session) => {
+      // Ignore INITIAL_SESSION and USER_UPDATED to prevent concurrent race conditions when saving metadata
+      const nextUid = session?.user?.id || null
+      if (event === 'SIGNED_IN' && nextUid && nextUid !== currentUserIdRef.current) {
+        loadInitialData(false)
+      }
     })
 
     function handleAutoRefresh() {
+      const latestToday = getTodayStr()
+      if (latestToday !== todayStr) {
+        setTodayStr(latestToday)
+        return
+      }
       if (document.visibilityState === 'visible' && Date.now() - lastLoadedRef.current > 15000) {
         loadInitialData(false)
       }
     }
 
+    const midnightTimer = setInterval(() => {
+      const latestToday = getTodayStr()
+      if (latestToday !== todayStr) {
+        setTodayStr(latestToday)
+      }
+    }, 30000)
+
     window.addEventListener('visibilitychange', handleAutoRefresh)
     window.addEventListener('focus', handleAutoRefresh)
 
     return () => {
+      clearInterval(midnightTimer)
       authSub?.subscription?.unsubscribe()
       window.removeEventListener('visibilitychange', handleAutoRefresh)
       window.removeEventListener('focus', handleAutoRefresh)
@@ -115,13 +135,14 @@ export default function ExercisePage() {
     if (showLoading) setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     const currentUserId = user?.id || null
+    currentUserIdRef.current = currentUserId
     setUserId(currentUserId)
 
     const data = await fetchExerciseData(currentUserId)
     setLogs(data.logs || [])
     setWeeklyGoal(data.weeklyGoal || 4)
     setXpTotal(data.xpTotal || 0)
-    setFreezesAvailable(data.freezesAvailable || 0)
+    setFreezesAvailable(typeof data.freezesAvailable === 'number' ? data.freezesAvailable : MAX_FREEZES)
     setFrozenDates(data.frozenDates || [])
     if (showLoading) {
       setLoading(false)
@@ -143,42 +164,88 @@ export default function ExercisePage() {
   const dailyMsg = useMemo(() => getDailyMessage(messagesPool, todayStr), [messagesPool, todayStr])
   const renderedAiPlan = useMemo(() => markdownToHtml(aiPlan), [aiPlan])
 
+  // Determine Duolingo 3-State Flame: 'lit' | 'frozen' | 'pending'
+  const flameState = stats.isCheckedInToday
+    ? 'lit'
+    : stats.isYesterdayFrozen
+    ? 'frozen'
+    : 'pending'
+
   async function handleCheckIn() {
+    const activeTodayStr = getTodayStr()
+    if (activeTodayStr !== todayStr) {
+      setTodayStr(activeTodayStr)
+    }
     if (stats.isCheckedInToday || checkingIn) return
     setCheckingIn(true)
 
-    const isNewFreezeEarned = ((logs.length + 1) % 5 === 0)
     const preCheckInFreezes = stats.freezesAvailable
     const preCheckInFrozenDates = stats.frozenDates
 
-    // 1. Optimistic Instant UI Update (0ms delay)
+    // 1. Optimistic Instant UI Update (0ms delay) with full preview calculation
     const optimisticLog = {
       id: `local-${Date.now()}`,
       user_id: userId,
-      log_date: todayStr,
+      log_date: activeTodayStr,
       activity_type: selectedTag,
       xp_earned: 20
     }
     const optimisticLogs = [optimisticLog, ...logs]
-    const optimisticXp = xpTotal + 20
-    setFrozenDates(preCheckInFrozenDates)
-    if (isNewFreezeEarned) setFreezesAvailable(preCheckInFreezes + 1)
-    setLogs(optimisticLogs)
-    setXpTotal(optimisticXp)
+    const previewStats = calculateStreakAndStats(
+      optimisticLogs,
+      weeklyGoal,
+      preCheckInFreezes,
+      activeTodayStr,
+      xpTotal + 20,
+      preCheckInFrozenDates
+    )
 
-    showToast(isNewFreezeEarned ? 'Checked in! +1 Streak Freeze earned! 🛡️' : t('exercise.checkedInToday'), 'success')
+    const previewWeeklyChest = stats.weeklyCount < weeklyGoal && previewStats.weeklyCount === weeklyGoal
+    let previewBonusXP = previewWeeklyChest ? 50 : 0
+    const previewUnlocked = []
+
+    for (const afterB of previewStats.badgeStatuses) {
+      const beforeB = stats.badgeStatuses.find(b => b.id === afterB.id)
+      if (!beforeB?.unlocked && afterB.unlocked) {
+        previewUnlocked.push(afterB)
+        if (afterB.id !== 'weekly_goal') {
+          previewBonusXP += (afterB.bonusXP || 50)
+        }
+      }
+    }
+
+    const previewTotalEarned = 20 + previewBonusXP
+    optimisticLog.xp_earned = previewTotalEarned
+    const previewEarnedFreeze = previewStats.earnedMilestoneFreezeToday || previewStats.earnedWeeklyGoalFreezeToday
+
+    setFrozenDates(previewStats.frozenDates)
+    setFreezesAvailable(previewStats.freezesAvailable)
+    setLogs(optimisticLogs)
+    setXpTotal(xpTotal + previewTotalEarned)
+
+    showToast(
+      previewWeeklyChest
+        ? 'Weekly Target Met! 🏆 +50 XP & +1 Streak Freeze!'
+        : previewEarnedFreeze
+        ? 'Checked in! +1 Streak Freeze earned! 🛡️'
+        : t('exercise.checkedInToday'),
+      'success'
+    )
     setCelebrationModal({
-      xpEarned: 20,
+      xpEarned: previewTotalEarned,
       message: dailyMsg,
-      earnedFreeze: isNewFreezeEarned,
-      unlockedBadges: []
+      earnedFreeze: previewEarnedFreeze,
+      earnedMilestoneFreeze: previewStats.earnedMilestoneFreezeToday,
+      earnedWeeklyGoalFreeze: previewStats.earnedWeeklyGoalFreezeToday,
+      weeklyChestUnlocked: previewWeeklyChest,
+      unlockedBadges: previewUnlocked
     })
 
     // 2. Persist in background
     try {
       const result = await logExerciseCheckIn({
         userId,
-        logDate: todayStr,
+        logDate: activeTodayStr,
         activityType: selectedTag,
         currentWeeklyGoal: weeklyGoal,
         currentXpTotal: xpTotal,
@@ -197,6 +264,9 @@ export default function ExercisePage() {
           xpEarned: result.xpEarned,
           message: dailyMsg,
           earnedFreeze: result.earnedFreeze,
+          earnedMilestoneFreeze: result.earnedMilestoneFreeze,
+          earnedWeeklyGoalFreeze: result.earnedWeeklyGoalFreeze,
+          weeklyChestUnlocked: result.weeklyChestUnlocked,
           unlockedBadges: result.unlockedBadges || []
         } : null)
       }
@@ -285,29 +355,39 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
     localStorage.setItem('axon_exercise_ai_plan_deleted_date', todayStr)
   }
 
+  // Aligned 4-week (28-day) Mon-Sun calendar matrix so columns match "This Week" strip
   const heatmapDays = useMemo(() => {
     const daysArr = []
     const loggedSet = new Set(logs.map(l => l.log_date))
     const frozenSet = new Set(stats.frozenDates || [])
-    const now = new Date()
-    for (let i = 27; i >= 0; i--) {
-      const d = new Date(now)
-      d.setDate(now.getDate() - i)
-      const y = d.getFullYear()
+    const todayDate = new Date(todayStr + 'T00:00:00')
+    const dayOfWeek = (todayDate.getDay() + 6) % 7 // Monday = 0, Sunday = 6
+    const currentMonday = new Date(todayDate)
+    currentMonday.setDate(todayDate.getDate() - dayOfWeek)
+
+    // Start 3 Mondays before currentMonday -> 4 full weeks (28 days, Mon to Sun)
+    const startMonday = new Date(currentMonday)
+    startMonday.setDate(currentMonday.getDate() - 21)
+
+    for (let i = 0; i < 28; i++) {
+      const d = new Date(startMonday)
+      d.setDate(startMonday.getDate() + i)
+      const ds = formatDateYMD(d)
       const m = String(d.getMonth() + 1).padStart(2, '0')
       const day = String(d.getDate()).padStart(2, '0')
-      const ds = `${y}-${m}-${day}`
       const log = logs.find(l => l.log_date === ds)
       daysArr.push({
         dateStr: ds,
         label: `${m}/${day}`,
         logged: loggedSet.has(ds),
         isFrozen: frozenSet.has(ds),
+        isToday: ds === todayStr,
+        isFuture: ds > todayStr,
         activity: log?.activity_type || null
       })
     }
     return daysArr
-  }, [logs, stats.frozenDates])
+  }, [logs, stats.frozenDates, todayStr])
 
   if (loading) {
     return (
@@ -337,61 +417,181 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
 
       {/* TOP 2 HERO CARDS */}
       <div className="grid gap-6 md:grid-cols-2 mb-8">
-        {/* HERO CARD 1: Habit Tracker & Streak (LEFT ACCENT: ORANGE) */}
-        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5 border-l-4 border-l-orange-500">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                {t('exercise.currentStreak')}
-              </p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-white tracking-tight">
-                  {stats.currentStreak}
-                </span>
-                <span className="text-sm font-bold text-orange-400">
-                  {t('common.days')} 🔥
-                </span>
+        {/* HERO CARD 1: Duolingo 3-State Streak & 5/5 Shield Inventory */}
+        <section
+          className={`rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5 border-l-4 transition-colors ${
+            flameState === 'lit'
+              ? 'border-l-orange-500'
+              : flameState === 'frozen'
+              ? 'border-l-cyan-400'
+              : 'border-l-amber-500/60'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3.5">
+              {/* Duolingo 3-State Flame Badge */}
+              <div
+                className={`grid h-14 w-14 place-items-center rounded-2xl text-3xl shrink-0 border transition-all ${
+                  flameState === 'lit'
+                    ? 'bg-orange-500/20 border-orange-500/40 shadow-lg shadow-orange-500/20 scale-105'
+                    : flameState === 'frozen'
+                    ? 'bg-cyan-500/20 border-cyan-400/40 shadow-lg shadow-cyan-500/20'
+                    : 'bg-slate-800/80 border-white/10 opacity-65 grayscale-[0.4]'
+                }`}
+                title={
+                  flameState === 'lit'
+                    ? 'Streak lit today!'
+                    : flameState === 'frozen'
+                    ? 'Protected by Streak Freeze yesterday!'
+                    : 'Check in today to light your flame!'
+                }
+              >
+                {flameState === 'frozen' ? '🧊' : '🔥'}
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                  {t('exercise.currentStreak')}
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span
+                    className={`text-4xl font-black tracking-tight ${
+                      flameState === 'lit'
+                        ? 'text-white'
+                        : flameState === 'frozen'
+                        ? 'text-cyan-300'
+                        : 'text-slate-200'
+                    }`}
+                  >
+                    {stats.currentStreak}
+                  </span>
+                  <span
+                    className={`text-sm font-bold ${
+                      flameState === 'lit'
+                        ? 'text-orange-400'
+                        : flameState === 'frozen'
+                        ? 'text-cyan-400'
+                        : 'text-slate-400'
+                    }`}
+                  >
+                    {t('common.days')} {flameState === 'lit' ? '🔥' : flameState === 'frozen' ? '🧊' : '⏳'}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Aligned Weekly Target Label & Button */}
+            {/* Aligned Weekly Target Chest & Edit Button */}
             <div className="flex flex-col items-end">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                Weekly Target
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
+                <span>Weekly Target</span>
+                <span>{stats.weeklyCount >= weeklyGoal ? '🏆' : '🎁'}</span>
               </span>
               <button
                 onClick={() => { setTempGoal(weeklyGoal); setShowGoalSheet(true) }}
-                className="inline-flex items-center gap-2 rounded-full bg-blue-500/15 border border-blue-500/30 px-3.5 py-1.5 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-all shadow-sm"
+                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm border ${
+                  stats.weeklyCount >= weeklyGoal
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
+                    : 'bg-blue-500/15 border-blue-500/30 text-blue-400 hover:bg-blue-500/25'
+                }`}
                 title={t('exercise.editGoal')}
               >
                 <span>{stats.weeklyCount} / {weeklyGoal} Days</span>
                 <Pencil className="h-3.5 w-3.5" />
               </button>
+              <span className="text-[10px] font-semibold mt-1 text-slate-400">
+                {stats.weeklyCount >= weeklyGoal ? '✨ Goal Chest Claimed!' : 'Goal Chest: +50 XP & +1 🧊'}
+              </span>
             </div>
           </div>
 
-          <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5 space-y-2.5">
+          {/* Duolingo 3-State Status Banner */}
+          <div
+            className={`mb-4 rounded-xl px-3.5 py-2.5 text-xs font-semibold border flex items-center gap-2.5 ${
+              flameState === 'lit'
+                ? 'bg-orange-500/10 border-orange-500/25 text-orange-200'
+                : flameState === 'frozen'
+                ? 'bg-cyan-500/15 border-cyan-400/35 text-cyan-200'
+                : 'bg-amber-500/10 border-amber-500/20 text-amber-200/90'
+            }`}
+          >
+            <span className="text-base shrink-0">
+              {flameState === 'lit' ? '🔥' : flameState === 'frozen' ? '🧊' : '⏳'}
+            </span>
+            <p className="leading-snug">
+              {flameState === 'lit' ? (
+                stats.isYesterdayFrozen ? (
+                  <>
+                    <span className="font-bold text-cyan-300">Yesterday was saved by a Streak Freeze 🧊</span>
+                    {' — '}and you checked in today to keep your {stats.currentStreak}-day streak burning!
+                  </>
+                ) : (
+                  <>
+                    <span className="font-bold text-orange-300">Streak Lit Today!</span> You extended your streak to {stats.currentStreak} {stats.currentStreak === 1 ? 'day' : 'days'}. Keep it up!
+                  </>
+                )
+              ) : flameState === 'frozen' ? (
+                <>
+                  <span className="font-bold text-cyan-300">Streak Frozen Yesterday!</span> 1 Streak Freeze protected your {stats.currentStreak}-day streak. Check in today to unfreeze!
+                </>
+              ) : stats.currentStreak > 0 ? (
+                <>
+                  <span className="font-bold text-amber-300">Flame Unlit Today:</span> Mark today done to extend your streak to <span className="underline">{stats.currentStreak + 1} days</span>!
+                </>
+              ) : (
+                <>
+                  <span className="font-bold text-amber-300">Start Your Streak:</span> Mark today done below to light your Day 1 flame!
+                </>
+              )}
+            </p>
+          </div>
+
+          {/* 5/5 Shield Inventory Box */}
+          <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-cyan-400" />
-                <span className="text-xs font-bold text-slate-300">Streak Protection</span>
+                <span className="text-xs font-bold text-slate-300">Streak Freeze Shields</span>
               </div>
               <span className="text-xs font-bold text-cyan-400">
-                {stats.freezesAvailable} {stats.freezesAvailable === 1 ? 'Freeze' : 'Freezes'} Available
+                {stats.freezesAvailable} / {MAX_FREEZES} Equipped
               </span>
+            </div>
+
+            {/* 5 Visual Shield Slots */}
+            <div className="grid grid-cols-5 gap-2">
+              {Array.from({ length: MAX_FREEZES }).map((_, idx) => {
+                const isEquipped = idx < stats.freezesAvailable
+                return (
+                  <div
+                    key={idx}
+                    className={`flex items-center justify-center rounded-lg py-1.5 text-sm border transition-all ${
+                      isEquipped
+                        ? 'bg-cyan-500/15 border-cyan-400/40 text-cyan-300 shadow-sm shadow-cyan-500/10'
+                        : 'bg-slate-900/60 border-dashed border-white/10 text-slate-600 opacity-50'
+                    }`}
+                    title={isEquipped ? `Shield Slot #${idx + 1}: Equipped` : `Shield Slot #${idx + 1}: Empty`}
+                  >
+                    {isEquipped ? '🧊' : '🛡️'}
+                  </div>
+                )
+              })}
             </div>
 
             <div className="pt-2 border-t border-white/5 space-y-1.5">
               <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400">
-                <span>Earn +1 Freeze: {stats.freezeProgress} / 5 check-ins</span>
+                <span>Refill +1 🧊: {stats.freezeProgress} / 5 check-ins</span>
                 <span className="text-cyan-400 font-bold">
-                  {stats.freezeProgress === 0 && logs.length > 0 ? 'Freeze earned! 🛡️' : `${5 - stats.freezeProgress} more needed`}
+                  {stats.freezesAvailable >= MAX_FREEZES
+                    ? 'MAX 5/5 Full 🛡️'
+                    : stats.freezeProgress === 0 && logs.length > 0
+                    ? 'Freeze refilled! 🛡️'
+                    : `${5 - stats.freezeProgress} more to refill`}
                 </span>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
                 <div
                   className="h-full rounded-full bg-cyan-400 transition-all duration-500"
-                  style={{ width: `${(stats.freezeProgress / 5) * 100}%` }}
+                  style={{ width: `${stats.freezesAvailable >= MAX_FREEZES ? 100 : (stats.freezeProgress / 5) * 100}%` }}
                 />
               </div>
             </div>
@@ -399,25 +599,27 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
         </section>
 
         {/* HERO CARD 2: Novice Mover Level / XP (LEFT ACCENT: PURPLE) */}
-        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5 border-l-4 border-l-purple-500">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                Level & Rank Status
-              </p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
-                  {levelInfo.title}
-                </span>
+        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5 border-l-4 border-l-purple-500 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                  Level & Rank Status
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
+                    {levelInfo.title}
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-purple-400 mt-0.5">
+                  {t('exercise.level', { level: levelInfo.level })} · Best Streak: {stats.longestStreak} {t('common.days')}
+                </p>
               </div>
-              <p className="text-xs font-bold text-purple-400 mt-0.5">
-                {t('exercise.level', { level: levelInfo.level })}
-              </p>
-            </div>
 
-            <div className="text-right">
-              <span className="text-3xl font-black text-white">{xpTotal}</span>
-              <p className="text-xs font-bold text-slate-400">Total XP</p>
+              <div className="text-right">
+                <span className="text-3xl font-black text-white">{xpTotal}</span>
+                <p className="text-xs font-bold text-slate-400">Total XP</p>
+              </div>
             </div>
           </div>
 
@@ -482,7 +684,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
           </div>
         </section>
 
-        {/* 2. MONTHLY CHECK-IN HEATMAP CARD (100% whole width on mobile, no horizontal scrolling) */}
+        {/* 2. MONTHLY CHECK-IN HEATMAP CARD (Aligned Mon-Sun 4-week matrix) */}
         <section className="rounded-2xl bg-[#131b2e] p-5 sm:p-8 shadow-xl border border-white/5">
           <div className="mb-5">
             <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
@@ -490,22 +692,33 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
               {t('exercise.monthlyHeatmap')}
             </h3>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Your 30-day activity matrix
+              Your 4-week calendar activity matrix (Mon – Sun aligned)
             </p>
+          </div>
+
+          {/* Mon - Sun Column Headers */}
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 w-full mb-2">
+            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(dName => (
+              <div key={dName} className="text-center text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+                {dName}
+              </div>
+            ))}
           </div>
 
           <div className="grid grid-cols-7 gap-1 sm:gap-2 w-full">
             {heatmapDays.map(day => (
               <div
                 key={day.dateStr}
-                title={`${day.dateStr} (${day.isFrozen ? 'Protected by Streak Freeze 🧊' : day.activity || 'No workout'})`}
+                title={`${day.dateStr} (${day.isFrozen ? 'Protected by Streak Freeze 🧊' : day.logged ? `Checked in: ${day.activity || 'Workout'}` : day.isFuture ? 'Upcoming' : 'No workout'})`}
                 className={`flex flex-col items-center justify-center rounded-lg sm:rounded-xl p-1 sm:p-2 min-h-[42px] sm:min-h-[48px] border transition-colors ${
                   day.logged
                     ? 'bg-emerald-500/20 border-emerald-500/35 text-emerald-400 font-bold'
                     : day.isFrozen
                     ? 'bg-cyan-500/20 border-cyan-500/35 text-cyan-400 font-bold'
+                    : day.isFuture
+                    ? 'bg-[#0a101d]/40 border-white/[0.03] text-slate-600 opacity-40'
                     : 'bg-[#0e1626] border-white/5 text-slate-400'
-                }`}
+                } ${day.isToday ? 'ring-1 ring-blue-400/70' : ''}`}
               >
                 <span className="text-[9px] sm:text-[10px] font-mono">{day.label}</span>
                 {day.logged ? (
@@ -517,31 +730,37 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
             ))}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-end gap-3 text-xs text-slate-400">
+          <div className="mt-4 flex flex-wrap items-center justify-end gap-4 text-xs text-slate-400">
+            <div className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded bg-[#0e1626] border border-white/10" />
+              <span>Rest / Missed</span>
+            </div>
             <div className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded bg-cyan-500/30 border border-cyan-500/50" />
               <span>Frozen 🧊</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span>{t('exercise.less')}</span>
-              <span className="h-3 w-3 rounded bg-[#0e1626] border border-white/10" />
-              <span className="h-3 w-3 rounded bg-emerald-500/30" />
-              <span className="h-3 w-3 rounded bg-emerald-500" />
-              <span>{t('exercise.more')}</span>
+              <span className="h-3 w-3 rounded bg-emerald-500/30 border border-emerald-500/50" />
+              <span>Checked In ✅</span>
             </div>
           </div>
         </section>
 
         {/* 3. MILESTONE BADGES CARD (Clearly distinguished Unlocked vs Locked) */}
         <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5">
-          <div className="mb-5">
-            <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
-              <Award className="h-5 w-5 text-amber-400" />
-              {t('exercise.badgesTitle')}
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Earn badges by building streaks, consistency & XP
-            </p>
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
+                <Award className="h-5 w-5 text-amber-400" />
+                {t('exercise.badgesTitle')}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                Earn badges by building streaks, consistency & XP
+              </p>
+            </div>
+            <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-400">
+              {stats.badgeStatuses.filter(b => b.unlocked).length} / {stats.badgeStatuses.length} Unlocked
+            </span>
           </div>
 
           <div className="relative">
@@ -760,23 +979,44 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
               <Zap className="h-5 w-5 stroke-[1.5]" />
               <span>+{celebrationModal.xpEarned} XP earned today!</span>
             </div>
-            {celebrationModal.earnedFreeze && (
-              <div className="rounded-[16px] bg-cyan-500/15 border border-cyan-500/30 p-3.5 text-center space-y-1">
-                <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-center gap-1.5">
-                  <Shield className="h-4 w-4" />
-                  Streak Freeze Unlocked!
+            {celebrationModal.weeklyChestUnlocked && (
+              <div className="rounded-[16px] bg-amber-500/15 border border-amber-500/35 p-3.5 text-center space-y-1">
+                <p className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center justify-center gap-1.5">
+                  <Trophy className="h-4 w-4" />
+                  Weekly Target Chest Unlocked! 🏆
                 </p>
-                <p className="text-xs sm:text-sm font-medium text-cyan-200">
-                  You marked done 5 times and earned 1 Streak Freeze to protect your streak!
+                <p className="text-xs sm:text-sm font-medium text-amber-100">
+                  You hit your weekly workout target! Earned +50 Bonus XP & +1 Streak Freeze (up to 5/5)!
                 </p>
               </div>
             )}
-            {celebrationModal.unlockedBadges.length > 0 && (
-              <div className="rounded-[16px] bg-amber-500/10 border border-amber-500/25 p-3 text-center">
-                <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">Milestone Unlocked!</p>
-                <p className="text-sm font-medium mt-1">
-                  You unlocked a new badge! Check your Milestone Badges section.
+            {celebrationModal.earnedMilestoneFreeze && (
+              <div className="rounded-[16px] bg-cyan-500/15 border border-cyan-500/30 p-3.5 text-center space-y-1">
+                <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-center gap-1.5">
+                  <Shield className="h-4 w-4" />
+                  Streak Freeze Refilled! 🧊
                 </p>
+                <p className="text-xs sm:text-sm font-medium text-cyan-200">
+                  You completed 5 check-ins and earned +1 Streak Freeze shield (up to 5/5)!
+                </p>
+              </div>
+            )}
+            {celebrationModal.unlockedBadges?.length > 0 && (
+              <div className="rounded-[16px] bg-amber-500/10 border border-amber-500/25 p-3.5 text-center space-y-2">
+                <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                  Milestone Badge{celebrationModal.unlockedBadges.length > 1 ? 's' : ''} Unlocked! ✨
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {celebrationModal.unlockedBadges.map(b => (
+                    <span
+                      key={b.id || b}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 px-3 py-1 text-xs font-bold text-amber-200"
+                    >
+                      <span>{b.icon || '🏅'}</span>
+                      <span>{t(b.titleKey || b)}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
             <button
