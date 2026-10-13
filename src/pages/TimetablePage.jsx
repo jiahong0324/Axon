@@ -414,7 +414,7 @@ export default function TimetablePage() {
     const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(1, 14)
     setNewSemesterForm({
       archiveName: semesterName ? `${semesterName} (${t('timetable.archivedBadge')})` : `${t('timetable.previousSemester')} (${t('timetable.archivedBadge')})`,
-      newName: '',
+      newName: semesterName || '',
       newStartDate: startDateStr,
       newEndDate: endDateStr
     })
@@ -1204,6 +1204,20 @@ export default function TimetablePage() {
             </p>
           </div>
 
+          {/* Timetable Name Field */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-300">
+              {t('timetable.timetableNameLabel')}
+            </label>
+            <input
+              type="text"
+              className="input text-sm py-2 px-3.5"
+              placeholder="e.g. Year 1 Sem 2"
+              value={newSemesterForm.newName}
+              onChange={e => setNewSemesterForm(prev => ({ ...prev, newName: e.target.value }))}
+            />
+          </div>
+
           {/* Quick Progress Selector */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
@@ -1257,7 +1271,7 @@ export default function TimetablePage() {
             </div>
           </div>
 
-          {/* Optional collapsible custom dates */}
+          {/* Optional collapsible advanced settings */}
           <div>
             <button
               type="button"
@@ -1269,23 +1283,34 @@ export default function TimetablePage() {
             </button>
 
             {showRolloverCustomDates && (
-              <div className="grid grid-cols-2 gap-2.5 pt-2 animate-in fade-in duration-200">
-                <Field label={t('timetable.semesterStartDate')}>
+              <div className="space-y-2.5 pt-2 animate-in fade-in duration-200">
+                <Field label={t('timetable.archiveNameLabel')}>
                   <input
-                    type="date"
+                    type="text"
                     className="input text-xs"
-                    value={newSemesterForm.newStartDate}
-                    onChange={e => setNewSemesterForm(prev => ({ ...prev, newStartDate: e.target.value }))}
+                    placeholder="e.g. Previous Semester"
+                    value={newSemesterForm.archiveName}
+                    onChange={e => setNewSemesterForm(prev => ({ ...prev, archiveName: e.target.value }))}
                   />
                 </Field>
-                <Field label={t('timetable.semesterEndDate')}>
-                  <input
-                    type="date"
-                    className="input text-xs"
-                    value={newSemesterForm.newEndDate}
-                    onChange={e => setNewSemesterForm(prev => ({ ...prev, newEndDate: e.target.value }))}
-                  />
-                </Field>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Field label={t('timetable.semesterStartDate')}>
+                    <input
+                      type="date"
+                      className="input text-xs"
+                      value={newSemesterForm.newStartDate}
+                      onChange={e => setNewSemesterForm(prev => ({ ...prev, newStartDate: e.target.value }))}
+                    />
+                  </Field>
+                  <Field label={t('timetable.semesterEndDate')}>
+                    <input
+                      type="date"
+                      className="input text-xs"
+                      value={newSemesterForm.newEndDate}
+                      onChange={e => setNewSemesterForm(prev => ({ ...prev, newEndDate: e.target.value }))}
+                    />
+                  </Field>
+                </div>
               </div>
             )}
           </div>
