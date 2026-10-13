@@ -1137,139 +1137,200 @@ export default function ExamResultsPage() {
             <div className="lg:col-span-2 rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <h3 className="text-xl font-extrabold text-white">Course Total Mark Calculator</h3>
-              </div>
 
-              {/* Assessment Rows */}
-              <div className="space-y-3">
-                {/* Desktop Column Header */}
-                <div className="hidden sm:flex items-center justify-between gap-3 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
-                  <span className="flex-1">Assessment Component</span>
-                  <div className="flex items-center justify-end gap-3 shrink-0">
-                    <span className="w-28 sm:w-36 text-left pl-1">Weight (%)</span>
-                    <span className="w-28 sm:w-36 text-left pl-1">Score (%)</span>
-                    <span className="w-9"></span>
-                  </div>
-                </div>
-
-                <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
-                  {courseCalcRows.map((row, index) => (
-                    <div
-                      key={row.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
-                    >
-                      {/* Component Name */}
-                      <div className="flex-1 min-w-0">
-                        <input
-                          className="bg-transparent text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none w-full"
-                          placeholder={index === 0 ? "e.g. Final Exam" : index === 1 ? "e.g. Assignment" : index === 2 ? "e.g. Midterm Test" : `Component ${index + 1}`}
-                          value={row.name}
-                          onChange={e => handleUpdateCourseCalcRow(row.id, 'name', e.target.value)}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
-                        {/* Weight % */}
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-slate-400 sm:hidden">Weight:</span>
-                          <div className="relative w-28 sm:w-36">
-                            <input
-                              type="number"
-                              inputMode="decimal"
-                              min="0"
-                              max="100"
-                              step="any"
-                              className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              placeholder="Weight"
-                              value={row.weight}
-                              onChange={e => handleUpdateCourseCalcRow(row.id, 'weight', e.target.value)}
-                            />
-                            <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
-                          </div>
-                        </div>
-
-                        {/* Score % */}
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-slate-400 sm:hidden">Score:</span>
-                          <div className="relative w-28 sm:w-36">
-                            <input
-                              type="number"
-                              inputMode="decimal"
-                              min="0"
-                              max="100"
-                              step="any"
-                              className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              placeholder="Score"
-                              value={row.score}
-                              onChange={e => handleUpdateCourseCalcRow(row.id, 'score', e.target.value)}
-                            />
-                            <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
-                          </div>
-                        </div>
-
-                        {/* Delete Row */}
-                        <button
-                          onClick={() => handleDeleteCourseCalcRow(row.id)}
-                          className="p-2 text-slate-500 hover:text-red-400 transition-colors shrink-0"
-                          title="Remove component"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Add / Reset Buttons */}
-              <div className="mt-4 flex gap-3">
-                <button
-                  onClick={handleAddCourseCalcRow}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Assessment Component</span>
-                </button>
-                {courseCalcRows.some(r => r.name || r.weight || r.score) && (
+                {courseCalcResult && (
                   <button
-                    onClick={handleResetCourseCalcRows}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent px-4 py-3 text-xs sm:text-sm font-semibold text-slate-400 hover:text-red-400 hover:border-red-500/30 transition-all"
-                    title="Reset rows"
+                    onClick={() => setCourseCalcResult(null)}
+                    className="flex items-center gap-2 rounded-xl bg-blue-500/15 px-4 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-all"
                   >
-                    <Trash2 className="h-4 w-4" />
-                    <span>Reset</span>
+                    <RotateCcw className="h-4 w-4" />
+                    <span>Edit Components</span>
                   </button>
                 )}
               </div>
 
-              {/* Calculate Button */}
-              <button
-                onClick={handleCalculateCourseMark}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-3.5 text-base font-extrabold text-white hover:bg-blue-600 transition-all shadow-lg cursor-pointer"
-              >
-                <Calculator className="h-5 w-5" />
-                <span>Calculate</span>
-              </button>
-
-              {/* Compact, Clean Result Card (Only shown after user clicks Calculate) */}
-              {courseCalcResult && (
-                <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-[#0e1626] p-6 border border-white/10 animate-fadeIn">
-                  <div>
+              {/* VIEW MODE 1: DEDICATED RESULT SCREEN AFTER CALCULATE (LIKE GPA SIMULATOR) */}
+              {courseCalcResult ? (
+                <div className="space-y-6 py-4 animate-fadeIn">
+                  <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-8 text-center border border-white/5">
                     <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Total Course Mark</span>
-                    <div className="text-4xl sm:text-5xl font-black text-white tracking-tight mt-1">
+                    <div className="my-2 text-5xl sm:text-6xl font-black text-white tracking-tight">
                       {courseCalcResult.totalEarned.toFixed(2)}%
                     </div>
+                    <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-4 py-1.5 text-xs font-bold text-blue-400">
+                      <Award className="h-4 w-4" />
+                      <span>Grade {courseCalcResult.gradeObj.grade} · {courseCalcResult.gradeObj.point.toFixed(4)} GP</span>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-400">
+                      Based on <strong className="text-white">{courseCalcResult.totalWeight}% Total Weight</strong> ({courseCalcResult.gradeObj.description})
+                    </p>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className={`inline-flex items-center justify-center px-4 py-2 rounded-xl font-mono text-lg font-black border ${getGradeBadgeStyle(courseCalcResult.gradeObj.grade)}`}>
-                      Grade {courseCalcResult.gradeObj.grade}
-                    </span>
-                    <div className="text-left">
-                      <div className="text-sm font-bold text-white font-mono">{courseCalcResult.gradeObj.point.toFixed(4)} GP</div>
-                      <div className="text-xs text-slate-400 font-medium">{courseCalcResult.gradeObj.description}</div>
+                  <div className="rounded-xl bg-[#0e1626] p-5">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                      Assessment Breakdown
+                    </h4>
+                    <div className="divide-y divide-white/[0.06]">
+                      {courseCalcRows
+                        .filter(r => {
+                          const w = parseFloat(r.weight)
+                          const s = parseFloat(r.score)
+                          return !isNaN(w) && w > 0 && !isNaN(s) && s >= 0
+                        })
+                        .map((r, i) => {
+                          const w = parseFloat(r.weight)
+                          const s = parseFloat(r.score)
+                          const contribution = (s / 100) * w
+                          return (
+                            <div key={r.id} className="flex items-start sm:items-center justify-between gap-3 py-3 text-sm">
+                              <span className="font-semibold text-white break-words leading-snug pr-2">
+                                {r.name || `Component ${i + 1}`}
+                              </span>
+                              <div className="flex items-center gap-2 sm:gap-4 shrink-0 pt-0.5 sm:pt-0">
+                                <span className="text-right text-xs font-medium text-slate-400 shrink-0">
+                                  {w}% weight · {s}% score
+                                </span>
+                                <span className="font-mono text-xs sm:text-sm font-bold text-emerald-400 shrink-0">
+                                  +{contribution.toFixed(2)}%
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })}
                     </div>
                   </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button
+                      onClick={() => setCourseCalcResult(null)}
+                      className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-500 py-3.5 text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-md"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      <span>Recalculate / Edit Components</span>
+                    </button>
+                    <button
+                      onClick={handleResetCourseCalcRows}
+                      className="flex items-center justify-center gap-2 rounded-xl bg-[#1e293b] px-6 py-3.5 text-sm font-bold text-slate-300 hover:bg-[#283548] transition-all"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Reset</span>
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                /* VIEW MODE 2: COMPONENT INPUT TABLE BEFORE CALCULATE */
+                <>
+                  {/* Assessment Rows */}
+                  <div className="space-y-3">
+                    {/* Desktop Column Header */}
+                    <div className="hidden sm:flex items-center justify-between gap-3 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
+                      <span className="flex-1">Assessment Component</span>
+                      <div className="flex items-center justify-end gap-3 shrink-0">
+                        <span className="w-28 sm:w-36 text-left pl-1">Weight (%)</span>
+                        <span className="w-28 sm:w-36 text-left pl-1">Score (%)</span>
+                        <span className="w-9"></span>
+                      </div>
+                    </div>
+
+                    <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
+                      {courseCalcRows.map((row, index) => (
+                        <div
+                          key={row.id}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
+                        >
+                          {/* Component Name */}
+                          <div className="flex-1 min-w-0">
+                            <input
+                              className="bg-transparent text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none w-full"
+                              placeholder={index === 0 ? "e.g. Final Exam" : index === 1 ? "e.g. Assignment" : index === 2 ? "e.g. Midterm Test" : `Component ${index + 1}`}
+                              value={row.name}
+                              onChange={e => handleUpdateCourseCalcRow(row.id, 'name', e.target.value)}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
+                            {/* Weight % */}
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-slate-400 sm:hidden">Weight:</span>
+                              <div className="relative w-28 sm:w-36">
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  min="0"
+                                  max="100"
+                                  step="any"
+                                  className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  placeholder="Weight"
+                                  value={row.weight}
+                                  onChange={e => handleUpdateCourseCalcRow(row.id, 'weight', e.target.value)}
+                                />
+                                <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
+                              </div>
+                            </div>
+
+                            {/* Score % */}
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-slate-400 sm:hidden">Score:</span>
+                              <div className="relative w-28 sm:w-36">
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  min="0"
+                                  max="100"
+                                  step="any"
+                                  className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  placeholder="Score"
+                                  value={row.score}
+                                  onChange={e => handleUpdateCourseCalcRow(row.id, 'score', e.target.value)}
+                                />
+                                <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
+                              </div>
+                            </div>
+
+                            {/* Delete Row */}
+                            <button
+                              onClick={() => handleDeleteCourseCalcRow(row.id)}
+                              className="p-2 text-slate-500 hover:text-red-400 transition-colors shrink-0"
+                              title="Remove component"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Add / Reset Buttons */}
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      onClick={handleAddCourseCalcRow}
+                      className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Add Assessment Component</span>
+                    </button>
+                    {courseCalcRows.some(r => r.name || r.weight || r.score) && (
+                      <button
+                        onClick={handleResetCourseCalcRows}
+                        className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent px-4 py-3 text-xs sm:text-sm font-semibold text-slate-400 hover:text-red-400 hover:border-red-500/30 transition-all"
+                        title="Reset rows"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span>Reset</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Calculate Button */}
+                  <button
+                    onClick={handleCalculateCourseMark}
+                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-4 text-base font-extrabold text-white hover:bg-blue-600 transition-all shadow-lg cursor-pointer"
+                  >
+                    <Calculator className="h-5 w-5" />
+                    <span>Calculate Course Mark Result</span>
+                  </button>
+                </>
               )}
             </div>
 
