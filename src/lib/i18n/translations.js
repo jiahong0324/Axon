@@ -231,7 +231,7 @@ export const translations = {
     'timetable.viewingArchived': 'Viewing Archived Timetable',
     'timetable.viewingArchivedDesc': 'This is a saved timetable. Switch back to your live timetable or set this one as main.',
     'timetable.archivedBadge': 'Archived',
-    'timetable.backToLive': 'Live Timetable',
+    'timetable.backToLive': 'Back to Live',
     'timetable.setAsMain': 'Set as Main Timetable',
     'timetable.promoteTitle': 'Set as Main Timetable?',
     'timetable.promoteMessage': 'This will set "{name}" as your active main timetable and archive your current one.',
