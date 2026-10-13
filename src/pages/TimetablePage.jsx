@@ -402,8 +402,8 @@ export default function TimetablePage() {
 
   function openNewSemesterModal() {
     setNewSemesterForm({
-      archiveName: semesterName || t('timetable.previousSemester'),
-      newName: '',
+      archiveName: '',
+      newName: 'My Timetable',
       newStartDate: '',
       newEndDate: ''
     })
@@ -413,8 +413,8 @@ export default function TimetablePage() {
   function openRolloverWizard() {
     const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(1, 14)
     setNewSemesterForm({
-      archiveName: semesterName ? `${semesterName} (${t('timetable.archivedBadge')})` : `${t('timetable.previousSemester')} (${t('timetable.archivedBadge')})`,
-      newName: '',
+      archiveName: '',
+      newName: 'My Timetable',
       newStartDate: startDateStr,
       newEndDate: endDateStr
     })
@@ -466,10 +466,12 @@ export default function TimetablePage() {
     e?.preventDefault()
     if (!user) return
 
-    const nextName = newSemesterForm.newName.trim()
-    if (!nextName) {
-      return showToast(t('timetable.nameRequired'), 'error')
+    const archiveLabel = newSemesterForm.archiveName.trim()
+    if (classes.length > 0 && !archiveLabel) {
+      return showToast(t('timetable.archiveNameRequired'), 'error')
     }
+
+    const nextName = newSemesterForm.newName.trim() || 'My Timetable'
 
     setIsSubmitting(true)
 
@@ -482,7 +484,6 @@ export default function TimetablePage() {
         setIsSubmitting(false)
         return showToast('Maximum saved timetables reached. Please remove one first.', 'error')
       }
-      const archiveLabel = newSemesterForm.archiveName.trim() || semesterName || t('timetable.previousSemester')
       const profileId = `profile-${Date.now()}`
       const archivedProfile = {
         id: profileId,
@@ -1103,8 +1104,7 @@ export default function TimetablePage() {
           <Field label={t('timetable.newSemesterNameLabel')}>
             <input
               className="input"
-              required
-              placeholder="e.g. Year 1 Sem 2"
+              placeholder="My Timetable"
               value={newSemesterForm.newName}
               onChange={e => setNewSemesterForm(prev => ({ ...prev, newName: e.target.value }))}
             />
@@ -1220,17 +1220,35 @@ export default function TimetablePage() {
             </p>
           </div>
 
-          {/* Timetable Name Field */}
+          {/* Old Semester Timetable Name Field (Required) */}
+          {classes.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
+                <span>{t('timetable.oldSemesterNameLabel')}</span>
+                <span className="text-rose-400">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                className="input text-sm py-2 px-3.5"
+                placeholder="e.g. Year 1 Sem 1"
+                value={newSemesterForm.archiveName}
+                onChange={e => setNewSemesterForm(prev => ({ ...prev, archiveName: e.target.value }))}
+                autoFocus
+              />
+            </div>
+          )}
+
+          {/* New Semester Timetable Name Field (Defaults to My Timetable, user can change) */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
-              <span>{t('timetable.timetableNameLabel')}</span>
-              <span className="text-rose-400">*</span>
-            </label>
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+              <label>{t('timetable.newSemesterNameLabel')}</label>
+              <span className="text-[11px] font-normal text-slate-400">{t('timetable.defaultBadge')}</span>
+            </div>
             <input
               type="text"
-              required
               className="input text-sm py-2 px-3.5"
-              placeholder="e.g. Year 1 Sem 2"
+              placeholder="My Timetable"
               value={newSemesterForm.newName}
               onChange={e => setNewSemesterForm(prev => ({ ...prev, newName: e.target.value }))}
             />
@@ -1302,15 +1320,6 @@ export default function TimetablePage() {
 
             {showRolloverCustomDates && (
               <div className="space-y-2.5 pt-2 animate-in fade-in duration-200">
-                <Field label={t('timetable.archiveNameLabel')}>
-                  <input
-                    type="text"
-                    className="input text-xs"
-                    placeholder="e.g. Previous Semester"
-                    value={newSemesterForm.archiveName}
-                    onChange={e => setNewSemesterForm(prev => ({ ...prev, archiveName: e.target.value }))}
-                  />
-                </Field>
                 <div className="grid grid-cols-2 gap-2.5">
                   <Field label={t('timetable.semesterStartDate')}>
                     <input
