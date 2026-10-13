@@ -411,12 +411,14 @@ export default function TimetablePage() {
   }
 
   function openRolloverWizard() {
+    const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(1, 14)
     setNewSemesterForm({
       archiveName: semesterName ? `${semesterName} (${t('timetable.archivedBadge')})` : `${t('timetable.previousSemester')} (${t('timetable.archivedBadge')})`,
       newName: '',
-      newStartDate: '',
-      newEndDate: ''
+      newStartDate: startDateStr,
+      newEndDate: endDateStr
     })
+    setShowRolloverCustomDates(false)
     setShowRolloverWizard(true)
   }
 
