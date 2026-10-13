@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Calendar, CalendarOff, ChevronDown, ChevronsUpDown, MapPin, Plus, Sparkles, Trash2, User } from 'lucide-react'
+import { ArrowRight, ArrowRightLeft, Calendar, CalendarOff, ChevronDown, ChevronsUpDown, GraduationCap, MapPin, Plus, ShieldCheck, Sparkles, Trash2, User } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import ClassTypeBadge from '../components/ClassTypeBadge'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -140,6 +140,8 @@ export default function TimetablePage() {
   const [showSemesterModal, setShowSemesterModal] = useState(false)
   const [semesterForm, setSemesterForm] = useState({ name: '', start_date: '', end_date: '' })
   const [showNewSemesterModal, setShowNewSemesterModal] = useState(false)
+  const [showRolloverWizard, setShowRolloverWizard] = useState(false)
+  const hasCheckedRollover = useRef(false)
   const [newSemesterForm, setNewSemesterForm] = useState({ archiveName: '', newName: '', newStartDate: '', newEndDate: '' })
   const [mobileDay, setMobileDay] = useState(() => {
     const day = new Date().getDay()
@@ -178,11 +180,27 @@ export default function TimetablePage() {
   }, [user, activeProfileId])
   useEffect(() => {
     function onKeyDown(e) {
-      if (e.key === 'Escape') setShowForm(false)
+      if (e.key === 'Escape') {
+        setShowForm(false)
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
+
+  // Auto-prompt rollover wizard for existing users whose previous semester ended / unset
+  useEffect(() => {
+    if (loading || !user || !isLiveProfile || classes.length === 0) return
+    if (hasCheckedRollover.current) return
+
+    const needsRollover = !semesterEndDate || isSemesterEnded
+    const isDismissed = sessionStorage.getItem('axon_rollover_wizard_dismissed') === 'true'
+
+    if (needsRollover && !isDismissed) {
+      hasCheckedRollover.current = true
+      openRolloverWizard()
+    }
+  }, [loading, user, isLiveProfile, classes.length, semesterEndDate, isSemesterEnded])
 
   async function initializeTimetables() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -372,6 +390,22 @@ export default function TimetablePage() {
     setShowNewSemesterModal(true)
   }
 
+  function openRolloverWizard() {
+    setNewSemesterForm({
+      archiveName: semesterName ? `${semesterName} (${t('timetable.archivedBadge')})` : `${t('timetable.previousSemester')} (${t('timetable.archivedBadge')})`,
+      newName: '',
+      newStartDate: '',
+      newEndDate: ''
+    })
+    setShowRolloverWizard(true)
+  }
+
+  function handleDismissRollover() {
+    sessionStorage.setItem('axon_rollover_wizard_dismissed', 'true')
+    setShowRolloverWizard(false)
+    showToast(t('timetable.rolloverDismissToast'), 'info')
+  }
+
   async function handleSaveSemesterSettings(e) {
     e?.preventDefault()
     if (!user) return
@@ -473,6 +507,8 @@ export default function TimetablePage() {
     clearCache(classesCacheKey(user.id))
     setClasses([])
     setIsSubmitting(false)
+    sessionStorage.setItem('axon_rollover_wizard_dismissed', 'true')
+    setShowRolloverWizard(false)
     setShowNewSemesterModal(false)
 
     showToast(t('timetable.newSemesterStarted'), 'success')
@@ -1137,6 +1173,163 @@ export default function TimetablePage() {
             </button>
             <button type="submit" disabled={isSubmitting} className="btn-primary flex-1">
               {isSubmitting ? t('common.saving') : t('timetable.startAndImport')}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Semester Rollover Wizard Modal for Existing Users */}
+      <Modal
+        isOpen={showRolloverWizard}
+        onClose={handleDismissRollover}
+        title={t('timetable.rolloverTitle')}
+        maxWidth="max-w-xl"
+        mobileMaxHeight="form"
+      >
+        <form onSubmit={handleStartNewSemester} className="space-y-4">
+          {/* Header Explanation Banner */}
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-theme-500/15 via-theme-500/5 to-transparent border border-theme-500/25 relative overflow-hidden">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-theme-500/20 text-theme-400 flex items-center justify-center shrink-0 mt-0.5 border border-theme-500/30">
+                <GraduationCap className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-white text-sm">
+                  {t('timetable.rolloverHeading')}
+                </h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {t('timetable.rolloverNotice')}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Archive Notice */}
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/10 space-y-2">
+            <div className="flex items-center justify-between text-xs font-semibold text-emerald-400">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4" />
+                {t('timetable.rolloverArchiveNotice', { count: classes.length })}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              {t('timetable.archiveCurrentNotice')}
+            </p>
+            <Field label={t('timetable.archiveNameLabel')}>
+              <input
+                className="input text-sm"
+                required
+                placeholder="e.g. Year 1 Sem 1"
+                value={newSemesterForm.archiveName}
+                onChange={e => setNewSemesterForm(prev => ({ ...prev, archiveName: e.target.value }))}
+              />
+            </Field>
+          </div>
+
+          {/* New Semester Configuration */}
+          <Field label={t('timetable.newSemesterNameLabel')}>
+            <input
+              className="input"
+              placeholder="e.g. Year 1 Sem 2"
+              value={newSemesterForm.newName}
+              onChange={e => setNewSemesterForm(prev => ({ ...prev, newName: e.target.value }))}
+            />
+          </Field>
+
+          {/* Quick Week for new semester */}
+          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-theme-300 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-theme-400" />
+                {t('timetable.quickWeekSelect')}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">{t('timetable.quickWeekTip')}</p>
+            <div className="grid grid-cols-7 gap-1 pt-1">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(w => {
+                const isSelected = newSemesterPreview?.currentWeek === w && !newSemesterPreview?.isEnded && !newSemesterPreview?.isUpcoming
+                return (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() => {
+                      const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(w, 14)
+                      setNewSemesterForm(prev => ({
+                        ...prev,
+                        newStartDate: startDateStr,
+                        newEndDate: endDateStr
+                      }))
+                    }}
+                    className={`py-1.5 text-xs rounded-lg font-medium transition-all ${
+                      isSelected
+                        ? 'bg-theme-500 text-white shadow-sm shadow-theme-500/30 font-semibold'
+                        : 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5'
+                    }`}
+                  >
+                    W{w}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label={t('timetable.newSemesterStartDateLabel')}>
+              <input
+                type="date"
+                className="input"
+                value={newSemesterForm.newStartDate}
+                onChange={e => setNewSemesterForm(prev => ({ ...prev, newStartDate: e.target.value }))}
+              />
+            </Field>
+            <Field label={t('timetable.newSemesterEndDateLabel')}>
+              <input
+                type="date"
+                className="input"
+                value={newSemesterForm.newEndDate}
+                onChange={e => setNewSemesterForm(prev => ({ ...prev, newEndDate: e.target.value }))}
+              />
+            </Field>
+          </div>
+
+          {newSemesterPreview && !newSemesterPreview.isInvalid && (
+            <div className="p-3 rounded-xl bg-slate-900/60 border border-white/10 text-xs text-slate-300 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-theme-400 shrink-0" />
+                <span>
+                  {newSemesterPreview.isEnded
+                    ? t('timetable.semesterEnded')
+                    : newSemesterPreview.isUpcoming
+                    ? t('timetable.semesterUpcoming', { days: newSemesterPreview.daysUntil })
+                    : t('timetable.semesterProgressPreview', {
+                        total: newSemesterPreview.totalWeeks,
+                        current: t('timetable.week', { week: newSemesterPreview.currentWeek })
+                      })}
+                </span>
+              </div>
+              {newSemesterPreview.remainingWeeks > 0 && !newSemesterPreview.isEnded && !newSemesterPreview.isUpcoming && (
+                <span className="text-emerald-400 font-medium">
+                  {t('timetable.weeksLeft', { count: newSemesterPreview.remainingWeeks })}
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-2 pt-2">
+            <button
+              type="button"
+              onClick={handleDismissRollover}
+              className="btn-secondary flex-1 py-3 text-xs sm:text-sm order-2 sm:order-1"
+            >
+              {t('timetable.rolloverDismissBtn')}
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn-primary flex-1 py-3 text-xs sm:text-sm order-1 sm:order-2 flex items-center justify-center gap-2"
+            >
+              <span>{isSubmitting ? t('common.saving') : t('timetable.rolloverStartBtn')}</span>
+              <ArrowRight className="h-4 w-4 shrink-0" />
             </button>
           </div>
         </form>
