@@ -76,21 +76,11 @@ export default function ExamResultsPage() {
 
   // Quick Calculator State with synchronous local hydration
   const [calcRows, setCalcRows] = useState(getInitialCalcRows)
-  const [showCalcResult, setShowCalcResult] = useState(() => {
-    try {
-      return localStorage.getItem('axon_quick_calculator_show_result') === 'true'
-    } catch (e) {}
-    return false
-  })
+  const [showCalcResult, setShowCalcResult] = useState(false)
 
   // Course Calculator State with synchronous local hydration
   const [courseCalcRows, setCourseCalcRows] = useState(getInitialCourseCalcRows)
-  const [showCourseCalcResult, setShowCourseCalcResult] = useState(() => {
-    try {
-      return localStorage.getItem('axon_course_calculator_show_result') === 'true'
-    } catch (e) {}
-    return false
-  })
+  const [courseCalcResult, setCourseCalcResult] = useState(null)
 
   const syncTimerRef = useRef(null)
   const calcSyncTimerRef = useRef(null)
@@ -151,15 +141,10 @@ export default function ExamResultsPage() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('axon_quick_calculator_show_result', String(showCalcResult))
+      localStorage.removeItem('axon_quick_calculator_show_result')
+      localStorage.removeItem('axon_course_calculator_show_result')
     } catch (e) {}
-  }, [showCalcResult])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('axon_course_calculator_show_result', String(showCourseCalcResult))
-    } catch (e) {}
-  }, [showCourseCalcResult])
+  }, [])
 
   useEffect(() => {
     loadSemesters()
@@ -656,7 +641,7 @@ export default function ExamResultsPage() {
     setShowCalcResult(false)
     try {
       localStorage.setItem('axon_quick_calculator_rows', JSON.stringify(defaultRows))
-      localStorage.setItem('axon_quick_calculator_show_result', 'false')
+      localStorage.removeItem('axon_quick_calculator_show_result')
     } catch (e) {}
     showToast('Quick calculator reset', 'info')
   }
@@ -672,6 +657,7 @@ export default function ExamResultsPage() {
 
   function handleUpdateCourseCalcRow(rowId, field, value) {
     setCourseCalcRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: value } : r))
+    setCourseCalcResult(null)
   }
 
   function handleAddCourseCalcRow() {
@@ -679,6 +665,7 @@ export default function ExamResultsPage() {
       ...prev,
       { id: Date.now(), name: '', weight: '', score: '' }
     ])
+    setCourseCalcResult(null)
   }
 
   function handleDeleteCourseCalcRow(rowId) {
@@ -689,6 +676,7 @@ export default function ExamResultsPage() {
       }
       return next
     })
+    setCourseCalcResult(null)
   }
 
   async function handleResetCourseCalcRows() {
@@ -709,10 +697,10 @@ export default function ExamResultsPage() {
       { id: 3, name: '', weight: '', score: '' }
     ]
     setCourseCalcRows(defaultRows)
-    setShowCourseCalcResult(false)
+    setCourseCalcResult(null)
     try {
       localStorage.setItem('axon_course_calculator_rows', JSON.stringify(defaultRows))
-      localStorage.setItem('axon_course_calculator_show_result', 'false')
+      localStorage.removeItem('axon_course_calculator_show_result')
     } catch (e) {}
     showToast('Course calculator reset', 'info')
   }
@@ -725,62 +713,35 @@ export default function ExamResultsPage() {
     })
     if (!hasFilled) {
       showToast('Please enter at least one component Weight & Score first.', 'warning')
+      setCourseCalcResult(null)
       return
     }
-    setShowCourseCalcResult(true)
-  }
 
-  // Course Calculator Computations
-  const courseCalcStats = (() => {
-    let totalWeight = 0
     let totalEarned = 0
     let gradedWeight = 0
-    let hasAnyWeight = false
-    let hasAnyScore = false
+    let totalWeight = 0
 
-    const items = courseCalcRows.map(r => {
+    courseCalcRows.forEach(r => {
       const w = parseFloat(r.weight)
       const validWeight = !isNaN(w) && w > 0 ? w : 0
-      if (validWeight > 0) hasAnyWeight = true
       totalWeight += validWeight
-
       const s = parseFloat(r.score)
-      const hasScore = !isNaN(s) && s >= 0
-
-      let contribution = 0
-      if (hasScore) {
-        hasAnyScore = true
-        if (validWeight > 0) {
-          contribution = (s / 100) * validWeight
-          totalEarned += contribution
-          gradedWeight += validWeight
-        }
-      }
-
-      return {
-        ...r,
-        validWeight,
-        hasScore,
-        scoreVal: s,
-        contribution
+      if (validWeight > 0 && !isNaN(s) && s >= 0) {
+        totalEarned += (s / 100) * validWeight
+        gradedWeight += validWeight
       }
     })
 
     const finalMark = Number(totalEarned.toFixed(2))
     const gradeObj = getGradeFromMark(finalMark)
-    const weightRemaining = Math.max(0, 100 - gradedWeight)
 
-    return {
-      totalWeight: Number(totalWeight.toFixed(1)),
+    setCourseCalcResult({
       totalEarned: finalMark,
+      totalWeight: Number(totalWeight.toFixed(1)),
       gradedWeight: Number(gradedWeight.toFixed(1)),
-      weightRemaining: Number(weightRemaining.toFixed(1)),
-      gradeObj,
-      items,
-      hasAnyWeight,
-      hasAnyScore
-    }
-  })()
+      gradeObj
+    })
+  }
 
   const overall = calculateOverallCGPA(semesters)
   const standing = getAcademicStanding(overall.cgpa, overall.overallCredits)
@@ -1176,25 +1137,6 @@ export default function ExamResultsPage() {
             <div className="lg:col-span-2 rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <h3 className="text-xl font-extrabold text-white">Course Total Mark Calculator</h3>
-
-                {/* Weight Status Badge (only shown when weights are entered) */}
-                {courseCalcStats.totalWeight === 100 ? (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
-                    <Check className="h-3.5 w-3.5" />
-                    <span>Total Weight: 100%</span>
-                  </div>
-                ) : courseCalcStats.totalWeight > 0 ? (
-                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
-                    courseCalcStats.totalWeight > 100
-                      ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
-                      : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
-                  }`}>
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    <span>
-                      Total Weight: {courseCalcStats.totalWeight}% {courseCalcStats.totalWeight > 100 ? `(exceeds 100%)` : `(${(100 - courseCalcStats.totalWeight).toFixed(1)}% remaining)`}
-                    </span>
-                  </div>
-                ) : null}
               </div>
 
               {/* Assessment Rows */}
@@ -1309,22 +1251,22 @@ export default function ExamResultsPage() {
               </button>
 
               {/* Compact, Clean Result Card (Only shown after user clicks Calculate) */}
-              {showCourseCalcResult && courseCalcStats.hasAnyScore && courseCalcStats.gradedWeight > 0 && (
+              {courseCalcResult && (
                 <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-[#0e1626] p-6 border border-white/10 animate-fadeIn">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Total Course Mark</span>
                     <div className="text-4xl sm:text-5xl font-black text-white tracking-tight mt-1">
-                      {courseCalcStats.totalEarned.toFixed(2)}%
+                      {courseCalcResult.totalEarned.toFixed(2)}%
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className={`inline-flex items-center justify-center px-4 py-2 rounded-xl font-mono text-lg font-black border ${getGradeBadgeStyle(courseCalcStats.gradeObj.grade)}`}>
-                      Grade {courseCalcStats.gradeObj.grade}
+                    <span className={`inline-flex items-center justify-center px-4 py-2 rounded-xl font-mono text-lg font-black border ${getGradeBadgeStyle(courseCalcResult.gradeObj.grade)}`}>
+                      Grade {courseCalcResult.gradeObj.grade}
                     </span>
                     <div className="text-left">
-                      <div className="text-sm font-bold text-white font-mono">{courseCalcStats.gradeObj.point.toFixed(4)} GP</div>
-                      <div className="text-xs text-slate-400 font-medium">{courseCalcStats.gradeObj.description}</div>
+                      <div className="text-sm font-bold text-white font-mono">{courseCalcResult.gradeObj.point.toFixed(4)} GP</div>
+                      <div className="text-xs text-slate-400 font-medium">{courseCalcResult.gradeObj.description}</div>
                     </div>
                   </div>
                 </div>
@@ -1344,7 +1286,7 @@ export default function ExamResultsPage() {
 
               <div className="space-y-2.5">
                 {TARUMT_GRADES.map(g => {
-                  const isCurrentGrade = showCourseCalcResult && courseCalcStats.hasAnyScore && courseCalcStats.gradedWeight > 0 && courseCalcStats.gradeObj.grade === g.grade
+                  const isCurrentGrade = courseCalcResult && courseCalcResult.gradeObj.grade === g.grade
                   return (
                     <div
                       key={g.grade}
