@@ -415,137 +415,220 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
         </div>
       </div>
 
-      {/* TOP 2 HERO CARDS - CLEAN DUOLINGO-STYLE DESIGN */}
+      {/* TOP 2 HERO CARDS */}
       <div className="grid gap-6 md:grid-cols-2 mb-8">
-        {/* HERO CARD 1: Streak & Consistency */}
-        <section className="relative overflow-hidden rounded-2xl bg-[#131b2e] p-4 sm:p-6 shadow-xl border border-white/5 flex flex-col justify-between transition-colors">
-          {/* Left accent indicator strip */}
-          <div
-            className={`absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 transition-colors ${
-              flameState === 'lit'
-                ? 'bg-gradient-to-b from-orange-400 to-orange-500'
-                : flameState === 'frozen'
-                ? 'bg-gradient-to-b from-cyan-300 to-cyan-500'
-                : 'bg-gradient-to-b from-amber-400/80 to-amber-500/80'
-            }`}
-          />
-
-          <div>
-            <div className="flex items-start justify-between gap-2.5 sm:gap-3 mb-3">
-              <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
-                <div
-                  className={`grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-xl sm:rounded-2xl text-xl sm:text-2xl shrink-0 border transition-all ${
-                    flameState === 'lit'
-                      ? 'bg-orange-500/20 border-orange-500/40 shadow-lg shadow-orange-500/20 scale-105'
-                      : flameState === 'frozen'
-                      ? 'bg-cyan-500/20 border-cyan-400/40 shadow-lg shadow-cyan-500/20'
-                      : 'bg-slate-800/80 border-white/10 opacity-70'
-                  }`}
-                >
-                  {flameState === 'frozen' ? '🧊' : '🔥'}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mb-0.5 truncate">
-                    {t('exercise.currentStreak')}
-                  </p>
-                  <div className="flex items-baseline gap-1.5 sm:gap-2">
-                    <span className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-                      {stats.currentStreak}
-                    </span>
-                    <span className="text-xs sm:text-sm font-bold text-orange-400 whitespace-nowrap">
-                      {t('common.days')} 🔥
-                    </span>
-                  </div>
-                </div>
+        {/* HERO CARD 1: Duolingo 3-State Streak & 5/5 Shield Inventory */}
+        <section
+          className={`rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5 border-l-4 transition-colors ${
+            flameState === 'lit'
+              ? 'border-l-orange-500'
+              : flameState === 'frozen'
+              ? 'border-l-cyan-400'
+              : 'border-l-amber-500/60'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3.5">
+              {/* Duolingo 3-State Flame Badge */}
+              <div
+                className={`grid h-14 w-14 place-items-center rounded-2xl text-3xl shrink-0 border transition-all ${
+                  flameState === 'lit'
+                    ? 'bg-orange-500/20 border-orange-500/40 shadow-lg shadow-orange-500/20 scale-105'
+                    : flameState === 'frozen'
+                    ? 'bg-cyan-500/20 border-cyan-400/40 shadow-lg shadow-cyan-500/20'
+                    : 'bg-slate-800/80 border-white/10 opacity-65 grayscale-[0.4]'
+                }`}
+                title={
+                  flameState === 'lit'
+                    ? 'Streak lit today!'
+                    : flameState === 'frozen'
+                    ? 'Protected by Streak Freeze yesterday!'
+                    : 'Check in today to light your flame!'
+                }
+              >
+                {flameState === 'frozen' ? '🧊' : '🔥'}
               </div>
 
-              {/* Weekly Target Pill */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                  {t('exercise.currentStreak')}
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span
+                    className={`text-4xl font-black tracking-tight ${
+                      flameState === 'lit'
+                        ? 'text-white'
+                        : flameState === 'frozen'
+                        ? 'text-cyan-300'
+                        : 'text-slate-200'
+                    }`}
+                  >
+                    {stats.currentStreak}
+                  </span>
+                  <span
+                    className={`text-sm font-bold ${
+                      flameState === 'lit'
+                        ? 'text-orange-400'
+                        : flameState === 'frozen'
+                        ? 'text-cyan-400'
+                        : 'text-slate-400'
+                    }`}
+                  >
+                    {t('common.days')} {flameState === 'lit' ? '🔥' : flameState === 'frozen' ? '🧊' : '⏳'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Aligned Weekly Target Chest & Edit Button */}
+            <div className="flex flex-col items-end">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
+                <span>Weekly Target</span>
+                <span>{stats.weeklyCount >= weeklyGoal ? '🏆' : '🎁'}</span>
+              </span>
               <button
                 onClick={() => { setTempGoal(weeklyGoal); setShowGoalSheet(true) }}
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-bold transition-all shadow-sm border shrink-0 whitespace-nowrap ${
+                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm border ${
                   stats.weeklyCount >= weeklyGoal
                     ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
                     : 'bg-blue-500/15 border-blue-500/30 text-blue-400 hover:bg-blue-500/25'
                 }`}
                 title={t('exercise.editGoal')}
               >
-                <span>🎯 {stats.weeklyCount} / {weeklyGoal} {t('common.days')}</span>
-                <Pencil className="h-3 w-3 opacity-70 shrink-0" />
+                <span>{stats.weeklyCount} / {weeklyGoal} Days</span>
+                <Pencil className="h-3.5 w-3.5" />
               </button>
-            </div>
-
-            {/* Clean 1-Line Status Subtitle */}
-            <div className="text-xs font-medium text-slate-300 mt-1 mb-3.5 leading-relaxed">
-              {flameState === 'lit' ? (
-                stats.isYesterdayFrozen ? (
-                  <span className="text-cyan-300">🧊 Yesterday protected by Freeze · Streak extended today!</span>
-                ) : (
-                  <span className="text-emerald-400">✅ Checked in today · Streak is active!</span>
-                )
-              ) : flameState === 'frozen' ? (
-                <span className="text-cyan-300">🧊 Streak frozen yesterday · Check in today to unfreeze!</span>
-              ) : (
-                <span className="text-amber-300/90">⏳ Check in today to extend your streak to {stats.currentStreak + 1} days</span>
-              )}
+              <span className="text-[10px] font-semibold mt-1 text-slate-400">
+                {stats.weeklyCount >= weeklyGoal ? '✨ Goal Chest Claimed!' : 'Goal Chest: +50 XP & +1 🧊'}
+              </span>
             </div>
           </div>
 
-          {/* Clean Streak Freeze Bar */}
-          <div className="pt-3 border-t border-white/5 space-y-1.5">
-            <div className="flex items-center justify-between text-xs font-semibold gap-2">
-              <span className="text-slate-300 flex items-center gap-1.5 min-w-0">
-                <Shield className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-                <span className="truncate">Streak Freezes: <strong className="text-cyan-400">{stats.freezesAvailable}/{MAX_FREEZES}</strong></span>
-              </span>
-              <span className="text-[11px] text-slate-400 shrink-0 whitespace-nowrap">
-                {stats.freezesAvailable >= MAX_FREEZES
-                  ? 'Max full (5/5)'
-                  : `+1 Freeze in ${5 - stats.freezeProgress} workouts`}
+          {/* Duolingo 3-State Status Banner */}
+          <div
+            className={`mb-4 rounded-xl px-3.5 py-2.5 text-xs font-semibold border flex items-center gap-2.5 ${
+              flameState === 'lit'
+                ? 'bg-orange-500/10 border-orange-500/25 text-orange-200'
+                : flameState === 'frozen'
+                ? 'bg-cyan-500/15 border-cyan-400/35 text-cyan-200'
+                : 'bg-amber-500/10 border-amber-500/20 text-amber-200/90'
+            }`}
+          >
+            <span className="text-base shrink-0">
+              {flameState === 'lit' ? '🔥' : flameState === 'frozen' ? '🧊' : '⏳'}
+            </span>
+            <p className="leading-snug">
+              {flameState === 'lit' ? (
+                stats.isYesterdayFrozen ? (
+                  <>
+                    <span className="font-bold text-cyan-300">Yesterday was saved by a Streak Freeze 🧊</span>
+                    {' — '}and you checked in today to keep your {stats.currentStreak}-day streak burning!
+                  </>
+                ) : (
+                  <>
+                    <span className="font-bold text-orange-300">Streak Lit Today!</span> You extended your streak to {stats.currentStreak} {stats.currentStreak === 1 ? 'day' : 'days'}. Keep it up!
+                  </>
+                )
+              ) : flameState === 'frozen' ? (
+                <>
+                  <span className="font-bold text-cyan-300">Streak Frozen Yesterday!</span> 1 Streak Freeze protected your {stats.currentStreak}-day streak. Check in today to unfreeze!
+                </>
+              ) : stats.currentStreak > 0 ? (
+                <>
+                  <span className="font-bold text-amber-300">Flame Unlit Today:</span> Mark today done to extend your streak to <span className="underline">{stats.currentStreak + 1} days</span>!
+                </>
+              ) : (
+                <>
+                  <span className="font-bold text-amber-300">Start Your Streak:</span> Mark today done below to light your Day 1 flame!
+                </>
+              )}
+            </p>
+          </div>
+
+          {/* 5/5 Shield Inventory Box */}
+          <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-cyan-400" />
+                <span className="text-xs font-bold text-slate-300">Streak Freeze Shields</span>
+              </div>
+              <span className="text-xs font-bold text-cyan-400">
+                {stats.freezesAvailable} / {MAX_FREEZES} Equipped
               </span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-              <div
-                className="h-full rounded-full bg-cyan-400 transition-all duration-500"
-                style={{ width: `${stats.freezesAvailable >= MAX_FREEZES ? 100 : (stats.freezeProgress / 5) * 100}%` }}
-              />
+
+            {/* 5 Visual Shield Slots */}
+            <div className="grid grid-cols-5 gap-2">
+              {Array.from({ length: MAX_FREEZES }).map((_, idx) => {
+                const isEquipped = idx < stats.freezesAvailable
+                return (
+                  <div
+                    key={idx}
+                    className={`flex items-center justify-center rounded-lg py-1.5 text-sm border transition-all ${
+                      isEquipped
+                        ? 'bg-cyan-500/15 border-cyan-400/40 text-cyan-300 shadow-sm shadow-cyan-500/10'
+                        : 'bg-slate-900/60 border-dashed border-white/10 text-slate-600 opacity-50'
+                    }`}
+                    title={isEquipped ? `Shield Slot #${idx + 1}: Equipped` : `Shield Slot #${idx + 1}: Empty`}
+                  >
+                    {isEquipped ? '🧊' : '🛡️'}
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="pt-2 border-t border-white/5 space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400">
+                <span>Refill +1 🧊: {stats.freezeProgress} / 5 check-ins</span>
+                <span className="text-cyan-400 font-bold">
+                  {stats.freezesAvailable >= MAX_FREEZES
+                    ? 'MAX 5/5 Full 🛡️'
+                    : stats.freezeProgress === 0 && logs.length > 0
+                    ? 'Freeze refilled! 🛡️'
+                    : `${5 - stats.freezeProgress} more to refill`}
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-cyan-400 transition-all duration-500"
+                  style={{ width: `${stats.freezesAvailable >= MAX_FREEZES ? 100 : (stats.freezeProgress / 5) * 100}%` }}
+                />
+              </div>
             </div>
           </div>
         </section>
 
-        {/* HERO CARD 2: Level & XP Progress */}
-        <section className="relative overflow-hidden rounded-2xl bg-[#131b2e] p-4 sm:p-6 shadow-xl border border-white/5 flex flex-col justify-between">
-          {/* Left accent indicator strip */}
-          <div className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 bg-gradient-to-b from-purple-400 to-purple-600" />
-
+        {/* HERO CARD 2: Novice Mover Level / XP (LEFT ACCENT: PURPLE) */}
+        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl border border-white/5 border-l-4 border-l-purple-500 flex flex-col justify-between">
           <div>
-            <div className="flex items-start justify-between gap-2.5 sm:gap-3 mb-3">
-              <div className="min-w-0">
-                <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-purple-400 mb-0.5">
-                  {t('exercise.level', { level: levelInfo.level })}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                  Level & Rank Status
                 </p>
-                <h3 className="text-xl sm:text-3xl font-black text-white tracking-tight truncate">
-                  {levelInfo.title}
-                </h3>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
+                    {levelInfo.title}
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-purple-400 mt-0.5">
+                  {t('exercise.level', { level: levelInfo.level })} · Best Streak: {stats.longestStreak} {t('common.days')}
+                </p>
               </div>
 
-              <div className="text-right shrink-0">
-                <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">{xpTotal}</span>
-                <p className="text-[11px] sm:text-xs font-bold text-slate-400">Total XP</p>
+              <div className="text-right">
+                <span className="text-3xl font-black text-white">{xpTotal}</span>
+                <p className="text-xs font-bold text-slate-400">Total XP</p>
               </div>
             </div>
-
-            <p className="text-xs text-slate-400 mt-1 mb-3.5">
-              Best Streak: <strong className="text-slate-200">{stats.longestStreak} days</strong>
-            </p>
           </div>
 
-          {/* Clean Level Progress Bar */}
-          <div className="pt-3 border-t border-white/5 space-y-1.5">
-            <div className="flex items-center justify-between text-xs font-semibold gap-2">
-              <span className="text-slate-300 min-w-0 truncate">Level Progress</span>
-              <span className="text-[11px] text-purple-300 shrink-0 whitespace-nowrap">{levelInfo.xpNeeded} XP to next rank</span>
+          <div className="rounded-xl bg-[#0e1626] p-4 border border-white/5 space-y-2.5">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+              <span>Level Progress</span>
+              <span className="text-purple-300">{levelInfo.xpNeeded} XP to next rank</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
               <div
                 className="h-full rounded-full bg-purple-500 transition-all duration-500"
                 style={{ width: `${levelInfo.progressPercent}%` }}
