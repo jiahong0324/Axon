@@ -1172,314 +1172,162 @@ export default function ExamResultsPage() {
         {/* TAB 3: COURSE MARK CALCULATOR */}
         {activeTab === 'course-calculator' && (
           <div className="grid gap-8 lg:grid-cols-3 items-start w-full">
-            {/* Left 2 Cols: Course Assessment Input & Summary */}
+            {/* Left 2 Cols: Course Assessment Input & Compact Result */}
             <div className="lg:col-span-2 rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-extrabold text-white">Course Total Mark Calculator</h3>
-                  <p className="text-xs sm:text-sm text-slate-400 mt-1">Simulate weighted coursework and exam scores</p>
+                <h3 className="text-xl font-extrabold text-white">Course Total Mark Calculator</h3>
+
+                {/* Weight Status Badge (only shown when weights are entered) */}
+                {courseCalcStats.totalWeight === 100 ? (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+                    <Check className="h-3.5 w-3.5" />
+                    <span>Total Weight: 100%</span>
+                  </div>
+                ) : courseCalcStats.totalWeight > 0 ? (
+                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
+                    courseCalcStats.totalWeight > 100
+                      ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
+                      : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                  }`}>
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <span>
+                      Total Weight: {courseCalcStats.totalWeight}% {courseCalcStats.totalWeight > 100 ? `(exceeds 100%)` : `(${(100 - courseCalcStats.totalWeight).toFixed(1)}% remaining)`}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Assessment Rows */}
+              <div className="space-y-3">
+                {/* Desktop Column Header */}
+                <div className="hidden sm:flex items-center justify-between gap-3 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <span className="flex-1">Assessment Component</span>
+                  <div className="flex items-center justify-end gap-3 shrink-0">
+                    <span className="w-28 sm:w-36 text-left pl-1">Weight (%)</span>
+                    <span className="w-28 sm:w-36 text-left pl-1">Score (%)</span>
+                    <span className="w-9"></span>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  {/* Weight Status Badge (only shown when weights are entered) */}
-                  {courseCalcStats.totalWeight === 100 ? (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
-                      <Check className="h-3.5 w-3.5" />
-                      <span>Total Weight: 100%</span>
-                    </div>
-                  ) : courseCalcStats.totalWeight > 0 ? (
-                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
-                      courseCalcStats.totalWeight > 100
-                        ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
-                        : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
-                    }`}>
-                      <AlertCircle className="h-3.5 w-3.5" />
-                      <span>
-                        Total Weight: {courseCalcStats.totalWeight}% {courseCalcStats.totalWeight > 100 ? `(exceeds 100%)` : `(${(100 - courseCalcStats.totalWeight).toFixed(1)}% remaining)`}
-                      </span>
-                    </div>
-                  ) : null}
-
-                  {showCourseCalcResult && (
-                    <button
-                      onClick={() => setShowCourseCalcResult(false)}
-                      className="flex items-center gap-2 rounded-xl bg-blue-500/15 px-4 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/25 transition-all"
+                <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
+                  {courseCalcRows.map((row, index) => (
+                    <div
+                      key={row.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
                     >
-                      <RotateCcw className="h-4 w-4" />
-                      <span>Edit Components</span>
-                    </button>
-                  )}
+                      {/* Component Name */}
+                      <div className="flex-1 min-w-0">
+                        <input
+                          className="bg-transparent text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none w-full"
+                          placeholder={index === 0 ? "e.g. Final Exam" : index === 1 ? "e.g. Assignment" : index === 2 ? "e.g. Midterm Test" : `Component ${index + 1}`}
+                          value={row.name}
+                          onChange={e => handleUpdateCourseCalcRow(row.id, 'name', e.target.value)}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
+                        {/* Weight % */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-slate-400 sm:hidden">Weight:</span>
+                          <div className="relative w-28 sm:w-36">
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              min="0"
+                              max="100"
+                              step="any"
+                              className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              placeholder="Weight"
+                              value={row.weight}
+                              onChange={e => handleUpdateCourseCalcRow(row.id, 'weight', e.target.value)}
+                            />
+                            <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
+                          </div>
+                        </div>
+
+                        {/* Score % */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-slate-400 sm:hidden">Score:</span>
+                          <div className="relative w-28 sm:w-36">
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              min="0"
+                              max="100"
+                              step="any"
+                              className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              placeholder="Score"
+                              value={row.score}
+                              onChange={e => handleUpdateCourseCalcRow(row.id, 'score', e.target.value)}
+                            />
+                            <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
+                          </div>
+                        </div>
+
+                        {/* Delete Row */}
+                        <button
+                          onClick={() => handleDeleteCourseCalcRow(row.id)}
+                          className="p-2 text-slate-500 hover:text-red-400 transition-colors shrink-0"
+                          title="Remove component"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* VIEW MODE 1: DEDICATED RESULT SCREEN AFTER USER CLICKS CALCULATE */}
-              {showCourseCalcResult && courseCalcStats.hasAnyScore && courseCalcStats.gradedWeight > 0 ? (
-                <div className="space-y-6 py-4 animate-fadeIn">
-                  <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-8 text-center border border-white/5">
-                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                      Total Calculated Course Mark
-                    </span>
-                    <div className="my-2 text-5xl sm:text-6xl font-black text-white tracking-tight">
+              {/* Add / Reset Buttons */}
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={handleAddCourseCalcRow}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Assessment Component</span>
+                </button>
+                {courseCalcRows.some(r => r.name || r.weight || r.score) && (
+                  <button
+                    onClick={handleResetCourseCalcRows}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent px-4 py-3 text-xs sm:text-sm font-semibold text-slate-400 hover:text-red-400 hover:border-red-500/30 transition-all"
+                    title="Reset rows"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Reset</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Calculate Button */}
+              <button
+                onClick={handleCalculateCourseMark}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-3.5 text-base font-extrabold text-white hover:bg-blue-600 transition-all shadow-lg cursor-pointer"
+              >
+                <Calculator className="h-5 w-5" />
+                <span>Calculate</span>
+              </button>
+
+              {/* Compact, Clean Result Card (Only shown after user clicks Calculate) */}
+              {showCourseCalcResult && courseCalcStats.hasAnyScore && courseCalcStats.gradedWeight > 0 && (
+                <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-[#0e1626] p-6 border border-white/10 animate-fadeIn">
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Total Course Mark</span>
+                    <div className="text-4xl sm:text-5xl font-black text-white tracking-tight mt-1">
                       {courseCalcStats.totalEarned.toFixed(2)}%
                     </div>
-                    <div className="mt-2 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold border border-white/10 bg-white/5">
-                      <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded font-mono font-black border ${getGradeBadgeStyle(courseCalcStats.gradeObj.grade)}`}>
-                        Grade {courseCalcStats.gradeObj.grade}
-                      </span>
-                      <span className="text-slate-300 font-mono">({courseCalcStats.gradeObj.point.toFixed(4)} GP)</span>
-                      <span className="text-slate-400">· {courseCalcStats.gradeObj.description}</span>
-                    </div>
-                    <p className="mt-3 text-xs text-slate-400">
-                      Graded weight accounted for: <strong className="text-white">{courseCalcStats.gradedWeight}%</strong> out of <strong className="text-white">{courseCalcStats.totalWeight}%</strong> total weight
-                    </p>
                   </div>
 
-                  {/* Component Breakdown List */}
-                  <div className="rounded-xl bg-[#0e1626] p-5 border border-white/5">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                      Assessment Breakdown
-                    </h4>
-                    <div className="divide-y divide-white/[0.06]">
-                      {courseCalcStats.items
-                        .filter(i => i.hasScore && i.validWeight > 0)
-                        .map((item, idx) => (
-                          <div key={item.id} className="flex items-center justify-between gap-3 py-3 text-sm">
-                            <span className="font-semibold text-white break-words">
-                              {item.name || `Component ${idx + 1}`}
-                            </span>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span className="text-xs text-slate-400">{item.weight}% Weight</span>
-                              <span className="text-xs text-slate-300 font-medium">Score: {item.score}%</span>
-                              <span className="font-mono text-xs font-bold text-emerald-400">
-                                +{item.contribution.toFixed(2)}%
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                  <div className="flex items-center gap-3">
+                    <span className={`inline-flex items-center justify-center px-4 py-2 rounded-xl font-mono text-lg font-black border ${getGradeBadgeStyle(courseCalcStats.gradeObj.grade)}`}>
+                      Grade {courseCalcStats.gradeObj.grade}
+                    </span>
+                    <div className="text-left">
+                      <div className="text-sm font-bold text-white font-mono">{courseCalcStats.gradeObj.point.toFixed(4)} GP</div>
+                      <div className="text-xs text-slate-400 font-medium">{courseCalcStats.gradeObj.description}</div>
                     </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  {courseCalcStats.gradedWeight > 0 && (
-                    <div className="rounded-xl bg-[#0e1626] p-5 border border-white/5 space-y-3">
-                      <div className="flex items-center justify-between text-xs font-bold">
-                        <span className="text-slate-300 uppercase tracking-wider">Assessment Contribution Breakdown</span>
-                        <span className="text-slate-400">{courseCalcStats.totalEarned.toFixed(2)}% / 100%</span>
-                      </div>
-                      <div className="w-full h-3 rounded-full bg-white/5 overflow-hidden flex">
-                        {courseCalcStats.items.filter(i => i.contribution > 0).map((item, idx) => {
-                          const colors = ['bg-blue-500', 'bg-teal-500', 'bg-amber-500', 'bg-purple-500', 'bg-emerald-500', 'bg-pink-500']
-                          const col = colors[idx % colors.length]
-                          return (
-                            <div
-                              key={item.id}
-                              style={{ width: `${Math.min(100, item.contribution)}%` }}
-                              className={`h-full ${col} transition-all`}
-                              title={`${item.name || `Component ${idx + 1}`}: +${item.contribution.toFixed(2)}%`}
-                            />
-                          )
-                        })}
-                      </div>
-                      <div className="flex flex-wrap gap-3 pt-2 text-xs">
-                        {courseCalcStats.items.filter(i => i.contribution > 0).map((item, idx) => {
-                          const dotColors = ['bg-blue-500', 'bg-teal-500', 'bg-amber-500', 'bg-purple-500', 'bg-emerald-500', 'bg-pink-500']
-                          const dotCol = dotColors[idx % dotColors.length]
-                          return (
-                            <div key={item.id} className="flex items-center gap-1.5 text-slate-300">
-                              <span className={`w-2.5 h-2.5 rounded-full ${dotCol}`} />
-                              <span className="font-medium">{item.name || `Component ${idx + 1}`}:</span>
-                              <span className="font-mono font-bold text-white">+{item.contribution.toFixed(2)}%</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Target Forecaster */}
-                  {courseCalcStats.totalWeight === 100 && courseCalcStats.weightRemaining > 0 && (
-                    <div className="rounded-xl bg-[#0e1626] p-5 border border-white/5 space-y-3">
-                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-400">
-                        <Sparkles className="h-4 w-4" />
-                        <span>Target Forecaster · Remaining {courseCalcStats.weightRemaining}% Weight</span>
-                      </div>
-                      <p className="text-xs text-slate-400">
-                        You currently have earned <strong className="text-white">{courseCalcStats.totalEarned.toFixed(2)}%</strong> across your completed assessments ({courseCalcStats.gradedWeight}% weight). Here is what you need in the remaining {courseCalcStats.weightRemaining}%:
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                        {[
-                          { grade: 'A (80%)', target: 80, badge: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' },
-                          { grade: 'B (65%)', target: 65, badge: 'text-blue-400 border-blue-500/30 bg-blue-500/10' },
-                          { grade: 'Pass (50%)', target: 50, badge: 'text-amber-400 border-amber-500/30 bg-amber-500/10' }
-                        ].map(t => {
-                          const needed = ((t.target - courseCalcStats.totalEarned) / courseCalcStats.weightRemaining) * 100
-                          let label = ''
-                          if (needed <= 0) {
-                            label = 'Already secured! ✓'
-                          } else if (needed > 100) {
-                            label = 'Not reachable'
-                          } else {
-                            label = `Need ≥ ${needed.toFixed(1)}%`
-                          }
-                          return (
-                            <div key={t.grade} className="rounded-lg bg-[#141d30] p-3 border border-white/5">
-                              <div className="text-[11px] font-bold text-slate-400">{t.grade}</div>
-                              <div className={`mt-1 text-xs font-extrabold px-2 py-0.5 rounded border inline-block ${t.badge}`}>
-                                {label}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Buttons: Recalculate / Reset */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                    <button
-                      onClick={() => setShowCourseCalcResult(false)}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-500 py-3.5 text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-md"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      <span>Recalculate / Edit Components</span>
-                    </button>
-                    <button
-                      onClick={handleResetCourseCalcRows}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-[#1e293b] px-6 py-3.5 text-sm font-bold text-slate-300 hover:bg-[#283548] transition-all"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span>Reset</span>
-                    </button>
                   </div>
                 </div>
-              ) : (
-                /* VIEW MODE 2: INPUT TABLE & CALCULATE BUTTON */
-                <>
-                  <div className="space-y-3">
-                    {/* Desktop Column Header */}
-                    <div className="hidden sm:flex items-center justify-between gap-3 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
-                      <span className="flex-1">Assessment Component</span>
-                      <div className="flex items-center justify-end gap-3 shrink-0">
-                        <span className="w-28 sm:w-36 text-left pl-1">Weight (%)</span>
-                        <span className="w-28 sm:w-36 text-left pl-1">Score (%)</span>
-                        <span className="w-20 text-right">Contrib.</span>
-                        <span className="w-9"></span>
-                      </div>
-                    </div>
-
-                    <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
-                      {courseCalcRows.map((row, index) => {
-                        const itemStat = courseCalcStats.items[index] || {}
-                        return (
-                          <div
-                            key={row.id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
-                          >
-                            {/* Component Name */}
-                            <div className="flex-1 min-w-0">
-                              <input
-                                className="bg-transparent text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none w-full"
-                                placeholder={index === 0 ? "e.g. Final Exam" : index === 1 ? "e.g. Assignment" : index === 2 ? "e.g. Midterm Test" : `Component ${index + 1}`}
-                                value={row.name}
-                                onChange={e => handleUpdateCourseCalcRow(row.id, 'name', e.target.value)}
-                              />
-                            </div>
-
-                            <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
-                              {/* Weight % */}
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs text-slate-400 sm:hidden">Weight:</span>
-                                <div className="relative w-28 sm:w-36">
-                                  <input
-                                    type="number"
-                                    inputMode="decimal"
-                                    min="0"
-                                    max="100"
-                                    step="any"
-                                    className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    placeholder="Weight"
-                                    value={row.weight}
-                                    onChange={e => handleUpdateCourseCalcRow(row.id, 'weight', e.target.value)}
-                                  />
-                                  <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
-                                </div>
-                              </div>
-
-                              {/* Score % */}
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs text-slate-400 sm:hidden">Score:</span>
-                                <div className="relative w-28 sm:w-36">
-                                  <input
-                                    type="number"
-                                    inputMode="decimal"
-                                    min="0"
-                                    max="100"
-                                    step="any"
-                                    className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    placeholder="Score"
-                                    value={row.score}
-                                    onChange={e => handleUpdateCourseCalcRow(row.id, 'score', e.target.value)}
-                                  />
-                                  <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
-                                </div>
-                              </div>
-
-                              {/* Contribution */}
-                              <div className="w-20 text-right shrink-0">
-                                {itemStat.hasScore && itemStat.validWeight > 0 ? (
-                                  <span className="font-mono text-sm font-bold text-emerald-400">
-                                    +{itemStat.contribution.toFixed(2)}%
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-slate-600">-</span>
-                                )}
-                              </div>
-
-                              {/* Delete Row */}
-                              <button
-                                onClick={() => handleDeleteCourseCalcRow(row.id)}
-                                className="p-2 text-slate-500 hover:text-red-400 transition-colors shrink-0"
-                                title="Remove component"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Add / Reset Buttons */}
-                  <div className="mt-4 flex gap-3">
-                    <button
-                      onClick={handleAddCourseCalcRow}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>Add Assessment Component</span>
-                    </button>
-                    {courseCalcRows.some(r => r.name || r.weight || r.score) && (
-                      <button
-                        onClick={handleResetCourseCalcRows}
-                        className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent px-4 py-3 text-xs sm:text-sm font-semibold text-slate-400 hover:text-red-400 hover:border-red-500/30 transition-all"
-                        title="Reset rows"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span>Reset</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Big Calculate Button */}
-                  <button
-                    onClick={handleCalculateCourseMark}
-                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-4 text-base font-extrabold text-white hover:bg-blue-600 transition-all shadow-lg cursor-pointer"
-                  >
-                    <Calculator className="h-5 w-5" />
-                    <span>Calculate Course Mark</span>
-                  </button>
-                </>
               )}
             </div>
 
