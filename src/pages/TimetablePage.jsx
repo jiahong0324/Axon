@@ -122,6 +122,25 @@ export function inferDatesFromCurrentWeek(weekNumber, totalWeeks = 14) {
   }
 }
 
+export function inferDatesForBreak(totalWeeks = 14) {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+  const day = today.getDay()
+  const diffToNextMonday = day === 0 ? 1 : 8 - day
+  const nextMonday = new Date(today)
+  nextMonday.setDate(today.getDate() + diffToNextMonday)
+
+  const endDate = new Date(nextMonday)
+  endDate.setDate(nextMonday.getDate() + totalWeeks * 7 - 3)
+
+  const fmt = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+  return {
+    startDateStr: fmt(nextMonday),
+    endDateStr: fmt(endDate)
+  }
+}
+
 export default function TimetablePage() {
   const [user, setUser] = useState(null)
   const [classes, setClasses] = useState([])
@@ -141,6 +160,7 @@ export default function TimetablePage() {
   const [semesterForm, setSemesterForm] = useState({ name: '', start_date: '', end_date: '' })
   const [showNewSemesterModal, setShowNewSemesterModal] = useState(false)
   const [showRolloverWizard, setShowRolloverWizard] = useState(false)
+  const [showRolloverCustomDates, setShowRolloverCustomDates] = useState(false)
   const hasCheckedRollover = useRef(false)
   const [newSemesterForm, setNewSemesterForm] = useState({ archiveName: '', newName: '', newStartDate: '', newEndDate: '' })
   const [mobileDay, setMobileDay] = useState(() => {
