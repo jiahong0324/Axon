@@ -1,4 +1,4 @@
-import { Archive, ArrowRight, ArrowRightLeft, Calendar, CalendarOff, ChevronDown, ChevronsUpDown, GraduationCap, MapPin, Plus, RotateCcw, ShieldCheck, Sparkles, Trash2, User } from 'lucide-react'
+import { ArrowRight, ArrowRightLeft, Calendar, CalendarOff, ChevronDown, ChevronsUpDown, GraduationCap, MapPin, Plus, ShieldCheck, Sparkles, Trash2, User } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import ClassTypeBadge from '../components/ClassTypeBadge'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -906,34 +906,17 @@ export default function TimetablePage() {
                 )
               )}
 
-              {/* Sleek, compact badge & actions when viewing archived timetable */}
+              {/* Only one tiny button "Set as Main" */}
               {!isLiveProfile && (
-                <div className="inline-flex items-center gap-1 sm:gap-1.5 p-1 rounded-full bg-slate-900/90 border border-white/10 backdrop-blur-md shadow-sm">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-xs font-medium border border-amber-500/20">
-                    <Archive className="h-3 w-3 text-amber-400" />
-                    <span>{t('timetable.archivedBadge')}</span>
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => promoteToMain(activeProfileId)}
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium text-theme-300 hover:text-white hover:bg-theme-500/20 transition-all cursor-pointer"
-                    title={t('timetable.promoteTitle')}
-                  >
-                    <span>{t('timetable.promoteConfirm')}</span>
-                    <ArrowRight className="h-3 w-3 text-theme-400" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => switchProfile(LIVE_PROFILE_ID)}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-slate-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-                    title={t('timetable.backToLive')}
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                    <span className="hidden sm:inline">{t('timetable.backToLive')}</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => promoteToMain(activeProfileId)}
+                  className="group inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-theme-500/15 hover:bg-theme-500/25 text-theme-300 hover:text-white border border-theme-500/30 hover:border-theme-400/50 backdrop-blur-md transition-all cursor-pointer shadow-sm active:scale-95"
+                  title={t('timetable.promoteTitle')}
+                >
+                  <span>{t('timetable.promoteConfirm')}</span>
+                  <ArrowRight className="h-3 w-3 text-theme-400 group-hover:text-white transition-transform group-hover:translate-x-0.5" />
+                </button>
               )}
             </div>
           ) : (
