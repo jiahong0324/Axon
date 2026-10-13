@@ -804,7 +804,7 @@ export default function TimetablePage() {
                         
                         <div className="h-px w-full bg-white/5 my-1" />
 
-                        {isLiveProfile && (
+                        {isLiveProfile ? (
                           <>
                             <button 
                               onClick={() => { openSemesterModal(); setIsDropdownOpen(false); }}
@@ -817,6 +817,16 @@ export default function TimetablePage() {
                               className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-theme-400 hover:bg-theme-500/10 transition-colors gap-2"
                             >
                               <Sparkles className="h-4 w-4" /> {t('timetable.startNewSemester')}
+                            </button>
+                            <div className="h-px w-full bg-white/5 my-1" />
+                          </>
+                        ) : (
+                          <>
+                            <button 
+                              onClick={() => { promoteToMain(activeProfileId); setIsDropdownOpen(false); }}
+                              className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
+                            >
+                              <ArrowRight className="h-4 w-4 text-slate-400" /> {t('timetable.promoteConfirm')}
                             </button>
                             <div className="h-px w-full bg-white/5 my-1" />
                           </>
@@ -906,16 +916,16 @@ export default function TimetablePage() {
                 )
               )}
 
-              {/* Only one tiny button "Set as Main" */}
+              {/* Minimal, subtle "Set as Main" button */}
               {!isLiveProfile && (
                 <button
                   type="button"
                   onClick={() => promoteToMain(activeProfileId)}
-                  className="group inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-theme-500/15 hover:bg-theme-500/25 text-theme-300 hover:text-white border border-theme-500/30 hover:border-theme-400/50 backdrop-blur-md transition-all cursor-pointer shadow-sm active:scale-95"
+                  className="group inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
                   title={t('timetable.promoteTitle')}
                 >
                   <span>{t('timetable.promoteConfirm')}</span>
-                  <ArrowRight className="h-3 w-3 text-theme-400 group-hover:text-white transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
                 </button>
               )}
             </div>
