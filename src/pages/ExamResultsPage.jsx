@@ -34,9 +34,9 @@ function getInitialCalcRows() {
 }
 
 const DEFAULT_COURSE_CALC_ROWS = [
-  { id: 1, name: '', weight: '', score: '', maxScore: '100' },
-  { id: 2, name: '', weight: '', score: '', maxScore: '100' },
-  { id: 3, name: '', weight: '', score: '', maxScore: '100' }
+  { id: 1, name: '', weight: '', score: '' },
+  { id: 2, name: '', weight: '', score: '' },
+  { id: 3, name: '', weight: '', score: '' }
 ]
 
 function getInitialCourseCalcRows() {
@@ -665,7 +665,7 @@ export default function ExamResultsPage() {
   function handleAddCourseCalcRow() {
     setCourseCalcRows(prev => [
       ...prev,
-      { id: Date.now(), name: '', weight: '', score: '', maxScore: '100' }
+      { id: Date.now(), name: '', weight: '', score: '' }
     ])
   }
 
@@ -673,7 +673,7 @@ export default function ExamResultsPage() {
     setCourseCalcRows(prev => {
       const next = prev.filter(r => r.id !== rowId)
       if (next.length === 0) {
-        return [{ id: Date.now(), name: '', weight: '', score: '', maxScore: '100' }]
+        return [{ id: Date.now(), name: '', weight: '', score: '' }]
       }
       return next
     })
@@ -692,9 +692,9 @@ export default function ExamResultsPage() {
       if (!ok) return
     }
     const defaultRows = [
-      { id: 1, name: '', weight: '', score: '', maxScore: '100' },
-      { id: 2, name: '', weight: '', score: '', maxScore: '100' },
-      { id: 3, name: '', weight: '', score: '', maxScore: '100' }
+      { id: 1, name: '', weight: '', score: '' },
+      { id: 2, name: '', weight: '', score: '' },
+      { id: 3, name: '', weight: '', score: '' }
     ]
     setCourseCalcRows(defaultRows)
     try {
@@ -718,16 +718,13 @@ export default function ExamResultsPage() {
       totalWeight += validWeight
 
       const s = parseFloat(r.score)
-      const m = parseFloat(r.maxScore) > 0 ? parseFloat(r.maxScore) : 100
       const hasScore = !isNaN(s) && s >= 0
 
       let contribution = 0
-      let normalizedScore = 0
       if (hasScore) {
         hasAnyScore = true
-        normalizedScore = Math.max(0, (s / m) * 100)
         if (validWeight > 0) {
-          contribution = (s / m) * validWeight
+          contribution = (s / 100) * validWeight
           totalEarned += contribution
           gradedWeight += validWeight
         }
@@ -738,8 +735,6 @@ export default function ExamResultsPage() {
         validWeight,
         hasScore,
         scoreVal: s,
-        maxScoreVal: m,
-        normalizedScore,
         contribution
       }
     })
@@ -1153,14 +1148,9 @@ export default function ExamResultsPage() {
             {/* Left 2 Cols: Course Assessment Input & Summary */}
             <div className="lg:col-span-2 rounded-2xl bg-[#131b2e] p-6 sm:p-8 shadow-xl">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-extrabold text-white">Course Total Mark Calculator</h3>
-                  <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                    Calculate your final course mark & letter grade from custom weighted assessments (e.g. 2, 3, or 4 components)
-                  </p>
-                </div>
+                <h3 className="text-xl font-extrabold text-white">Course Total Mark Calculator</h3>
 
-                {/* Weight Status Badge */}
+                {/* Weight Status Badge (only shown when weights are entered) */}
                 {courseCalcStats.totalWeight === 100 ? (
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
                     <Check className="h-3.5 w-3.5" />
@@ -1177,22 +1167,20 @@ export default function ExamResultsPage() {
                       Total Weight: {courseCalcStats.totalWeight}% {courseCalcStats.totalWeight > 100 ? `(exceeds 100%)` : `(${(100 - courseCalcStats.totalWeight).toFixed(1)}% remaining)`}
                     </span>
                   </div>
-                ) : (
-                  <div className="text-xs font-semibold text-slate-400">
-                    Custom weights · Total = 100%
-                  </div>
-                )}
+                ) : null}
               </div>
 
               {/* Assessment Rows */}
               <div className="space-y-3">
                 {/* Desktop Column Header */}
-                <div className="hidden sm:grid grid-cols-12 gap-3 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
-                  <span className="col-span-5">Assessment Component</span>
-                  <span className="col-span-2">Weight (%)</span>
-                  <span className="col-span-2">Your Score</span>
-                  <span className="col-span-2 text-right">Contribution</span>
-                  <span className="col-span-1 text-center"></span>
+                <div className="hidden sm:flex items-center justify-between gap-3 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <span className="flex-1">Assessment Component</span>
+                  <div className="flex items-center justify-end gap-3 shrink-0">
+                    <span className="w-28 sm:w-36 text-left pl-1">Weight (%)</span>
+                    <span className="w-28 sm:w-36 text-left pl-1">Score (%)</span>
+                    <span className="w-20 text-right">Contrib.</span>
+                    <span className="w-9"></span>
+                  </div>
                 </div>
 
                 <div className="divide-y divide-white/[0.06] rounded-xl bg-[#0e1626] overflow-hidden">
@@ -1201,10 +1189,10 @@ export default function ExamResultsPage() {
                     return (
                       <div
                         key={row.id}
-                        className="flex flex-col sm:grid sm:grid-cols-12 gap-3 p-4 sm:items-center"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
                       >
                         {/* Component Name */}
-                        <div className="sm:col-span-5 flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
                           <input
                             className="bg-transparent text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none w-full"
                             placeholder={index === 0 ? "e.g. Final Exam" : index === 1 ? "e.g. Assignment" : index === 2 ? "e.g. Midterm Test" : `Component ${index + 1}`}
@@ -1213,68 +1201,60 @@ export default function ExamResultsPage() {
                           />
                         </div>
 
-                        {/* Weight % (Customizable by user) */}
-                        <div className="sm:col-span-2 flex items-center gap-1.5">
-                          <span className="text-xs text-slate-400 sm:hidden w-20">Weight:</span>
-                          <div className="relative flex-1">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="any"
-                              className="w-full bg-[#1a2236] rounded-lg px-3 py-2 pr-7 text-xs sm:text-sm font-semibold text-slate-200 placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none"
-                              placeholder="Weight"
-                              value={row.weight}
-                              onChange={e => handleUpdateCourseCalcRow(row.id, 'weight', e.target.value)}
-                            />
-                            <span className="absolute right-2.5 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
+                        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
+                          {/* Weight % */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-slate-400 sm:hidden">Weight:</span>
+                            <div className="relative w-28 sm:w-36">
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                min="0"
+                                max="100"
+                                step="any"
+                                className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                placeholder="Weight"
+                                value={row.weight}
+                                onChange={e => handleUpdateCourseCalcRow(row.id, 'weight', e.target.value)}
+                              />
+                              <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Score & Max Marks */}
-                        <div className="sm:col-span-2 flex items-center gap-1.5">
-                          <span className="text-xs text-slate-400 sm:hidden w-20">Score:</span>
-                          <div className="flex items-center gap-1 flex-1">
-                            <input
-                              type="number"
-                              min="0"
-                              step="any"
-                              className="w-full bg-[#1a2236] rounded-lg px-2.5 py-2 text-xs sm:text-sm font-semibold text-slate-200 placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none"
-                              placeholder="Score"
-                              value={row.score}
-                              onChange={e => handleUpdateCourseCalcRow(row.id, 'score', e.target.value)}
-                            />
-                            <span className="text-xs text-slate-500 font-bold">/</span>
-                            <input
-                              type="number"
-                              min="1"
-                              step="any"
-                              className="w-14 bg-[#1a2236] rounded-lg px-2 py-2 text-xs sm:text-sm font-semibold text-slate-400 placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none text-center"
-                              placeholder="100"
-                              value={row.maxScore}
-                              onChange={e => handleUpdateCourseCalcRow(row.id, 'maxScore', e.target.value)}
-                              title="Max Marks (default 100)"
-                            />
+                          {/* Score % */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-slate-400 sm:hidden">Score:</span>
+                            <div className="relative w-28 sm:w-36">
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                min="0"
+                                max="100"
+                                step="any"
+                                className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                placeholder="Score"
+                                value={row.score}
+                                onChange={e => handleUpdateCourseCalcRow(row.id, 'score', e.target.value)}
+                              />
+                              <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Contribution */}
-                        <div className="sm:col-span-2 flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
-                          <span className="text-xs text-slate-400 sm:hidden">Contribution:</span>
-                          {itemStat.hasScore && itemStat.validWeight > 0 ? (
-                            <span className="font-mono text-xs sm:text-sm font-bold text-emerald-400">
-                              +{itemStat.contribution.toFixed(2)}%
-                            </span>
-                          ) : (
-                            <span className="text-xs text-slate-600">-</span>
-                          )}
-                        </div>
+                          {/* Contribution */}
+                          <div className="w-20 text-right shrink-0">
+                            {itemStat.hasScore && itemStat.validWeight > 0 ? (
+                              <span className="font-mono text-sm font-bold text-emerald-400">
+                                +{itemStat.contribution.toFixed(2)}%
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-600">-</span>
+                            )}
+                          </div>
 
-                        {/* Delete Row */}
-                        <div className="sm:col-span-1 flex justify-end">
+                          {/* Delete Row */}
                           <button
                             onClick={() => handleDeleteCourseCalcRow(row.id)}
-                            className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
+                            className="p-2 text-slate-500 hover:text-red-400 transition-colors shrink-0"
                             title="Remove component"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1309,24 +1289,38 @@ export default function ExamResultsPage() {
 
               {/* Real-time Calculation Result Screen */}
               <div className="mt-8 pt-6 border-t border-white/[0.06] space-y-6">
-                <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-7 text-center border border-white/5">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                    Total Calculated Course Mark
-                  </span>
-                  <div className="my-2 text-5xl sm:text-6xl font-black text-white tracking-tight">
-                    {courseCalcStats.totalEarned.toFixed(2)}%
-                  </div>
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold border border-white/10 bg-white/5">
-                    <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded font-mono font-black border ${getGradeBadgeStyle(courseCalcStats.gradeObj.grade)}`}>
-                      Grade {courseCalcStats.gradeObj.grade}
+                {courseCalcStats.hasAnyScore && courseCalcStats.gradedWeight > 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-7 text-center border border-white/5">
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                      Total Calculated Course Mark
                     </span>
-                    <span className="text-slate-300 font-mono">({courseCalcStats.gradeObj.point.toFixed(4)} GP)</span>
-                    <span className="text-slate-400">· {courseCalcStats.gradeObj.description}</span>
+                    <div className="my-2 text-5xl sm:text-6xl font-black text-white tracking-tight">
+                      {courseCalcStats.totalEarned.toFixed(2)}%
+                    </div>
+                    <div className="mt-2 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold border border-white/10 bg-white/5">
+                      <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded font-mono font-black border ${getGradeBadgeStyle(courseCalcStats.gradeObj.grade)}`}>
+                        Grade {courseCalcStats.gradeObj.grade}
+                      </span>
+                      <span className="text-slate-300 font-mono">({courseCalcStats.gradeObj.point.toFixed(4)} GP)</span>
+                      <span className="text-slate-400">· {courseCalcStats.gradeObj.description}</span>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-400">
+                      Graded weight accounted for: <strong className="text-white">{courseCalcStats.gradedWeight}%</strong> out of <strong className="text-white">{courseCalcStats.totalWeight}%</strong> total weight
+                    </p>
                   </div>
-                  <p className="mt-3 text-xs text-slate-400">
-                    Graded weight accounted for: <strong className="text-white">{courseCalcStats.gradedWeight}%</strong> out of <strong className="text-white">{courseCalcStats.totalWeight}%</strong> total weight
-                  </p>
-                </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center rounded-2xl bg-[#0e1626] p-7 text-center border border-white/5">
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                      Total Calculated Course Mark
+                    </span>
+                    <div className="my-2 text-4xl sm:text-5xl font-black text-slate-600 tracking-tight">
+                      --
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">
+                      Enter your assessment weights and scores above to see your calculated mark and grade
+                    </p>
+                  </div>
+                )}
 
                 {/* Progress breakdown bar */}
                 {courseCalcStats.gradedWeight > 0 && (
@@ -1436,7 +1430,7 @@ export default function ExamResultsPage() {
 
               <div className="space-y-2.5">
                 {TARUMT_GRADES.map(g => {
-                  const isCurrentGrade = courseCalcStats.hasAnyScore && courseCalcStats.gradeObj.grade === g.grade
+                  const isCurrentGrade = courseCalcStats.hasAnyScore && courseCalcStats.gradedWeight > 0 && courseCalcStats.gradeObj.grade === g.grade
                   return (
                     <div
                       key={g.grade}
