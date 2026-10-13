@@ -311,7 +311,8 @@ export const translations = {
 
     'results.title': 'Results',
     'results.mySemesters': 'My Semesters',
-    'results.quickCalc': 'Quick Calculator',
+    'results.gpaSimulator': 'GPA Simulator',
+    'results.courseCalc': 'Course Calculator',
     'results.overallCgpa': 'Overall CGPA',
     'results.credits': 'Credits',
 
@@ -846,7 +847,8 @@ export const translations = {
 
     'results.title': '成绩与绩点',
     'results.mySemesters': '学期成绩单',
-    'results.quickCalc': '快速模拟计算器',
+    'results.gpaSimulator': 'GPA 模拟器',
+    'results.courseCalc': '课程成绩计算器',
     'results.overallCgpa': '总 CGPA',
     'results.credits': '学分',
 

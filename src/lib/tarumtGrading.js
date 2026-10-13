@@ -18,6 +18,20 @@ export function getGradePoint(gradeStr) {
   return found ? found.point : 0.0000
 }
 
+export function getGradeFromMark(mark) {
+  const num = Number(mark)
+  if (isNaN(num) || num < 0) return TARUMT_GRADES[TARUMT_GRADES.length - 1] // F
+  if (num >= 90) return TARUMT_GRADES[0] // A+
+  if (num >= 80) return TARUMT_GRADES[1] // A
+  if (num >= 75) return TARUMT_GRADES[2] // A-
+  if (num >= 70) return TARUMT_GRADES[3] // B+
+  if (num >= 65) return TARUMT_GRADES[4] // B
+  if (num >= 60) return TARUMT_GRADES[5] // B-
+  if (num >= 55) return TARUMT_GRADES[6] // C+
+  if (num >= 50) return TARUMT_GRADES[7] // C
+  return TARUMT_GRADES[8] // F
+}
+
 export function calculateSemesterGPA(courses = []) {
   if (!Array.isArray(courses) || courses.length === 0) return { gpa: '0.0000', totalCredits: 0, totalPoints: 0 }
   let totalCredits = 0
