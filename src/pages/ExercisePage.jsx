@@ -418,20 +418,23 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
       {/* TOP 2 HERO CARDS - CLEAN DUOLINGO-STYLE DESIGN */}
       <div className="grid gap-6 md:grid-cols-2 mb-8">
         {/* HERO CARD 1: Streak & Consistency */}
-        <section
-          className={`rounded-2xl bg-[#131b2e] p-6 sm:p-7 shadow-xl border border-white/5 border-l-4 transition-colors flex flex-col justify-between ${
-            flameState === 'lit'
-              ? 'border-l-orange-500'
-              : flameState === 'frozen'
-              ? 'border-l-cyan-400'
-              : 'border-l-amber-500/60'
-          }`}
-        >
+        <section className="relative overflow-hidden rounded-2xl bg-[#131b2e] p-4 sm:p-6 shadow-xl border border-white/5 flex flex-col justify-between transition-colors">
+          {/* Left accent indicator strip */}
+          <div
+            className={`absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 transition-colors ${
+              flameState === 'lit'
+                ? 'bg-gradient-to-b from-orange-400 to-orange-500'
+                : flameState === 'frozen'
+                ? 'bg-gradient-to-b from-cyan-300 to-cyan-500'
+                : 'bg-gradient-to-b from-amber-400/80 to-amber-500/80'
+            }`}
+          />
+
           <div>
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div className="flex items-center gap-3.5">
+            <div className="flex items-start justify-between gap-2.5 sm:gap-3 mb-3">
+              <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
                 <div
-                  className={`grid h-12 w-12 place-items-center rounded-2xl text-2xl sm:text-3xl shrink-0 border transition-all ${
+                  className={`grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-xl sm:rounded-2xl text-xl sm:text-2xl shrink-0 border transition-all ${
                     flameState === 'lit'
                       ? 'bg-orange-500/20 border-orange-500/40 shadow-lg shadow-orange-500/20 scale-105'
                       : flameState === 'frozen'
@@ -441,15 +444,15 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
                 >
                   {flameState === 'frozen' ? '🧊' : '🔥'}
                 </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                <div className="min-w-0">
+                  <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mb-0.5 truncate">
                     {t('exercise.currentStreak')}
                   </p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                  <div className="flex items-baseline gap-1.5 sm:gap-2">
+                    <span className="text-2xl sm:text-4xl font-black text-white tracking-tight">
                       {stats.currentStreak}
                     </span>
-                    <span className="text-sm font-bold text-orange-400">
+                    <span className="text-xs sm:text-sm font-bold text-orange-400 whitespace-nowrap">
                       {t('common.days')} 🔥
                     </span>
                   </div>
@@ -459,20 +462,20 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
               {/* Weekly Target Pill */}
               <button
                 onClick={() => { setTempGoal(weeklyGoal); setShowGoalSheet(true) }}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all shadow-sm border ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-bold transition-all shadow-sm border shrink-0 whitespace-nowrap ${
                   stats.weeklyCount >= weeklyGoal
                     ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
                     : 'bg-blue-500/15 border-blue-500/30 text-blue-400 hover:bg-blue-500/25'
                 }`}
                 title={t('exercise.editGoal')}
               >
-                <span>🎯 {stats.weeklyCount} / {weeklyGoal} Days</span>
-                <Pencil className="h-3 w-3 opacity-70" />
+                <span>🎯 {stats.weeklyCount} / {weeklyGoal} {t('common.days')}</span>
+                <Pencil className="h-3 w-3 opacity-70 shrink-0" />
               </button>
             </div>
 
             {/* Clean 1-Line Status Subtitle */}
-            <p className="text-xs font-medium text-slate-300 mt-1 mb-4 flex items-center gap-1.5">
+            <div className="text-xs font-medium text-slate-300 mt-1 mb-3.5 leading-relaxed">
               {flameState === 'lit' ? (
                 stats.isYesterdayFrozen ? (
                   <span className="text-cyan-300">🧊 Yesterday protected by Freeze · Streak extended today!</span>
@@ -484,17 +487,17 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
               ) : (
                 <span className="text-amber-300/90">⏳ Check in today to extend your streak to {stats.currentStreak + 1} days</span>
               )}
-            </p>
+            </div>
           </div>
 
           {/* Clean Streak Freeze Bar */}
           <div className="pt-3 border-t border-white/5 space-y-1.5">
-            <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-300 flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-cyan-400" />
-                <span>Streak Freezes: <strong className="text-cyan-400">{stats.freezesAvailable}/{MAX_FREEZES}</strong></span>
+            <div className="flex items-center justify-between text-xs font-semibold gap-2">
+              <span className="text-slate-300 flex items-center gap-1.5 min-w-0">
+                <Shield className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+                <span className="truncate">Streak Freezes: <strong className="text-cyan-400">{stats.freezesAvailable}/{MAX_FREEZES}</strong></span>
               </span>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-slate-400 shrink-0 whitespace-nowrap">
                 {stats.freezesAvailable >= MAX_FREEZES
                   ? 'Max full (5/5)'
                   : `+1 Freeze in ${5 - stats.freezeProgress} workouts`}
@@ -510,34 +513,37 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
         </section>
 
         {/* HERO CARD 2: Level & XP Progress */}
-        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-7 shadow-xl border border-white/5 border-l-4 border-l-purple-500 flex flex-col justify-between">
+        <section className="relative overflow-hidden rounded-2xl bg-[#131b2e] p-4 sm:p-6 shadow-xl border border-white/5 flex flex-col justify-between">
+          {/* Left accent indicator strip */}
+          <div className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 bg-gradient-to-b from-purple-400 to-purple-600" />
+
           <div>
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-0.5">
+            <div className="flex items-start justify-between gap-2.5 sm:gap-3 mb-3">
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-purple-400 mb-0.5">
                   {t('exercise.level', { level: levelInfo.level })}
                 </p>
-                <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                <h3 className="text-xl sm:text-3xl font-black text-white tracking-tight truncate">
                   {levelInfo.title}
                 </h3>
               </div>
 
-              <div className="text-right">
-                <span className="text-3xl font-black text-white tracking-tight">{xpTotal}</span>
-                <p className="text-xs font-bold text-slate-400">Total XP</p>
+              <div className="text-right shrink-0">
+                <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">{xpTotal}</span>
+                <p className="text-[11px] sm:text-xs font-bold text-slate-400">Total XP</p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-400 mt-1 mb-4">
+            <p className="text-xs text-slate-400 mt-1 mb-3.5">
               Best Streak: <strong className="text-slate-200">{stats.longestStreak} days</strong>
             </p>
           </div>
 
           {/* Clean Level Progress Bar */}
           <div className="pt-3 border-t border-white/5 space-y-1.5">
-            <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-300">Level Progress</span>
-              <span className="text-[11px] text-purple-300">{levelInfo.xpNeeded} XP to next rank</span>
+            <div className="flex items-center justify-between text-xs font-semibold gap-2">
+              <span className="text-slate-300 min-w-0 truncate">Level Progress</span>
+              <span className="text-[11px] text-purple-300 shrink-0 whitespace-nowrap">{levelInfo.xpNeeded} XP to next rank</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
               <div

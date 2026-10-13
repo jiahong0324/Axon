@@ -414,7 +414,7 @@ export default function TimetablePage() {
     const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(1, 14)
     setNewSemesterForm({
       archiveName: semesterName ? `${semesterName} (${t('timetable.archivedBadge')})` : `${t('timetable.previousSemester')} (${t('timetable.archivedBadge')})`,
-      newName: semesterName || '',
+      newName: '',
       newStartDate: startDateStr,
       newEndDate: endDateStr
     })
@@ -465,6 +465,12 @@ export default function TimetablePage() {
   async function handleStartNewSemester(e) {
     e?.preventDefault()
     if (!user) return
+
+    const nextName = newSemesterForm.newName.trim()
+    if (!nextName) {
+      return showToast(t('timetable.nameRequired'), 'error')
+    }
+
     setIsSubmitting(true)
 
     const freshProfiles = readLinkedProfiles(user.id)
@@ -500,7 +506,6 @@ export default function TimetablePage() {
     const remainingReplacements = replacements.filter(r => r.profile_id && r.profile_id !== 'account' && r.profile_id !== LIVE_PROFILE_ID)
 
     // 3. Set new semester name & dates
-    const nextName = newSemesterForm.newName.trim()
     const nextStartDate = newSemesterForm.newStartDate.trim()
     const nextEndDate = newSemesterForm.newEndDate.trim()
 
@@ -1098,6 +1103,7 @@ export default function TimetablePage() {
           <Field label={t('timetable.newSemesterNameLabel')}>
             <input
               className="input"
+              required
               placeholder="e.g. Year 1 Sem 2"
               value={newSemesterForm.newName}
               onChange={e => setNewSemesterForm(prev => ({ ...prev, newName: e.target.value }))}
@@ -1216,11 +1222,13 @@ export default function TimetablePage() {
 
           {/* Timetable Name Field */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
-              {t('timetable.timetableNameLabel')}
+            <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
+              <span>{t('timetable.timetableNameLabel')}</span>
+              <span className="text-rose-400">*</span>
             </label>
             <input
               type="text"
+              required
               className="input text-sm py-2 px-3.5"
               placeholder="e.g. Year 1 Sem 2"
               value={newSemesterForm.newName}
