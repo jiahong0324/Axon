@@ -1209,7 +1209,7 @@ export default function TimetablePage() {
         maxWidth="max-w-md"
       >
         {rolloverStep === 1 ? (
-          /* STEP 1: Archive Old Timetable */
+          /* STEP 1: Archive Previous Timetable */
           <form onSubmit={handleArchiveAndProceed} className="space-y-4 pt-1">
             {/* Friendly explanation */}
             <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.03] border border-white/5">
@@ -1221,7 +1221,7 @@ export default function TimetablePage() {
               </p>
             </div>
 
-            {/* Old Semester Timetable Name (Required) */}
+            {/* Previous Timetable Name (Required) */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
                 <span>{t('timetable.oldSemesterNameLabel')}</span>
