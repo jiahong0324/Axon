@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 
 /**
  * Converts ISO YYYY-MM-DD to DD/MM/YYYY display format.
@@ -324,35 +324,29 @@ export default function DateInput({
         </button>
 
         <div className="flex items-center gap-1.5">
-          <div className="relative">
-            <select
-              value={viewMonth}
-              onChange={(e) => setViewMonth(Number(e.target.value))}
-              className="appearance-none bg-slate-800/90 hover:bg-slate-700/80 text-slate-100 font-semibold text-xs py-1 pl-2.5 pr-6 rounded-lg border border-white/10 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
-            >
-              {MONTH_NAMES.map((mName, idx) => (
-                <option key={idx} value={idx} className="bg-slate-900 text-slate-100">
-                  {mName}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="h-3 w-3 text-slate-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+          <select
+            value={viewMonth}
+            onChange={(e) => setViewMonth(Number(e.target.value))}
+            className="bg-slate-800/90 hover:bg-slate-700/80 text-slate-100 font-semibold text-xs py-1 px-2 rounded-lg border border-white/10 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
+          >
+            {MONTH_NAMES.map((mName, idx) => (
+              <option key={idx} value={idx} className="bg-slate-900 text-slate-100">
+                {mName}
+              </option>
+            ))}
+          </select>
 
-          <div className="relative">
-            <select
-              value={viewYear}
-              onChange={(e) => setViewYear(Number(e.target.value))}
-              className="appearance-none bg-slate-800/90 hover:bg-slate-700/80 text-slate-100 font-semibold text-xs py-1 pl-2.5 pr-6 rounded-lg border border-white/10 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
-            >
-              {yearOptions.map((y) => (
-                <option key={y} value={y} className="bg-slate-900 text-slate-100">
-                  {y}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="h-3 w-3 text-slate-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+          <select
+            value={viewYear}
+            onChange={(e) => setViewYear(Number(e.target.value))}
+            className="bg-slate-800/90 hover:bg-slate-700/80 text-slate-100 font-semibold text-xs py-1 px-2 rounded-lg border border-white/10 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
+          >
+            {yearOptions.map((y) => (
+              <option key={y} value={y} className="bg-slate-900 text-slate-100">
+                {y}
+              </option>
+            ))}
+          </select>
         </div>
 
         <button
