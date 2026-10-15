@@ -96,22 +96,18 @@ const statusMessages = {
     'Identifying semester info...'
   ]
 }
-const colors = ['blue', 'green', 'purple', 'cyan', 'red', 'yellow']
-const colorClasses = {
-  blue: 'bg-blue-500',
-  green: 'bg-emerald-500',
-  purple: 'bg-purple-500',
-  cyan: 'bg-cyan-500',
-  red: 'bg-red-500',
-  yellow: 'bg-amber-500'
+const typeBorderClasses = {
+  L: 'border-l-blue-500',
+  T: 'border-l-emerald-500',
+  P: 'border-l-purple-500',
+  C: 'border-l-pink-500'
 }
-const colorBorderClasses = {
-  blue: 'border-l-blue-500',
-  green: 'border-l-emerald-500',
-  purple: 'border-l-purple-500',
-  cyan: 'border-l-cyan-500',
-  red: 'border-l-red-500',
-  yellow: 'border-l-amber-500'
+
+const typeBadgeClasses = {
+  L: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  T: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  P: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+  C: 'bg-pink-500/15 text-pink-400 border-pink-500/30'
 }
 
 export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
@@ -520,7 +516,7 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
                   : item.class_type === 'P'
                   ? 'bg-purple-500/15 text-purple-400 border-purple-500/30 hover:bg-purple-500/25'
                   : item.class_type === 'C'
-                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 hover:bg-amber-500/25'
+                  ? 'bg-pink-500/15 text-pink-400 border-pink-500/30 hover:bg-pink-500/25'
                   : 'bg-blue-500/15 text-blue-400 border-blue-500/30 hover:bg-blue-500/25'
               }`}
               title="Class type"
@@ -848,7 +844,7 @@ function ResultItemRow({ item, index, updateItem, onDelete }) {
 }
 
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
-function getColorFromType(classType) { return classType === 'T' ? 'green' : classType === 'P' ? 'purple' : classType === 'C' ? 'yellow' : 'blue' }
+function getColorFromType(classType) { return classType === 'T' ? 'green' : classType === 'P' ? 'purple' : classType === 'C' ? 'pink' : 'blue' }
 function normalizeItem(item, type, index) {
   const class_type = ['L', 'T', 'P', 'C'].includes(item.class_type) ? item.class_type : 'L'
   const base = {

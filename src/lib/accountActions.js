@@ -228,11 +228,11 @@ When user provides subject, day, and time:
     "classroom": "TBA",
     "lecturer": "TBA",
     "class_type": "C",
-    "color": "yellow"
+    "color": "pink"
   }
 }
 </axon_action>
-(day must be one of: 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'. class_type: 'L' for Lecture, 'T' for Tutorial, 'P' for Practical, or 'C' for general Class. Day and start_time are MANDATORY — if missing, ask user before adding. If user did NOT state whether it is a lecture/tutorial/practical, use 'C' ('Class') with color 'yellow' and NEVER default to 'L' / 'Lecture').
+(day must be one of: 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'. class_type: 'L' for Lecture, 'T' for Tutorial, 'P' for Practical, or 'C' for general Class. Day and start_time are MANDATORY — if missing, ask user before adding. If user did NOT state whether it is a lecture/tutorial/practical, use 'C' ('Class') with color 'pink' and NEVER default to 'L' / 'Lecture').
 
 8. Update Class:
 <axon_action>
@@ -672,7 +672,7 @@ export async function executeAccountAction(action, user) {
         const classroom = (data.classroom || '').trim() || 'TBA'
         const lecturer = (data.lecturer || '').trim() || 'TBA'
         const classType = normalizeClassType(data.class_type)
-        const color = data.color || (classType === 'L' ? 'blue' : classType === 'T' ? 'green' : classType === 'P' ? 'purple' : 'yellow')
+        const color = data.color || (classType === 'L' ? 'blue' : classType === 'T' ? 'green' : classType === 'P' ? 'purple' : 'pink')
         const isReplacement = Boolean(data.is_replacement || data.date)
         const date = data.date || ''
 

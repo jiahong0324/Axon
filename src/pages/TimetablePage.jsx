@@ -1349,7 +1349,7 @@ function Field({ label, children, className = '' }) {
 }
 
 function DesktopClassTile({ item, onDelete }) {
-  const border = item.class_type === 'T' ? 'border-l-emerald-500' : item.class_type === 'P' ? 'border-l-purple-500' : item.class_type === 'C' ? 'border-l-amber-500' : 'border-l-blue-500'
+  const border = item.class_type === 'T' ? 'border-l-emerald-500' : item.class_type === 'P' ? 'border-l-purple-500' : item.class_type === 'C' ? 'border-l-pink-500' : 'border-l-blue-500'
   return (
     <article className={`group relative rounded-xl border border-white/10 bg-[#192436] border-l-4 ${border} p-4 transition-colors hover:bg-[#202e45] shadow-sm`}>
       <button className="btn-danger absolute right-1 top-1 opacity-100 xl:opacity-0 xl:group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
@@ -1370,7 +1370,7 @@ function MobileClassTile({ item, onDelete }) {
     L: { border: 'border-l-blue-500', text: 'text-blue-400', badge: 'bg-blue-500/20 text-blue-400' },
     T: { border: 'border-l-emerald-500', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-400' },
     P: { border: 'border-l-purple-500', text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-400' },
-    C: { border: 'border-l-amber-500', text: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-400' },
+    C: { border: 'border-l-pink-500', text: 'text-pink-400', badge: 'bg-pink-500/20 text-pink-400' },
   }
   const colors = typeColors[item.class_type] || typeColors['C']
 
