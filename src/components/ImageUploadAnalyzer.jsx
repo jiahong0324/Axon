@@ -243,10 +243,10 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
   const label = type === 'exam' ? 'EXAMS' : type === 'assignment' ? 'ASSIGNMENTS' : type === 'result' ? 'COURSE RESULTS' : 'CLASS SESSIONS'
 
   return (
-    <div className={`flex flex-1 min-h-0 flex-col ${step !== 'results' ? 'max-w-md mx-auto w-full' : 'w-full'}`}>
+    <div className={`flex flex-1 min-h-0 flex-col ${step !== 'results' ? 'max-w-xl mx-auto w-full' : 'w-full'}`}>
       <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto pr-1">
         {step === 'upload' && (
-          <div className="flex flex-col items-center justify-center w-full py-1">
+          <div className="flex flex-col items-center justify-center w-full py-2">
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -254,23 +254,23 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
               onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
               onDragLeave={e => { e.preventDefault(); setIsDragging(false) }}
               onDrop={e => { e.preventDefault(); setIsDragging(false); pickFile(e.dataTransfer.files?.[0]) }}
-              className={`group flex w-full flex-col items-center justify-center rounded-2xl border border-dashed py-8 px-6 text-center transition-all duration-200 ${
+              className={`group flex w-full flex-col items-center justify-center rounded-2xl border border-dashed py-10 sm:py-12 px-6 sm:px-8 text-center transition-all duration-200 ${
                 isDragging
                   ? 'border-emerald-400 bg-emerald-500/15 shadow-lg shadow-emerald-500/10 scale-[1.01]'
                   : 'border-theme-500/30 bg-theme-500/5 hover:border-theme-500/50 hover:bg-theme-500/10'
               }`}
             >
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 group-hover:scale-105 transition-transform duration-200">
-                <Upload className="h-7 w-7" />
+              <div className="mb-4 sm:mb-5 flex h-16 w-16 sm:h-18 sm:w-18 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 group-hover:scale-105 transition-transform duration-200">
+                <Upload className="h-7 w-7 sm:h-8 sm:w-8" />
               </div>
 
-              <span className="text-xl font-bold tracking-tight text-white mb-2">Upload screenshot</span>
+              <span className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">Upload screenshot</span>
 
-              <span className="text-sm text-slate-400 max-w-[280px] leading-relaxed mb-6">
+              <span className="text-sm sm:text-base text-slate-400 max-w-[340px] leading-relaxed mb-6 sm:mb-7">
                 Take a screenshot of your {type === 'exam' ? 'exam dates' : type === 'assignment' ? 'assignments list' : type === 'result' ? 'exam results slip' : 'timetable'} and upload it here
               </span>
 
-              <span className="btn-import pointer-events-none px-6 py-2.5 text-sm sm:text-base font-semibold rounded-xl shadow-lg shadow-emerald-500/25">
+              <span className="btn-import pointer-events-none px-7 py-3 text-sm sm:text-base font-semibold rounded-xl shadow-lg shadow-emerald-500/25">
                 Browse Files
               </span>
             </button>

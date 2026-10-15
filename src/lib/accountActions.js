@@ -4,6 +4,56 @@ import { clearCache } from './cache.js'
 import { updatePreference } from './preferences.js'
 import { fetchExerciseData, logExerciseCheckIn, getTodayStr } from './exerciseUtils.js'
 
+export const COMMON_SE_COURSES = {
+  'BMCS1013': 'Problem Solving and Programming',
+  'BMIT1013': 'Computing Mathematics',
+  'BMCS2033': 'Object-Oriented Programming',
+  'BACS2063': 'Operating Systems',
+  'BMCS2123': 'Database Development and Applications',
+  'BMCS2113': 'Web Design and Development',
+  'BACS2163': 'Software Engineering',
+  'BACS2023': 'Data Structures and Algorithms',
+  'BACS3013': 'Computer Networks',
+  'BMCS3043': 'Mobile Application Development'
+}
+
+function normalizeDay(dayStr) {
+  if (!dayStr) return 'Monday'
+  const d = String(dayStr).trim().toLowerCase()
+  if (d.startsWith('mon')) return 'Monday'
+  if (d.startsWith('tue')) return 'Tuesday'
+  if (d.startsWith('wed')) return 'Wednesday'
+  if (d.startsWith('thu')) return 'Thursday'
+  if (d.startsWith('fri')) return 'Friday'
+  if (d.startsWith('sat')) return 'Saturday'
+  if (d.startsWith('sun')) return 'Sunday'
+  return 'Monday'
+}
+
+function normalizeTime(timeStr, defaultTime = '09:00') {
+  if (!timeStr) return defaultTime
+  let s = String(timeStr).trim().toLowerCase()
+  const isPm = s.includes('pm')
+  const isAm = s.includes('am')
+  s = s.replace(/am|pm/g, '').trim()
+  const parts = s.split(':')
+  let hour = parseInt(parts[0], 10)
+  let minute = parts.length > 1 ? parseInt(parts[1], 10) : 0
+  if (isNaN(hour)) return defaultTime
+  if (isNaN(minute)) minute = 0
+  if (isPm && hour < 12) hour += 12
+  if (isAm && hour === 12) hour = 0
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+}
+
+function normalizeClassType(typeStr) {
+  if (!typeStr) return 'L'
+  const t = String(typeStr).trim().toUpperCase()
+  if (t === 'P' || t.startsWith('PRAC') || t.startsWith('LAB')) return 'P'
+  if (t === 'T' || t.startsWith('TUT')) return 'T'
+  return 'L'
+}
+
 export const ACTION_SCHEMA_PROMPT = `
 === AUTONOMOUS ACCOUNT ACTIONS ENGINE ===
 You have FULL AUTONOMOUS AUTHORITY and DIRECT DATABASE ACCESS to modify, create, update, and manage the student's account records.
@@ -93,7 +143,8 @@ Supported Action Types & Data Format:
 }
 </axon_action>
 
-7. Add Class / Replacement Class:
+7. Add Class / Timetable Class (Weekly Schedule):
+When user asks to add a class, timetable entry, or replacement class (e.g. "Add to my timetable BMCS1013 on Monday 09:00-11:00", "I have lecture on Tuesday 10am", "Add class"):
 <axon_action>
 {
   "type": "add_class",
@@ -109,7 +160,7 @@ Supported Action Types & Data Format:
   }
 }
 </axon_action>
-(class_type: 'L' for Lecture, 'T' for Tutorial, 'P' for Practical).
+(day must be one of: 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'. class_type: 'L' for Lecture, 'T' for Tutorial, 'P' for Practical. If multiple classes are requested, output an <axon_action> block for each or a JSON array).
 
 8. Update Class:
 <axon_action>
@@ -216,7 +267,8 @@ Supported Action Types & Data Format:
 </axon_action>
 (keys include: 'aiLanguage', 'aiStyle', 'reminderLeadTime', 'firstDay', 'timeFormat', 'theme', 'accentColor').
 
-17. Add Academic Course Grade / Exam Result:
+17. Add Academic Course Grade / Exam Result (Exam Results & CGPA):
+When user asks to record an exam result, course grade, or semester GPA (e.g. "Add my result for BMCS1013 Grade A", "Record my grade A for BMCS1013", "My result is BMCS1013 A (3 credits)", "Record result for semester 1"):
 <axon_action>
 {
   "type": "add_exam_result",
@@ -229,6 +281,7 @@ Supported Action Types & Data Format:
   }
 }
 </axon_action>
+(grade: 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'F'. credit_hours: defaults to 3. If semester_name is not specified, use the student's active semester or "Year 1 Semester 1").
 
 18. Delete Course Result:
 <axon_action>
@@ -489,32 +542,97 @@ export async function executeAccountAction(action, user) {
 
       // 7. ADD CLASS / REPLACEMENT CLASS
       case 'add_class': {
-        const payload = {
-          user_id: currentUser.id,
-          subject: (data.subject || 'Class').trim(),
-          day: (data.day || 'Monday').trim(),
-          start_time: data.start_time || '09:00',
-          end_time: data.end_time || '10:00',
-          classroom: data.classroom || 'TBA',
-          lecturer: data.lecturer || 'TBA',
-          class_type: data.class_type || 'L',
-          color: data.color || 'blue',
-          is_replacement: Boolean(data.is_replacement),
-          date: data.date || ''
+        const subject = (data.subject || 'Class').trim()
+        const day = normalizeDay(data.day)
+        const startTime = normalizeTime(data.start_time, '09:00')
+        const endTime = normalizeTime(data.end_time, '10:00')
+        const classroom = (data.classroom || 'TBA').trim()
+        const lecturer = (data.lecturer || 'TBA').trim()
+        const classType = normalizeClassType(data.class_type)
+        const color = data.color || (classType === 'L' ? 'blue' : classType === 'T' ? 'green' : 'purple')
+        const isReplacement = Boolean(data.is_replacement || data.date)
+        const date = data.date || ''
+
+        const savedActive = (typeof window !== 'undefined' && localStorage.getItem(`axon_active_timetable_${currentUser.id}`)) || 'account'
+
+        if (savedActive !== 'account') {
+          // Add to active linked profile
+          try {
+            const raw = localStorage.getItem(`axon_linked_timetables_${currentUser.id}`) || '[]'
+            const profiles = JSON.parse(raw)
+            const activeProfile = profiles.find(p => p.id === savedActive)
+            if (activeProfile) {
+              const newClass = {
+                id: `local-${Date.now()}`,
+                subject,
+                day,
+                start_time: startTime,
+                end_time: endTime,
+                classroom,
+                lecturer,
+                class_type: classType,
+                color,
+                profile_id: savedActive
+              }
+              activeProfile.classes = [...(activeProfile.classes || []), newClass]
+              localStorage.setItem(`axon_linked_timetables_${currentUser.id}`, JSON.stringify(profiles))
+              await supabase.auth.updateUser({ data: { linked_timetables: profiles } }).catch(() => {})
+            }
+          } catch (e) {
+            console.error('Error adding to linked timetable profile:', e)
+          }
+        } else if (isReplacement) {
+          // Add to replacement_classes in user_metadata
+          const { data: authData } = await supabase.auth.getUser()
+          const activeUser = authData?.user || currentUser
+          const replacements = activeUser.user_metadata?.replacement_classes || []
+          const newRep = {
+            id: `rep-${Date.now()}`,
+            subject,
+            day,
+            start_time: startTime,
+            end_time: endTime,
+            classroom,
+            lecturer,
+            class_type: classType,
+            color,
+            is_replacement: true,
+            date: date || getTodayStr(),
+            profile_id: 'account'
+          }
+          await supabase.auth.updateUser({
+            data: { replacement_classes: [...replacements, newRep] }
+          })
+        } else {
+          // Insert into SQL classes table (ONLY valid columns: subject, day, start_time, end_time, classroom, lecturer, class_type, color, user_id)
+          const dbRow = {
+            user_id: currentUser.id,
+            subject,
+            day,
+            start_time: startTime,
+            end_time: endTime,
+            classroom,
+            lecturer,
+            class_type: classType,
+            color
+          }
+
+          const { error } = await supabase.from('classes').insert(dbRow)
+          if (error) {
+            console.error('Supabase classes insert error:', error)
+            throw error
+          }
         }
 
-        const { error } = await supabase.from('classes').insert(payload)
-        if (error) throw error
-
         clearCache(`axon_classes_${currentUser.id}`)
-        await logActivity('Added class', 'class', payload.subject, currentUser.id)
+        await logActivity('Added class', 'class', subject, currentUser.id)
         window.dispatchEvent(new CustomEvent('axon_classes_updated'))
 
         return {
           success: true,
           type,
-          data: payload,
-          message: `Added class "${payload.subject}" on ${payload.day}`
+          data: { subject, day, start_time: startTime, end_time: endTime, classroom, lecturer, class_type: classType },
+          message: `Added class "${subject}" on ${day} (${startTime} - ${endTime})`
         }
       }
 
@@ -522,12 +640,12 @@ export async function executeAccountAction(action, user) {
       case 'update_class': {
         const updates = {}
         if (data.subject) updates.subject = data.subject.trim()
-        if (data.day) updates.day = data.day.trim()
-        if (data.start_time) updates.start_time = data.start_time
-        if (data.end_time) updates.end_time = data.end_time
+        if (data.day) updates.day = normalizeDay(data.day)
+        if (data.start_time) updates.start_time = normalizeTime(data.start_time)
+        if (data.end_time) updates.end_time = normalizeTime(data.end_time)
         if (data.classroom) updates.classroom = data.classroom.trim()
         if (data.lecturer) updates.lecturer = data.lecturer.trim()
-        if (data.class_type) updates.class_type = data.class_type
+        if (data.class_type) updates.class_type = normalizeClassType(data.class_type)
         if (data.color) updates.color = data.color
 
         let query = supabase.from('classes').update(updates).eq('user_id', currentUser.id)
@@ -535,7 +653,7 @@ export async function executeAccountAction(action, user) {
           query = query.eq('id', data.id)
         } else if (data.subject) {
           query = query.ilike('subject', `%${data.subject.trim()}%`)
-          if (data.day) query = query.eq('day', data.day.trim())
+          if (data.day) query = query.eq('day', normalizeDay(data.day))
         }
 
         const { error } = await query
@@ -550,16 +668,32 @@ export async function executeAccountAction(action, user) {
 
       // 9. DELETE CLASS
       case 'delete_class': {
+        const cleanDay = data.day ? normalizeDay(data.day) : null
         let query = supabase.from('classes').delete().eq('user_id', currentUser.id)
         if (data.id) {
           query = query.eq('id', data.id)
         } else if (data.subject) {
           query = query.ilike('subject', `%${data.subject.trim()}%`)
-          if (data.day) query = query.eq('day', data.day.trim())
+          if (cleanDay) query = query.eq('day', cleanDay)
         }
 
         const { error } = await query
         if (error) throw error
+
+        // Also remove from replacement_classes if any
+        if (currentUser.user_metadata?.replacement_classes) {
+          const reps = currentUser.user_metadata.replacement_classes.filter(r => {
+            if (data.id && r.id === data.id) return false
+            if (data.subject && r.subject?.toLowerCase().includes(data.subject.toLowerCase())) {
+              if (cleanDay && r.day !== cleanDay) return true
+              return false
+            }
+            return true
+          })
+          if (reps.length !== currentUser.user_metadata.replacement_classes.length) {
+            await supabase.auth.updateUser({ data: { replacement_classes: reps } }).catch(() => {})
+          }
+        }
 
         clearCache(`axon_classes_${currentUser.id}`)
         await logActivity('Deleted class', 'class', data.subject || 'Class', currentUser.id)
@@ -720,61 +854,148 @@ export async function executeAccountAction(action, user) {
 
       // 17. ADD EXAM RESULT / COURSE GRADE
       case 'add_exam_result': {
-        const semesterName = (data.semester_name || 'Year 1 Semester 1').trim()
-        const courseCode = (data.course_code || '').trim()
-        const courseName = (data.course_name || 'Course').trim()
+        const rawCode = (data.course_code || '').trim().toUpperCase()
+        const courseName = (data.course_name || COMMON_SE_COURSES[rawCode] || rawCode || 'Course').trim()
+        const courseCode = rawCode || (Object.keys(COMMON_SE_COURSES).find(k => COMMON_SE_COURSES[k].toLowerCase() === courseName.toLowerCase()) || '')
         const creditHours = Number(data.credit_hours) || 3
         const grade = (data.grade || 'A').trim().toUpperCase()
+        const targetSemName = (data.semester_name || '').trim()
 
-        // 1. Get or create student_semesters row
-        let semesterId = null
-        const { data: existingSem } = await supabase
-          .from('student_semesters')
-          .select('id')
-          .eq('user_id', currentUser.id)
-          .eq('name', semesterName)
-          .maybeSingle()
+        // 1. Load existing semesters from localStorage / user_metadata / SQL
+        let semesters = []
+        try {
+          const cached = typeof window !== 'undefined' ? localStorage.getItem('axon_exam_results_semesters') : null
+          if (cached) semesters = JSON.parse(cached)
+        } catch (e) {}
 
-        if (existingSem?.id) {
-          semesterId = existingSem.id
-        } else {
-          const { data: newSem, error: semErr } = await supabase
-            .from('student_semesters')
-            .insert({ user_id: currentUser.id, name: semesterName })
-            .select('id')
-            .maybeSingle()
-
-          if (semErr) throw semErr
-          semesterId = newSem?.id
+        if (!Array.isArray(semesters) || semesters.length === 0) {
+          if (Array.isArray(currentUser.user_metadata?.axon_exam_results_semesters)) {
+            semesters = [...currentUser.user_metadata.axon_exam_results_semesters]
+          }
         }
 
-        if (!semesterId) throw new Error('Could not establish semester record')
+        if (!Array.isArray(semesters) || semesters.length === 0) {
+          const { data: semsData } = await supabase.from('student_semesters').select('*').eq('user_id', currentUser.id).order('created_at')
+          const { data: coursesData } = await supabase.from('student_semester_courses').select('*').eq('user_id', currentUser.id)
+          if (semsData && semsData.length > 0) {
+            semesters = semsData.map(s => ({
+              ...s,
+              is_submitted: true,
+              courses: (coursesData || []).filter(c => c.semester_id === s.id)
+            }))
+          }
+        }
 
-        // 2. Check if course already recorded
-        const { data: existingCourse } = await supabase
-          .from('student_semester_courses')
-          .select('id')
-          .eq('semester_id', semesterId)
-          .eq('user_id', currentUser.id)
-          .or(`course_code.eq.${courseCode},course_name.eq.${courseName}`)
-          .maybeSingle()
+        if (!Array.isArray(semesters) || semesters.length === 0) {
+          semesters = [{
+            id: `sem-${Date.now()}`,
+            name: targetSemName || 'Year 1 Semester 1',
+            is_submitted: true,
+            courses: []
+          }]
+        }
 
-        if (existingCourse?.id) {
-          await supabase
-            .from('student_semester_courses')
-            .update({ course_code: courseCode, course_name: courseName, credit_hours: creditHours, grade })
-            .eq('id', existingCourse.id)
+        // 2. Locate or create target semester
+        let sem = null
+        if (targetSemName) {
+          sem = semesters.find(s => s.name?.toLowerCase().includes(targetSemName.toLowerCase()))
+          if (!sem) {
+            sem = {
+              id: `sem-${Date.now()}`,
+              name: targetSemName,
+              is_submitted: true,
+              courses: []
+            }
+            semesters.push(sem)
+          }
         } else {
-          await supabase
-            .from('student_semester_courses')
-            .insert({
-              semester_id: semesterId,
-              user_id: currentUser.id,
+          // Default to latest semester
+          sem = semesters[semesters.length - 1] || semesters[0]
+        }
+
+        if (!Array.isArray(sem.courses)) sem.courses = []
+
+        // 3. Find or add course
+        let existingCourse = sem.courses.find(c =>
+          (courseCode && c.course_code?.toUpperCase() === courseCode) ||
+          (courseName && c.course_name?.toLowerCase() === courseName.toLowerCase())
+        )
+
+        if (existingCourse) {
+          existingCourse.course_code = courseCode || existingCourse.course_code
+          existingCourse.course_name = courseName || existingCourse.course_name
+          existingCourse.credit_hours = creditHours
+          existingCourse.grade = grade
+        } else {
+          // Check for empty placeholder row
+          const emptySlot = sem.courses.find(c => (!c.grade || c.grade === '') && (!c.course_name || c.course_name === '') && (!c.course_code || c.course_code === ''))
+          if (emptySlot) {
+            emptySlot.course_code = courseCode
+            emptySlot.course_name = courseName
+            emptySlot.credit_hours = creditHours
+            emptySlot.grade = grade
+          } else {
+            sem.courses.push({
+              id: `course-${Date.now()}`,
+              semester_id: sem.id,
               course_code: courseCode,
               course_name: courseName,
               credit_hours: creditHours,
               grade
             })
+          }
+        }
+
+        sem.is_submitted = true
+
+        // 4. Save to localStorage and user_metadata
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('axon_exam_results_semesters', JSON.stringify(semesters))
+        }
+        await supabase.auth.updateUser({
+          data: { axon_exam_results_semesters: semesters }
+        }).catch(() => {})
+
+        // 5. Also upsert to SQL tables student_semesters and student_semester_courses
+        try {
+          let sqlSemId = null
+          const { data: dbSem } = await supabase.from('student_semesters').select('id').eq('user_id', currentUser.id).eq('name', sem.name).maybeSingle()
+          if (dbSem?.id) {
+            sqlSemId = dbSem.id
+          } else {
+            const { data: newDbSem } = await supabase.from('student_semesters').insert({ user_id: currentUser.id, name: sem.name }).select('id').maybeSingle()
+            sqlSemId = newDbSem?.id
+          }
+
+          if (sqlSemId) {
+            let courseQuery = supabase.from('student_semester_courses').select('id').eq('semester_id', sqlSemId).eq('user_id', currentUser.id)
+            if (courseCode) {
+              courseQuery = courseQuery.eq('course_code', courseCode)
+            } else {
+              courseQuery = courseQuery.eq('course_name', courseName)
+            }
+            const { data: dbCourse } = await courseQuery.maybeSingle()
+
+            if (dbCourse?.id) {
+              await supabase.from('student_semester_courses').update({
+                course_code: courseCode,
+                course_name: courseName,
+                credit_hours: creditHours,
+                grade
+              }).eq('id', dbCourse.id)
+            } else {
+              await supabase.from('student_semester_courses').insert({
+                semester_id: sqlSemId,
+                user_id: currentUser.id,
+                course_code: courseCode,
+                course_name: courseName,
+                credit_hours: creditHours,
+                grade
+              })
+            }
+          }
+        } catch (dbErr) {
+          console.warn('SQL exam results sync warning:', dbErr)
         }
 
         await logActivity('Recorded course grade', 'exam_result', `${courseCode || courseName} (${grade})`, currentUser.id)
@@ -783,24 +1004,53 @@ export async function executeAccountAction(action, user) {
         return {
           success: true,
           type,
-          message: `Recorded grade ${grade} for ${courseCode || courseName}`
+          data: { semester_name: sem.name, course_code: courseCode, course_name: courseName, credit_hours: creditHours, grade },
+          message: `Recorded grade ${grade} for ${courseCode || courseName} in ${sem.name}`
         }
       }
 
       // 18. DELETE EXAM RESULT
       case 'delete_exam_result': {
-        const courseCode = (data.course_code || '').trim()
-        const courseName = (data.course_name || '').trim()
+        const courseCode = (data.course_code || '').trim().toUpperCase()
+        const courseName = (data.course_name || '').trim().toLowerCase()
 
-        let query = supabase.from('student_semester_courses').delete().eq('user_id', currentUser.id)
-        if (courseCode) {
-          query = query.ilike('course_code', `%${courseCode}%`)
-        } else if (courseName) {
-          query = query.ilike('course_name', `%${courseName}%`)
+        let semesters = []
+        try {
+          const cached = typeof window !== 'undefined' ? localStorage.getItem('axon_exam_results_semesters') : null
+          if (cached) semesters = JSON.parse(cached)
+        } catch (e) {}
+
+        if (!Array.isArray(semesters) || semesters.length === 0) {
+          if (Array.isArray(currentUser.user_metadata?.axon_exam_results_semesters)) {
+            semesters = [...currentUser.user_metadata.axon_exam_results_semesters]
+          }
         }
 
-        const { error } = await query
-        if (error) throw error
+        if (Array.isArray(semesters)) {
+          semesters.forEach(s => {
+            if (Array.isArray(s.courses)) {
+              s.courses = s.courses.filter(c => {
+                if (courseCode && c.course_code?.toUpperCase() === courseCode) return false
+                if (courseName && c.course_name?.toLowerCase() === courseName) return false
+                return true
+              })
+            }
+          })
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('axon_exam_results_semesters', JSON.stringify(semesters))
+          }
+          await supabase.auth.updateUser({ data: { axon_exam_results_semesters: semesters } }).catch(() => {})
+        }
+
+        try {
+          let query = supabase.from('student_semester_courses').delete().eq('user_id', currentUser.id)
+          if (courseCode) {
+            query = query.ilike('course_code', `%${courseCode}%`)
+          } else if (courseName) {
+            query = query.ilike('course_name', `%${courseName}%`)
+          }
+          await query
+        } catch (err) {}
 
         await logActivity('Deleted course grade', 'exam_result', courseCode || courseName, currentUser.id)
         window.dispatchEvent(new CustomEvent('axon_exam_results_updated'))

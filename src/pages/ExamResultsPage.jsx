@@ -1456,7 +1456,7 @@ export default function ExamResultsPage() {
         isOpen={analyzerOpen}
         onClose={() => { setAnalyzerOpen(false); setAnalyzerStep('upload') }}
         title="AI Import Exam Results Slip"
-        maxWidth={analyzerStep === 'results' ? 'max-w-3xl' : 'max-w-md'}
+        maxWidth={analyzerStep === 'results' ? 'max-w-3xl' : 'max-w-xl'}
       >
         <ImageUploadAnalyzer
           type="result"

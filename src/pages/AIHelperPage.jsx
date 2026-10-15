@@ -427,8 +427,13 @@ export default function AIHelperPage({ role = 'student' }) {
       const actionResults = await parseAndExecuteActions(answer, currentUser)
       if (actionResults && actionResults.length > 0) {
         const successes = actionResults.filter(r => r.success)
+        const failures = actionResults.filter(r => !r.success)
+        if (failures.length > 0) {
+          console.error('Account action execution errors:', failures)
+          showToast(`Action note: ${failures[0].error || 'Could not complete action'}`, 'error')
+        }
         if (successes.length > 0) {
-          showToast(successes[0].message || 'Updated your account schedule', 'success')
+          showToast(successes.length === 1 ? successes[0].message : `Successfully recorded ${successes.length} items to your account!`, 'success')
         }
       }
 
