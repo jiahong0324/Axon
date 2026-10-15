@@ -1,4 +1,9 @@
-import { ArrowLeft, Award, Bot, Calendar, Copy, Download, Dumbbell, Flame, Image, Layers, MessageSquareText, Pencil, Search, Shield, Trophy } from 'lucide-react'
+import {
+  ArrowLeft, Award, Bell, Bot, Calendar, Check, CheckCircle2, Clock, Copy,
+  Download, Dumbbell, Flame, Globe, Image, Info, Layers, MessageSquareText,
+  Moon, Palette, Pencil, Search, Settings, Shield, Sliders, Smartphone,
+  Sparkles, Sun, Trophy, User, XCircle
+} from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { Link, useParams } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -15,8 +20,9 @@ import { dateLabel, days, daysFromToday, formatTime, initials, markdownToHtml } 
 import { calculateOverallCGPA, calculateSemesterGPA, getAcademicStanding, getGradeBadgeStyle } from '../../lib/tarumtGrading'
 import { ACTIVITY_ICONS, calculateStreakAndStats, fetchExerciseData, getLevelInfo, getTodayStr } from '../../lib/exerciseUtils'
 import { fetchFullStudentDetail } from '../../lib/manageStudent'
+import { isInternalSync, formatActionLabel, formatEntityLabel } from './ManagerActivityPage'
 
-const tabs = ['Timetable', 'Assignments', 'Exams & Results', 'Exercise', 'Activity', 'AI Chats']
+const tabs = ['Timetable', 'Assignments', 'Exams & Results', 'Reminders', 'Exercise', 'Activity', 'AI Chats', 'Settings']
 const resultInitial = { score: '', grade: 'A', remarks: '' }
 
 export default function ManagerStudentDetail() {
@@ -29,6 +35,11 @@ export default function ManagerStudentDetail() {
   const [exams, setExams] = useState([])
   const [results, setResults] = useState([])
   const [semesters, setSemesters] = useState([])
+  const [reminders, setReminders] = useState([])
+  const [studentPreferences, setStudentPreferences] = useState({})
+  const [semesterSettings, setSemesterSettings] = useState({ name: '', startDate: '', endDate: '' })
+  const [accountInfo, setAccountInfo] = useState(null)
+  const [metadata, setMetadata] = useState({})
   const [activity, setActivity] = useState([])
   const [initialChats, setInitialChats] = useState([])
   const [activeTab, setActiveTab] = useState('Timetable')
@@ -41,7 +52,18 @@ export default function ManagerStudentDetail() {
 
   async function loadDetail() {
     try {
-      const [studentRes, classesRes, assignmentsRes, examsRes, resultsRes, activityRes, semsRes, coursesRes, fullDetail] = await Promise.all([
+      const [
+        studentRes,
+        classesRes,
+        assignmentsRes,
+        examsRes,
+        resultsRes,
+        activityRes,
+        semsRes,
+        coursesRes,
+        remindersRes,
+        fullDetail
+      ] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', studentId).single(),
         supabase.from('classes').select('*').eq('user_id', studentId),
         supabase.from('assignments').select('*').eq('user_id', studentId).order('deadline'),
@@ -50,6 +72,7 @@ export default function ManagerStudentDetail() {
         supabase.from('activity_log').select('*').eq('user_id', studentId).order('created_at', { ascending: false }),
         supabase.from('student_semesters').select('*').eq('user_id', studentId).order('created_at'),
         supabase.from('student_semester_courses').select('*').eq('user_id', studentId).order('created_at'),
+        supabase.from('reminders').select('*').eq('user_id', studentId).order('reminder_time'),
         fetchFullStudentDetail(studentId).catch(() => null)
       ])
 
@@ -138,6 +161,26 @@ export default function ManagerStudentDetail() {
 
       setSemesters(sems)
 
+      // Reminders
+      const loadedReminders = (remindersRes.data && remindersRes.data.length > 0)
+        ? remindersRes.data
+        : (fullDetail?.reminders || [])
+      setReminders(loadedReminders)
+
+      // Settings & Preferences
+      const rawPrefs = fullDetail?.preferences || fullDetail?.metadata?.preferences || {}
+      setStudentPreferences(rawPrefs)
+
+      const semSettings = fullDetail?.semesterSettings || {
+        name: fullDetail?.metadata?.semester_name || rawPrefs.axon_semester_name || '',
+        startDate: fullDetail?.metadata?.semester_start_date || rawPrefs.axon_semester_start_date || '',
+        endDate: fullDetail?.metadata?.semester_end_date || rawPrefs.axon_semester_end_date || ''
+      }
+      setSemesterSettings(semSettings)
+
+      setAccountInfo(fullDetail?.accountInfo || null)
+      setMetadata(fullDetail?.metadata || {})
+
       // Chats
       if (fullDetail?.chats && fullDetail.chats.length > 0) {
         setInitialChats(fullDetail.chats)
@@ -220,7 +263,7 @@ export default function ManagerStudentDetail() {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <button className="btn-ghost" onClick={() => setEditing(true)}><Pencil className="h-4 w-4" /> Edit Student</button>
-            <button className="manager-primary-btn" onClick={() => downloadStudentReport({ student, classes, assignments, exams, examResults: results, semesters })}><Download className="h-4 w-4" /> Export PDF Report</button>
+            <button className="manager-primary-btn" onClick={() => downloadStudentReport({ student, classes, assignments, exams, examResults: results, semesters, reminders })}><Download className="h-4 w-4" /> Export PDF Report</button>
           </div>
         </div>
       </header>
@@ -245,6 +288,7 @@ export default function ManagerStudentDetail() {
           semesters={semesters}
         />
       )}
+      {activeTab === 'Reminders' && <RemindersTab reminders={reminders} />}
       {activeTab === 'Exercise' && <ExerciseManagerTab studentId={studentId} />}
       {activeTab === 'Activity' && <ActivityTab activity={activity} />}
       {activeTab === 'AI Chats' && (
@@ -252,6 +296,15 @@ export default function ManagerStudentDetail() {
           studentId={studentId}
           student={student}
           initialChats={initialChats}
+        />
+      )}
+      {activeTab === 'Settings' && (
+        <StudentSettingsTab
+          student={student}
+          preferences={studentPreferences}
+          semesterSettings={semesterSettings}
+          accountInfo={accountInfo}
+          metadata={metadata}
         />
       )}
 
@@ -570,7 +623,34 @@ function ExamsTab({ exams = [], resultByExam, openResult, semesters = [] }) {
 }
 
 function ActivityTab({ activity }) {
-  return <section className="card"><div className="space-y-3">{activity.length === 0 ? <p className="muted">No activity yet.</p> : activity.map(item => <article key={item.id} className="flex gap-3 rounded-xl border border-white/10 p-3"><span className="mt-2 h-2 w-2 rounded-full bg-amber-400" /><div><p className="text-sm">{item.action} {item.entity_name && <span className="text-slate-300">"{item.entity_name}"</span>}</p><p className="text-xs text-slate-500">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p></div></article>)}</div></section>
+  const visible = (activity || []).filter(item => !isInternalSync(item))
+
+  return (
+    <section className="card">
+      <div className="space-y-3">
+        {visible.length === 0 ? (
+          <p className="muted py-4 text-center">No student activity records found.</p>
+        ) : (
+          visible.map(item => {
+            const actionLabel = formatActionLabel(item.action)
+            const entityLabel = formatEntityLabel(item.entity_name)
+            return (
+              <article key={item.id} className="flex gap-3 rounded-xl border border-white/10 p-3">
+                <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm">
+                    <span className="text-slate-200">{actionLabel}</span>{' '}
+                    {entityLabel && <span className="font-medium text-amber-300">"{entityLabel}"</span>}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
+                </div>
+              </article>
+            )
+          })
+        )}
+      </div>
+    </section>
+  )
 }
 
 function ExerciseManagerTab({ studentId }) {

@@ -8,6 +8,7 @@ import { useToast } from '../../components/Toast'
 import { supabase } from '../../lib/supabase'
 import { initials } from '../../lib/utils'
 import { studentManager } from '../../lib/manageStudent'
+import { isInternalSync, formatActionLabel, formatEntityLabel } from './ManagerActivityPage'
 
 const announcementInitial = { title: '', message: '', type: 'info', expires_at: '' }
 
@@ -47,10 +48,13 @@ export default function ManagerDashboard() {
       exams: examsRes.data?.length || 0,
       announcements: (announcementsRes.data || []).filter(a => !a.expires_at || new Date(a.expires_at) > new Date()).length
     })
-    setActivity((activityRes.data || []).map(item => ({
-      ...item,
-      profile: studentProfiles.find(p => p.id === item.user_id)
-    })))
+    setActivity((activityRes.data || [])
+      .filter(item => !isInternalSync(item))
+      .map(item => ({
+        ...item,
+        profile: studentProfiles.find(p => p.id === item.user_id)
+      }))
+    )
     window.hidePrerenderSplash?.()
   }
 
@@ -154,14 +158,21 @@ function QuickLink({ to, icon: Icon, label }) {
 
 function ActivityItem({ item }) {
   const profile = item.profile || {}
-  const color = item.entity_type === 'class' ? 'bg-theme-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : 'bg-emerald-400'
+  const color = item.entity_type === 'class' ? 'bg-theme-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : item.entity_type === 'exercise' ? 'bg-orange-400' : 'bg-emerald-400'
+  const actionLabel = formatActionLabel(item.action)
+  const entityLabel = formatEntityLabel(item.entity_name)
+
   return (
     <article className="flex items-start gap-3 rounded-xl border border-white/10 p-3">
       <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${color}`} />
       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold text-white" style={{ background: profile.avatar_color || '#F59E0B' }}>{initials(profile.full_name || profile.email || 'S')}</div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm"><span className="font-semibold">{profile.full_name || profile.email || 'Student'}</span> {item.action} {item.entity_name && <span className="text-slate-300">"{item.entity_name}"</span>}</p>
-        <p className="text-xs text-slate-500">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
+        <p className="text-sm">
+          <span className="font-semibold text-white">{profile.full_name || profile.email || 'Student'}</span>{' '}
+          <span className="text-slate-300">{actionLabel}</span>{' '}
+          {entityLabel && <span className="font-medium text-amber-300">"{entityLabel}"</span>}
+        </p>
+        <p className="text-xs text-slate-500 mt-0.5">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
       </div>
     </article>
   )

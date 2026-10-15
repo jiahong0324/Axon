@@ -188,19 +188,7 @@ export default function ExamResultsPage() {
         data: { axon_exam_results_semesters: localList }
       })
 
-      // 2. Also log to activity_log so managers and PDF reports can read directly from public schema without service_role key
-      try {
-        await supabase.from('activity_log').insert({
-          user_id: user.id,
-          action: 'SYNC_EXAM_RESULTS',
-          entity_type: 'axon_exam_results_semesters',
-          entity_name: JSON.stringify(localList)
-        })
-      } catch (err) {
-        console.warn('activity_log semesters sync error:', err)
-      }
-
-      // 3. Also sync to SQL tables if they exist
+      // 2. Also sync to SQL tables if they exist
       let hasIdChanges = false
       const updatedList = []
       for (const sem of localList) {
@@ -404,14 +392,6 @@ export default function ExamResultsPage() {
     localStorage.setItem('axon_exam_results_semesters', JSON.stringify(merged))
     if (user?.id) {
       localStorage.setItem(`axon_exam_results_semesters_${user.id}`, JSON.stringify(merged))
-      if (merged.some(s => (s.courses || []).some(c => c.course_name?.trim() || c.grade))) {
-        supabase.from('activity_log').insert({
-          user_id: user.id,
-          action: 'SYNC_EXAM_RESULTS',
-          entity_type: 'axon_exam_results_semesters',
-          entity_name: JSON.stringify(merged)
-        }).then(() => {}).catch(() => {})
-      }
     }
     setLoading(false)
   }
