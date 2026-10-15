@@ -8,7 +8,7 @@ export default function TermsPage() {
         title="Terms and Conditions | Axon"
         description="Terms and conditions for using the Axon student productivity platform."
       />
-      <main className="h-screen overflow-y-auto bg-[radial-gradient(circle_at_top,#E0E7FF,#EEF4FB_55%)] text-slate-900 dark:bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] dark:text-white px-4 py-10 transition-colors duration-300">
+      <main className="h-screen h-[100dvh] overflow-y-auto overscroll-contain bg-[radial-gradient(circle_at_top,#E0E7FF,#EEF4FB_55%)] text-slate-900 dark:bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] dark:text-white px-4 py-10 transition-colors duration-300" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="mx-auto max-w-3xl glass rounded-2xl p-8 shadow-2xl mb-10">
           <div className="mb-8 flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-4">
             <h1 className="text-2xl font-bold">Terms and Conditions</h1>

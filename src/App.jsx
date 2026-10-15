@@ -77,8 +77,6 @@ export default function App() {
                 <Route path="faq" element={<LandingFAQ />} />
                 <Route path="contact" element={<LandingContact />} />
                 <Route path="helo" element={<LandingHelo />} />
-                <Route path="terms" element={<TermsPage />} />
-                <Route path="privacy" element={<PrivacyPage />} />
               </Route>
               <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
               <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />

@@ -10,7 +10,7 @@ export default function PrivacyPage() {
         description="Learn how Axon protects your academic records, encrypts your data, and safeguards student privacy."
         keywords="Axon privacy policy, student data security, FERPA compliance, education privacy, encrypted student dashboard"
       />
-      <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_top,#E0E7FF,#EEF4FB_55%)] text-slate-900 dark:bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] dark:text-white px-4 py-10 transition-colors duration-300">
+      <main className="h-screen h-[100dvh] overflow-y-auto overscroll-contain bg-[radial-gradient(circle_at_top,#E0E7FF,#EEF4FB_55%)] text-slate-900 dark:bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] dark:text-white px-4 py-10 transition-colors duration-300" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="mx-auto max-w-4xl glass rounded-3xl p-6 sm:p-10 shadow-2xl mb-12">
           {/* Header */}
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-6">
