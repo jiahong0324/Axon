@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 
 /**
  * Converts ISO YYYY-MM-DD to DD/MM/YYYY display format.
@@ -122,6 +122,7 @@ export default function DateInput({
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear())
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth())
   const [coords, setCoords] = useState(null)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
 
   const containerRef = useRef(null)
   const popoverRef = useRef(null)
@@ -129,6 +130,14 @@ export default function DateInput({
   useEffect(() => {
     setDisplayText(formatIsoToDisplay(value))
   }, [value])
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640)
+    }
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const notifyChange = (isoValue) => {
     if (typeof onChange === 'function') {
@@ -301,6 +310,142 @@ export default function DateInput({
   const today = new Date()
   const todayIso = formatIso(today.getFullYear(), today.getMonth(), today.getDate())
 
+  const calendarContent = (
+    <div className="w-[280px] text-slate-100 select-none">
+      {/* Header: Month/Year navigation */}
+      <div className="flex items-center justify-between gap-1 mb-2.5">
+        <button
+          type="button"
+          onClick={handlePrevMonth}
+          className="!min-h-0 !min-w-0 h-7 w-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+          title="Previous month"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+
+        <div className="flex items-center gap-1.5">
+          <div className="relative">
+            <select
+              value={viewMonth}
+              onChange={(e) => setViewMonth(Number(e.target.value))}
+              className="appearance-none bg-slate-800/90 hover:bg-slate-700/80 text-slate-100 font-semibold text-xs py-1 pl-2.5 pr-6 rounded-lg border border-white/10 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
+            >
+              {MONTH_NAMES.map((mName, idx) => (
+                <option key={idx} value={idx} className="bg-slate-900 text-slate-100">
+                  {mName}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="h-3 w-3 text-slate-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          <div className="relative">
+            <select
+              value={viewYear}
+              onChange={(e) => setViewYear(Number(e.target.value))}
+              className="appearance-none bg-slate-800/90 hover:bg-slate-700/80 text-slate-100 font-semibold text-xs py-1 pl-2.5 pr-6 rounded-lg border border-white/10 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
+            >
+              {yearOptions.map((y) => (
+                <option key={y} value={y} className="bg-slate-900 text-slate-100">
+                  {y}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="h-3 w-3 text-slate-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleNextMonth}
+          className="!min-h-0 !min-w-0 h-7 w-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+          title="Next month"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Weekday headers */}
+      <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-slate-400 py-1 mb-1 border-b border-white/5">
+        {WEEK_DAYS.map((day) => (
+          <div key={day} className="py-0.5">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar Days Grid */}
+      <div className="grid grid-cols-7 gap-1 place-items-center text-center text-xs">
+        {calendarDays.map((item, idx) => {
+          const itemIso = formatIso(item.year, item.month, item.day)
+          const isSelected = value === itemIso
+          const isToday = todayIso === itemIso
+          const isDisabled = (min && itemIso < min) || (max && itemIso > max)
+
+          let cellClass = '!min-h-0 !min-w-0 h-8 w-8 rounded-lg flex items-center justify-center text-xs transition-all font-medium select-none '
+          if (isDisabled) {
+            cellClass += 'opacity-20 cursor-not-allowed pointer-events-none text-slate-600'
+          } else if (isSelected) {
+            cellClass += 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/40 ring-1 ring-indigo-400'
+          } else if (isToday) {
+            cellClass += 'border border-indigo-400/60 bg-indigo-500/15 text-indigo-300 font-bold hover:bg-indigo-500/25'
+          } else if (item.isCurrentMonth) {
+            cellClass += 'text-slate-200 hover:bg-white/10 hover:text-white'
+          } else {
+            cellClass += 'text-slate-600 hover:text-slate-400 hover:bg-white/5'
+          }
+
+          return (
+            <button
+              key={idx}
+              type="button"
+              disabled={isDisabled}
+              onClick={() => handleSelectDate(itemIso)}
+              className={cellClass}
+            >
+              {item.day}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Footer: Quick Actions */}
+      <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between text-xs">
+        <button
+          type="button"
+          onClick={() => handleSelectDate(todayIso)}
+          className="!min-h-0 !min-w-0 px-2.5 py-1 rounded-lg text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 font-semibold transition-colors"
+        >
+          Today
+        </button>
+        <div className="flex items-center gap-1.5">
+          {!required && (
+            <button
+              type="button"
+              onClick={() => {
+                setDisplayText('')
+                notifyChange('')
+                setIsOpen(false)
+              }}
+              className="!min-h-0 !min-w-0 px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
+            >
+              Clear
+            </button>
+          )}
+          {isMobile && (
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="!min-h-0 !min-w-0 px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
+            >
+              Close
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div ref={containerRef} className="relative flex items-center w-full">
       <input
@@ -322,7 +467,7 @@ export default function DateInput({
           tabIndex={-1}
           onClick={togglePicker}
           disabled={disabled}
-          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+          className={`!min-h-0 !min-w-0 h-8 w-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
             isOpen ? 'text-indigo-400 bg-indigo-500/15' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
           title="Open calendar"
@@ -333,133 +478,45 @@ export default function DateInput({
       </div>
 
       {/* Interactive Calendar Popover Portal */}
-      {isOpen && coords && typeof document !== 'undefined' && createPortal(
-        <div
-          ref={popoverRef}
-          style={{
-            position: 'fixed',
-            top: `${coords.top}px`,
-            left: `${coords.left}px`,
-            zIndex: 99999,
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="w-[280px] bg-slate-900 border border-slate-700/90 rounded-2xl p-3 shadow-2xl shadow-black/80 backdrop-blur-xl text-slate-100 select-none animate-in fade-in zoom-in-95 duration-150"
-        >
-          {/* Header: Month/Year navigation */}
-          <div className="flex items-center justify-between gap-1 mb-2">
-            <button
-              type="button"
-              onClick={handlePrevMonth}
-              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              title="Previous month"
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        isMobile ? (
+          /* Mobile centered sheet with backdrop */
+          <div
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+            onClick={() => setIsOpen(false)}
+            onTouchStart={(e) => {
+              if (e.target === e.currentTarget) setIsOpen(false)
+            }}
+          >
+            <div
+              ref={popoverRef}
+              onClick={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              className="bg-slate-900 border border-slate-700/90 rounded-2xl p-3.5 shadow-2xl shadow-black/90 animate-in zoom-in-95 duration-150"
             >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-
-            <div className="flex items-center gap-1.5">
-              <select
-                value={viewMonth}
-                onChange={(e) => setViewMonth(Number(e.target.value))}
-                className="bg-slate-800/90 hover:bg-slate-800 text-slate-100 rounded-lg px-2 py-1 text-xs font-semibold border border-white/10 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-              >
-                {MONTH_NAMES.map((mName, idx) => (
-                  <option key={idx} value={idx} className="bg-slate-900 text-slate-100">
-                    {mName}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={viewYear}
-                onChange={(e) => setViewYear(Number(e.target.value))}
-                className="bg-slate-800/90 hover:bg-slate-800 text-slate-100 rounded-lg px-2 py-1 text-xs font-semibold border border-white/10 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-              >
-                {yearOptions.map((y) => (
-                  <option key={y} value={y} className="bg-slate-900 text-slate-100">
-                    {y}
-                  </option>
-                ))}
-              </select>
+              {calendarContent}
             </div>
-
-            <button
-              type="button"
-              onClick={handleNextMonth}
-              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              title="Next month"
+          </div>
+        ) : (
+          /* Desktop anchored popover */
+          coords && (
+            <div
+              ref={popoverRef}
+              style={{
+                position: 'fixed',
+                top: `${coords.top}px`,
+                left: `${coords.left}px`,
+                zIndex: 99999,
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="bg-slate-900 border border-slate-700/90 rounded-2xl p-3.5 shadow-2xl shadow-black/80 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
             >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Weekday headers */}
-          <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-slate-400 py-1 mb-1 border-b border-white/5">
-            {WEEK_DAYS.map((day) => (
-              <div key={day} className="py-0.5">
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* Calendar Days Grid */}
-          <div className="grid grid-cols-7 gap-1 text-center text-xs">
-            {calendarDays.map((item, idx) => {
-              const itemIso = formatIso(item.year, item.month, item.day)
-              const isSelected = value === itemIso
-              const isToday = todayIso === itemIso
-              const isDisabled = (min && itemIso < min) || (max && itemIso > max)
-
-              let cellClass = 'h-8 w-8 mx-auto flex items-center justify-center rounded-lg text-xs transition-all font-medium '
-              if (isDisabled) {
-                cellClass += 'opacity-25 cursor-not-allowed pointer-events-none text-slate-500'
-              } else if (isSelected) {
-                cellClass += 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/40 ring-1 ring-indigo-400'
-              } else if (isToday) {
-                cellClass += 'border border-indigo-400/60 bg-indigo-500/15 text-indigo-300 font-bold hover:bg-indigo-500/25'
-              } else if (item.isCurrentMonth) {
-                cellClass += 'text-slate-200 hover:bg-slate-800 hover:text-white'
-              } else {
-                cellClass += 'text-slate-500 hover:bg-slate-800/40 hover:text-slate-400'
-              }
-
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  disabled={isDisabled}
-                  onClick={() => handleSelectDate(itemIso)}
-                  className={cellClass}
-                >
-                  {item.day}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Footer: Quick Actions */}
-          <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between text-xs">
-            <button
-              type="button"
-              onClick={() => handleSelectDate(todayIso)}
-              className="px-2 py-1 rounded text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 font-medium transition-colors"
-            >
-              Today
-            </button>
-            {!required && (
-              <button
-                type="button"
-                onClick={() => {
-                  setDisplayText('')
-                  notifyChange('')
-                  setIsOpen(false)
-                }}
-                className="px-2 py-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        </div>,
+              {calendarContent}
+            </div>
+          )
+        ),
         document.body
       )}
     </div>

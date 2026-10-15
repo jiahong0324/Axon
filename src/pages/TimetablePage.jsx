@@ -35,33 +35,30 @@ function saveLinkedProfiles(userId, profiles) {
 }
 
 export function getSemesterProgress(startDateStr, endDateStr) {
-  if (!endDateStr && !startDateStr) return null
+  if (!startDateStr || !endDateStr) return null
 
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+  let start = null
+  if (/^\d{4}-\d{2}-\d{2}$/.test(startDateStr)) {
+    const [sy, sm, sd] = startDateStr.split('-').map(Number)
+    start = new Date(sy, sm - 1, sd, 0, 0, 0, 0)
+  }
 
   let end = null
-  if (endDateStr && /^\d{4}-\d{2}-\d{2}$/.test(endDateStr)) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(endDateStr)) {
     const [ey, em, ed] = endDateStr.split('-').map(Number)
     end = new Date(ey, em - 1, ed, 23, 59, 59, 999)
   }
 
-  let start = null
-  if (startDateStr && /^\d{4}-\d{2}-\d{2}$/.test(startDateStr)) {
-    const [sy, sm, sd] = startDateStr.split('-').map(Number)
-    start = new Date(sy, sm - 1, sd, 0, 0, 0, 0)
-  } else if (end) {
-    // Default fallback: 14 weeks (98 days) before end date
-    start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 97, 0, 0, 0, 0)
-  } else {
-    const [sy, sm, sd] = startDateStr.split('-').map(Number)
-    start = new Date(sy, sm - 1, sd, 0, 0, 0, 0)
-    end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 97, 23, 59, 59, 999)
+  if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return null
   }
 
-  if (start && end && start > end) {
+  if (start > end) {
     return { isInvalid: true }
   }
+
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
 
   if (end && today > end) {
     return { isEnded: true }
