@@ -10,6 +10,7 @@ import { logActivity } from '../lib/logActivity'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
+import SEO from '../components/SEO'
 
 const initialForm = { title: '', reminder_time: '09:00', repeat_type: 'once', is_active: true }
 
@@ -126,8 +127,10 @@ export default function RemindersPage() {
   }
 
   return (
-    <main className="main-content">
-      <h1 className="page-title">{t('reminders.title')}</h1>
+    <>
+      <SEO title="Reminders | Axon" description="Manage deadlines, study alerts, and custom academic reminders." />
+      <main className="main-content">
+        <h1 className="page-title">{t('reminders.title')}</h1>
       <section className="card mb-6 border-l-4 border-l-purple-500">
         <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
           <h2 className="section-header mb-0"><Bot className="h-5 w-5 text-purple-400" /> {t('reminders.aiPlan')}</h2>
@@ -189,5 +192,6 @@ export default function RemindersPage() {
       </section>
       {ConfirmDialog}
     </main>
+  </>
   )
 }

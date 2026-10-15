@@ -137,7 +137,10 @@ export default function LandingLayout() {
               </Link>
             ) : (
               <>
-                <Link to="/login" className="inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10">
+                <Link to="/login?guest=true" className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-50/80 dark:bg-emerald-500/10 px-3.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition">
+                  Try Guest
+                </Link>
+                <Link to="/login" className="inline-flex min-h-[44px] items-center justify-center rounded-xl px-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10">
                   Sign In
                 </Link>
                 <Link to="/register" className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-theme-600 px-5 text-sm font-semibold text-white shadow-lg shadow-theme-600/20 transition hover:bg-theme-700">
@@ -165,7 +168,7 @@ export default function LandingLayout() {
               </Link>
             ))}
             <div className="my-3 h-px bg-slate-200/50 dark:bg-white/10" />
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <ThemeToggle theme={themeCtx.theme} setTheme={themeCtx.setTheme} />
               {hasSession ? (
                 <Link to="/onboarding" className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-theme-600 px-5 text-sm font-bold text-white shadow-lg shadow-theme-600/30 transition hover:bg-theme-700">
@@ -173,10 +176,13 @@ export default function LandingLayout() {
                 </Link>
               ) : (
                 <>
-                  <Link to="/login" className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5">
+                  <Link to="/login?guest=true" onClick={() => setMenuOpen(false)} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 px-4 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                    Try Guest
+                  </Link>
+                  <Link to="/login" onClick={() => setMenuOpen(false)} className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5">
                     Sign In
                   </Link>
-                  <Link to="/register" className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-theme-600 px-5 text-sm font-bold text-white shadow-lg shadow-theme-600/30 transition hover:bg-theme-700">
+                  <Link to="/register" onClick={() => setMenuOpen(false)} className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-theme-600 px-4 text-sm font-bold text-white shadow-lg shadow-theme-600/30 transition hover:bg-theme-700">
                     Get Started
                   </Link>
                 </>
@@ -202,10 +208,15 @@ export default function LandingLayout() {
             </p>
           </div>
           <FooterGroup title="Product" links={navLinks} searchStr={searchStr} />
-          <FooterGroup title="Account" links={hasSession ? [['Dashboard', '/onboarding'], ['Terms and Conditions', '/terms']] : [['Sign In', '/login'], ['Get Started', '/register'], ['Terms and Conditions', '/terms']]} searchStr="" />
+          <FooterGroup title="Account" links={hasSession ? [['Dashboard', '/onboarding'], ['Terms and Conditions', '/terms'], ['Privacy Policy', '/privacy']] : [['Sign In', '/login'], ['Get Started', '/register'], ['Terms and Conditions', '/terms'], ['Privacy Policy', '/privacy']]} searchStr="" />
         </div>
-        <div className="border-t border-slate-200 px-5 py-5 text-center text-sm text-slate-500 dark:border-white/10 dark:text-slate-500">
-          &copy; {new Date().getFullYear()} Axon App. All rights reserved.
+        <div className="border-t border-slate-200 px-5 py-5 text-center text-sm text-slate-500 dark:border-white/10 dark:text-slate-500 flex flex-wrap items-center justify-between gap-4 max-w-7xl mx-auto md:px-8">
+          <div>&copy; {new Date().getFullYear()} Axon App. All rights reserved.</div>
+          <div className="flex items-center gap-6 text-xs">
+            <Link to="/terms" className="hover:text-theme-600 dark:hover:text-white transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-theme-600 dark:hover:text-white transition-colors">Privacy Policy</Link>
+            <Link to="/contact" className="hover:text-theme-600 dark:hover:text-white transition-colors">Support</Link>
+          </div>
         </div>
       </footer>
     </div>

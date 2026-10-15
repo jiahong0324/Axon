@@ -244,7 +244,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
         {step === 'ready' && (
           <div className="flex flex-col items-center justify-center w-full py-6 text-center">
             <div className="relative group max-w-xs mb-6 rounded-2xl overflow-hidden border border-white/10 shadow-2xl transition-transform duration-300 hover:scale-[1.02]">
-              <img src={preview} alt="Uploaded preview" className="mx-auto max-h-64 object-contain rounded-2xl" />
+              <img src={preview} alt={file?.name ? `Schedule or coursework document preview: ${file.name}` : "Uploaded academic document preview"} className="mx-auto max-h-64 object-contain rounded-2xl" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-center p-3 opacity-0 group-hover:opacity-100 transition-opacity">
                 <span className="text-xs text-slate-300">{file.name}</span>
               </div>
@@ -264,7 +264,7 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
         {step === 'analyzing' && (
           <div className="flex flex-col items-center justify-center w-full py-12 text-center space-y-6">
             <div className="relative">
-              <img src={preview} alt="Uploaded preview" className="mx-auto h-24 w-24 rounded-2xl border border-white/10 object-cover blur-[1px] opacity-60" />
+              <img src={preview} alt="Academic schedule document being analyzed by AI" className="mx-auto h-24 w-24 rounded-2xl border border-white/10 object-cover blur-[1px] opacity-60" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]" />
               </div>

@@ -11,6 +11,7 @@ import { dateLabel, daysFromToday, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
 import SubjectSelect from '../components/SubjectSelect'
 import { SkeletonList } from '../components/SkeletonLoader'
+import SEO from '../components/SEO'
 
 
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
@@ -135,8 +136,10 @@ export default function ExamPage() {
   const past = exams.filter(e => isExamPast(e))
 
   return (
-    <main className="main-content">
-      <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
+    <>
+      <SEO title="Exams & Countdown | Axon" description="Track examination dates, countdown timers, seat venues, and syllabus preparation notes." />
+      <main className="main-content">
+        <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div className="flex items-center justify-between w-full">
           <h1 className="page-title mb-0">{t('exams.title')}</h1>
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
@@ -209,6 +212,7 @@ export default function ExamPage() {
       </Modal>
       {ConfirmDialog}
     </main>
+  </>
   )
 }
 

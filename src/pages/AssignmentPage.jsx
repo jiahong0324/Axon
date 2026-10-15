@@ -15,6 +15,7 @@ import { dateLabel, markdownToHtml } from '../lib/utils'
 import { SkeletonList } from '../components/SkeletonLoader'
 import { useLanguage } from '../components/LanguageProvider'
 import SubjectSelect from '../components/SubjectSelect'
+import SEO from '../components/SEO'
 
 const statuses = ['Pending', 'In Progress', 'Done']
 const initialForm = { title: '', subject: '', deadline: '', priority: 'Medium', notes: '', status: 'Pending' }
@@ -133,8 +134,10 @@ export default function AssignmentPage() {
   }
 
   return (
-    <main className="main-content">
-      <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
+    <>
+      <SEO title="Assignments & Coursework | Axon" description="Track assignment deadlines, priorities, status, and revision progress." />
+      <main className="main-content">
+        <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div className="flex items-center justify-between w-full">
           <h1 className="page-title mb-0">{t('assignments.title')}</h1>
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
@@ -237,6 +240,7 @@ export default function AssignmentPage() {
       </Modal>
       {ConfirmDialog}
     </main>
+  </>
   )
 }
 

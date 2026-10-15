@@ -18,8 +18,10 @@ import AIHelperPage from './pages/AIHelperPage'
 import RemindersPage from './pages/RemindersPage'
 import SettingsPage from './pages/SettingsPage'
 import TermsPage from './pages/TermsPage'
+import PrivacyPage from './pages/PrivacyPage'
 import OnboardingPage from './pages/OnboardingPage'
 import UpdatePasswordPage from './pages/UpdatePasswordPage'
+import AuthPage from './pages/AuthPage'
 
 import ManagerDashboard from './pages/manager/ManagerDashboard'
 import ManagerStudentsPage from './pages/manager/ManagerStudentsPage'
@@ -43,7 +45,7 @@ import { useEffect } from 'react'
 function SplashController() {
   const location = useLocation()
   useEffect(() => {
-    const publicPaths = ['/login', '/register', '/onboarding', '/update-password', '/terms']
+    const publicPaths = ['/login', '/register', '/onboarding', '/update-password', '/terms', '/privacy', '/forgot-password']
     if (publicPaths.includes(location.pathname) || location.pathname.startsWith('/blog') || location.pathname.startsWith('/faq') || location.pathname.startsWith('/contact') || location.pathname.startsWith('/helo')) {
       window.hidePrerenderSplash?.()
     }
@@ -62,9 +64,11 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<AuthPage mode="forgot" />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/update-password" element={<UpdatePasswordPage />} />
               <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
 
               <Route path="/" element={<LandingLayout />}>
                 <Route index element={<LandingHome />} />
@@ -73,6 +77,8 @@ export default function App() {
                 <Route path="faq" element={<LandingFAQ />} />
                 <Route path="contact" element={<LandingContact />} />
                 <Route path="helo" element={<LandingHelo />} />
+                <Route path="terms" element={<TermsPage />} />
+                <Route path="privacy" element={<PrivacyPage />} />
               </Route>
               <Route path="/home" element={<ProtectedRoute requireRole="student"><HomePage /></ProtectedRoute>} />
               <Route path="/timetable" element={<ProtectedRoute requireRole="student"><TimetablePage /></ProtectedRoute>} />

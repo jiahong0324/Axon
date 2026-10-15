@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabase'
 import { daysFromToday, dateLabel, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
 import { readCache, writeCache } from '../lib/cache'
+import SEO from '../components/SEO'
 
 export default function HomePage() {
   const [user, setUser] = useState(null)
@@ -154,27 +155,32 @@ export default function HomePage() {
   const greeting = hour < 12 ? t('home.morning') : hour < 18 ? t('home.afternoon') : t('home.evening')
 
   if (loading) return (
-    <main className="home-dashboard main-content scrollbar-hide">
-      <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-end">
-        <h1 className="font-heading text-2xl font-bold">{greeting}... 👋</h1>
-        <p className="muted tabular-nums">{format(currentTime, 'EEEE, dd MMMM yyyy · hh:mm:ss a')}</p>
-      </header>
-      <SkeletonStats />
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
-        <div className="card space-y-4">
-          <h2 className="section-header">📚 {t('home.todayClasses')}</h2>
-          <SkeletonList count={3} />
+    <>
+      <SEO title="Dashboard | Axon" description="Your student productivity overview and today's schedule." />
+      <main className="home-dashboard main-content scrollbar-hide">
+        <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-end">
+          <h1 className="font-heading text-2xl font-bold">{greeting}... 👋</h1>
+          <p className="muted tabular-nums">{format(currentTime, 'EEEE, dd MMMM yyyy · hh:mm:ss a')}</p>
+        </header>
+        <SkeletonStats />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+          <div className="card space-y-4">
+            <h2 className="section-header">📚 {t('home.todayClasses')}</h2>
+            <SkeletonList count={3} />
+          </div>
+          <div className="card space-y-4">
+            <h2 className="section-header mb-0">📝 {t('home.dueSoon')}</h2>
+            <SkeletonList count={3} />
+          </div>
         </div>
-        <div className="card space-y-4">
-          <h2 className="section-header mb-0">📝 {t('home.dueSoon')}</h2>
-          <SkeletonList count={3} />
-        </div>
-      </div>
-    </main>
+      </main>
+    </>
   )
 
   return (
-    <main className="home-dashboard main-content scrollbar-hide">
+    <>
+      <SEO title="Dashboard | Axon" description="View today's class schedule, active assignment deadlines, exam countdowns, and AI study tips." />
+      <main className="home-dashboard main-content scrollbar-hide">
       {banner && (
         <div className="card mb-5 flex items-center justify-between gap-3 border-theme-500/30">
           <p className="text-sm">📲 Add Axon to your home screen! On iOS, tap Share then Add to Home Screen.</p>
@@ -271,6 +277,7 @@ export default function HomePage() {
       </section>
 
     </main>
+  </>
   )
 }
 

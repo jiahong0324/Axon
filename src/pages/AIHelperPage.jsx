@@ -25,6 +25,7 @@ import { askGroq, analyzeImageWithGroq, transcribeAudioWithGroq } from '../lib/g
 import { markdownToHtml } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
 import { supabase } from '../lib/supabase'
+import SEO from '../components/SEO'
 
 const studentActions = [
   { icon: Table, mobile: 'Show in table', tKey: 'table' },
@@ -372,7 +373,9 @@ export default function AIHelperPage({ role = 'student' }) {
   }
 
   return (
-    <main className="ai-helper-shell scrollbar-hide flex h-full flex-1 flex-col overflow-hidden pt-safe md:h-full md:flex-row md:gap-5 md:overflow-hidden md:p-6" style={{ background: 'var(--bg-primary)' }}>
+    <>
+      <SEO title="AI Study Helper | Axon" description="Get instant answers, concept explanations, and revision schedules from your personal AI academic tutor." />
+      <main className="ai-helper-shell scrollbar-hide flex h-full flex-1 flex-col overflow-hidden pt-safe md:h-full md:flex-row md:gap-5 md:overflow-hidden md:p-6" style={{ background: 'var(--bg-primary)' }}>
       <aside className="ai-helper-panel card hidden w-64 shrink-0 md:flex md:flex-col md:h-full md:overflow-y-auto">
         <div className="mb-4 flex items-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-xl bg-theme-500/15 text-theme-300">
@@ -441,7 +444,7 @@ export default function AIHelperPage({ role = 'student' }) {
           }`}>
             {selectedImage && (
               <div className="mb-2 relative h-16 w-16 overflow-hidden rounded-lg border border-white/20 shadow-md">
-                <img src={selectedImage.url} alt="Upload preview" className="h-full w-full object-cover" />
+                <img src={selectedImage.url} alt={selectedImage.file?.name ? `Study document preview: ${selectedImage.file.name}` : "Study document or notes preview"} className="h-full w-full object-cover" />
                 <button 
                   onClick={removeImage} 
                   className="absolute right-1 top-1 flex h-5 w-5 min-h-[20px] min-w-[20px] shrink-0 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-md transition-colors hover:bg-black"
@@ -533,6 +536,7 @@ export default function AIHelperPage({ role = 'student' }) {
         </div>
       </section>
     </main>
+  </>
   )
 }
 
@@ -541,7 +545,7 @@ function Message({ msg }) {
   return isUser ? (
     <div className="ai-message flex w-full min-w-0 justify-end">
       <div className="ai-user-bubble flex flex-col items-end max-w-[86%] min-w-0 break-words rounded-2xl rounded-br-md px-3.5 py-2.5 text-sm leading-relaxed text-white md:max-w-[72%] md:px-4 md:py-3">
-        {msg.image && <img src={msg.image} alt="User upload" className="mb-2 max-h-64 rounded-xl object-contain" />}
+        {msg.image && <img src={msg.image} alt="Student uploaded study notes or diagram" className="mb-2 max-h-64 rounded-xl object-contain" />}
         {msg.content && <span className="break-words">{msg.content}</span>}
       </div>
     </div>

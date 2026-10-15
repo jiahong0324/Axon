@@ -13,6 +13,7 @@ import { SkeletonTimetable } from '../components/SkeletonLoader'
 import { useLanguage } from '../components/LanguageProvider'
 import { clearCache, readCache, writeCache } from '../lib/cache'
 import { updatePreference } from '../lib/preferences'
+import SEO from '../components/SEO'
 
 const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue', is_replacement: false, date: '' }
 const LIVE_PROFILE_ID = 'account'
@@ -761,12 +762,14 @@ export default function TimetablePage() {
   }
 
   return (
-    <main 
-      className="main-content"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEndHandler}
-    >
+    <>
+      <SEO title="Timetable | Axon" description="View and manage your weekly lecture, tutorial, and practical timetable schedule." />
+      <main 
+        className="main-content"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEndHandler}
+      >
       <div className="mb-6 flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           {!loading ? (
@@ -1471,6 +1474,7 @@ export default function TimetablePage() {
       </Modal>
       {ConfirmDialog}
     </main>
+  </>
   )
 }
 

@@ -1,0 +1,31 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Allow: /helo
+Allow: /blog
+Allow: /blog/*
+Allow: /faq
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+Allow: /login
+Allow: /register
+
+# Disallow authenticated application and manager routes
+Disallow: /home
+Disallow: /timetable
+Disallow: /exercise
+Disallow: /assignments
+Disallow: /exams
+Disallow: /results
+Disallow: /exam-results
+Disallow: /ai-helper
+Disallow: /reminders
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /update-password
+Disallow: /manager
+Disallow: /manager/*
+Disallow: /api/*
+
+Sitemap: https://axon-com.vercel.app/sitemap.xml

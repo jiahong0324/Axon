@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Mail, Clock, BookOpen, Send } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import SEO from '../../components/SEO'
 
 function ContactLine({ icon: Icon, title, desc }) {
   return (
@@ -41,7 +42,13 @@ export default function LandingContact() {
   }
 
   return (
-    <section className="mx-auto grid max-w-7xl gap-10 px-5 py-16 md:px-8 md:py-20 lg:grid-cols-[0.85fr_1fr] lg:items-start">
+    <>
+      <SEO
+        title="Contact Us & Support | Axon"
+        description="Have a question about Axon or want to suggest a new student feature? Reach out to our team."
+        keywords="Axon contact, student app support, study platform feedback, academic planner inquiries"
+      />
+      <section className="mx-auto grid max-w-7xl gap-10 px-5 py-16 md:px-8 md:py-20 lg:grid-cols-[0.85fr_1fr] lg:items-start">
       <div>
         <p className="mb-4 inline-flex rounded-full bg-theme-50 px-4 py-2 text-sm font-bold text-theme-700 dark:bg-theme-500/10 dark:text-theme-300">
           Contact Us
@@ -84,5 +91,6 @@ export default function LandingContact() {
         )}
       </form>
     </section>
+  </>
   )
 }

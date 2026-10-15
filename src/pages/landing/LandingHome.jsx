@@ -1,6 +1,12 @@
-import { Link, useOutletContext } from 'react-router-dom'
-import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen } from 'lucide-react'
+import { useState } from 'react'
+import { Link, useNavigate, useOutletContext } from 'react-router-dom'
+import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen, Loader2 } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
+import { supabase, createProfile } from '../../lib/supabase'
+import { useToast } from '../../components/Toast'
+import SEO from '../../components/SEO'
+import LandingShowcase from './LandingShowcase'
+import LandingTestimonials from './LandingTestimonials'
 
 const features = [
   {
@@ -137,9 +143,51 @@ function ScheduleRow({ time, title, meta }) {
 
 export default function LandingHome() {
   const { hasSession } = useOutletContext()
+  const navigate = useNavigate()
+  const { showToast } = useToast()
+  const [guestLoading, setGuestLoading] = useState(false)
+
+  async function handleGuestDemo() {
+    setGuestLoading(true)
+    try {
+      let result = await supabase.auth.signInAnonymously({
+        options: { data: { full_name: 'Guest Student' } }
+      })
+      if (result.error && result.error.message.toLowerCase().includes('anonymous')) {
+        const dummyEmail = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 7)}@guest.local`
+        const dummyPassword = `GuestPassword123!`
+        result = await supabase.auth.signUp({
+          email: dummyEmail,
+          password: dummyPassword,
+          options: { data: { full_name: 'Guest Student' } }
+        })
+      }
+      if (result.error) throw result.error
+      if (result.data?.user) {
+        await createProfile(result.data.user, 'student')
+        await supabase.from('profiles').update({
+          university: 'Guest University',
+          course: 'Guest Demo',
+          student_id: `GUEST-${result.data.user.id.substring(0, 8)}`
+        }).eq('id', result.data.user.id)
+      }
+      showToast('Welcome to Axon! Exploring as Guest Student.', 'success')
+      navigate('/home')
+    } catch (err) {
+      console.warn('Guest demo error:', err)
+      navigate('/login?guest=true')
+    } finally {
+      setGuestLoading(false)
+    }
+  }
 
   return (
     <>
+      <SEO
+        title="Axon - Your Academic Life, Finally Organized | Smart Student Dashboard"
+        description="Plan your timetable, track coursework, prepare for exams, and get 24/7 AI study help in one unified dashboard. Try instantly as guest with no signup required."
+        keywords="student planner, academic dashboard, timetable app, assignment tracker, exam countdown, student productivity, AI study helper, university planner"
+      />
       <section className="relative overflow-hidden border-b border-slate-200 bg-white dark:border-white/10 dark:bg-slate-950">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_34rem),radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.1),transparent_24rem)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.2),transparent_34rem),radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.14),transparent_24rem)]" />
         <div className="relative mx-auto grid max-w-7xl gap-12 px-5 py-16 md:px-8 md:py-20 lg:grid-cols-[1fr_0.9fr] lg:items-center">
@@ -153,7 +201,7 @@ export default function LandingHome() {
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">
               Plan your timetable, track assignments, prepare for exams, read study blogs, and get AI-powered learning support from a clean student dashboard.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
               {hasSession ? (
                 <Link to="/onboarding" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700">
                   Go to Dashboard <ArrowRight className="h-5 w-5" />
@@ -163,12 +211,37 @@ export default function LandingHome() {
                   <Link to="/register" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700">
                     Get Started <ArrowRight className="h-5 w-5" />
                   </Link>
+                  <button
+                    id="hero-guest-btn"
+                    type="button"
+                    onClick={handleGuestDemo}
+                    disabled={guestLoading}
+                    className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl border-2 border-emerald-500/50 bg-emerald-50 px-6 text-base font-bold text-emerald-800 transition hover:bg-emerald-100 hover:border-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300 dark:hover:bg-emerald-500/25 shadow-sm"
+                  >
+                    {guestLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span>Launching Demo...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                        <span>Try as guest - no signup</span>
+                      </>
+                    )}
+                  </button>
                   <Link to="/login" className="inline-flex min-h-[56px] items-center justify-center rounded-xl border border-slate-200 bg-white px-7 text-base font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
                     Sign In
                   </Link>
                 </>
               )}
             </div>
+            {!hasSession && (
+              <p className="mt-3 text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                <span className="flex h-2 w-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                Instant 1-click guest access &bull; No registration or password required
+              </p>
+            )}
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-4">
               <HeroStat value="6" label="Study tools" />
               <HeroStat value="24/7" label="AI support" />
@@ -179,7 +252,10 @@ export default function LandingHome() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-20">
+      {/* Real Product Screenshots & Interactive Tour */}
+      <LandingShowcase />
+
+      <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-20 border-t border-slate-200 dark:border-white/10">
         <SectionIntro
           eyebrow="Features"
           title="Everything students need to stay ahead"
@@ -205,6 +281,9 @@ export default function LandingHome() {
         </div>
       </section>
 
+      {/* Real Student Testimonials & Trust */}
+      <LandingTestimonials />
+
       <section className="mx-auto max-w-7xl px-5 pt-16 md:px-8">
         <div className="rounded-3xl bg-slate-950 px-6 py-12 text-center text-white shadow-2xl shadow-slate-300/40 dark:bg-slate-900 dark:border dark:border-white/10 dark:shadow-black/20 md:px-10">
           <h2 className="font-heading text-3xl font-extrabold tracking-tight md:text-5xl text-white">
@@ -213,10 +292,21 @@ export default function LandingHome() {
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-300 dark:text-slate-400">
             Build better study habits with a dashboard that keeps your classes, deadlines, exams, reminders, and learning support in one place.
           </p>
-          <div className="mt-8">
-            <Link to={hasSession ? '/onboarding' : '/register'} className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-8 text-base font-bold text-white transition hover:bg-theme-700">
-              {hasSession ? 'Go to Dashboard' : 'Get Started'} <ArrowRight className="h-5 w-5" />
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link to={hasSession ? '/onboarding' : '/register'} className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-8 text-base font-bold text-white transition hover:bg-theme-700 shadow-xl shadow-theme-600/30">
+              {hasSession ? 'Go to Dashboard' : 'Get Started Free'} <ArrowRight className="h-5 w-5" />
             </Link>
+            {!hasSession && (
+              <button
+                type="button"
+                onClick={handleGuestDemo}
+                disabled={guestLoading}
+                className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-7 text-base font-bold text-white transition hover:bg-white/20"
+              >
+                <Sparkles className="h-5 w-5 text-emerald-400" />
+                <span>Try as guest - no signup</span>
+              </button>
+            )}
           </div>
         </div>
       </section>

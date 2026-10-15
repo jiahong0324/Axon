@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, Edit2, Check, RotateCcw, Percent, AlertCircle } from 'lucide-react'
+import SEO from '../components/SEO'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../components/Toast'
 import { useConfirmDialog } from '../components/ConfirmModal'
@@ -753,7 +754,9 @@ export default function ExamResultsPage() {
   const calcStanding = getAcademicStanding(calcGPA.gpa, calcGPA.totalCredits)
 
   return (
-    <main className="main-content">
+    <>
+      <SEO title="Exam Results & GPA | Axon" description="Track university semester grades, cumulative GPA (CGPA), and academic performance history." />
+      <main className="main-content">
       {/* Page Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center justify-between sm:justify-start gap-3">
@@ -1418,6 +1421,7 @@ export default function ExamResultsPage() {
 
       {ConfirmDialog}
     </main>
+    </>
   )
 }
 

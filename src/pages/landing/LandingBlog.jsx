@@ -3,6 +3,7 @@ import { Link, useOutletContext } from 'react-router-dom'
 import { ArrowRight, MessageCircle, Heart, Eye } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
 import { supabase } from '../../lib/supabase'
+import SEO from '../../components/SEO'
 
 const categoryColors = {
   'Time Management': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300',
@@ -70,7 +71,13 @@ export default function LandingBlog() {
   const filteredPosts = selectedCategory === 'All' ? posts : posts.filter(p => p.category === selectedCategory)
 
   return (
-    <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-20">
+    <>
+      <SEO
+        title="Student Productivity & Study Blog | Axon"
+        description="A student-focused article hub for productivity habits, deadline planning, exam preparation, and healthier study routines."
+        keywords="student study tips, exam revision methods, university productivity, time management for students, academic planner blog"
+      />
+      <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-20">
       <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <SectionIntro
           eyebrow="Blog"
@@ -114,5 +121,6 @@ export default function LandingBlog() {
         </>
       )}
     </section>
+  </>
   )
 }

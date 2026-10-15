@@ -3,6 +3,7 @@ import { useParams, Link, useOutletContext, Navigate } from 'react-router-dom'
 import { ArrowLeft, Clock, Share2, Heart, MessageSquare, Send, Eye, Reply } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useToast } from '../../components/Toast'
+import SEO from '../../components/SEO'
 
 export default function LandingArticle() {
   const { slug } = useParams()
@@ -131,7 +132,15 @@ export default function LandingArticle() {
   }
 
   return (
-    <article className="mx-auto max-w-3xl px-5 py-16 md:px-8 md:py-20">
+    <>
+      <SEO
+        title={`${post.title} | Axon Blog`}
+        description={post.description}
+        image={post.image_url || undefined}
+        keywords={`${post.category}, student study tips, academic advice, Axon blog, ${post.title}`}
+        type="article"
+      />
+      <article className="mx-auto max-w-3xl px-5 py-16 md:px-8 md:py-20">
       <Link to={`/blog${searchStr}`} className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-theme-600 dark:text-slate-400 dark:hover:text-theme-400">
         <ArrowLeft className="h-4 w-4" /> Back to Blog
       </Link>
@@ -324,5 +333,6 @@ export default function LandingArticle() {
         </div>
       </section>
     </article>
+  </>
   )
 }

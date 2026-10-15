@@ -1,5 +1,6 @@
 import { ChevronDown } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
+import SEO from '../../components/SEO'
 
 export const faqs = [
   {
@@ -58,7 +59,13 @@ function FaqItem({ item }) {
 
 export default function LandingFAQ() {
   return (
-    <section className="mx-auto max-w-4xl px-5 py-16 md:px-8 md:py-20">
+    <>
+      <SEO
+        title="Frequently Asked Questions | Axon"
+        description="Find answers to common student questions about Axon timetables, assignment tracking, data privacy, and AI study help."
+        keywords="Axon FAQ, student planner help, timetable support, student data privacy, exam reminder guide"
+      />
+      <section className="mx-auto max-w-4xl px-5 py-16 md:px-8 md:py-20">
       <SectionIntro
         eyebrow="FAQ"
         title="Questions students usually ask"
@@ -69,5 +76,6 @@ export default function LandingFAQ() {
         {faqs.map(item => <FaqItem key={item.question} item={item} />)}
       </div>
     </section>
+  </>
   )
 }

@@ -21,6 +21,7 @@ import {
 import { askGroq } from '../lib/groq'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml } from '../lib/utils'
+import SEO from '../components/SEO'
 
 const DEFAULT_TABLE_PLAN = `| Phase | Exercise / Activity | Duration / Sets | Intensity | Coach Tips |
 | :--- | :--- | :--- | :--- | :--- |
@@ -402,7 +403,9 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
   }
 
   return (
-    <main className="main-content pb-16 md:pb-12">
+    <>
+      <SEO title="Habits & Fitness | Axon" description="Track daily study habits, workout consistency, streak freezes, and fitness routines." />
+      <main className="main-content pb-16 md:pb-12">
       {/* Page Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -1095,5 +1098,6 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
       </Modal>
       {ConfirmDialog}
     </main>
+    </>
   )
 }

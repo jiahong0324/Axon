@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
 import { Calendar, CheckSquare, Clock, LayoutDashboard, ChevronRight, User, Bell, Activity, Sparkles, Brain, GraduationCap, BarChart, Settings, BookOpen, AlertTriangle, ShieldCheck, Zap } from 'lucide-react'
+import SEO from '../../components/SEO'
 
 // --- Reusable Glass Panel ---
 const GlassPanel = ({ children, className = "" }) => (
@@ -814,7 +815,13 @@ export default function LandingHelo() {
   )
 
   return (
-    <div className="w-full bg-white dark:bg-slate-900 selection:bg-theme-500/30 -mt-[73px]">
+    <>
+      <SEO
+        title="Helo - The Interactive 3D Ecosystem | Axon"
+        description="Experience the interactive 3D universe of Axon's intelligent student tools, orbiting around your academic success."
+        keywords="Axon Helo, 3D student dashboard, interactive study tools, student productivity ecosystem"
+      />
+      <div className="w-full bg-white dark:bg-slate-900 selection:bg-theme-500/30 -mt-[73px]">
       
       {/* 2600vh Container for 13 distinct scenes */}
       <div ref={containerRef} className="h-[2600vh] relative">
@@ -845,7 +852,7 @@ export default function LandingHelo() {
           </div>
         </motion.div>
       </div>
-
     </div>
+  </>
   )
 }

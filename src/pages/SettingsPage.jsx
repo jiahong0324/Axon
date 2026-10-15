@@ -1,6 +1,7 @@
 import { Download, LogOut, Mail, Save, ShieldAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
+import SEO from '../components/SEO'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import ToggleSwitch from '../components/ToggleSwitch'
@@ -436,7 +437,9 @@ export default function SettingsPage() {
   function setPref(key, value) { updatePreference(user, key, value); showToast('Preference saved.', 'success') }
 
   return (
-    <main className="main-content !pt-0">
+    <>
+      <SEO title="Settings & Preferences | Axon" description="Customize profile, themes, notifications, and data privacy." />
+      <main className="main-content !pt-0">
       <div className="sticky top-0 z-20 -mx-4 bg-[var(--bg-primary)] px-4 pb-3 pt-[calc(env(safe-area-inset-top)+1.25rem)] md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:pt-[calc(env(safe-area-inset-top)+1.25rem)] border-b border-white/10 md:border-none">
         <h1 className="page-title mb-3 md:mb-6">{t('settings.title')}</h1>
         <nav className="scrollbar-hide flex gap-2 overflow-x-auto md:hidden">
@@ -612,10 +615,16 @@ export default function SettingsPage() {
 
             <button className="btn-ghost" onClick={globalSignOut}><LogOut className="h-4 w-4" /> {t('action.logoutAll')}</button>
           </div>
+          <div className="pt-3 border-t border-white/10 flex items-center gap-4 text-xs text-slate-500">
+            <Link to="/privacy" className="hover:text-theme-400 hover:underline">Privacy Policy</Link>
+            <span>&bull;</span>
+            <Link to="/terms" className="hover:text-theme-400 hover:underline">Terms of Service</Link>
+          </div>
         </Section>
       </div>
       {ConfirmDialog}
     </main>
+  </>
   )
 }
 
