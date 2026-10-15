@@ -98,12 +98,20 @@ const statusMessages = {
 }
 const colors = ['blue', 'green', 'purple', 'cyan', 'red', 'yellow']
 const colorClasses = {
-  blue: 'bg-theme-500',
-  green: 'bg-green-500',
+  blue: 'bg-blue-500',
+  green: 'bg-emerald-500',
   purple: 'bg-purple-500',
   cyan: 'bg-cyan-500',
   red: 'bg-red-500',
-  yellow: 'bg-yellow-500'
+  yellow: 'bg-amber-500'
+}
+const colorBorderClasses = {
+  blue: 'border-l-blue-500',
+  green: 'border-l-emerald-500',
+  purple: 'border-l-purple-500',
+  cyan: 'border-l-cyan-500',
+  red: 'border-l-red-500',
+  yellow: 'border-l-amber-500'
 }
 
 export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
@@ -247,7 +255,7 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
   const label = type === 'exam' ? 'EXAMS' : type === 'assignment' ? 'ASSIGNMENTS' : type === 'result' ? 'COURSE RESULTS' : 'CLASS SESSIONS'
 
   return (
-    <div className={`flex flex-1 min-h-0 flex-col ${step !== 'results' ? 'max-w-xl mx-auto w-full' : 'w-full'}`}>
+    <div className="flex flex-1 min-h-0 flex-col w-full">
       <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto pr-1">
         {step === 'upload' && (
           <div className="flex flex-col items-center justify-center w-full py-2">
@@ -395,28 +403,26 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
         )}
 
         {step === 'results' && (
-          <div className="animate-[fadeIn_.25s_ease] space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-white/10">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-6 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 text-xs font-bold text-emerald-400">
+          <div className="animate-[fadeIn_.2s_ease] space-y-2.5">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="flex h-5 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 text-[11px] font-bold text-emerald-400">
                   {selected.length} of {items.length} selected
                 </span>
-                <span className="text-xs sm:text-sm font-semibold text-slate-300 tracking-wide">
+                <span className="text-xs font-semibold text-slate-400 tracking-wide uppercase">
                   {label} DETECTED
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-theme-400 hover:text-theme-300 transition-colors"
-                  onClick={() => setAll(selected.length !== items.length)}
-                >
-                  {selected.length === items.length ? 'Deselect All' : 'Select All'}
-                </button>
-              </div>
+              <button
+                type="button"
+                className="text-xs font-semibold text-theme-400 hover:text-theme-300 transition-colors"
+                onClick={() => setAll(selected.length !== items.length)}
+              >
+                {selected.length === items.length ? 'Deselect All' : 'Select All'}
+              </button>
             </div>
 
-            <div className="space-y-3 max-h-[58vh] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[52vh] overflow-y-auto pr-1">
               {items.map((item, index) => type === 'timetable'
                 ? <TimetableResult key={item.key} item={item} index={index} updateItem={updateItem} onDelete={() => deleteItem(index)} />
                 : type === 'result'
@@ -428,18 +434,18 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
       </div>
 
       {step === 'results' && (
-        <div className="mt-4 flex shrink-0 flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-white/10 pt-4">
+        <div className="mt-3 flex shrink-0 items-center justify-between gap-3 border-t border-white/10 pt-3">
           <button
             type="button"
-            className="btn-ghost w-full sm:w-auto !min-h-0 !py-2.5 !px-4 text-sm font-medium hover:bg-white/5 transition-colors"
+            className="btn-ghost !min-h-0 !py-2 !px-3.5 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors"
             onClick={startOver}
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="h-3.5 w-3.5" />
             <span>Start Over</span>
           </button>
           <button
             type="button"
-            className="btn-import w-full sm:w-auto !min-h-0 !py-2.5 !px-6 text-sm font-semibold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-import !min-h-0 !py-2.5 !px-5 text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={selected.length === 0 || isImporting}
             onClick={handleImport}
           >
@@ -463,91 +469,101 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
 
 function TimetableResult({ item, index, updateItem, onDelete }) {
   const currentColor = item.color || getColorFromType(item.class_type || 'L')
+  const borderClass = colorBorderClasses[currentColor] || 'border-l-blue-500'
 
   return (
     <div
-      className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden ${
+      className={`group relative rounded-xl border border-l-4 transition-all duration-150 ${borderClass} ${
         item.selected
-          ? 'border-white/10 bg-[#162033]/90 shadow-md hover:border-white/20'
-          : 'border-white/5 bg-slate-900/30 opacity-50 hover:opacity-75'
+          ? 'border-white/10 bg-[#151f30] hover:bg-[#19253a] shadow-sm'
+          : 'border-white/5 bg-slate-900/30 opacity-40 hover:opacity-60'
       }`}
     >
-      {/* Top accent stripe indicating class theme color */}
-      <div className={`h-1 w-full ${colorClasses[currentColor] || 'bg-emerald-500'}`} />
-
-      <div className="p-4 sm:p-5 space-y-3">
-        {/* Row 1: Checkbox + Subject Name Input + Type Segmented Switch + Trash */}
-        <div className="flex items-center gap-3">
+      <div className="p-2.5 sm:px-3 sm:py-2.5 space-y-1.5">
+        {/* Row 1: Checkbox + Subject (Inline Editable) + Class Type Badge + Mini Color Dots + Trash */}
+        <div className="flex items-center gap-2">
+          {/* Checkbox */}
           <button
             type="button"
             onClick={() => updateItem(index, { selected: !item.selected })}
-            className={`h-7 w-7 shrink-0 flex items-center justify-center rounded-lg transition-all duration-150 ${
+            className={`h-5 w-5 shrink-0 flex items-center justify-center rounded-md transition-all ${
               item.selected
-                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 ring-2 ring-emerald-500/20'
-                : 'border border-slate-700 bg-slate-800 text-transparent hover:border-slate-500'
+                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
+                : 'border border-slate-600 bg-slate-800/80 text-transparent hover:border-slate-400'
             }`}
             title={item.selected ? 'Deselect session' : 'Select session'}
           >
-            <Check className="h-4 w-4 stroke-[3]" />
+            <Check className="h-3.5 w-3.5 stroke-[3]" />
           </button>
 
+          {/* Subject Name Input */}
           <div className="flex-1 min-w-0">
             <input
-              className="w-full bg-slate-900/60 hover:bg-slate-900/90 focus:bg-slate-900 border border-white/10 focus:border-theme-500/60 rounded-xl px-3.5 py-2 text-sm sm:text-base font-bold text-white tracking-wide placeholder-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-theme-500/20"
+              className="w-full bg-transparent hover:bg-white/5 focus:bg-slate-900/90 border border-transparent focus:border-white/20 rounded-lg px-2 py-0.5 text-[14px] font-bold text-white tracking-wide placeholder-slate-500 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
               value={item.subject || ''}
               onChange={e => updateItem(index, { subject: e.target.value })}
-              placeholder="e.g. BMIS1043 Web Development"
+              placeholder="Subject (e.g. BMIS1043)"
             />
           </div>
 
-          {/* Class Type Segmented Switch */}
-          <div className="hidden sm:flex items-center bg-slate-900/80 p-1 rounded-xl border border-white/10 shrink-0">
-            {[
-              { id: 'L', label: 'Lec', typeName: 'Lecture' },
-              { id: 'T', label: 'Tut', typeName: 'Tutorial' },
-              { id: 'P', label: 'Prac', typeName: 'Practical' }
-            ].map(type => {
-              const active = item.class_type === type.id
-              return (
-                <button
-                  key={type.id}
-                  type="button"
-                  onClick={() => updateItem(index, { class_type: type.id, color: getColorFromType(type.id) })}
-                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all duration-150 ${
-                    active
-                      ? type.id === 'L'
-                        ? 'bg-theme-500 text-white shadow-sm'
-                        : type.id === 'T'
-                        ? 'bg-emerald-500 text-white shadow-sm'
-                        : 'bg-purple-500 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                  title={type.typeName}
-                >
-                  {type.label}
-                </button>
-              )
-            })}
+          {/* Class Type Badge Selector */}
+          <div className="relative shrink-0">
+            <select
+              value={item.class_type || 'L'}
+              onChange={e => {
+                const val = e.target.value
+                updateItem(index, { class_type: val, color: getColorFromType(val) })
+              }}
+              className={`text-[11px] font-bold px-2 py-0.5 rounded-md border cursor-pointer focus:outline-none transition-colors ${
+                item.class_type === 'T'
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
+                  : item.class_type === 'P'
+                  ? 'bg-purple-500/15 text-purple-400 border-purple-500/30 hover:bg-purple-500/25'
+                  : 'bg-blue-500/15 text-blue-400 border-blue-500/30 hover:bg-blue-500/25'
+              }`}
+              title="Class type"
+            >
+              <option value="L" className="bg-slate-900 text-white">Lecture (L)</option>
+              <option value="T" className="bg-slate-900 text-white">Tutorial (T)</option>
+              <option value="P" className="bg-slate-900 text-white">Practical (P)</option>
+            </select>
           </div>
 
-          {/* Delete item button */}
+          {/* Mini Color Dots (Inline, 6 micro dots) */}
+          <div className="hidden sm:flex items-center gap-1 shrink-0 px-1 border-l border-white/10">
+            {colors.map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => updateItem(index, { color: c })}
+                className={`h-2.5 w-2.5 rounded-full transition-all ${colorClasses[c]} ${
+                  currentColor === c
+                    ? 'ring-2 ring-white ring-offset-1 ring-offset-[#151f30] scale-125 opacity-100'
+                    : 'opacity-35 hover:opacity-100 hover:scale-125'
+                }`}
+                title={`Color: ${c}`}
+              />
+            ))}
+          </div>
+
+          {/* Delete Button */}
           <button
             type="button"
             onClick={onDelete}
-            className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            className="h-6 w-6 shrink-0 flex items-center justify-center rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
             title="Remove class"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        {/* Row 2: Grid of properties (Day, Time, Room, Lecturer) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        {/* Row 2: Day, Time, Room, Lecturer */}
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pl-7 text-xs text-slate-400">
           {/* Day */}
-          <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5 focus-within:border-white/20 transition-colors">
-            <Calendar className="h-4 w-4 text-theme-400 shrink-0" />
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <select
-              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium focus:outline-none cursor-pointer"
+              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none cursor-pointer"
               value={item.day || 'Monday'}
               onChange={e => updateItem(index, { day: e.target.value })}
             >
@@ -557,81 +573,66 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
             </select>
           </div>
 
-          {/* Time Range */}
-          <div className="flex items-center gap-1.5 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5 focus-within:border-white/20 transition-colors">
-            <Clock className="h-4 w-4 text-emerald-400 shrink-0" />
+          <span className="text-white/15 hidden sm:inline">·</span>
+
+          {/* Time */}
+          <div className="flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <input
               type="time"
-              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium focus:outline-none text-center"
+              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none w-[66px] text-center"
               value={item.start_time || '09:00'}
               onChange={e => updateItem(index, { start_time: e.target.value })}
             />
-            <span className="text-slate-500 text-xs font-bold">-</span>
+            <span className="text-slate-600">-</span>
             <input
               type="time"
-              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium focus:outline-none text-center"
+              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none w-[66px] text-center"
               value={item.end_time || '10:00'}
               onChange={e => updateItem(index, { end_time: e.target.value })}
             />
           </div>
 
+          <span className="text-white/15 hidden sm:inline">·</span>
+
           {/* Room */}
-          <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5 focus-within:border-white/20 transition-colors">
-            <MapPin className="h-4 w-4 text-purple-400 shrink-0" />
+          <div className="flex items-center gap-1">
+            <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <input
-              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium placeholder-slate-500 focus:outline-none"
+              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none placeholder-slate-600 w-20 sm:w-24 truncate"
               value={item.classroom || ''}
               onChange={e => updateItem(index, { classroom: e.target.value })}
-              placeholder="Room / Venue"
+              placeholder="Room"
             />
           </div>
+
+          <span className="text-white/15 hidden sm:inline">·</span>
 
           {/* Lecturer */}
-          <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5 focus-within:border-white/20 transition-colors">
-            <User className="h-4 w-4 text-amber-400 shrink-0" />
+          <div className="flex items-center gap-1 flex-1 min-w-[120px]">
+            <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <input
-              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium placeholder-slate-500 focus:outline-none truncate"
+              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none placeholder-slate-600 w-full truncate"
               value={item.lecturer || ''}
               onChange={e => updateItem(index, { lecturer: e.target.value })}
-              placeholder="Lecturer name"
+              placeholder="Lecturer (optional)"
             />
           </div>
-        </div>
 
-        {/* Row 3: Mobile Class Type + Color Swatches */}
-        <div className="flex items-center justify-between pt-1 border-t border-white/5">
-          <div className="flex sm:hidden items-center bg-slate-900 p-0.5 rounded-lg border border-white/10">
-            {['L', 'T', 'P'].map(t => (
+          {/* Mobile Color Dots */}
+          <div className="flex sm:hidden items-center gap-1.5 ml-auto pt-0.5">
+            {colors.map(c => (
               <button
-                key={t}
+                key={c}
                 type="button"
-                onClick={() => updateItem(index, { class_type: t, color: getColorFromType(t) })}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md ${
-                  item.class_type === t ? 'bg-theme-500 text-white' : 'text-slate-400'
+                onClick={() => updateItem(index, { color: c })}
+                className={`h-2.5 w-2.5 rounded-full transition-all ${colorClasses[c]} ${
+                  currentColor === c
+                    ? 'ring-2 ring-white ring-offset-1 ring-offset-[#151f30] scale-125'
+                    : 'opacity-40'
                 }`}
-              >
-                {t === 'L' ? 'Lec' : t === 'T' ? 'Tut' : 'Prac'}
-              </button>
+              />
             ))}
-          </div>
-
-          <div className="flex items-center gap-2 ml-auto">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Color:</span>
-            <div className="flex items-center gap-1.5">
-              {colors.map(c => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => updateItem(index, { color: c })}
-                  className={`h-4 w-4 rounded-full transition-all duration-150 ${colorClasses[c]} ${
-                    currentColor === c
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-[#162033] scale-125'
-                      : 'opacity-40 hover:opacity-100 hover:scale-110'
-                  }`}
-                  title={c}
-                />
-              ))}
-            </div>
           </div>
         </div>
       </div>
@@ -640,83 +641,136 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
 }
 
 function SimpleResult({ item, index, updateItem, onDelete, type }) {
+  const borderClass = type === 'exam' ? 'border-l-purple-500' : 'border-l-blue-500'
   return (
     <div
-      className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden ${
+      className={`group relative rounded-xl border border-l-4 transition-all duration-150 ${borderClass} ${
         item.selected
-          ? 'border-white/10 bg-[#162033]/90 shadow-md hover:border-white/20'
-          : 'border-white/5 bg-slate-900/30 opacity-50 hover:opacity-75'
+          ? 'border-white/10 bg-[#151f30] hover:bg-[#19253a] shadow-sm'
+          : 'border-white/5 bg-slate-900/30 opacity-40 hover:opacity-60'
       }`}
     >
-      <div className={`h-1 w-full ${type === 'exam' ? 'bg-purple-500' : 'bg-blue-500'}`} />
-      <div className="p-4 sm:p-5 space-y-3">
-        <div className="flex items-center gap-3">
+      <div className="p-2.5 sm:px-3 sm:py-2.5 space-y-1.5">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => updateItem(index, { selected: !item.selected })}
-            className={`h-7 w-7 shrink-0 flex items-center justify-center rounded-lg transition-all duration-150 ${
+            className={`h-5 w-5 shrink-0 flex items-center justify-center rounded-md transition-all ${
               item.selected
-                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 ring-2 ring-emerald-500/20'
-                : 'border border-slate-700 bg-slate-800 text-transparent hover:border-slate-500'
+                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
+                : 'border border-slate-600 bg-slate-800/80 text-transparent hover:border-slate-400'
             }`}
           >
-            <Check className="h-4 w-4 stroke-[3]" />
+            <Check className="h-3.5 w-3.5 stroke-[3]" />
           </button>
 
           <div className="flex-1 min-w-0">
             <input
-              className="w-full bg-slate-900/60 hover:bg-slate-900/90 focus:bg-slate-900 border border-white/10 focus:border-theme-500/60 rounded-xl px-3.5 py-2 text-sm sm:text-base font-bold text-white tracking-wide placeholder-slate-500 transition-colors focus:outline-none"
+              className="w-full bg-transparent hover:bg-white/5 focus:bg-slate-900/90 border border-transparent focus:border-white/20 rounded-lg px-2 py-0.5 text-[14px] font-bold text-white tracking-wide placeholder-slate-500 transition-colors focus:outline-none"
               value={type === 'exam' ? (item.subject || '') : (item.title || '')}
               onChange={e => updateItem(index, type === 'exam' ? { subject: e.target.value } : { title: e.target.value })}
               placeholder={type === 'exam' ? 'e.g. MATH 201 Advanced Calculus' : 'e.g. Lab Report 1'}
             />
           </div>
 
+          {type === 'exam' ? (
+            <select
+              value={item.exam_type || 'Final'}
+              onChange={e => updateItem(index, { exam_type: e.target.value })}
+              className="text-[11px] font-bold px-2 py-0.5 rounded-md border border-purple-500/30 bg-purple-500/15 text-purple-400 cursor-pointer focus:outline-none"
+            >
+              {['Test 1', 'Test 2', 'Midterm', 'Final', 'Practical'].map(et => (
+                <option key={et} value={et} className="bg-slate-900 text-white">{et}</option>
+              ))}
+            </select>
+          ) : (
+            <select
+              value={item.priority || 'Medium'}
+              onChange={e => updateItem(index, { priority: e.target.value })}
+              className={`text-[11px] font-bold px-2 py-0.5 rounded-md border cursor-pointer focus:outline-none ${
+                item.priority === 'High'
+                  ? 'border-red-500/30 bg-red-500/15 text-red-400'
+                  : item.priority === 'Low'
+                  ? 'border-slate-500/30 bg-slate-500/15 text-slate-400'
+                  : 'border-amber-500/30 bg-amber-500/15 text-amber-400'
+              }`}
+            >
+              {['High', 'Medium', 'Low'].map(p => (
+                <option key={p} value={p} className="bg-slate-900 text-white">{p}</option>
+              ))}
+            </select>
+          )}
+
           {onDelete && (
             <button
               type="button"
               onClick={onDelete}
-              className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-              title="Remove item"
+              className="h-6 w-6 shrink-0 flex items-center justify-center rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              title="Remove"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5">
-            <Calendar className="h-4 w-4 text-theme-400 shrink-0" />
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pl-7 text-xs text-slate-400">
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <DateInput
-              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium focus:outline-none"
+              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none w-28"
               value={type === 'exam' ? (item.exam_date || '') : (item.deadline || '')}
               onChange={e => updateItem(index, type === 'exam' ? { exam_date: e.target.value } : { deadline: e.target.value })}
             />
           </div>
 
-          {type === 'exam' ? (
-            <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5">
-              <MapPin className="h-4 w-4 text-purple-400 shrink-0" />
-              <input
-                className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium placeholder-slate-500 focus:outline-none"
-                value={item.venue || ''}
-                onChange={e => updateItem(index, { venue: e.target.value })}
-                placeholder="Venue / Exam Hall"
-              />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5">
-              <span className="text-xs text-slate-400 font-medium shrink-0">Priority:</span>
-              <select
-                className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium focus:outline-none cursor-pointer"
-                value={item.priority || 'Medium'}
-                onChange={e => updateItem(index, { priority: e.target.value })}
-              >
-                {['High', 'Medium', 'Low'].map(p => (
-                  <option key={p} value={p} className="bg-slate-900 text-white">{p}</option>
-                ))}
-              </select>
-            </div>
+          {type === 'exam' && (
+            <>
+              <span className="text-white/15 hidden sm:inline">·</span>
+              <div className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                <input
+                  type="time"
+                  className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none w-[66px] text-center"
+                  value={item.start_time || ''}
+                  onChange={e => updateItem(index, { start_time: e.target.value })}
+                  placeholder="Start"
+                />
+                <span className="text-slate-600">-</span>
+                <input
+                  type="time"
+                  className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none w-[66px] text-center"
+                  value={item.end_time || ''}
+                  onChange={e => updateItem(index, { end_time: e.target.value })}
+                  placeholder="End"
+                />
+              </div>
+
+              <span className="text-white/15 hidden sm:inline">·</span>
+              <div className="flex items-center gap-1 flex-1 min-w-[100px]">
+                <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                <input
+                  className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none placeholder-slate-600 w-full truncate"
+                  value={item.venue || ''}
+                  onChange={e => updateItem(index, { venue: e.target.value })}
+                  placeholder="Venue (e.g. Hall A)"
+                />
+              </div>
+            </>
+          )}
+
+          {type === 'assignment' && (
+            <>
+              <span className="text-white/15 hidden sm:inline">·</span>
+              <div className="flex items-center gap-1 flex-1 min-w-[120px]">
+                <span className="text-slate-500">Subject:</span>
+                <input
+                  className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none placeholder-slate-600 w-full truncate"
+                  value={item.subject || ''}
+                  onChange={e => updateItem(index, { subject: e.target.value })}
+                  placeholder="Subject code/name"
+                />
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -728,66 +782,63 @@ function ResultItemRow({ item, index, updateItem, onDelete }) {
   const grades = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'F']
   return (
     <div
-      className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden ${
+      className={`group relative rounded-xl border border-l-4 border-l-emerald-500 transition-all duration-150 ${
         item.selected
-          ? 'border-white/10 bg-[#162033]/90 shadow-md hover:border-white/20'
-          : 'border-white/5 bg-slate-900/30 opacity-50 hover:opacity-75'
+          ? 'border-white/10 bg-[#151f30] hover:bg-[#19253a] shadow-sm'
+          : 'border-white/5 bg-slate-900/30 opacity-40 hover:opacity-60'
       }`}
     >
-      <div className="h-1 w-full bg-emerald-500" />
-      <div className="p-4 sm:p-5 space-y-3">
-        <div className="flex items-center gap-3">
+      <div className="p-2.5 sm:px-3 sm:py-2.5 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => updateItem(index, { selected: !item.selected })}
+          className={`h-5 w-5 shrink-0 flex items-center justify-center rounded-md transition-all ${
+            item.selected
+              ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
+              : 'border border-slate-600 bg-slate-800/80 text-transparent hover:border-slate-400'
+          }`}
+        >
+          <Check className="h-3.5 w-3.5 stroke-[3]" />
+        </button>
+
+        <div className="w-24 sm:w-28 shrink-0">
+          <input
+            className="w-full bg-transparent hover:bg-white/5 focus:bg-slate-900/90 border border-transparent focus:border-white/20 rounded-lg px-2 py-0.5 text-xs sm:text-sm font-bold text-white tracking-wide uppercase placeholder-slate-500 transition-colors focus:outline-none"
+            value={item.course_code || ''}
+            onChange={e => updateItem(index, { course_code: e.target.value.toUpperCase() })}
+            placeholder="Code"
+          />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <input
+            className="w-full bg-transparent hover:bg-white/5 focus:bg-slate-900/90 border border-transparent focus:border-white/20 rounded-lg px-2 py-0.5 text-xs sm:text-sm font-semibold text-slate-200 placeholder-slate-500 transition-colors focus:outline-none truncate"
+            value={item.course_name || ''}
+            onChange={e => updateItem(index, { course_name: e.target.value })}
+            placeholder="Course Name"
+          />
+        </div>
+
+        <div className="w-16 shrink-0">
+          <select
+            className="w-full bg-emerald-500/15 border border-emerald-500/30 rounded-lg px-2 py-0.5 text-xs font-bold text-emerald-400 focus:outline-none cursor-pointer text-center"
+            value={item.grade || 'A'}
+            onChange={e => updateItem(index, { grade: e.target.value })}
+          >
+            {grades.map(g => <option key={g} value={g} className="bg-slate-900 text-white">{g}</option>)}
+          </select>
+        </div>
+
+        {onDelete && (
           <button
             type="button"
-            onClick={() => updateItem(index, { selected: !item.selected })}
-            className={`h-7 w-7 shrink-0 flex items-center justify-center rounded-lg transition-all duration-150 ${
-              item.selected
-                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 ring-2 ring-emerald-500/20'
-                : 'border border-slate-700 bg-slate-800 text-transparent hover:border-slate-500'
-            }`}
+            onClick={onDelete}
+            className="h-6 w-6 shrink-0 flex items-center justify-center rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            title="Remove"
           >
-            <Check className="h-4 w-4 stroke-[3]" />
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
-
-          <div className="w-32 shrink-0">
-            <input
-              className="w-full bg-slate-900/60 hover:bg-slate-900/90 focus:bg-slate-900 border border-white/10 focus:border-theme-500/60 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white tracking-wide uppercase placeholder-slate-500 transition-colors focus:outline-none"
-              value={item.course_code || ''}
-              onChange={e => updateItem(index, { course_code: e.target.value.toUpperCase() })}
-              placeholder="e.g. AACS1074"
-            />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <input
-              className="w-full bg-slate-900/60 hover:bg-slate-900/90 focus:bg-slate-900 border border-white/10 focus:border-theme-500/60 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold text-white tracking-wide placeholder-slate-500 transition-colors focus:outline-none truncate"
-              value={item.course_name || ''}
-              onChange={e => updateItem(index, { course_name: e.target.value })}
-              placeholder="Course Title"
-            />
-          </div>
-
-          <div className="w-20 shrink-0">
-            <select
-              className="w-full bg-slate-900/60 border border-white/10 rounded-xl px-2 py-2 text-xs font-bold text-emerald-400 focus:outline-none cursor-pointer"
-              value={item.grade || 'A'}
-              onChange={e => updateItem(index, { grade: e.target.value })}
-            >
-              {grades.map(g => <option key={g} value={g} className="bg-slate-900 text-white">{g}</option>)}
-            </select>
-          </div>
-
-          {onDelete && (
-            <button
-              type="button"
-              onClick={onDelete}
-              className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-              title="Remove course"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+        )}
       </div>
     </div>
   )

@@ -1328,7 +1328,7 @@ export default function TimetablePage() {
         isOpen={analyzerOpen}
         onClose={() => { setAnalyzerOpen(false); setAnalyzerStep('upload') }}
         title={t('timetable.importTitle')}
-        maxWidth={analyzerStep === 'results' ? 'max-w-4xl' : 'max-w-xl'}
+        maxWidth={analyzerStep === 'results' ? 'max-w-2xl' : 'max-w-lg'}
         bodyClassName="overflow-hidden"
       >
         <ImageUploadAnalyzer type="timetable" onResult={saveAll} onStepChange={setAnalyzerStep} />

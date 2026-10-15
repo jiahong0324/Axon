@@ -213,7 +213,7 @@ export default function ExamPage() {
         isOpen={analyzerOpen}
         onClose={() => { setAnalyzerOpen(false); setAnalyzerStep('upload') }}
         title="Import Exam Schedule from Screenshot"
-        maxWidth={analyzerStep === 'results' ? 'max-w-3xl' : 'max-w-xl'}
+        maxWidth={analyzerStep === 'results' ? 'max-w-2xl' : 'max-w-lg'}
         bodyClassName="overflow-hidden"
       >
         <ImageUploadAnalyzer type="exam" onResult={saveAll} onStepChange={setAnalyzerStep} />
