@@ -447,7 +447,7 @@ export default function DateInput({
   )
 
   return (
-    <div ref={containerRef} className="relative flex items-center w-full">
+    <div ref={containerRef} className="relative flex items-center w-full min-w-0">
       <input
         type="text"
         id={id}
@@ -458,16 +458,16 @@ export default function DateInput({
         onChange={handleTextChange}
         onBlur={handleBlur}
         placeholder={placeholder}
-        className={`${className || 'input'} pr-10`}
+        className={`w-full min-w-0 ${className || 'input'} pr-8 text-sm sm:text-base`}
         {...props}
       />
-      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8">
+      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-auto">
         <button
           type="button"
           tabIndex={-1}
           onClick={togglePicker}
           disabled={disabled}
-          className={`!min-h-0 !min-w-0 h-8 w-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
+          className={`!min-h-0 !min-w-0 h-7 w-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
             isOpen ? 'text-indigo-400 bg-indigo-500/15' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
           }`}
           title="Open calendar"

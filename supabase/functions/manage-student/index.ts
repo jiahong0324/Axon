@@ -76,6 +76,24 @@ Deno.serve(async req => {
           .select('*')
           .eq('student_id', studentId)
 
+        const { data: reminders } = await adminClient
+          .from('reminders')
+          .select('*')
+          .eq('user_id', studentId)
+          .order('reminder_time', { ascending: true })
+
+        const rawPrefs = meta.preferences || {}
+        const accountInfo = {
+          id: targetUser?.user?.id || studentId,
+          email: targetUser?.user?.email || '',
+          email_confirmed_at: targetUser?.user?.email_confirmed_at || targetUser?.user?.confirmed_at || null,
+          last_sign_in_at: targetUser?.user?.last_sign_in_at || null,
+          created_at: targetUser?.user?.created_at || null,
+          updated_at: targetUser?.user?.updated_at || null,
+          phone: targetUser?.user?.phone || null,
+          app_metadata: targetUser?.user?.app_metadata || {}
+        }
+
         const finalChats = [...(chats || [])]
         const metaChats = Array.isArray(meta.axon_ai_chats) ? meta.axon_ai_chats : []
         for (let i = 0; i < metaChats.length; i++) {
@@ -102,17 +120,20 @@ Deno.serve(async req => {
         result = {
           data: {
             metadata: meta,
+            accountInfo,
+            preferences: rawPrefs,
             linkedTimetables: meta.linked_timetables || [],
             examResultsSemesters: meta.axon_exam_results_semesters || [],
             semesterSettings: {
-              name: meta.semester_name || '',
-              startDate: meta.semester_start_date || '',
-              endDate: meta.semester_end_date || ''
+              name: meta.semester_name || rawPrefs.axon_semester_name || '',
+              startDate: meta.semester_start_date || rawPrefs.axon_semester_start_date || '',
+              endDate: meta.semester_end_date || rawPrefs.axon_semester_end_date || ''
             },
             chats: finalChats,
             classes: classes || [],
             exams: exams || [],
-            examResults: examResults || []
+            examResults: examResults || [],
+            reminders: reminders || []
           }
         }
         break

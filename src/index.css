@@ -94,6 +94,14 @@ button:active,
 }
 input, select, textarea { font-size: 16px; }
 
+@media screen and (max-width: 768px) {
+  input, select, textarea,
+  input.input, select.input, textarea.input,
+  .input {
+    font-size: 16px !important;
+  }
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;

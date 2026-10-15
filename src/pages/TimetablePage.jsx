@@ -1052,11 +1052,11 @@ export default function TimetablePage() {
               <input
                 type="text"
                 required
-                className="input text-sm py-2.5 px-3.5"
+                className="input py-2.5 px-3.5 text-base"
                 placeholder={t('timetable.oldSemesterNamePlaceholder')}
                 value={newSemesterForm.archiveName}
                 onChange={e => setNewSemesterForm(prev => ({ ...prev, archiveName: e.target.value }))}
-                autoFocus
+                autoFocus={typeof window !== 'undefined' && window.innerWidth >= 768}
               />
               <p className="text-[11px] text-slate-400">
                 {t('timetable.archiveNameHelp')}
@@ -1095,17 +1095,17 @@ export default function TimetablePage() {
 
             {/* New Semester Timetable Name */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-                <label>{t('timetable.newSemesterNameLabel')}</label>
-                <span className="text-[11px] font-normal text-slate-400">{t('timetable.defaultBadge')}</span>
+              <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-300">
+                <label className="truncate">{t('timetable.newSemesterNameLabel')}</label>
+                <span className="text-[11px] font-normal text-slate-400 shrink-0">{t('timetable.defaultBadge')}</span>
               </div>
               <input
                 type="text"
-                className="input text-sm py-2 px-3.5"
+                className="input py-2.5 px-3.5 text-base"
                 placeholder="My Timetable"
                 value={newSemesterForm.newName}
                 onChange={e => setNewSemesterForm(prev => ({ ...prev, newName: e.target.value }))}
-                autoFocus={!savedArchiveName}
+                autoFocus={typeof window !== 'undefined' && window.innerWidth >= 768 && !savedArchiveName}
               />
             </div>
 
@@ -1113,14 +1113,14 @@ export default function TimetablePage() {
             <div className="grid grid-cols-2 gap-2.5">
               <Field label={t('timetable.semesterStartDate')}>
                 <DateInput
-                  className="input text-xs"
+                  className="input text-sm sm:text-base"
                   value={newSemesterForm.newStartDate}
                   onChange={e => setNewSemesterForm(prev => ({ ...prev, newStartDate: e.target.value }))}
                 />
               </Field>
               <Field label={t('timetable.semesterEndDate')}>
                 <DateInput
-                  className="input text-xs"
+                  className="input text-sm sm:text-base"
                   value={newSemesterForm.newEndDate}
                   onChange={e => setNewSemesterForm(prev => ({ ...prev, newEndDate: e.target.value }))}
                 />
@@ -1290,7 +1290,14 @@ export default function TimetablePage() {
   )
 }
 
-function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
+function Field({ label, children, className = '' }) {
+  return (
+    <label className={`block min-w-0 ${className}`}>
+      <span className="label truncate text-xs block">{label}</span>
+      {children}
+    </label>
+  )
+}
 
 function DesktopClassTile({ item, onDelete }) {
   const border = item.class_type === 'T' ? 'border-l-emerald-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-blue-500'

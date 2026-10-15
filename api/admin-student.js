@@ -123,20 +123,42 @@ export default async function handler(req, res) {
       .select('*')
       .eq('student_id', studentId)
 
+    // Fetch reminders
+    const { data: reminders } = await adminSupabase
+      .from('reminders')
+      .select('*')
+      .eq('user_id', studentId)
+      .order('reminder_time', { ascending: true })
+
+    const rawPrefs = meta.preferences || {}
+    const accountInfo = {
+      id: targetUser?.id || studentId,
+      email: targetUser?.email || '',
+      email_confirmed_at: targetUser?.email_confirmed_at || targetUser?.confirmed_at || null,
+      last_sign_in_at: targetUser?.last_sign_in_at || null,
+      created_at: targetUser?.created_at || null,
+      updated_at: targetUser?.updated_at || null,
+      phone: targetUser?.phone || null,
+      app_metadata: targetUser?.app_metadata || {}
+    }
+
     return res.status(200).json({
       success: true,
       metadata: meta,
+      accountInfo,
+      preferences: rawPrefs,
       linkedTimetables: meta.linked_timetables || [],
       examResultsSemesters: meta.axon_exam_results_semesters || [],
       semesterSettings: {
-        name: meta.semester_name || '',
-        startDate: meta.semester_start_date || '',
-        endDate: meta.semester_end_date || ''
+        name: meta.semester_name || rawPrefs.axon_semester_name || '',
+        startDate: meta.semester_start_date || rawPrefs.axon_semester_start_date || '',
+        endDate: meta.semester_end_date || rawPrefs.axon_semester_end_date || ''
       },
       chats: finalChats,
       classes: classes || [],
       exams: exams || [],
-      examResults: examResults || []
+      examResults: examResults || [],
+      reminders: reminders || []
     })
   } catch (err) {
     console.error('admin-student handler error:', err)

@@ -6,7 +6,7 @@ import { calculateOverallCGPA, getAcademicStanding } from './tarumtGrading'
 import { supabase } from './supabase'
 import { fetchFullStudentDetail } from './manageStudent'
 
-export function createStudentReportDoc({ student = {}, classes = [], assignments = [], exams = [], examResults = [], semesters = [] }) {
+export function createStudentReportDoc({ student = {}, classes = [], assignments = [], exams = [], examResults = [], semesters = [], reminders = [] }) {
   const doc = new jsPDF()
   const fullName = student.full_name || student.email || 'Student'
   const resultByExam = new Map(examResults.map(result => [result.exam_id, result]))
@@ -158,6 +158,20 @@ export function createStudentReportDoc({ student = {}, classes = [], assignments
     subtitle
   )
 
+  if (Array.isArray(reminders) && reminders.length > 0) {
+    addSection(
+      'Scheduled Reminders & Study Alerts',
+      ['Title', 'Scheduled Time', 'Frequency', 'Status'],
+      reminders.map(r => [
+        r.title || 'Untitled Reminder',
+        formatTime(r.reminder_time) || 'No time',
+        r.repeat_type || 'once',
+        r.is_active ? 'Active' : 'Inactive'
+      ]),
+      'No reminders configured.'
+    )
+  }
+
   const pageCount = doc.internal.getNumberOfPages()
   for (let page = 1; page <= pageCount; page += 1) {
     doc.setPage(page)
@@ -171,7 +185,7 @@ export function createStudentReportDoc({ student = {}, classes = [], assignments
 }
 
 export async function downloadStudentReport(payload) {
-  let { student, semesters } = payload || {}
+  let { student, semesters, reminders } = payload || {}
 
   // Auto-fetch missing semesters asynchronously
   if ((!semesters || semesters.length === 0) && student?.id) {
@@ -200,10 +214,26 @@ export async function downloadStudentReport(payload) {
         if (full?.examResultsSemesters && full.examResultsSemesters.length > 0) {
           payload.semesters = full.examResultsSemesters
         }
+        if (!payload.reminders && full?.reminders) {
+          payload.reminders = full.reminders
+        }
       }
     } catch (e) {
       console.warn('Auto-fetch semesters error in downloadStudentReport:', e)
     }
+  }
+
+  if (!payload.reminders && student?.id) {
+    try {
+      const { data: rems } = await supabase
+        .from('reminders')
+        .select('*')
+        .eq('user_id', student.id)
+        .order('reminder_time')
+      if (rems && rems.length > 0) {
+        payload.reminders = rems
+      }
+    } catch (e) {}
   }
 
   const { doc, fileName } = createStudentReportDoc(payload)
