@@ -464,8 +464,9 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
 }
 
 function TimetableResult({ item, index, updateItem, onDelete }) {
-  const currentColor = item.color || getColorFromType(item.class_type || 'L')
-  const borderClass = colorBorderClasses[currentColor] || 'border-l-blue-500'
+  const classType = ['L', 'T', 'P', 'C'].includes(item.class_type) ? item.class_type : 'L'
+  const borderClass = typeBorderClasses[classType] || 'border-l-blue-500'
+  const badgeClass = typeBadgeClasses[classType] || typeBadgeClasses.L
 
   return (
     <div
@@ -475,8 +476,8 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
           : 'border-white/5 bg-slate-900/30 opacity-40 hover:opacity-60'
       }`}
     >
-      <div className="p-2.5 sm:px-3 sm:py-2.5 space-y-1.5">
-        {/* Row 1: Checkbox + Subject (Inline Editable) + Class Type Badge + Mini Color Dots + Trash */}
+      <div className="p-2.5 sm:px-3 sm:py-2 space-y-1.5">
+        {/* Row 1: Checkbox + Subject Name Input + Class Type Badge + Trash Button */}
         <div className="flex items-center gap-2">
           {/* Checkbox */}
           <button
@@ -495,7 +496,7 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
           {/* Subject Name Input */}
           <div className="flex-1 min-w-0">
             <input
-              className="w-full bg-transparent hover:bg-white/5 focus:bg-slate-900/90 border border-transparent focus:border-white/20 rounded-lg px-2 py-0.5 text-[14px] font-bold text-white tracking-wide placeholder-slate-500 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+              className="w-full bg-transparent hover:bg-white/5 focus:bg-slate-900/90 border border-transparent focus:border-white/20 rounded-md px-2 py-0.5 text-sm font-bold text-white tracking-wide placeholder-slate-500 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/30 truncate"
               value={item.subject || ''}
               onChange={e => updateItem(index, { subject: e.target.value })}
               placeholder="Subject (e.g. BMIS1043)"
@@ -505,20 +506,12 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
           {/* Class Type Badge Selector */}
           <div className="relative shrink-0">
             <select
-              value={item.class_type || 'L'}
+              value={classType}
               onChange={e => {
                 const val = e.target.value
                 updateItem(index, { class_type: val, color: getColorFromType(val) })
               }}
-              className={`text-[11px] font-bold px-2 py-0.5 rounded-md border cursor-pointer focus:outline-none transition-colors ${
-                item.class_type === 'T'
-                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
-                  : item.class_type === 'P'
-                  ? 'bg-purple-500/15 text-purple-400 border-purple-500/30 hover:bg-purple-500/25'
-                  : item.class_type === 'C'
-                  ? 'bg-pink-500/15 text-pink-400 border-pink-500/30 hover:bg-pink-500/25'
-                  : 'bg-blue-500/15 text-blue-400 border-blue-500/30 hover:bg-blue-500/25'
-              }`}
+              className={`text-xs font-bold px-2.5 py-1 rounded-md border cursor-pointer focus:outline-none transition-colors ${badgeClass}`}
               title="Class type"
             >
               <option value="L" className="bg-slate-900 text-white">Lecture (L)</option>
@@ -528,28 +521,11 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
             </select>
           </div>
 
-          {/* Mini Color Dots (Inline, 6 micro dots) */}
-          <div className="hidden sm:flex items-center gap-1 shrink-0 px-1 border-l border-white/10">
-            {colors.map(c => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => updateItem(index, { color: c })}
-                className={`h-2.5 w-2.5 rounded-full transition-all ${colorClasses[c]} ${
-                  currentColor === c
-                    ? 'ring-2 ring-white ring-offset-1 ring-offset-[#151f30] scale-125 opacity-100'
-                    : 'opacity-35 hover:opacity-100 hover:scale-125'
-                }`}
-                title={`Color: ${c}`}
-              />
-            ))}
-          </div>
-
           {/* Delete Button */}
           <button
             type="button"
             onClick={onDelete}
-            className="h-6 w-6 shrink-0 flex items-center justify-center rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            className="h-7 w-7 shrink-0 flex items-center justify-center rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
             title="Remove class"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -598,7 +574,7 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
           <div className="flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <input
-              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none placeholder-slate-600 w-20 sm:w-24 truncate"
+              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none placeholder-slate-600 w-16 sm:w-20 truncate"
               value={item.classroom || ''}
               onChange={e => updateItem(index, { classroom: e.target.value })}
               placeholder="Room"
@@ -608,7 +584,7 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
           <span className="text-white/15 hidden sm:inline">·</span>
 
           {/* Lecturer */}
-          <div className="flex items-center gap-1 flex-1 min-w-[120px]">
+          <div className="flex items-center gap-1 flex-1 min-w-[100px]">
             <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <input
               className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none placeholder-slate-600 w-full truncate"
@@ -616,22 +592,6 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
               onChange={e => updateItem(index, { lecturer: e.target.value })}
               placeholder="Lecturer (optional)"
             />
-          </div>
-
-          {/* Mobile Color Dots */}
-          <div className="flex sm:hidden items-center gap-1.5 ml-auto pt-0.5">
-            {colors.map(c => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => updateItem(index, { color: c })}
-                className={`h-2.5 w-2.5 rounded-full transition-all ${colorClasses[c]} ${
-                  currentColor === c
-                    ? 'ring-2 ring-white ring-offset-1 ring-offset-[#151f30] scale-125'
-                    : 'opacity-40'
-                }`}
-              />
-            ))}
           </div>
         </div>
       </div>
