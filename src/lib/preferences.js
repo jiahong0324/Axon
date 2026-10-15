@@ -134,3 +134,67 @@ export async function updatePreference(user, key, value) {
     }
   }
 }
+
+export async function saveSemesterPreferences(user, { name, startDate, endDate, linkedProfiles }) {
+  const nextName = String(name || '').trim()
+  const nextStartDate = String(startDate || '').trim()
+  const nextEndDate = String(endDate || '').trim()
+
+  // 1. Save locally
+  localStorage.setItem('axon_semester_name', nextName)
+  localStorage.setItem('axon_semester_start_date', nextStartDate)
+  localStorage.setItem('axon_semester_end_date', nextEndDate)
+
+  // 2. Fetch fresh user if not provided
+  let currentUser = user
+  if (!currentUser) {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      currentUser = authUser
+    } catch (err) {
+      console.error('Error fetching user for semester preference sync:', err)
+    }
+  }
+
+  if (!currentUser) return null
+
+  // 3. Atomically update both top-level metadata AND preferences
+  const existingPrefs = currentUser.user_metadata?.preferences || {}
+  const updatedPrefs = {
+    ...existingPrefs,
+    axon_semester_name: nextName,
+    axon_semester_start_date: nextStartDate,
+    axon_semester_end_date: nextEndDate
+  }
+
+  const updateData = {
+    semester_name: nextName,
+    semester_start_date: nextStartDate,
+    semester_end_date: nextEndDate,
+    preferences: updatedPrefs
+  }
+  if (linkedProfiles !== undefined) {
+    updateData.linked_timetables = linkedProfiles
+  }
+
+  const { data, error } = await supabase.auth.updateUser({
+    data: updateData
+  })
+
+  if (error) {
+    console.error('Failed to atomically update semester metadata:', error)
+  }
+
+  const updatedUser = data?.user || currentUser
+
+  // 4. Sync push subscription
+  try {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      await registerPushSubscription(updatedUser)
+    }
+  } catch (err) {
+    console.error('Failed to sync push subscription on semester update:', err)
+  }
+
+  return updatedUser
+}

@@ -12,7 +12,7 @@ import { classColors, days, formatTime } from '../lib/utils'
 import { SkeletonTimetable } from '../components/SkeletonLoader'
 import { useLanguage } from '../components/LanguageProvider'
 import { clearCache, readCache, writeCache } from '../lib/cache'
-import { updatePreference } from '../lib/preferences'
+import { updatePreference, saveSemesterPreferences } from '../lib/preferences'
 import SEO from '../components/SEO'
 import DateInput from '../components/DateInput'
 
@@ -149,7 +149,7 @@ export default function TimetablePage() {
     if (!newSemesterForm.newStartDate && !newSemesterForm.newEndDate) return null
     return getSemesterProgress(newSemesterForm.newStartDate, newSemesterForm.newEndDate)
   }, [newSemesterForm.newStartDate, newSemesterForm.newEndDate])
-  const isSemesterEnded = isLiveProfile && Boolean(semesterEndDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterEndDate) && todayString > semesterEndDate)
+  const isSemesterEnded = isLiveProfile && classes.length > 0 && Boolean(semesterEndDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterEndDate) && todayString > semesterEndDate)
 
   useEffect(() => { initializeTimetables() }, [])
   useEffect(() => {
@@ -165,19 +165,19 @@ export default function TimetablePage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  // Auto-prompt rollover wizard for existing users whose previous semester ended / unset
+  // Auto-prompt rollover wizard for existing users whose previous semester ended
   useEffect(() => {
     if (loading || !user || !isLiveProfile || classes.length === 0) return
     if (hasCheckedRollover.current) return
 
-    const needsRollover = !semesterEndDate || isSemesterEnded
+    const needsRollover = isSemesterEnded
     const isDismissed = sessionStorage.getItem('axon_rollover_wizard_dismissed') === 'true'
 
     if (needsRollover && !isDismissed) {
       hasCheckedRollover.current = true
       openRolloverWizard()
     }
-  }, [loading, user, isLiveProfile, classes.length, semesterEndDate, isSemesterEnded])
+  }, [loading, user, isLiveProfile, classes.length, isSemesterEnded])
 
   async function initializeTimetables() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -224,19 +224,26 @@ export default function TimetablePage() {
     const savedActive = localStorage.getItem(activeKey(currentUser.id)) || LIVE_PROFILE_ID
     setActiveProfileId(savedActive === LIVE_PROFILE_ID || profiles.some(profile => profile.id === savedActive) ? savedActive : LIVE_PROFILE_ID)
 
-    const metaSemesterName = currentUser.user_metadata?.semester_name || currentUser.user_metadata?.preferences?.axon_semester_name || ''
-    const metaSemesterStartDate = currentUser.user_metadata?.semester_start_date || currentUser.user_metadata?.preferences?.axon_semester_start_date || ''
-    const metaSemesterEndDate = currentUser.user_metadata?.semester_end_date || currentUser.user_metadata?.preferences?.axon_semester_end_date || ''
-    const initialName = metaSemesterName || localStorage.getItem('axon_semester_name') || ''
-    const initialStartDate = metaSemesterStartDate || localStorage.getItem('axon_semester_start_date') || ''
-    const initialEndDate = metaSemesterEndDate || localStorage.getItem('axon_semester_end_date') || ''
+    const metaSemesterName = currentUser.user_metadata?.semester_name !== undefined
+      ? currentUser.user_metadata.semester_name
+      : (currentUser.user_metadata?.preferences?.axon_semester_name ?? localStorage.getItem('axon_semester_name') ?? '')
+    const metaSemesterStartDate = currentUser.user_metadata?.semester_start_date !== undefined
+      ? currentUser.user_metadata.semester_start_date
+      : (currentUser.user_metadata?.preferences?.axon_semester_start_date ?? localStorage.getItem('axon_semester_start_date') ?? '')
+    const metaSemesterEndDate = currentUser.user_metadata?.semester_end_date !== undefined
+      ? currentUser.user_metadata.semester_end_date
+      : (currentUser.user_metadata?.preferences?.axon_semester_end_date ?? localStorage.getItem('axon_semester_end_date') ?? '')
+
+    const initialName = String(metaSemesterName ?? '')
+    const initialStartDate = String(metaSemesterStartDate ?? '')
+    const initialEndDate = String(metaSemesterEndDate ?? '')
 
     setSemesterName(initialName)
     setSemesterStartDate(initialStartDate)
     setSemesterEndDate(initialEndDate)
-    if (initialName) localStorage.setItem('axon_semester_name', initialName)
-    if (initialStartDate) localStorage.setItem('axon_semester_start_date', initialStartDate)
-    if (initialEndDate) localStorage.setItem('axon_semester_end_date', initialEndDate)
+    localStorage.setItem('axon_semester_name', initialName)
+    localStorage.setItem('axon_semester_start_date', initialStartDate)
+    localStorage.setItem('axon_semester_end_date', initialEndDate)
   }
 
   async function fetchClasses() {
@@ -424,19 +431,15 @@ export default function TimetablePage() {
     localStorage.setItem('axon_semester_end_date', nextEndDate)
 
     const currentLinked = readLinkedProfiles(user.id)
-    await Promise.all([
-      updatePreference(user, 'axon_semester_name', nextName),
-      updatePreference(user, 'axon_semester_start_date', nextStartDate),
-      updatePreference(user, 'axon_semester_end_date', nextEndDate),
-      supabase.auth.updateUser({
-        data: {
-          semester_name: nextName,
-          semester_start_date: nextStartDate,
-          semester_end_date: nextEndDate,
-          linked_timetables: currentLinked
-        }
-      })
-    ])
+    const updatedUser = await saveSemesterPreferences(user, {
+      name: nextName,
+      startDate: nextStartDate,
+      endDate: nextEndDate,
+      linkedProfiles: currentLinked
+    })
+    if (updatedUser) {
+      setUser(updatedUser)
+    }
 
     setShowSemesterModal(false)
     setIsSubmitting(false)
@@ -514,27 +517,15 @@ export default function TimetablePage() {
     setSemesterName(nextName)
     setSemesterStartDate(nextStartDate)
     setSemesterEndDate(nextEndDate)
-    localStorage.setItem('axon_semester_name', nextName)
-    localStorage.setItem('axon_semester_start_date', nextStartDate)
-    localStorage.setItem('axon_semester_end_date', nextEndDate)
-
     const currentLinked = readLinkedProfiles(user.id)
-
-    const [authRes] = await Promise.all([
-      supabase.auth.updateUser({
-        data: {
-          semester_name: nextName,
-          semester_start_date: nextStartDate,
-          semester_end_date: nextEndDate,
-          linked_timetables: currentLinked
-        }
-      }),
-      updatePreference(user, 'axon_semester_name', nextName),
-      updatePreference(user, 'axon_semester_start_date', nextStartDate),
-      updatePreference(user, 'axon_semester_end_date', nextEndDate)
-    ])
-    if (authRes?.data?.user) {
-      setUser(authRes.data.user)
+    const updatedUser = await saveSemesterPreferences(user, {
+      name: nextName,
+      startDate: nextStartDate,
+      endDate: nextEndDate,
+      linkedProfiles: currentLinked
+    })
+    if (updatedUser) {
+      setUser(updatedUser)
     }
 
     sessionStorage.setItem('axon_rollover_wizard_dismissed', 'true')
