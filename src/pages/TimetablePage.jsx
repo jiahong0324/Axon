@@ -154,6 +154,19 @@ export default function TimetablePage() {
   useEffect(() => { initializeTimetables() }, [])
   useEffect(() => {
     if (user) fetchClasses()
+
+    function handleClassesUpdated() {
+      if (user) {
+        clearCache(classesCacheKey(user.id))
+        fetchClasses()
+      }
+    }
+    window.addEventListener('axon_classes_updated', handleClassesUpdated)
+    window.addEventListener('focus', handleClassesUpdated)
+    return () => {
+      window.removeEventListener('axon_classes_updated', handleClassesUpdated)
+      window.removeEventListener('focus', handleClassesUpdated)
+    }
   }, [user, activeProfileId])
   useEffect(() => {
     function onKeyDown(e) {
@@ -1299,7 +1312,7 @@ export default function TimetablePage() {
         isOpen={analyzerOpen}
         onClose={() => { setAnalyzerOpen(false); setAnalyzerStep('upload') }}
         title={t('timetable.importTitle')}
-        maxWidth={analyzerStep === 'results' ? 'max-w-3xl' : 'max-w-lg'}
+        maxWidth={analyzerStep === 'results' ? 'max-w-3xl' : 'max-w-md'}
         bodyClassName="overflow-hidden"
       >
         <ImageUploadAnalyzer type="timetable" onResult={saveAll} onStepChange={setAnalyzerStep} />

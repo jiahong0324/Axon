@@ -165,11 +165,13 @@ export default function ExamResultsPage() {
 
     window.addEventListener('visibilitychange', handleAutoRefresh)
     window.addEventListener('focus', handleAutoRefresh)
+    window.addEventListener('axon_exam_results_updated', loadSemesters)
 
     return () => {
       authSub?.subscription?.unsubscribe()
       window.removeEventListener('visibilitychange', handleAutoRefresh)
       window.removeEventListener('focus', handleAutoRefresh)
+      window.removeEventListener('axon_exam_results_updated', loadSemesters)
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
       if (calcSyncTimerRef.current) clearTimeout(calcSyncTimerRef.current)
       if (courseCalcSyncTimerRef.current) clearTimeout(courseCalcSyncTimerRef.current)
@@ -336,9 +338,27 @@ export default function ExamResultsPage() {
     }
 
     // 4. Source of truth resolution:
-    // When logged in, cloud metadata (or SQL tables) is the authoritative list across devices so deleted semesters stay deleted on all devices
+    // When logged in, merge cloud metadata and SQL tables so any courses added via AI or UI are preserved
     let merged = []
-    if (hasCloudMeta) {
+    if (hasCloudMeta && tableList.length > 0) {
+      const semMap = new Map()
+      metaList.forEach(s => semMap.set(s.name || s.id, { ...s, courses: [...(s.courses || [])] }))
+      tableList.forEach(ts => {
+        const key = ts.name || ts.id
+        if (!semMap.has(key)) {
+          semMap.set(key, ts)
+        } else {
+          const sem = semMap.get(key)
+          ;(ts.courses || []).forEach(tc => {
+            if (!sem.courses.some(c => (c.course_code && tc.course_code && c.course_code === tc.course_code) || (c.course_name && tc.course_name && c.course_name.toLowerCase() === tc.course_name.toLowerCase()))) {
+              sem.courses.push(tc)
+            }
+          })
+          if (ts.is_submitted) sem.is_submitted = true
+        }
+      })
+      merged = Array.from(semMap.values())
+    } else if (hasCloudMeta) {
       merged = metaList
     } else if (tableList.length > 0) {
       merged = tableList
@@ -1436,7 +1456,7 @@ export default function ExamResultsPage() {
         isOpen={analyzerOpen}
         onClose={() => { setAnalyzerOpen(false); setAnalyzerStep('upload') }}
         title="AI Import Exam Results Slip"
-        maxWidth={analyzerStep === 'results' ? 'max-w-3xl' : 'max-w-lg'}
+        maxWidth={analyzerStep === 'results' ? 'max-w-3xl' : 'max-w-md'}
       >
         <ImageUploadAnalyzer
           type="result"

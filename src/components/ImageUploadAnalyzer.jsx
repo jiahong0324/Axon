@@ -243,59 +243,37 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
   const label = type === 'exam' ? 'EXAMS' : type === 'assignment' ? 'ASSIGNMENTS' : type === 'result' ? 'COURSE RESULTS' : 'CLASS SESSIONS'
 
   return (
-    <div className={`flex flex-1 min-h-0 flex-col ${step !== 'results' ? 'max-w-xl mx-auto w-full' : 'w-full'}`}>
+    <div className={`flex flex-1 min-h-0 flex-col ${step !== 'results' ? 'max-w-md mx-auto w-full' : 'w-full'}`}>
       <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto pr-1">
         {step === 'upload' && (
-          <div className="flex flex-col items-center justify-center w-full py-1 sm:py-2">
-            <div
+          <div className="flex flex-col items-center justify-center w-full py-1">
+            <button
+              type="button"
               onClick={() => inputRef.current?.click()}
               onDragEnter={e => { e.preventDefault(); setIsDragging(true) }}
               onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
               onDragLeave={e => { e.preventDefault(); setIsDragging(false) }}
               onDrop={e => { e.preventDefault(); setIsDragging(false); pickFile(e.dataTransfer.files?.[0]) }}
-              className={`group relative flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center transition-all duration-200 ${
+              className={`group flex w-full flex-col items-center justify-center rounded-2xl border border-dashed py-8 px-6 text-center transition-all duration-200 ${
                 isDragging
                   ? 'border-emerald-400 bg-emerald-500/15 shadow-lg shadow-emerald-500/10 scale-[1.01]'
-                  : 'border-white/15 bg-white/[0.02] hover:border-emerald-500/50 hover:bg-emerald-500/[0.04]'
+                  : 'border-theme-500/30 bg-theme-500/5 hover:border-theme-500/50 hover:bg-theme-500/10'
               }`}
             >
-              <div className={`mb-3.5 flex h-13 w-13 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border transition-all duration-300 ${
-                isDragging
-                  ? 'border-emerald-400 bg-emerald-500/25 text-emerald-300 scale-110 shadow-lg shadow-emerald-500/30'
-                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 group-hover:scale-105 group-hover:border-emerald-400/50 group-hover:bg-emerald-500/15'
-              }`}>
-                <Upload className="h-6 w-6" />
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 group-hover:scale-105 transition-transform duration-200">
+                <Upload className="h-7 w-7" />
               </div>
 
-              <h3 className="text-base sm:text-lg font-semibold tracking-tight text-white mb-1.5">
-                {isDragging ? 'Drop screenshot here' : 'Upload screenshot'}
-              </h3>
+              <span className="text-xl font-bold tracking-tight text-white mb-2">Upload screenshot</span>
 
-              <p className="text-xs sm:text-sm text-slate-400 max-w-[320px] leading-relaxed mb-5">
-                Drag & drop your {type === 'exam' ? 'exam schedule' : type === 'assignment' ? 'assignments list' : type === 'result' ? 'result slip' : 'timetable'} screenshot, or click to browse
-              </p>
-
-              <div className="flex flex-col items-center gap-2.5">
-                <span className="btn-import !py-2.5 !px-5 !min-h-0 text-sm shadow-md shadow-emerald-500/20">
-                  <Upload className="h-4 w-4" /> Browse Files
-                </span>
-
-                <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 bg-white/5 px-2.5 py-1 rounded-full border border-white/10">
-                  or paste with <kbd className="px-1.5 py-0.5 rounded bg-black/40 text-slate-300 font-mono text-[10px] border border-white/10">Ctrl+V</kbd>
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-3.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-slate-400">
-              <span className="inline-flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                PNG, JPG, WebP
+              <span className="text-sm text-slate-400 max-w-[280px] leading-relaxed mb-6">
+                Take a screenshot of your {type === 'exam' ? 'exam dates' : type === 'assignment' ? 'assignments list' : type === 'result' ? 'exam results slip' : 'timetable'} and upload it here
               </span>
-              <span className="inline-flex items-center gap-1">
-                <Sparkles className="h-3 w-3 text-emerald-400" />
-                AI auto-extracts timetable details
+
+              <span className="btn-import pointer-events-none px-6 py-2.5 text-sm sm:text-base font-semibold rounded-xl shadow-lg shadow-emerald-500/25">
+                Browse Files
               </span>
-            </div>
+            </button>
           </div>
         )}
         <input ref={inputRef} className="hidden" type="file" accept="image/*" onChange={e => pickFile(e.target.files?.[0])} />
