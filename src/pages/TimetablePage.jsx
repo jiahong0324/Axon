@@ -813,10 +813,10 @@ export default function TimetablePage() {
             title={t('timetable.startNewSemester')}
           >
             <span className="text-xs">🌴</span>
-            <span className="font-medium text-amber-200 group-hover:text-white transition-colors">
-              {t('timetable.semesterBreak')} · {t('timetable.startNewSemester')}
+            <span className="font-medium text-amber-200 group-hover:text-white transition-colors whitespace-nowrap">
+              {t('timetable.semesterBreak')}
             </span>
-            <ArrowRight className="h-3 w-3 text-amber-300/80 group-hover:text-white transition-transform group-hover:translate-x-0.5" />
+            <ArrowRight className="h-3 w-3 text-amber-300/80 group-hover:text-white transition-transform group-hover:translate-x-0.5 shrink-0" />
           </button>
         ) : progressInfo?.isUpcoming ? (
           <button

@@ -57,6 +57,33 @@ export default async function handler(req, res) {
       })
     }
 
+    // MODE: Clean up raw internal sync logs from activity_log
+    if (mode === 'cleanup_activity') {
+      try {
+        await adminSupabase
+          .from('activity_log')
+          .delete()
+          .in('entity_type', ['axon_linked_timetables', 'axon_exam_results_semesters'])
+
+        await adminSupabase
+          .from('activity_log')
+          .delete()
+          .like('action', 'SYNC_%')
+
+        await adminSupabase
+          .from('activity_log')
+          .delete()
+          .like('entity_name', '[{%')
+      } catch (e) {
+        console.warn('cleanup_activity error:', e)
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Purged raw internal sync logs'
+      })
+    }
+
     if (!studentId) {
       return res.status(400).json({ error: 'studentId is required' })
     }

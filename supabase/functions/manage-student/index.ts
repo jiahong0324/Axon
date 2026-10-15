@@ -37,10 +37,10 @@ Deno.serve(async req => {
     const callerRole = profile?.role || 'student'
 
     if (!action) return json({ error: 'Missing action' }, 400)
-    if (!['create_student', 'invite_user', 'send_promotional_email'].includes(action) && !studentId) return json({ error: 'Missing studentId' }, 400)
+    if (!['create_student', 'invite_user', 'send_promotional_email', 'cleanup_activity'].includes(action) && !studentId) return json({ error: 'Missing studentId' }, 400)
 
     // Verify manager privileges for strict actions
-    const strictActions = ['create_student', 'get_student_detail', 'change_password', 'change_email', 'send_reset_email', 'delete_account', 'deactivate', 'reactivate', 'send_promotional_email']
+    const strictActions = ['create_student', 'get_student_detail', 'change_password', 'change_email', 'send_reset_email', 'delete_account', 'deactivate', 'reactivate', 'send_promotional_email', 'cleanup_activity']
     if (strictActions.includes(action) && callerRole !== 'manager') {
       return json({ error: 'Forbidden: managers only' }, 403)
     }
@@ -136,6 +136,29 @@ Deno.serve(async req => {
             reminders: reminders || []
           }
         }
+        break
+      }
+
+      case 'cleanup_activity': {
+        try {
+          await adminClient
+            .from('activity_log')
+            .delete()
+            .in('entity_type', ['axon_linked_timetables', 'axon_exam_results_semesters'])
+
+          await adminClient
+            .from('activity_log')
+            .delete()
+            .like('action', 'SYNC_%')
+
+          await adminClient
+            .from('activity_log')
+            .delete()
+            .like('entity_name', '[{%')
+        } catch (e) {
+          console.warn('cleanup_activity error:', e)
+        }
+        result = { data: { success: true } }
         break
       }
 

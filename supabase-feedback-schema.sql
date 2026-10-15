@@ -1,16 +1,19 @@
 create table if not exists public.feedback (
   id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade,
+  name text,
+  email text,
   message text not null,
+  image_url text,
   status text default 'pending',
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 alter table public.feedback enable row level security;
 
-create policy "Users can insert their own feedback."
+create policy "Anyone can insert feedback."
   on public.feedback for insert
-  with check (auth.uid() = user_id);
+  with check (true);
 
 create policy "Users can view their own feedback."
   on public.feedback for select
@@ -22,4 +25,8 @@ create policy "Managers can view all feedback."
 
 create policy "Managers can update feedback."
   on public.feedback for update
+  using (exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'manager'));
+
+create policy "Managers can delete feedback."
+  on public.feedback for delete
   using (exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'manager'));

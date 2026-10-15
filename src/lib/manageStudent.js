@@ -33,7 +33,18 @@ export const studentManager = {
   sendAcademicDigest: (id, options) => call('send_academic_digest', id, options),
   deleteAccount: id => call('delete_account', id),
   deactivate: id => call('deactivate', id),
-  reactivate: id => call('reactivate', id)
+  reactivate: id => call('reactivate', id),
+  cleanupActivityLogs: async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.access_token) {
+      try {
+        await fetch('/api/admin-student?mode=cleanup_activity', {
+          headers: { Authorization: `Bearer ${session.access_token}` }
+        })
+      } catch (_) {}
+    }
+    return call('cleanup_activity', 'admin').catch(() => null)
+  }
 }
 
 export async function fetchFullStudentDetail(studentId) {

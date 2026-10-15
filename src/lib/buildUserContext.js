@@ -105,9 +105,17 @@ ${activityLogs.length === 0 ? 'No recent activities logged.' : activityLogs.slic
 
 === STUDENT FEEDBACK TICKETS ===
 Pending Tickets (${pendingFeedback.length}):
-${pendingFeedback.length === 0 ? 'No pending feedback tickets.' : pendingFeedback.map(f => `- [PENDING] From ${f.name || getStudentName(f.user_id)} (${f.email || 'no email'}): "${f.message}" (${format(new Date(f.created_at), 'yyyy-MM-dd')})`).join('\n')}
+${pendingFeedback.length === 0 ? 'No pending feedback tickets.' : pendingFeedback.map(f => {
+  const hasImage = Boolean(f.image_url || f.message?.includes('__ATTACHMENT__:'))
+  const cleanMsg = (f.message || '').split('__ATTACHMENT__:')[0].trim().replace(/\s+/g, ' ').slice(0, 150)
+  return `- [PENDING] From ${f.name || getStudentName(f.user_id)} (${f.email || 'no email'}): "${cleanMsg}"${hasImage ? ' [Screenshot Attached]' : ''} (${format(new Date(f.created_at), 'yyyy-MM-dd')})`
+}).join('\n')}
 Other Recent Feedback:
-${feedback.filter(f => f.status !== 'pending').slice(0, 15).map(f => `- [${(f.status || 'reviewed').toUpperCase()}] From ${f.name || getStudentName(f.user_id)}: "${f.message}"`).join('\n') || 'None'}
+${feedback.filter(f => f.status !== 'pending').slice(0, 15).map(f => {
+  const hasImage = Boolean(f.image_url || f.message?.includes('__ATTACHMENT__:'))
+  const cleanMsg = (f.message || '').split('__ATTACHMENT__:')[0].trim().replace(/\s+/g, ' ').slice(0, 150)
+  return `- [${(f.status || 'reviewed').toUpperCase()}] From ${f.name || getStudentName(f.user_id)}: "${cleanMsg}"${hasImage ? ' [Screenshot Attached]' : ''}`
+}).join('\n') || 'None'}
 
 === ANNOUNCEMENTS ===
 ${announcements.length === 0 ? 'No announcements.' : announcements.slice(0, 10).map(a => `- [${(a.type || 'info').toUpperCase()}] "${a.title}": ${a.message} (Expires: ${a.expires_at || 'No expiration'})`).join('\n')}
