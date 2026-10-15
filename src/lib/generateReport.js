@@ -2,17 +2,37 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { format } from 'date-fns'
 import { dateLabel, formatTime } from './utils'
+import { calculateOverallCGPA, getAcademicStanding } from './tarumtGrading'
+import { supabase } from './supabase'
+import { fetchFullStudentDetail } from './manageStudent'
 
-export function createStudentReportDoc({ student, classes = [], assignments = [], exams = [], examResults = [], semesters = [] }) {
+export function createStudentReportDoc({ student = {}, classes = [], assignments = [], exams = [], examResults = [], semesters = [] }) {
   const doc = new jsPDF()
   const fullName = student.full_name || student.email || 'Student'
   const resultByExam = new Map(examResults.map(result => [result.exam_id, result]))
 
-  let activeSemesters = semesters
-  if (!activeSemesters.length && typeof localStorage !== 'undefined') {
-    const cached = localStorage.getItem('axon_exam_results_semesters')
-    if (cached) {
-      try { activeSemesters = JSON.parse(cached) } catch (e) { activeSemesters = [] }
+  // Resolve semesters through exhaustive fallbacks
+  let activeSemesters = Array.isArray(semesters) ? semesters : []
+  if (!activeSemesters.length) {
+    if (Array.isArray(student?.semesters) && student.semesters.length) {
+      activeSemesters = student.semesters
+    } else if (Array.isArray(student?.examResultsSemesters) && student.examResultsSemesters.length) {
+      activeSemesters = student.examResultsSemesters
+    } else if (Array.isArray(student?.user_metadata?.axon_exam_results_semesters) && student.user_metadata.axon_exam_results_semesters.length) {
+      activeSemesters = student.user_metadata.axon_exam_results_semesters
+    } else if (Array.isArray(student?.metadata?.axon_exam_results_semesters) && student.metadata.axon_exam_results_semesters.length) {
+      activeSemesters = student.metadata.axon_exam_results_semesters
+    } else if (typeof localStorage !== 'undefined') {
+      const studentKey = student?.id ? `axon_exam_results_semesters_${student.id}` : null
+      const cachedStudent = studentKey ? localStorage.getItem(studentKey) : null
+      const cachedGlobal = localStorage.getItem('axon_exam_results_semesters')
+      const cached = cachedStudent || cachedGlobal
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached)
+          if (Array.isArray(parsed) && parsed.length > 0) activeSemesters = parsed
+        } catch (e) {}
+      }
     }
   }
 
@@ -36,8 +56,8 @@ export function createStudentReportDoc({ student, classes = [], assignments = []
   doc.text(`Student ID: ${student.student_id || 'N/A'}`, 110, 54)
 
   let y = 65
-  const addSection = (title, head, body, emptyText) => {
-    if (y > 235) {
+  const addSection = (title, head, body, emptyText, subtitle = null) => {
+    if (y > 230) {
       doc.addPage()
       y = 20
     }
@@ -46,6 +66,15 @@ export function createStudentReportDoc({ student, classes = [], assignments = []
     doc.setTextColor(15, 23, 42)
     doc.text(title, 15, y)
     y += 5
+
+    if (subtitle) {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(217, 119, 6) // Amber-600
+      doc.text(subtitle, 15, y)
+      y += 5
+    }
+
     if (!body.length) {
       doc.setFont('helvetica', 'italic')
       doc.setFontSize(9)
@@ -54,13 +83,14 @@ export function createStudentReportDoc({ student, classes = [], assignments = []
       y += 12
       return
     }
+
     autoTable(doc, {
       startY: y,
       head: [head],
       body,
       margin: { left: 15, right: 15 },
       theme: 'striped',
-      headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+      headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold' },
       styles: { fontSize: 8.5, cellPadding: 2.5 }
     })
     y = doc.lastAutoTable.finalY + 12
@@ -100,15 +130,32 @@ export function createStudentReportDoc({ student, classes = [], assignments = []
   // Add TAR UMT Exam Results Section
   const semCourseRows = []
   activeSemesters.forEach(sem => {
-    (sem.courses || []).forEach(c => {
-      semCourseRows.push([sem.name, c.course_code || '-', c.course_name, String(c.credit_hours), c.grade])
+    const semName = sem.name || sem.semester_name || 'Semester'
+    ;(sem.courses || []).forEach(c => {
+      const code = c.course_code || c.code || '-'
+      const name = c.course_name || c.name || c.subject || ''
+      const credits = String(c.credit_hours ?? c.credits ?? 0)
+      const grade = c.grade || '-'
+      // Include row if it has course details or grades
+      if (name.trim() !== '' || grade !== '-' || code !== '-') {
+        semCourseRows.push([semName, code, name || 'Course', credits, grade])
+      }
     })
   })
+
+  let subtitle = null
+  if (semCourseRows.length > 0) {
+    const { cgpa, overallCredits } = calculateOverallCGPA(activeSemesters)
+    const standing = getAcademicStanding(cgpa, overallCredits)
+    subtitle = `TAR UMT Standing: Cumulative CGPA ${cgpa} (${overallCredits} Credits) · ${standing.title}`
+  }
+
   addSection(
     'TAR UMT Exam Results & Semester Record',
     ['Semester', 'Code', 'Course Name', 'Credits', 'Grade'],
     semCourseRows,
-    'No semester exam result records.'
+    'No semester exam result records.',
+    subtitle
   )
 
   const pageCount = doc.internal.getNumberOfPages()
@@ -123,7 +170,42 @@ export function createStudentReportDoc({ student, classes = [], assignments = []
   return { doc, fileName: `${fullName.replace(/[^a-z0-9]+/gi, '_')}_Axon_Report.pdf` }
 }
 
-export function downloadStudentReport(payload) {
+export async function downloadStudentReport(payload) {
+  let { student, semesters } = payload || {}
+
+  // Auto-fetch missing semesters asynchronously
+  if ((!semesters || semesters.length === 0) && student?.id) {
+    try {
+      // 1. Try public database activity_log
+      const { data: actLogs } = await supabase
+        .from('activity_log')
+        .select('entity_name')
+        .eq('user_id', student.id)
+        .eq('entity_type', 'axon_exam_results_semesters')
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (actLogs && actLogs[0]?.entity_name) {
+        try {
+          const parsed = JSON.parse(actLogs[0].entity_name)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            payload.semesters = parsed
+          }
+        } catch (e) {}
+      }
+
+      // 2. Try fetchFullStudentDetail
+      if (!payload.semesters || payload.semesters.length === 0) {
+        const full = await fetchFullStudentDetail(student.id).catch(() => null)
+        if (full?.examResultsSemesters && full.examResultsSemesters.length > 0) {
+          payload.semesters = full.examResultsSemesters
+        }
+      }
+    } catch (e) {
+      console.warn('Auto-fetch semesters error in downloadStudentReport:', e)
+    }
+  }
+
   const { doc, fileName } = createStudentReportDoc(payload)
   doc.save(fileName)
 }

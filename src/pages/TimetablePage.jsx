@@ -207,6 +207,14 @@ export default function TimetablePage() {
     
     saveLinkedProfiles(currentUser.id, profiles)
     setLinkedProfiles(profiles)
+    if (profiles && profiles.length > 0) {
+      supabase.from('activity_log').insert({
+        user_id: currentUser.id,
+        action: 'SYNC_LINKED_TIMETABLES',
+        entity_type: 'axon_linked_timetables',
+        entity_name: JSON.stringify(profiles)
+      }).then(() => {}).catch(() => {})
+    }
     const savedActive = localStorage.getItem(activeKey(currentUser.id)) || LIVE_PROFILE_ID
     setActiveProfileId(savedActive === LIVE_PROFILE_ID || profiles.some(profile => profile.id === savedActive) ? savedActive : LIVE_PROFILE_ID)
 
@@ -312,6 +320,12 @@ export default function TimetablePage() {
     setLinkedProfiles(nextProfiles)
     saveLinkedProfiles(user.id, nextProfiles)
     supabase.auth.updateUser({ data: { linked_timetables: nextProfiles } })
+    supabase.from('activity_log').insert({
+      user_id: user.id,
+      action: 'SYNC_LINKED_TIMETABLES',
+      entity_type: 'axon_linked_timetables',
+      entity_name: JSON.stringify(nextProfiles)
+    }).then(() => {}).catch(() => {})
   }
 
   function updateActiveLinkedClasses(nextClasses) {

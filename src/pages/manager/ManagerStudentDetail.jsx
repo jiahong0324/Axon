@@ -61,7 +61,36 @@ export default function ManagerStudentDetail() {
       setActivity(activityRes.data || [])
 
       // Timetables
-      const linked = fullDetail?.linkedTimetables || fullDetail?.metadata?.linked_timetables || []
+      let linked = fullDetail?.linkedTimetables || fullDetail?.metadata?.linked_timetables || []
+      if (linked.length === 0) {
+        try {
+          const { data: actLinked } = await supabase
+            .from('activity_log')
+            .select('entity_name')
+            .eq('user_id', studentId)
+            .eq('entity_type', 'axon_linked_timetables')
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          if (actLinked && actLinked[0]?.entity_name) {
+            const parsed = JSON.parse(actLinked[0].entity_name)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              linked = parsed
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (linked.length === 0 && typeof localStorage !== 'undefined') {
+        const cached = localStorage.getItem(`axon_linked_timetables_${studentId}`)
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached)
+            if (Array.isArray(parsed) && parsed.length > 0) linked = parsed
+          } catch (e) {}
+        }
+      }
+
       setLinkedTimetables(linked)
       setReplacementClasses(fullDetail?.metadata?.replacement_classes || [])
 
@@ -75,6 +104,38 @@ export default function ManagerStudentDetail() {
           courses: (coursesRes.data || []).filter(c => c.semester_id === s.id)
         }))
       }
+
+      // Check activity_log for synced semesters
+      if (sems.length === 0) {
+        try {
+          const { data: actLogs } = await supabase
+            .from('activity_log')
+            .select('entity_name')
+            .eq('user_id', studentId)
+            .eq('entity_type', 'axon_exam_results_semesters')
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          if (actLogs && actLogs[0]?.entity_name) {
+            const parsed = JSON.parse(actLogs[0].entity_name)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              sems = parsed
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Local storage fallback for this student
+      if (sems.length === 0 && typeof localStorage !== 'undefined') {
+        const cached = localStorage.getItem(`axon_exam_results_semesters_${studentId}`) || localStorage.getItem('axon_exam_results_semesters')
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached)
+            if (Array.isArray(parsed) && parsed.length > 0) sems = parsed
+          } catch (e) {}
+        }
+      }
+
       setSemesters(sems)
 
       // Chats
