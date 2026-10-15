@@ -1,6 +1,24 @@
-import { Calendar, Check, Clock, Loader2, MapPin, RotateCcw, Sparkles, Trash2, Upload, User, XCircle } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import {
+  AlertCircle,
+  AlertTriangle,
+  Calendar,
+  Check,
+  Clock,
+  Image as ImageIcon,
+  Loader2,
+  MapPin,
+  Pencil,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+  Upload,
+  User,
+  X,
+  XCircle
+} from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { analyzeImageWithGroq } from '../lib/groq'
+import { formatTime } from '../lib/utils'
 import DateInput from './DateInput'
 
 const TIMETABLE_PROMPT = `
@@ -108,6 +126,45 @@ const typeBadgeClasses = {
   T: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
   P: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
   C: 'bg-pink-500/15 text-pink-400 border-pink-500/30'
+}
+
+export const SAMPLE_TIMETABLE_ITEMS = [
+  { key: 'sample-1', subject: 'BMIS1043', day: 'Monday', start_time: '13:00', end_time: '14:00', classroom: 'B001K', lecturer: 'Tan Lai Kien', class_type: 'T', color: 'green', selected: true },
+  { key: 'sample-2', subject: 'BMIS1043', day: 'Monday', start_time: '14:00', end_time: '15:00', classroom: 'B001K', lecturer: 'Tan Lai Kien', class_type: 'P', color: 'purple', selected: true },
+  { key: 'sample-3', subject: 'BMMS1623', day: 'Tuesday', start_time: '11:00', end_time: '13:00', classroom: 'DK ABA', lecturer: 'Tan Li Yin', class_type: 'L', color: 'blue', selected: true },
+  { key: 'sample-4', subject: 'BMCS1113', day: 'Wednesday', start_time: '09:00', end_time: '11:00', classroom: 'B102', lecturer: 'Lee Wei Ming', class_type: 'L', color: 'blue', selected: true },
+  { key: 'sample-5', subject: 'BMCS1113', day: 'Wednesday', start_time: '11:00', end_time: '12:00', classroom: '', lecturer: 'Lee Wei Ming', class_type: 'T', color: 'green', selected: true },
+  { key: 'sample-6', subject: 'BACS2042', day: 'Thursday', start_time: '14:00', end_time: '16:00', classroom: 'DK 1', lecturer: 'Dr. Wong', class_type: 'L', color: 'blue', selected: true },
+  { key: 'sample-7', subject: 'BACS2042', day: 'Thursday', start_time: '16:00', end_time: '18:00', classroom: 'Lab 4', lecturer: 'Dr. Wong', class_type: 'P', color: 'purple', selected: true },
+  { key: 'sample-8', subject: 'BJEL1023', day: 'Friday', start_time: '10:00', end_time: '12:00', classroom: '', lecturer: 'Ms. Sarah', class_type: 'L', color: 'blue', selected: true },
+  { key: 'sample-9', subject: 'BJEL1023', day: 'Friday', start_time: '14:00', end_time: '16:00', classroom: 'B204', lecturer: 'Ms. Sarah', class_type: 'T', color: 'green', selected: true },
+  { key: 'sample-10', subject: 'BHEL1012', day: 'Friday', start_time: '15:00', end_time: '17:00', classroom: 'DK 2', lecturer: 'En. Ahmad', class_type: 'C', color: 'pink', selected: true },
+]
+
+const CLASS_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const SHORT_DAYS = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun' }
+
+const CLASS_TYPE_CONFIG = {
+  L: { label: 'Lecture', short: 'L', dot: 'bg-blue-400', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/25', blockBg: 'bg-blue-500/15 border-blue-500/40 text-blue-200' },
+  T: { label: 'Tutorial', short: 'T', dot: 'bg-emerald-400', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25', blockBg: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-200' },
+  P: { label: 'Practical', short: 'P', dot: 'bg-purple-400', badge: 'bg-purple-500/10 text-purple-400 border-purple-500/25', blockBg: 'bg-purple-500/15 border-purple-500/40 text-purple-200' },
+  C: { label: 'Class', short: 'C', dot: 'bg-pink-400', badge: 'bg-pink-500/10 text-pink-400 border-pink-500/25', blockBg: 'bg-pink-500/15 border-pink-500/40 text-pink-200' },
+}
+
+function timeToMinutes(timeStr) {
+  if (!timeStr) return 0
+  const parts = String(timeStr).trim().split(':')
+  if (parts.length < 2) return 0
+  const h = parseInt(parts[0], 10) || 0
+  const m = parseInt(parts[1], 10) || 0
+  return h * 60 + m
+}
+
+function formatTimeRange(start, end) {
+  if (!start) return 'TBA'
+  const s = formatTime(start)
+  const e = end ? formatTime(end) : ''
+  return e ? `${s} – ${e}` : s
 }
 
 export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
@@ -249,6 +306,50 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
 
   const selected = items.filter(item => item.selected)
   const label = type === 'exam' ? 'EXAMS' : type === 'assignment' ? 'ASSIGNMENTS' : type === 'result' ? 'COURSE RESULTS' : 'CLASS SESSIONS'
+
+  if (step === 'results' && type === 'timetable') {
+    return (
+      <TimetableResultsWorkspace
+        items={items.length ? items : SAMPLE_TIMETABLE_ITEMS}
+        preview={preview}
+        updateItem={(index, updates) => {
+          if (!items.length) {
+            setItems(SAMPLE_TIMETABLE_ITEMS.map((item, i) => i === index ? { ...item, ...updates } : item))
+          } else {
+            updateItem(index, updates)
+          }
+        }}
+        deleteItem={(index) => {
+          if (!items.length) {
+            setItems(SAMPLE_TIMETABLE_ITEMS.filter((_, i) => i !== index))
+          } else {
+            deleteItem(index)
+          }
+        }}
+        setAll={(selected) => {
+          if (!items.length) {
+            setItems(SAMPLE_TIMETABLE_ITEMS.map(item => ({ ...item, selected })))
+          } else {
+            setAll(selected)
+          }
+        }}
+        startOver={startOver}
+        handleImport={async () => {
+          const toImport = (items.length ? items : SAMPLE_TIMETABLE_ITEMS).filter(item => item.selected)
+          if (isImporting) return
+          setIsImporting(true)
+          try {
+            await onResult(toImport.map(item => cleanItem(item, type)))
+          } catch (err) {
+            console.error(err)
+          } finally {
+            setIsImporting(false)
+          }
+        }}
+        isImporting={isImporting}
+      />
+    )
+  }
 
   return (
     <div className="flex flex-1 min-h-0 flex-col w-full">
@@ -463,135 +564,862 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
   )
 }
 
-function TimetableResult({ item, index, updateItem, onDelete }) {
-  const classType = ['L', 'T', 'P', 'C'].includes(item.class_type) ? item.class_type : 'L'
-  const borderClass = typeBorderClasses[classType] || 'border-l-blue-500'
-  const badgeClass = typeBadgeClasses[classType] || typeBadgeClasses.L
+function TimetableResultsWorkspace({
+  items,
+  preview,
+  updateItem,
+  deleteItem,
+  setAll,
+  startOver,
+  handleImport,
+  isImporting
+}) {
+  const [hoveredKey, setHoveredKey] = useState(null)
+  const [expandedKey, setExpandedKey] = useState(null)
+  const [filterMode, setFilterMode] = useState('all') // 'all' | 'conflicts' | 'review'
+  const [showScreenshot, setShowScreenshot] = useState(false)
+  const [mobileTab, setMobileTab] = useState('list') // 'list' | 'week'
+
+  function handleUpdateByKey(key, updates) {
+    const idx = items.findIndex(it => it.key === key)
+    if (idx !== -1) updateItem(idx, updates)
+  }
+
+  function handleDeleteByKey(key) {
+    const idx = items.findIndex(it => it.key === key)
+    if (idx !== -1) deleteItem(idx)
+  }
+
+  // Conflict detection: overlapping times on same day
+  const conflictData = useMemo(() => {
+    const map = new Map()
+    const pairs = new Set()
+
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i]
+        const b = items[j]
+        if (a.day && b.day && a.day.toLowerCase() === b.day.toLowerCase()) {
+          const aStart = timeToMinutes(a.start_time)
+          const aEnd = timeToMinutes(a.end_time)
+          const bStart = timeToMinutes(b.start_time)
+          const bEnd = timeToMinutes(b.end_time)
+          if (aStart < bEnd && bStart < aEnd) {
+            if (!map.has(a.key)) map.set(a.key, [])
+            if (!map.has(b.key)) map.set(b.key, [])
+            map.get(a.key).push({ key: b.key, subject: b.subject || 'Class', time: formatTimeRange(b.start_time, b.end_time) })
+            map.get(b.key).push({ key: a.key, subject: a.subject || 'Class', time: formatTimeRange(a.start_time, a.end_time) })
+            const pairKey = [a.key, b.key].sort().join('-')
+            pairs.add(pairKey)
+          }
+        }
+      }
+    }
+    return { map, pairCount: pairs.size }
+  }, [items])
+
+  // Review detection
+  const reviewMap = useMemo(() => {
+    const map = new Map()
+    items.forEach(item => {
+      const issues = []
+      if (item.needsReview) {
+        issues.push(typeof item.needsReview === 'string' ? item.needsReview : 'Low OCR confidence')
+      }
+      if (!item.classroom || !item.classroom.trim()) {
+        issues.push('Missing room')
+      }
+      if (!item.subject || item.subject.trim().length < 3) {
+        issues.push('Uncertain subject name')
+      }
+      if (!item.start_time || !item.end_time) {
+        issues.push('Missing class time')
+      } else if (timeToMinutes(item.end_time) <= timeToMinutes(item.start_time)) {
+        issues.push('Invalid time range')
+      }
+      if (issues.length > 0) {
+        map.set(item.key, issues)
+      }
+    })
+    return map
+  }, [items])
+
+  // Filtering
+  const filteredItems = useMemo(() => {
+    if (filterMode === 'conflicts') {
+      return items.filter(it => conflictData.map.has(it.key))
+    }
+    if (filterMode === 'review') {
+      return items.filter(it => reviewMap.has(it.key))
+    }
+    return items
+  }, [items, filterMode, conflictData, reviewMap])
+
+  // Grouping by day
+  const groupedByDay = useMemo(() => {
+    const groups = {}
+    CLASS_DAYS.forEach(d => { groups[d] = [] })
+    filteredItems.forEach(item => {
+      const d = item.day || 'Monday'
+      if (!groups[d]) groups[d] = []
+      groups[d].push(item)
+    })
+    Object.keys(groups).forEach(d => {
+      groups[d].sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time))
+    })
+    return CLASS_DAYS.filter(d => groups[d]?.length > 0).map(d => ({
+      day: d,
+      items: groups[d]
+    }))
+  }, [filteredItems])
+
+  const selectedCount = items.filter(it => it.selected).length
+
+  function handleSelectBlock(key) {
+    setExpandedKey(key)
+    setMobileTab('list')
+    setTimeout(() => {
+      document.getElementById(`session-row-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 50)
+  }
+
+  return (
+    <div className="flex flex-1 min-h-0 flex-col w-full">
+      {/* 4. SMART REVIEW & HEADER STRIP */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-white/10 shrink-0">
+        {/* Clickable Summary Strip */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <button
+            type="button"
+            onClick={() => setFilterMode('all')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+              filterMode === 'all'
+                ? 'bg-white/10 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <span>{items.length} sessions detected</span>
+          </button>
+          <span className="text-white/20 select-none">·</span>
+          <button
+            type="button"
+            onClick={() => setFilterMode(filterMode === 'conflicts' ? 'all' : 'conflicts')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              filterMode === 'conflicts'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                : conflictData.pairCount > 0
+                ? 'text-amber-400/90 hover:bg-amber-500/10 hover:text-amber-300'
+                : 'text-slate-500'
+            }`}
+            title={conflictData.pairCount > 0 ? 'Filter to conflicting sessions' : 'No conflicts detected'}
+          >
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+            <span>{conflictData.pairCount} {conflictData.pairCount === 1 ? 'conflict' : 'conflicts'}</span>
+          </button>
+          <span className="text-white/20 select-none">·</span>
+          <button
+            type="button"
+            onClick={() => setFilterMode(filterMode === 'review' ? 'all' : 'review')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              filterMode === 'review'
+                ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm'
+                : reviewMap.size > 0
+                ? 'text-sky-400/90 hover:bg-sky-500/10 hover:text-sky-300'
+                : 'text-slate-500'
+            }`}
+            title={reviewMap.size > 0 ? 'Filter to items needing review' : 'All fields verified'}
+          >
+            <AlertCircle className="h-3.5 w-3.5 text-sky-400 shrink-0" />
+            <span>{reviewMap.size} need review</span>
+          </button>
+        </div>
+
+        {/* Right Controls: Screenshot Toggle & Selection Status */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {preview && (
+            <button
+              type="button"
+              onClick={() => setShowScreenshot(!showScreenshot)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 border transition-all ${
+                showScreenshot
+                  ? 'bg-white/15 text-white border-white/20 shadow-sm'
+                  : 'text-slate-400 hover:text-white bg-white/[0.03] border-white/10 hover:bg-white/5'
+              }`}
+              title="Toggle source screenshot"
+            >
+              <ImageIcon className="h-3.5 w-3.5 text-slate-300" />
+              <span className="hidden sm:inline">{showScreenshot ? 'Hide Source' : 'View Source'}</span>
+            </button>
+          )}
+          <div className="flex items-center gap-2">
+            <span className="flex h-5 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 text-[11px] font-bold text-emerald-400">
+              {selectedCount} of {items.length} selected
+            </span>
+            <button
+              type="button"
+              onClick={() => setAll(selectedCount !== items.length)}
+              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+            >
+              {selectedCount === items.length ? 'Deselect all' : 'Select all'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Collapsible Source Screenshot Drawer */}
+      {showScreenshot && preview && (
+        <div className="my-2 rounded-xl border border-white/10 bg-black/40 p-2.5 shrink-0 animate-[fadeIn_.15s_ease] motion-reduce:animate-none">
+          <div className="flex items-center justify-between pb-1.5 px-1 border-b border-white/5 text-xs text-slate-400">
+            <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+              <ImageIcon className="h-3.5 w-3.5 text-slate-400" /> Original Screenshot
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowScreenshot(false)}
+              className="text-slate-400 hover:text-white p-0.5 rounded hover:bg-white/5"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="mt-2 max-h-48 overflow-auto rounded-lg bg-black/60 flex items-center justify-center p-1">
+            <img
+              src={preview}
+              alt="Original timetable upload"
+              className="max-h-44 object-contain rounded"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Active Filter Pill if filter is on */}
+      {filterMode !== 'all' && (
+        <div className="my-2 flex items-center justify-between bg-white/[0.03] border border-white/10 px-3 py-1.5 rounded-lg text-xs text-slate-300 shrink-0">
+          <span>
+            Filtering by <strong className="text-white capitalize">{filterMode === 'conflicts' ? 'Time Conflicts' : 'Needs Review'}</strong> ({filteredItems.length} matching)
+          </span>
+          <button
+            type="button"
+            onClick={() => setFilterMode('all')}
+            className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold"
+          >
+            Show all sessions
+          </button>
+        </div>
+      )}
+
+      {/* MOBILE SEGMENTED TOGGLE (< 900px / lg) */}
+      <div className="flex lg:hidden p-1 bg-black/40 border border-white/10 rounded-xl my-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => setMobileTab('list')}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+            mobileTab === 'list'
+              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          <span>Session List ({filteredItems.length})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab('week')}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+            mobileTab === 'week'
+              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Clock className="h-3.5 w-3.5" />
+          <span>Week Preview</span>
+        </button>
+      </div>
+
+      {/* TWO-PANE LAYOUT */}
+      <div className="flex flex-1 min-h-0 pt-2 gap-4 overflow-hidden">
+        {/* LEFT PANE: Day-grouped Session List (~60% desktop, full mobile when list tab) */}
+        <div
+          className={`w-full lg:w-[58%] xl:w-[60%] flex-col min-h-0 ${
+            mobileTab === 'list' ? 'flex' : 'hidden lg:flex'
+          }`}
+        >
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide pr-1 rounded-xl border border-white/5 bg-slate-900/30">
+            {groupedByDay.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 space-y-2">
+                <p className="text-sm">No sessions match the selected filter.</p>
+                <button
+                  type="button"
+                  onClick={() => setFilterMode('all')}
+                  className="text-xs text-emerald-400 hover:underline"
+                >
+                  Clear filter
+                </button>
+              </div>
+            ) : (
+              groupedByDay.map(({ day, items: dayItems }) => (
+                <div key={day} className="relative">
+                  {/* Sticky Day Header */}
+                  <div className="sticky top-0 z-10 flex items-center justify-between bg-[#0b121e]/95 backdrop-blur-md px-3 py-1.5 border-b border-white/10 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-emerald-400" />
+                      <span>{day}</span>
+                    </span>
+                    <span className="text-[11px] font-normal text-slate-400 lowercase">
+                      {dayItems.length} {dayItems.length === 1 ? 'session' : 'sessions'}
+                    </span>
+                  </div>
+
+                  {/* Sessions in day */}
+                  <div className="divide-y divide-white/5">
+                    {dayItems.map(item => (
+                      <TimetableSessionRow
+                        key={item.key}
+                        item={item}
+                        isExpanded={expandedKey === item.key}
+                        onToggleExpand={() => setExpandedKey(expandedKey === item.key ? null : item.key)}
+                        onUpdate={(updates) => handleUpdateByKey(item.key, updates)}
+                        onDelete={() => handleDeleteByKey(item.key)}
+                        onToggleSelect={() => handleUpdateByKey(item.key, { selected: !item.selected })}
+                        isHovered={hoveredKey === item.key}
+                        setHoveredKey={setHoveredKey}
+                        conflicts={conflictData.map.get(item.key) || []}
+                        reviewIssues={reviewMap.get(item.key) || []}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT PANE: Live Weekly Timetable Preview (~40% desktop, full mobile when week tab) */}
+        <div
+          className={`w-full lg:w-[42%] xl:w-[40%] flex-col min-h-0 pl-0 lg:pl-1 ${
+            mobileTab === 'week' ? 'flex' : 'hidden lg:flex'
+          }`}
+        >
+          <LiveTimetablePreview
+            items={items}
+            hoveredKey={hoveredKey}
+            setHoveredKey={setHoveredKey}
+            onSelectBlock={handleSelectBlock}
+            conflictMap={conflictData.map}
+          />
+        </div>
+      </div>
+
+      {/* 5. STICKY FOOTER */}
+      <div className="mt-3 flex shrink-0 items-center justify-between gap-3 border-t border-white/10 pt-3">
+        <button
+          type="button"
+          className="btn-ghost !min-h-0 !py-2 !px-3.5 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors"
+          onClick={startOver}
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          <span>Start Over</span>
+        </button>
+
+        <button
+          type="button"
+          className="btn-import !min-h-0 !py-2.5 !px-5 text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={selectedCount === 0 || isImporting}
+          onClick={handleImport}
+        >
+          {isImporting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Importing...</span>
+            </>
+          ) : (
+            <>
+              <Check className="h-4 w-4 stroke-[2.5]" />
+              <span>Import {selectedCount} {selectedCount === 1 ? 'session' : 'sessions'}</span>
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function TimetableSessionRow({
+  item,
+  isExpanded,
+  onToggleExpand,
+  onUpdate,
+  onDelete,
+  onToggleSelect,
+  isHovered,
+  setHoveredKey,
+  conflicts = [],
+  reviewIssues = []
+}) {
+  const typeConfig = CLASS_TYPE_CONFIG[item.class_type] || CLASS_TYPE_CONFIG.L
+  const hasConflict = conflicts.length > 0
+  const needsReview = reviewIssues.length > 0
 
   return (
     <div
-      className={`group relative rounded-xl border border-l-4 transition-all duration-150 ${borderClass} ${
-        item.selected
-          ? 'border-white/10 bg-[#151f30] hover:bg-[#19253a] shadow-sm'
-          : 'border-white/5 bg-slate-900/30 opacity-40 hover:opacity-60'
+      id={`session-row-${item.key}`}
+      role="checkbox"
+      aria-checked={item.selected}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return
+        if (e.key === ' ') {
+          e.preventDefault()
+          onToggleSelect()
+        } else if (e.key === 'Enter') {
+          e.preventDefault()
+          onToggleExpand()
+        }
+      }}
+      onMouseEnter={() => setHoveredKey(item.key)}
+      onMouseLeave={() => setHoveredKey(null)}
+      className={`group relative transition-colors duration-150 border-b border-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 motion-reduce:transition-none ${
+        isHovered
+          ? 'bg-white/[0.05]'
+          : 'hover:bg-white/[0.02]'
+      } ${
+        !item.selected
+          ? 'opacity-40 hover:opacity-75'
+          : ''
+      } ${
+        isExpanded ? 'bg-white/[0.03]' : ''
       }`}
     >
-      <div className="p-2.5 sm:px-3 sm:py-2 space-y-1.5">
-        {/* Row 1: Checkbox + Subject Name Input + Class Type Badge + Trash Button */}
-        <div className="flex items-center gap-2">
-          {/* Checkbox */}
-          <button
-            type="button"
-            onClick={() => updateItem(index, { selected: !item.selected })}
-            className={`h-5 w-5 shrink-0 flex items-center justify-center rounded-md transition-all ${
-              item.selected
-                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
-                : 'border border-slate-600 bg-slate-800/80 text-transparent hover:border-slate-400'
-            }`}
-            title={item.selected ? 'Deselect session' : 'Select session'}
+      {/* Read-only compact row (~58-64px) */}
+      <div
+        onClick={onToggleExpand}
+        className="min-h-[58px] py-2.5 px-3 flex items-center gap-3 cursor-pointer select-none"
+      >
+        {/* Rounded Checkbox */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleSelect()
+          }}
+          className={`h-5 w-5 shrink-0 flex items-center justify-center rounded-md transition-all motion-reduce:transition-none ${
+            item.selected
+              ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
+              : 'border border-slate-600 bg-slate-800/80 text-transparent hover:border-slate-400'
+          }`}
+          title={item.selected ? 'Deselect session' : 'Select session'}
+        >
+          <Check className="h-3.5 w-3.5 stroke-[3]" />
+        </button>
+
+        {/* Class Type Dot */}
+        <span
+          className={`w-2.5 h-2.5 rounded-full shrink-0 ${typeConfig.dot}`}
+          title={`${typeConfig.label} (${typeConfig.short})`}
+        />
+
+        {/* Course Code */}
+        <span
+          className="font-bold text-white text-sm tracking-wide truncate max-w-[140px] sm:max-w-[180px]"
+          title={item.subject}
+        >
+          {item.subject || 'Untitled Subject'}
+        </span>
+
+        {/* Plain text type badge (L / T / P / C) */}
+        <span
+          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase shrink-0 ${typeConfig.badge}`}
+        >
+          {typeConfig.short}
+        </span>
+
+        {/* Time range */}
+        <span className="text-xs text-slate-300 font-mono shrink-0">
+          {formatTimeRange(item.start_time, item.end_time)}
+        </span>
+
+        {/* Room + Lecturer secondary text */}
+        <span className="text-xs text-slate-400 truncate flex-1 min-w-0 flex items-center gap-1.5">
+          <span>{item.classroom?.trim() || <span className="text-amber-400/80 italic">Room TBA</span>}</span>
+          {item.lecturer?.trim() && (
+            <>
+              <span className="text-slate-600">·</span>
+              <span className="truncate">{item.lecturer}</span>
+            </>
+          )}
+        </span>
+
+        {/* Conflict Warning Icon */}
+        {hasConflict && (
+          <div
+            className="shrink-0 flex items-center text-amber-400 cursor-help"
+            title={`Time conflict with: ${conflicts.map(c => `${c.subject} (${c.time})`).join(', ')}`}
           >
-            <Check className="h-3.5 w-3.5 stroke-[3]" />
-          </button>
-
-          {/* Subject Name Input */}
-          <div className="flex-1 min-w-0">
-            <input
-              className="w-full bg-transparent hover:bg-white/5 focus:bg-slate-900/90 border border-transparent focus:border-white/20 rounded-md px-2 py-0.5 text-sm font-bold text-white tracking-wide placeholder-slate-500 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/30 truncate"
-              value={item.subject || ''}
-              onChange={e => updateItem(index, { subject: e.target.value })}
-              placeholder="Subject (e.g. BMIS1043)"
-            />
+            <AlertTriangle className="h-4 w-4" />
           </div>
+        )}
 
-          {/* Class Type Badge Selector */}
-          <div className="relative shrink-0">
-            <select
-              value={classType}
-              onChange={e => {
-                const val = e.target.value
-                updateItem(index, { class_type: val, color: getColorFromType(val) })
-              }}
-              className={`text-xs font-bold px-2.5 py-1 rounded-md border cursor-pointer focus:outline-none transition-colors ${badgeClass}`}
-              title="Class type"
-            >
-              <option value="L" className="bg-slate-900 text-white">Lecture (L)</option>
-              <option value="T" className="bg-slate-900 text-white">Tutorial (T)</option>
-              <option value="P" className="bg-slate-900 text-white">Practical (P)</option>
-              <option value="C" className="bg-slate-900 text-white">Class (C)</option>
-            </select>
-          </div>
+        {/* Review Needed Badge */}
+        {needsReview && (
+          <span
+            className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 cursor-help"
+            title={reviewIssues.join(' • ')}
+          >
+            {reviewIssues[0] || 'Review'}
+          </span>
+        )}
 
-          {/* Delete Button */}
+        {/* Hover-only Edit & Delete Actions */}
+        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
           <button
             type="button"
-            onClick={onDelete}
-            className="h-7 w-7 shrink-0 flex items-center justify-center rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-            title="Remove class"
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleExpand()
+            }}
+            className="h-7 w-7 flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            title="Edit session"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete()
+            }}
+            className="h-7 w-7 flex items-center justify-center rounded-md text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            title="Delete session"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
+      </div>
 
-        {/* Row 2: Day, Time, Room, Lecturer */}
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pl-7 text-xs text-slate-400">
-          {/* Day */}
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <select
-              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none cursor-pointer"
-              value={item.day || 'Monday'}
-              onChange={e => updateItem(index, { day: e.target.value })}
+      {/* Inline Expanded Editor */}
+      {isExpanded && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="px-3 pb-3 pt-1 border-t border-white/5 space-y-3 bg-black/25 animate-[fadeIn_.15s_ease] motion-reduce:animate-none"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {/* Subject Input */}
+            <div>
+              <label className="text-[11px] font-medium text-slate-400 block mb-1">Course Code / Subject</label>
+              <input
+                type="text"
+                value={item.subject || ''}
+                onChange={(e) => onUpdate({ subject: e.target.value })}
+                className="w-full bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+                placeholder="e.g. BMIS1043"
+              />
+            </div>
+
+            {/* Class Type Pills */}
+            <div>
+              <label className="text-[11px] font-medium text-slate-400 block mb-1">Class Type</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {['L', 'T', 'P', 'C'].map(ct => {
+                  const isSelected = (item.class_type || 'L') === ct
+                  const conf = CLASS_TYPE_CONFIG[ct]
+                  return (
+                    <button
+                      key={ct}
+                      type="button"
+                      onClick={() => onUpdate({ class_type: ct, color: getColorFromType(ct) })}
+                      className={`py-1 text-xs font-semibold rounded-lg border transition-all ${
+                        isSelected
+                          ? `${conf.badge} border-white/30 shadow-sm`
+                          : 'bg-white/[0.03] text-slate-400 border-white/10 hover:bg-white/5'
+                      }`}
+                    >
+                      {conf.short} ({conf.label.slice(0, 3)})
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Day and Times */}
+            <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div>
+                <label className="text-[11px] font-medium text-slate-400 block mb-1">Day of Week</label>
+                <select
+                  value={item.day || 'Monday'}
+                  onChange={(e) => onUpdate({ day: e.target.value })}
+                  className="w-full bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none cursor-pointer"
+                >
+                  {CLASS_DAYS.map(d => (
+                    <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-medium text-slate-400 block mb-1">Start Time</label>
+                <input
+                  type="time"
+                  value={item.start_time || '09:00'}
+                  onChange={(e) => onUpdate({ start_time: e.target.value })}
+                  className="w-full bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white text-center focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-medium text-slate-400 block mb-1">End Time</label>
+                <input
+                  type="time"
+                  value={item.end_time || '10:00'}
+                  onChange={(e) => onUpdate({ end_time: e.target.value })}
+                  className="w-full bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white text-center focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Room and Lecturer */}
+            <div>
+              <label className="text-[11px] font-medium text-slate-400 block mb-1">
+                Classroom / Room {(!item.classroom || !item.classroom.trim()) && <span className="text-amber-400">(Needs Room)</span>}
+              </label>
+              <input
+                type="text"
+                value={item.classroom || ''}
+                onChange={(e) => onUpdate({ classroom: e.target.value })}
+                className={`w-full bg-slate-900/90 border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 ${
+                  !item.classroom?.trim()
+                    ? 'border-amber-500/50 focus:border-amber-400 focus:ring-amber-500/30'
+                    : 'border-white/15 focus:border-emerald-500/50 focus:ring-emerald-500/40'
+                }`}
+                placeholder="e.g. B001K, DK 1, Lab 4"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-medium text-slate-400 block mb-1">Lecturer (Optional)</label>
+              <input
+                type="text"
+                value={item.lecturer || ''}
+                onChange={(e) => onUpdate({ lecturer: e.target.value })}
+                className="w-full bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+                placeholder="e.g. Dr. Wong"
+              />
+            </div>
+          </div>
+
+          {/* Expanded Bottom Row */}
+          <div className="flex items-center justify-between pt-1">
+            <button
+              type="button"
+              onClick={onDelete}
+              className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1.5 py-1 px-2 rounded hover:bg-red-500/10 transition-colors"
             >
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
-                <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Delete session</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 py-1 px-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1"
+            >
+              <Check className="h-3.5 w-3.5" />
+              <span>Done</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function LiveTimetablePreview({
+  items,
+  hoveredKey,
+  setHoveredKey,
+  onSelectBlock,
+  conflictMap
+}) {
+  const displayedDays = useMemo(() => {
+    const base = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    const hasSat = items.some(it => it.day?.toLowerCase() === 'saturday')
+    const hasSun = items.some(it => it.day?.toLowerCase() === 'sunday')
+    if (hasSat) base.push('Saturday')
+    if (hasSun) base.push('Sunday')
+    return base
+  }, [items])
+
+  const { startHour, endHour, totalHours } = useMemo(() => {
+    let minH = 8
+    let maxH = 18
+    items.forEach(it => {
+      if (it.start_time) {
+        const h = Math.floor(timeToMinutes(it.start_time) / 60)
+        if (h > 0 && h < minH) minH = Math.max(6, h)
+      }
+      if (it.end_time) {
+        const h = Math.ceil(timeToMinutes(it.end_time) / 60)
+        if (h > maxH) maxH = Math.min(23, h)
+      }
+    })
+    return { startHour: minH, endHour: maxH, totalHours: Math.max(1, maxH - minH) }
+  }, [items])
+
+  const hoursList = useMemo(() => {
+    const list = []
+    for (let h = startHour; h <= endHour; h++) {
+      list.push(h)
+    }
+    return list
+  }, [startHour, endHour])
+
+  function formatHour(h) {
+    const ampm = h >= 12 ? 'PM' : 'AM'
+    const hr = h % 12 === 0 ? 12 : h % 12
+    return `${hr} ${ampm}`
+  }
+
+  return (
+    <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-white/10 bg-slate-900/40 overflow-hidden">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-900/80 border-b border-white/5 shrink-0">
+        <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+          <Clock className="h-3.5 w-3.5 text-emerald-400" />
+          <span>Weekly Timetable Preview</span>
+        </span>
+        <span className="text-[11px] text-slate-500 hidden sm:inline">
+          Live sync with edits
+        </span>
+      </div>
+
+      {/* Grid container with scroll */}
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto scrollbar-hide p-2 relative">
+        <div className="min-w-[420px] flex flex-col h-full">
+          {/* Day Column Headers */}
+          <div
+            className="grid grid-cols-[46px_repeat(var(--day-count),1fr)] sticky top-0 z-10 bg-slate-950/95 backdrop-blur-md pb-1 border-b border-white/10"
+            style={{ '--day-count': displayedDays.length }}
+          >
+            <div className="text-[10px] font-mono text-slate-500 text-center py-1">Time</div>
+            {displayedDays.map(day => (
+              <div key={day} className="text-center py-1">
+                <span className="text-xs font-bold text-slate-200">
+                  {SHORT_DAYS[day] || day.slice(0, 3)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Timetable Hour Grid */}
+          <div className="relative flex-1 mt-1" style={{ minHeight: `${totalHours * 44}px` }}>
+            {/* Horizontal Hour Lines & Labels */}
+            {hoursList.map((h, i) => {
+              const topPercent = (i / totalHours) * 100
+              return (
+                <div
+                  key={h}
+                  className="absolute inset-x-0 border-t border-white/5 flex items-start"
+                  style={{ top: `${topPercent}%` }}
+                >
+                  <span className="w-[46px] text-[10px] font-mono text-slate-500 -mt-2 text-right pr-2 select-none shrink-0">
+                    {formatHour(h)}
+                  </span>
+                  <div className="flex-1 h-0 border-t border-white/[0.04]" />
+                </div>
+              )
+            })}
+
+            {/* Vertical Day Column Lines */}
+            <div
+              className="absolute inset-y-0 left-[46px] right-0 grid grid-cols-[repeat(var(--day-count),1fr)] pointer-events-none"
+              style={{ '--day-count': displayedDays.length }}
+            >
+              {displayedDays.map((day, idx) => (
+                <div
+                  key={day}
+                  className={`h-full border-r border-white/[0.04] ${idx === 0 ? 'border-l border-white/[0.04]' : ''}`}
+                />
               ))}
-            </select>
-          </div>
+            </div>
 
-          <span className="text-white/15 hidden sm:inline">·</span>
+            {/* Session Blocks */}
+            <div
+              className="absolute inset-y-0 left-[46px] right-0 grid grid-cols-[repeat(var(--day-count),1fr)]"
+              style={{ '--day-count': displayedDays.length }}
+            >
+              {displayedDays.map(day => {
+                const daySessions = items.filter(it => it.day?.toLowerCase() === day.toLowerCase())
+                return (
+                  <div key={day} className="relative h-full px-0.5">
+                    {daySessions.map(item => {
+                      const sMins = timeToMinutes(item.start_time)
+                      const eMins = timeToMinutes(item.end_time)
+                      const baseMins = startHour * 60
+                      const totalMins = totalHours * 60
 
-          {/* Time */}
-          <div className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <input
-              type="time"
-              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none w-[66px] text-center"
-              value={item.start_time || '09:00'}
-              onChange={e => updateItem(index, { start_time: e.target.value })}
-            />
-            <span className="text-slate-600">-</span>
-            <input
-              type="time"
-              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none w-[66px] text-center"
-              value={item.end_time || '10:00'}
-              onChange={e => updateItem(index, { end_time: e.target.value })}
-            />
-          </div>
+                      const topPct = Math.max(0, Math.min(100, ((sMins - baseMins) / totalMins) * 100))
+                      const heightPct = Math.max(4, Math.min(100 - topPct, ((eMins - sMins) / totalMins) * 100))
 
-          <span className="text-white/15 hidden sm:inline">·</span>
+                      const typeConfig = CLASS_TYPE_CONFIG[item.class_type] || CLASS_TYPE_CONFIG.L
+                      const isHovered = hoveredKey === item.key
+                      const hasConflict = conflictMap.has(item.key)
 
-          {/* Room */}
-          <div className="flex items-center gap-1">
-            <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <input
-              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none placeholder-slate-600 w-16 sm:w-20 truncate"
-              value={item.classroom || ''}
-              onChange={e => updateItem(index, { classroom: e.target.value })}
-              placeholder="Room"
-            />
-          </div>
+                      return (
+                        <div
+                          key={item.key}
+                          onClick={() => onSelectBlock(item.key)}
+                          onMouseEnter={() => setHoveredKey(item.key)}
+                          onMouseLeave={() => setHoveredKey(null)}
+                          style={{
+                            top: `${topPct}%`,
+                            height: `${heightPct}%`,
+                          }}
+                          className={`absolute inset-x-0.5 rounded-lg border p-1 sm:p-1.5 flex flex-col justify-between overflow-hidden cursor-pointer transition-all duration-150 motion-reduce:transition-none ${
+                            typeConfig.blockBg
+                          } ${
+                            !item.selected
+                              ? 'opacity-25 border-dashed border-white/20 bg-slate-900/50'
+                              : ''
+                          } ${
+                            hasConflict
+                              ? 'border-amber-400/90 shadow-[0_0_8px_rgba(245,158,11,0.3)]'
+                              : ''
+                          } ${
+                            isHovered
+                              ? 'ring-2 ring-emerald-400 z-30 scale-[1.02] shadow-lg shadow-emerald-500/20 brightness-125'
+                              : 'z-10'
+                          }`}
+                          title={`${item.subject} (${item.class_type}) • ${formatTimeRange(item.start_time, item.end_time)}${item.classroom ? ` • ${item.classroom}` : ''}`}
+                        >
+                          <div className="flex items-center justify-between gap-1 leading-tight">
+                            <span className="text-[10px] font-bold text-white truncate">
+                              {item.subject || 'Class'}
+                            </span>
+                            <span className={`text-[9px] font-bold px-1 rounded uppercase ${typeConfig.badge}`}>
+                              {typeConfig.short}
+                            </span>
+                          </div>
 
-          <span className="text-white/15 hidden sm:inline">·</span>
+                          <div className="text-[9px] font-mono text-slate-300 truncate">
+                            {formatTimeRange(item.start_time, item.end_time)}
+                          </div>
 
-          {/* Lecturer */}
-          <div className="flex items-center gap-1 flex-1 min-w-[100px]">
-            <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <input
-              className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none placeholder-slate-600 w-full truncate"
-              value={item.lecturer || ''}
-              onChange={e => updateItem(index, { lecturer: e.target.value })}
-              placeholder="Lecturer (optional)"
-            />
+                          {item.classroom && (
+                            <div className="text-[9px] text-slate-400 truncate">
+                              {item.classroom}
+                            </div>
+                          )}
+
+                          {hasConflict && (
+                            <div className="absolute bottom-0.5 right-0.5 bg-amber-500 text-slate-950 rounded-full p-0.5">
+                              <AlertTriangle className="h-2.5 w-2.5" />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
