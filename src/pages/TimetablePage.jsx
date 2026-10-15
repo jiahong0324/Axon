@@ -865,10 +865,10 @@ export default function TimetablePage() {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="inline-flex items-center gap-1.5 focus:outline-none group text-left max-w-full"
                 >
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold font-heading text-white group-hover:opacity-80 transition-opacity truncate">
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-heading text-white group-hover:opacity-80 transition-opacity truncate">
                     {isLiveProfile ? (semesterName || t('timetable.title')) : activeProfile?.name}
                   </h1>
-                  <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
+                  <ChevronDown className={`h-4 w-4 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
                 </button>
 
                 {isDropdownOpen && (
@@ -944,7 +944,7 @@ export default function TimetablePage() {
               </div>
             </div>
           ) : (
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold font-heading text-white">{t('timetable.title')}</h1>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-heading text-white">{t('timetable.title')}</h1>
           )}
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
             {!loading && (
