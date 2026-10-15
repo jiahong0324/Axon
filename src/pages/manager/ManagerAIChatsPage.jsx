@@ -59,8 +59,30 @@ export default function ManagerAIChatsPage() {
           .limit(1000)
       ])
 
+      let loadedChats = chatsRes.data || []
+
+      // Fallback: If DB table query returned 0 rows, check the admin endpoint with service role
+      if (loadedChats.length === 0) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.access_token) {
+            const apiRes = await fetch('/api/admin-student?mode=all_chats', {
+              headers: { Authorization: `Bearer ${session.access_token}` }
+            })
+            if (apiRes.ok) {
+              const json = await apiRes.json()
+              if (json?.chats && json.chats.length > 0) {
+                loadedChats = json.chats
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Fallback admin-student all_chats query failed:', e)
+        }
+      }
+
       setStudents(studentsRes.data || [])
-      setChats(chatsRes.data || [])
+      setChats(loadedChats)
     } catch (err) {
       console.error('Failed to load AI chats:', err)
       showToast('Could not load student AI chats.', 'error')

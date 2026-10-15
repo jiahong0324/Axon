@@ -137,7 +137,7 @@ export default function ExamPage() {
 
   return (
     <>
-      <SEO title="Exams & Countdown | Axon" description="Track examination dates, countdown timers, seat venues, and syllabus preparation notes." />
+      <SEO title="Exams | Axon" description="Track examination dates, countdown timers, seat venues, and syllabus preparation notes." />
       <main className="main-content">
         <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div className="flex items-center justify-between w-full">

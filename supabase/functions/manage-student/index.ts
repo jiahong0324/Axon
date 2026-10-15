@@ -40,7 +40,7 @@ Deno.serve(async req => {
     if (!['create_student', 'invite_user', 'send_promotional_email'].includes(action) && !studentId) return json({ error: 'Missing studentId' }, 400)
 
     // Verify manager privileges for strict actions
-    const strictActions = ['create_student', 'change_password', 'change_email', 'send_reset_email', 'delete_account', 'deactivate', 'reactivate', 'send_promotional_email']
+    const strictActions = ['create_student', 'get_student_detail', 'change_password', 'change_email', 'send_reset_email', 'delete_account', 'deactivate', 'reactivate', 'send_promotional_email']
     if (strictActions.includes(action) && callerRole !== 'manager') {
       return json({ error: 'Forbidden: managers only' }, 403)
     }
@@ -48,6 +48,76 @@ Deno.serve(async req => {
     let result
 
     switch (action) {
+      case 'get_student_detail': {
+        const { data: targetUser, error: uErr } = await adminClient.auth.admin.getUserById(studentId)
+        if (uErr) return json({ error: uErr.message }, 404)
+
+        const meta = targetUser?.user?.user_metadata || {}
+
+        const { data: chats } = await adminClient
+          .from('student_ai_chats')
+          .select('*')
+          .eq('user_id', studentId)
+          .eq('is_manager', false)
+          .order('created_at', { ascending: true })
+
+        const { data: classes } = await adminClient
+          .from('classes')
+          .select('*')
+          .eq('user_id', studentId)
+
+        const { data: exams } = await adminClient
+          .from('exams')
+          .select('*')
+          .eq('user_id', studentId)
+
+        const { data: examResults } = await adminClient
+          .from('exam_results')
+          .select('*')
+          .eq('student_id', studentId)
+
+        const finalChats = [...(chats || [])]
+        const metaChats = Array.isArray(meta.axon_ai_chats) ? meta.axon_ai_chats : []
+        for (let i = 0; i < metaChats.length; i++) {
+          const mc = metaChats[i]
+          const mcContent = (mc.content || '').trim()
+          const mcRole = mc.role || 'user'
+          const exists = finalChats.some((fc: any) =>
+            fc.role === mcRole &&
+            ((fc.content || '').trim() === mcContent || (mc.image && fc.image === mc.image))
+          )
+          if (!exists) {
+            finalChats.push({
+              id: `meta-chat-${i}-${Date.now()}`,
+              user_id: studentId,
+              role: mcRole,
+              content: mc.content || '',
+              image: mc.image || null,
+              created_at: mc.created_at || new Date().toISOString()
+            })
+          }
+        }
+        finalChats.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+        result = {
+          data: {
+            metadata: meta,
+            linkedTimetables: meta.linked_timetables || [],
+            examResultsSemesters: meta.axon_exam_results_semesters || [],
+            semesterSettings: {
+              name: meta.semester_name || '',
+              startDate: meta.semester_start_date || '',
+              endDate: meta.semester_end_date || ''
+            },
+            chats: finalChats,
+            classes: classes || [],
+            exams: exams || [],
+            examResults: examResults || []
+          }
+        }
+        break
+      }
+
       case 'create_student': {
         if (!data?.email || !data?.password || !data?.full_name) return json({ error: 'Full name, email, and password are required' }, 400)
         if (data.password.length < 8) return json({ error: 'Password must be at least 8 characters' }, 400)

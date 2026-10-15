@@ -755,7 +755,7 @@ export default function ExamResultsPage() {
 
   return (
     <>
-      <SEO title="Exam Results & GPA | Axon" description="Track university semester grades, cumulative GPA (CGPA), and academic performance history." />
+      <SEO title="Results | Axon" description="Track university semester grades, cumulative GPA (CGPA), and academic performance history." />
       <main className="main-content">
       {/* Page Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

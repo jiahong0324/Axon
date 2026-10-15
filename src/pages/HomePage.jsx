@@ -156,7 +156,7 @@ export default function HomePage() {
 
   if (loading) return (
     <>
-      <SEO title="Dashboard | Axon" description="Your student productivity overview and today's schedule." />
+      <SEO title="Home | Axon" description="Your student productivity overview and today's schedule." />
       <main className="home-dashboard main-content scrollbar-hide">
         <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-end">
           <h1 className="font-heading text-2xl font-bold">{greeting}... 👋</h1>
@@ -179,7 +179,7 @@ export default function HomePage() {
 
   return (
     <>
-      <SEO title="Dashboard | Axon" description="View today's class schedule, active assignment deadlines, exam countdowns, and AI study tips." />
+      <SEO title="Home | Axon" description="View today's class schedule, active assignment deadlines, exam countdowns, and AI study tips." />
       <main className="home-dashboard main-content scrollbar-hide">
       {banner && (
         <div className="card mb-5 flex items-center justify-between gap-3 border-theme-500/30">

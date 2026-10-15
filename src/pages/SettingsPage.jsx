@@ -438,7 +438,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <SEO title="Settings & Preferences | Axon" description="Customize profile, themes, notifications, and data privacy." />
+      <SEO title="Settings | Axon" description="Customize profile, themes, notifications, and data privacy." />
       <main className="main-content !pt-0">
       <div className="sticky top-0 z-20 -mx-4 bg-[var(--bg-primary)] px-4 pb-3 pt-[calc(env(safe-area-inset-top)+1.25rem)] md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:pt-[calc(env(safe-area-inset-top)+1.25rem)] border-b border-white/10 md:border-none">
         <h1 className="page-title mb-3 md:mb-6">{t('settings.title')}</h1>

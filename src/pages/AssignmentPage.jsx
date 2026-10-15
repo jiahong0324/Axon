@@ -135,7 +135,7 @@ export default function AssignmentPage() {
 
   return (
     <>
-      <SEO title="Assignments & Coursework | Axon" description="Track assignment deadlines, priorities, status, and revision progress." />
+      <SEO title="Assignments | Axon" description="Track assignment deadlines, priorities, status, and revision progress." />
       <main className="main-content">
         <div className="mb-6 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div className="flex items-center justify-between w-full">

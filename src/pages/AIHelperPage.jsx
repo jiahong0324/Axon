@@ -145,22 +145,38 @@ export default function AIHelperPage({ role = 'student' }) {
         }))
         setMessages(formatted)
         localStorage.setItem(isManager ? 'aiManagerChat' : 'aiChat', JSON.stringify(formatted))
-      } else if (!error && (!cloudMessages || cloudMessages.length === 0)) {
-        // If Supabase has no messages, upload existing localStorage chat history to cloud
+      } else {
+        // If cloud is empty or missing records, sync localStorage chat history to cloud
         const localSaved = JSON.parse(localStorage.getItem(isManager ? 'aiManagerChat' : 'aiChat') || '[]')
         const toUpload = localSaved.filter(m => m.content && !isWelcomeMessage(m.content)).map(m => ({
           user_id: user.id,
           role: m.role,
-          content: m.content,
+          content: (m.content && m.content.trim()) || (m.image ? '[Attached Study Image / Diagram]' : '[Message]'),
           image: m.image || null,
           is_manager: isManager
         }))
         if (toUpload.length > 0) {
-          await supabase.from('student_ai_chats').insert(toUpload)
+          for (const item of toUpload) {
+            const { error: insErr } = await supabase.from('student_ai_chats').insert(item)
+            if (insErr && item.image) {
+              await supabase.from('student_ai_chats').insert({ ...item, image: null })
+            }
+          }
+          if (!isManager) {
+            const metaChat = toUpload.slice(-30).map(m => ({
+              role: m.role,
+              content: m.content,
+              has_image: Boolean(m.image),
+              created_at: new Date().toISOString()
+            }))
+            await supabase.auth.updateUser({
+              data: { axon_ai_chats: metaChat }
+            }).catch(() => {})
+          }
         }
       }
     } catch (err) {
-      // Gracefully fall back to localStorage if table not created yet
+      console.warn('syncAIChatWithSupabase error:', err)
     } finally {
       setSyncingCloud(false)
     }
@@ -170,15 +186,41 @@ export default function AIHelperPage({ role = 'student' }) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      await supabase.from('student_ai_chats').insert({
+
+      const safeContent = (msg.content && msg.content.trim()) || (msg.image ? '[Attached Study Image / Diagram]' : '[Message]')
+      const payload = {
         user_id: user.id,
         role: msg.role,
-        content: msg.content,
+        content: safeContent,
         image: msg.image || null,
         is_manager: isManager
-      })
+      }
+
+      const { error } = await supabase.from('student_ai_chats').insert(payload)
+      if (error && msg.image) {
+        console.warn('Insert with image failed, falling back to text query record:', error.message)
+        await supabase.from('student_ai_chats').insert({ ...payload, image: null })
+      }
+
+      // Also backup to user_metadata for universal sync
+      if (!isManager) {
+        const localSaved = JSON.parse(localStorage.getItem('aiChat') || '[]')
+        const metaChat = localSaved
+          .filter(m => m.content && !isWelcomeMessage(m.content))
+          .slice(-30)
+          .map(m => ({
+            role: m.role,
+            content: m.content,
+            has_image: Boolean(m.image),
+            created_at: m.timestamp || new Date().toISOString()
+          }))
+
+        await supabase.auth.updateUser({
+          data: { axon_ai_chats: metaChat }
+        }).catch(() => {})
+      }
     } catch (e) {
-      // Silent catch if table not yet created
+      console.warn('saveMessageToCloud caught exception:', e)
     }
   }
 
@@ -193,6 +235,10 @@ export default function AIHelperPage({ role = 'student' }) {
         .delete()
         .eq('user_id', user.id)
         .eq('is_manager', isManager)
+
+      if (!isManager) {
+        await supabase.auth.updateUser({ data: { axon_ai_chats: [] } }).catch(() => {})
+      }
     } catch (e) {}
   }
 
@@ -200,7 +246,6 @@ export default function AIHelperPage({ role = 'student' }) {
     const file = e.target.files?.[0]
     if (!file) return
     
-    // Compress image before setting to avoid payload limits and timeouts
     const reader = new FileReader()
     reader.onload = (e) => {
       const img = new Image()
@@ -208,7 +253,7 @@ export default function AIHelperPage({ role = 'student' }) {
         const canvas = document.createElement('canvas')
         let width = img.width
         let height = img.height
-        const maxDim = 2048
+        const maxDim = 1600
         
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -224,11 +269,32 @@ export default function AIHelperPage({ role = 'student' }) {
         canvas.height = height
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, width, height)
-        
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.9)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
+
+        // Lightweight storage thumbnail to guarantee DB insert never exceeds payload limits
+        const thumbCanvas = document.createElement('canvas')
+        const thumbMax = 600
+        let tw = img.width
+        let th = img.height
+        if (tw > thumbMax || th > thumbMax) {
+          if (tw > th) {
+            th = Math.round((th * thumbMax) / tw)
+            tw = thumbMax
+          } else {
+            tw = Math.round((tw * thumbMax) / th)
+            th = thumbMax
+          }
+        }
+        thumbCanvas.width = tw
+        thumbCanvas.height = th
+        const thumbCtx = thumbCanvas.getContext('2d')
+        thumbCtx.drawImage(img, 0, 0, tw, th)
+        const storageThumb = thumbCanvas.toDataURL('image/jpeg', 0.5)
+
         setSelectedImage({
           url: dataUrl,
           base64: dataUrl.split(',')[1],
+          storageThumbnail: storageThumb,
           mimeType: 'image/jpeg'
         })
       }
@@ -333,8 +399,9 @@ export default function AIHelperPage({ role = 'student' }) {
       if (fileInputRef.current) fileInputRef.current.value = ''
     }, 150)
 
-    const newMsg = { role: 'user', content: userText, timestamp: new Date() }
-    if (imgData) newMsg.image = `data:${imgData.mimeType};base64,${imgData.base64}`
+    const safeUserText = userText || (imgData ? '[Attached Study Image / Diagram]' : '[Message]')
+    const newMsg = { role: 'user', content: safeUserText, timestamp: new Date() }
+    if (imgData) newMsg.image = imgData.storageThumbnail || `data:${imgData.mimeType};base64,${imgData.base64}`
 
     setMessages(prev => [...prev, newMsg])
     saveMessageToCloud(newMsg)
@@ -374,7 +441,7 @@ export default function AIHelperPage({ role = 'student' }) {
 
   return (
     <>
-      <SEO title="AI Study Helper | Axon" description="Get instant answers, concept explanations, and revision schedules from your personal AI academic tutor." />
+      <SEO title="AI Helper | Axon" description="Get instant answers, concept explanations, and revision schedules from your personal AI academic tutor." />
       <main className="ai-helper-shell scrollbar-hide flex h-full flex-1 flex-col overflow-hidden pt-safe md:h-full md:flex-row md:gap-5 md:overflow-hidden md:p-6" style={{ background: 'var(--bg-primary)' }}>
       <aside className="ai-helper-panel card hidden w-64 shrink-0 md:flex md:flex-col md:h-full md:overflow-y-auto">
         <div className="mb-4 flex items-center gap-2">

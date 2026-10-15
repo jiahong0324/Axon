@@ -1,4 +1,4 @@
-import { ArrowLeft, Award, Bot, Copy, Download, Dumbbell, Flame, Image, MessageSquareText, Pencil, Search, Shield, Trophy } from 'lucide-react'
+import { ArrowLeft, Award, Bot, Calendar, Copy, Download, Dumbbell, Flame, Image, MessageSquareText, Pencil, Search, Shield, Trophy } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { Link, useParams } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -12,8 +12,9 @@ import { useLanguage } from '../../components/LanguageProvider'
 import { downloadStudentReport } from '../../lib/generateReport'
 import { supabase } from '../../lib/supabase'
 import { dateLabel, days, daysFromToday, formatTime, initials, markdownToHtml } from '../../lib/utils'
-import { calculateOverallCGPA } from '../../lib/tarumtGrading'
+import { calculateOverallCGPA, calculateSemesterGPA } from '../../lib/tarumtGrading'
 import { ACTIVITY_ICONS, calculateStreakAndStats, fetchExerciseData, getLevelInfo, getTodayStr } from '../../lib/exerciseUtils'
+import { fetchFullStudentDetail } from '../../lib/manageStudent'
 
 const tabs = ['Timetable', 'Assignments', 'Exams & Results', 'Exercise', 'Activity', 'AI Chats']
 const resultInitial = { score: '', grade: 'A', remarks: '' }
