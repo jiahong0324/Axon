@@ -798,13 +798,13 @@ export default function TimetablePage() {
               <span>{t('timetable.week', { week: progressInfo.currentWeek })}</span>
               <span className="text-[11px] font-normal text-slate-400">/ {progressInfo.totalWeeks}</span>
             </span>
-            <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden shrink-0">
+            <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden hidden sm:block shrink-0">
               <div 
                 className="h-full bg-gradient-to-r from-theme-500 to-emerald-400 rounded-full transition-all duration-500"
                 style={{ width: `${progressInfo.percentage || 0}%` }}
               />
             </div>
-            <span className="text-[11px] text-emerald-400/80 group-hover:text-emerald-300 transition-colors hidden md:inline">
+            <span className="text-[11px] text-emerald-400/80 group-hover:text-emerald-300 transition-colors hidden md:inline shrink-0">
               {progressInfo.remainingWeeks > 0
                 ? t('timetable.weeksLeft', { count: progressInfo.remainingWeeks })
                 : t('timetable.lastWeek')}
@@ -875,19 +875,19 @@ export default function TimetablePage() {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEndHandler}
       >
-      <div className="mb-6 flex flex-col gap-2.5 sm:gap-4">
-        <div className="flex items-center justify-between gap-3">
+      <div className="mb-6 flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
           {!loading ? (
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
               <div className="relative flex items-center group min-w-0">
                 <button 
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-1.5 focus:outline-none group text-left min-w-0"
+                  className="flex items-center gap-1 sm:gap-1.5 focus:outline-none group text-left min-w-0"
                 >
-                  <h1 className="text-xl sm:text-2xl font-bold font-heading text-white group-hover:opacity-80 transition-opacity truncate">
+                  <h1 className="text-lg sm:text-2xl font-bold font-heading text-white group-hover:opacity-80 transition-opacity truncate whitespace-nowrap">
                     {isLiveProfile ? (semesterName || t('timetable.title')) : activeProfile?.name}
                   </h1>
-                  <ChevronDown className={`h-5 w-5 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
+                  <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
                 </button>
 
                 {isDropdownOpen && (
@@ -957,22 +957,20 @@ export default function TimetablePage() {
                 )}
               </div>
 
-              {/* Desktop / Tablet Badge & Promote Button */}
-              <div className="hidden sm:flex items-center gap-2.5 shrink-0">
-                {semesterProgressBadge}
-                {promoteButton}
-              </div>
+              {/* Side-by-side Badge or Promote Button: ALWAYS LEFT AND RIGHT */}
+              {semesterProgressBadge}
+              {promoteButton}
             </div>
           ) : (
-            <h1 className="text-xl sm:text-2xl font-bold font-heading text-white">{t('timetable.title')}</h1>
+            <h1 className="text-lg sm:text-2xl font-bold font-heading text-white">{t('timetable.title')}</h1>
           )}
-          <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
             {!loading && (
               <>
-                <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('timetable.extract')}>
+                <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-1.5 sm:p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('timetable.extract')}>
                   <Sparkles className="h-5 w-5" />
                 </button>
-                <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setShowForm(true)} title={t('timetable.addClass')}>
+                <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-1.5 sm:p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setShowForm(true)} title={t('timetable.addClass')}>
                   <Plus className="h-5 w-5" />
                 </button>
                 <div className="hidden md:flex flex-row gap-2">
@@ -990,12 +988,12 @@ export default function TimetablePage() {
                   </button>
                 </div>
                 {classes.length > 0 && isLiveProfile && (
-                  <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
+                  <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1.5 sm:p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-0.5 sm:ml-1" onClick={clearTimetable} title={t('timetable.clearAllTitle')}>
                     <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('timetable.clear')}</span>
                   </button>
                 )}
                 {!isLiveProfile && (
-                  <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-1" onClick={() => deleteLinkedProfile(activeProfileId)} title={t('timetable.deleteProfileTitle')}>
+                  <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1.5 sm:p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-0.5 sm:ml-1" onClick={() => deleteLinkedProfile(activeProfileId)} title={t('timetable.deleteProfileTitle')}>
                     <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('common.delete')}</span>
                   </button>
                 )}
@@ -1003,14 +1001,6 @@ export default function TimetablePage() {
             )}
           </div>
         </div>
-
-        {/* Mobile-only Badge & Promote Button */}
-        {!loading && (semesterProgressBadge || promoteButton) && (
-          <div className="flex sm:hidden items-center gap-2 flex-wrap">
-            {semesterProgressBadge}
-            {promoteButton}
-          </div>
-        )}
       </div>
 
       {/* Semester Settings Modal */}
