@@ -519,6 +519,8 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
                   ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
                   : item.class_type === 'P'
                   ? 'bg-purple-500/15 text-purple-400 border-purple-500/30 hover:bg-purple-500/25'
+                  : item.class_type === 'C'
+                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 hover:bg-amber-500/25'
                   : 'bg-blue-500/15 text-blue-400 border-blue-500/30 hover:bg-blue-500/25'
               }`}
               title="Class type"
@@ -526,6 +528,7 @@ function TimetableResult({ item, index, updateItem, onDelete }) {
               <option value="L" className="bg-slate-900 text-white">Lecture (L)</option>
               <option value="T" className="bg-slate-900 text-white">Tutorial (T)</option>
               <option value="P" className="bg-slate-900 text-white">Practical (P)</option>
+              <option value="C" className="bg-slate-900 text-white">Class (C)</option>
             </select>
           </div>
 
@@ -845,9 +848,9 @@ function ResultItemRow({ item, index, updateItem, onDelete }) {
 }
 
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
-function getColorFromType(classType) { return classType === 'T' ? 'green' : classType === 'P' ? 'purple' : 'blue' }
+function getColorFromType(classType) { return classType === 'T' ? 'green' : classType === 'P' ? 'purple' : classType === 'C' ? 'yellow' : 'blue' }
 function normalizeItem(item, type, index) {
-  const class_type = ['L', 'T', 'P'].includes(item.class_type) ? item.class_type : 'L'
+  const class_type = ['L', 'T', 'P', 'C'].includes(item.class_type) ? item.class_type : 'L'
   const base = {
     ...item,
     key: `${index}-${item.subject || item.title || item.course_name || index}`,

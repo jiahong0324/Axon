@@ -67,6 +67,9 @@ If the user asks you to add, record, schedule, or update something, but does NOT
   • NEVER assume 09:00 or any random time slot for a class, exam, or reminder.
   • NEVER assume "Lecture" (L) if the user did not explicitly state it is a lecture! If the user did not say "lecture", NEVER label it as "Lecture", NEVER call it "The [Subject] lecture", and do NOT set class_type: "L". Use class_type: "C" ("Class").
   • NEVER assume Grade 'A' or any arbitrary grade for an academic exam result.
+  • NEVER assume Credit Hours (e.g. NEVER default to 3 or any number) for an exam result! If the user did not specify credit hours, you MUST ask the user.
+  • NEVER assume Semester (e.g. NEVER default to Year 1 Semester 1 or any semester) for an exam result! If the user did not specify the semester, you MUST ask the user.
+  • NEVER assume Exam Start Time (e.g. NEVER default to 09:00) or Exam Date.
   • NEVER assume today's date for an exam date or assignment deadline.
   • NEVER fabricate fake classrooms (e.g., "DK1") or fake lecturer names (e.g., "Dr Lee") if the user did not provide them.
 - DO NOT output an <axon_action> block when essential information is missing!
@@ -91,18 +94,24 @@ WHEN TO ASK VS WHEN TO EXECUTE:
      -> Execute the action! Use "TBA" for classroom and lecturer. NEVER make up fake rooms or lecturer names.
 
 2. Exam Result / Course Grade (add_exam_result):
-   - ESSENTIAL REQUIRED: Course Code or Course Name, AND the Grade (or marks achieved).
-   - If user asks to record an exam result (e.g., "Add my exam result for BMCS1013", "Record my grade for Web Development") WITHOUT stating what grade they received:
-     -> DO NOT default to 'A'! DO NOT output <axon_action>!
-     -> Politely ASK: "What grade (e.g. A, A-, B+, B, C) or marks did you get for BMCS1013? And which semester should this be recorded under (e.g. Year 1 Semester 1)?"
-   - If user provides both Course and Grade (e.g., "Add my BMCS1013 result Grade A"), and the semester is mentioned or identifiable:
-     -> Execute the action!
+   - ESSENTIAL REQUIRED: Course Code or Course Name, Grade, Credit Hours, AND Semester Name.
+   - If the user asks to record an exam result but has NOT provided all required details (e.g., grade, credit hours, or semester):
+     -> DO NOT default grade to 'A'!
+     -> DO NOT default credit hours to 3!
+     -> DO NOT default semester to Year 1 Semester 1!
+     -> DO NOT output <axon_action>!
+     -> Politely ASK the user for the missing information before recording it!
+     Example prompt to user if credit hours or semester is missing:
+     "Congratulations on completing your course! To record this result accurately:
+     1. How many credit hours is this course? (e.g. 3 or 4 credits)
+     2. Which semester was this taken in? (e.g. Year 1 Semester 1)"
+   - ONLY when Course, Grade, Credit Hours, and Semester are all known -> execute the action!
 
 3. Upcoming Exam / Test / Quiz (add_exam):
-   - ESSENTIAL REQUIRED: Subject / Course name, AND Exam Date (exact date or clear relative date like "tomorrow", "this Friday", "15 Oct 2026").
-   - If user mentions an exam (e.g., "I have an exam for BMCS1013 add it") WITHOUT a date:
-     -> DO NOT default to today or tomorrow! DO NOT output <axon_action>!
-     -> Politely ASK: "What date is your BMCS1013 exam scheduled for? Also, what time does it start and do you know the venue?"
+   - ESSENTIAL REQUIRED: Subject / Course name, Exam Date, AND Start Time.
+   - If user mentions an exam without a date or without a start time:
+     -> DO NOT default to today, tomorrow, or 09:00! DO NOT output <axon_action>!
+     -> Politely ASK: "What date and time is your exam scheduled for? Also, let me know if you know the venue!"
    - If user gives the date and time (e.g., "I got a practical test tomorrow at 11am for problem solving and programming"):
      -> Calculate the date based on Today's Date in context and execute the action. If venue is unstated, use "TBA".
 
@@ -219,11 +228,11 @@ When user provides subject, day, and time:
     "classroom": "TBA",
     "lecturer": "TBA",
     "class_type": "C",
-    "color": "cyan"
+    "color": "yellow"
   }
 }
 </axon_action>
-(day must be one of: 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'. class_type: 'L' for Lecture, 'T' for Tutorial, 'P' for Practical, or 'C' for general Class. Day and start_time are MANDATORY — if missing, ask user before adding. If user did NOT state whether it is a lecture/tutorial/practical, use 'C' ('Class') and NEVER default to 'L' / 'Lecture').
+(day must be one of: 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'. class_type: 'L' for Lecture, 'T' for Tutorial, 'P' for Practical, or 'C' for general Class. Day and start_time are MANDATORY — if missing, ask user before adding. If user did NOT state whether it is a lecture/tutorial/practical, use 'C' ('Class') with color 'yellow' and NEVER default to 'L' / 'Lecture').
 
 8. Update Class:
 <axon_action>
@@ -331,7 +340,7 @@ When user provides subject, day, and time:
 (keys include: 'aiLanguage', 'aiStyle', 'reminderLeadTime', 'firstDay', 'timeFormat', 'theme', 'accentColor').
 
 17. Add Academic Course Grade / Exam Result (Exam Results & CGPA):
-When user provides course and grade (e.g. "Add my result for BMCS1013 Grade A", "Record my grade A for BMCS1013", "My result is BMCS1013 A (3 credits)"):
+When user provides course, grade, credit hours, and semester (e.g. "Add my result for BMCS1013 Grade A, 3 credits, Year 1 Semester 1"):
 <axon_action>
 {
   "type": "add_exam_result",
@@ -344,7 +353,7 @@ When user provides course and grade (e.g. "Add my result for BMCS1013 Grade A", 
   }
 }
 </axon_action>
-(grade: 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'F'. Grade is MANDATORY — NEVER default to 'A', ask user for their grade if not provided. credit_hours: defaults to 3 if standard course credit is known. If semester_name is not specified, use the student's active semester from academic context).
+(All 4 fields: course, grade, credit_hours, and semester_name are MANDATORY. NEVER default credit_hours to 3. NEVER default semester_name to Year 1 Semester 1 or any semester. NEVER default grade. If ANY of these are missing from the user's prompt, DO NOT execute an action — ASK the user for the missing details before adding).
 
 18. Delete Course Result:
 <axon_action>
@@ -465,8 +474,12 @@ export async function executeAccountAction(action, user) {
         }
 
         const startTime = normalizeTime(data.start_time)
+        if (!startTime) {
+          return { success: false, error: 'Cannot add exam: Exam start time is missing. Please ask the user what time the exam starts.' }
+        }
+
         let endTime = normalizeTime(data.end_time)
-        if (startTime && !endTime) {
+        if (!endTime) {
           const [h, m] = startTime.split(':').map(Number)
           const endH = Math.min(23, h + 2)
           endTime = `${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`
@@ -476,8 +489,8 @@ export async function executeAccountAction(action, user) {
           user_id: currentUser.id,
           subject,
           exam_date: examDate,
-          start_time: startTime || '09:00',
-          end_time: endTime || '11:00',
+          start_time: startTime,
+          end_time: endTime,
           exam_type: data.exam_type ? data.exam_type.trim() : 'Exam',
           venue: (data.venue || '').trim() || 'TBA',
           notes: data.notes ? data.notes.trim() : ''
@@ -659,7 +672,7 @@ export async function executeAccountAction(action, user) {
         const classroom = (data.classroom || '').trim() || 'TBA'
         const lecturer = (data.lecturer || '').trim() || 'TBA'
         const classType = normalizeClassType(data.class_type)
-        const color = data.color || (classType === 'L' ? 'blue' : classType === 'T' ? 'green' : classType === 'P' ? 'purple' : 'cyan')
+        const color = data.color || (classType === 'L' ? 'blue' : classType === 'T' ? 'green' : classType === 'P' ? 'purple' : 'yellow')
         const isReplacement = Boolean(data.is_replacement || data.date)
         const date = data.date || ''
 
@@ -990,9 +1003,18 @@ export async function executeAccountAction(action, user) {
           return { success: false, error: 'Cannot record exam result: Grade is missing (e.g. A, B+, C). Please ask the user what grade they received.' }
         }
 
-        const creditHours = Number(data.credit_hours) || 3
-        const grade = rawGrade
+        const rawCredit = data.credit_hours !== undefined && data.credit_hours !== null && String(data.credit_hours).trim() !== '' ? Number(data.credit_hours) : null
+        if (rawCredit === null || isNaN(rawCredit) || rawCredit <= 0) {
+          return { success: false, error: 'Cannot record exam result: Credit hours is missing. Please ask the user how many credit hours this course is (e.g. 3 or 4 credits).' }
+        }
+        const creditHours = rawCredit
+
         const targetSemName = (data.semester_name || '').trim()
+        if (!targetSemName) {
+          return { success: false, error: 'Cannot record exam result: Semester is missing. Please ask the user which semester this course was taken in (e.g. Year 1 Semester 1).' }
+        }
+
+        const grade = rawGrade
 
         // 1. Load existing semesters from localStorage / user_metadata / SQL
         let semesters = []
