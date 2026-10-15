@@ -635,9 +635,9 @@ function Field({ label, children }) {
   return <label className="block"><span className="label">{label}</span>{children}</label>
 }
 
-function StudentAIChatsTab({ studentId, student }) {
-  const [messages, setMessages] = useState([])
-  const [loading, setLoading] = useState(true)
+function StudentAIChatsTab({ studentId, student, initialChats = [] }) {
+  const [messages, setMessages] = useState(initialChats)
+  const [loading, setLoading] = useState(initialChats.length === 0)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all') // 'all', 'user', 'assistant'
   const [zoomedImage, setZoomedImage] = useState(null)
@@ -645,7 +645,7 @@ function StudentAIChatsTab({ studentId, student }) {
 
   const loadChats = useCallback(async () => {
     try {
-      setLoading(true)
+      if (messages.length === 0) setLoading(true)
       const { data, error } = await supabase
         .from('student_ai_chats')
         .select('*')
@@ -654,13 +654,50 @@ function StudentAIChatsTab({ studentId, student }) {
         .order('created_at', { ascending: true })
 
       if (error) throw error
-      setMessages(data || [])
+
+      // Merge DB chats with initialChats without duplicates
+      const merged = [...(data || [])]
+      for (const ic of initialChats) {
+        const icContent = (ic.content || '').trim()
+        const icRole = ic.role || 'user'
+        const exists = merged.some(m =>
+          m.role === icRole &&
+          ((m.content || '').trim() === icContent || (ic.image && m.image === ic.image))
+        )
+        if (!exists) {
+          merged.push(ic)
+        }
+      }
+      merged.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      setMessages(merged)
     } catch (err) {
       console.error('Failed to load student AI chats:', err)
+      if (initialChats.length > 0) {
+        setMessages(initialChats)
+      }
     } finally {
       setLoading(false)
     }
-  }, [studentId])
+  }, [studentId, initialChats, messages.length])
+
+  useEffect(() => {
+    if (initialChats.length > 0) {
+      setMessages(prev => {
+        if (prev.length === 0) return initialChats
+        const combined = [...prev]
+        for (const ic of initialChats) {
+          const exists = combined.some(m =>
+            m.role === ic.role &&
+            ((m.content || '').trim() === (ic.content || '').trim() || (ic.image && m.image === ic.image))
+          )
+          if (!exists) combined.push(ic)
+        }
+        combined.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+        return combined
+      })
+      setLoading(false)
+    }
+  }, [initialChats])
 
   useEffect(() => {
     loadChats()
