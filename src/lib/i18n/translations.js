@@ -251,6 +251,8 @@ export const translations = {
     'timetable.manualSetupBtn': 'I\'ll add classes manually',
     'timetable.rolloverDismissBtn': 'Later',
     'timetable.rolloverDismissToast': 'Previous timetable kept. Tap header pill anytime to rollover.',
+    'timetable.archivedNotification': 'Previous timetable "{name}" is safely archived ({count} classes).',
+    'timetable.viewArchiveBtn': 'View Archive',
 
     'assignments.title': 'Assignments',
     'assignments.add': 'Add Assignment',
@@ -802,6 +804,8 @@ export const translations = {
     'timetable.manualSetupBtn': '稍后手动录入课程',
     'timetable.rolloverDismissBtn': '稍后处理',
     'timetable.rolloverDismissToast': '已保留上一学期课表。你可随时点击顶部胶囊开启新学期。',
+    'timetable.archivedNotification': '上一学期课表 “{name}” 已安全归档（共 {count} 节课）。',
+    'timetable.viewArchiveBtn': '查看归档',
 
     'assignments.title': '作业',
     'assignments.add': '添加作业',

@@ -199,8 +199,24 @@ export default function TimetablePage() {
     const remoteProfiles = currentUser.user_metadata?.linked_timetables
     const localProfiles = readLinkedProfiles(currentUser.id)
     
-    // If remoteProfiles exists in metadata (even if empty []), use it. Otherwise, use local.
-    let profiles = remoteProfiles !== undefined ? remoteProfiles : localProfiles
+    // Merge remote and local profiles by id to guarantee zero data loss
+    const profileMap = new Map()
+    if (Array.isArray(localProfiles)) {
+      localProfiles.forEach(p => {
+        if (p && p.id) profileMap.set(p.id, p)
+      })
+    }
+    if (Array.isArray(remoteProfiles)) {
+      remoteProfiles.forEach(p => {
+        if (p && p.id) {
+          const existing = profileMap.get(p.id)
+          if (!existing || (p.classes?.length || 0) >= (existing.classes?.length || 0)) {
+            profileMap.set(p.id, p)
+          }
+        }
+      })
+    }
+    const profiles = Array.from(profileMap.values())
     
     saveLinkedProfiles(currentUser.id, profiles)
     setLinkedProfiles(profiles)
@@ -316,7 +332,16 @@ export default function TimetablePage() {
     if (!user) return
     setLinkedProfiles(nextProfiles)
     saveLinkedProfiles(user.id, nextProfiles)
-    supabase.auth.updateUser({ data: { linked_timetables: nextProfiles } })
+    setUser(prev => prev ? {
+      ...prev,
+      user_metadata: {
+        ...prev.user_metadata,
+        linked_timetables: nextProfiles
+      }
+    } : prev)
+    supabase.auth.updateUser({ data: { linked_timetables: nextProfiles } }).then(({ data: authData }) => {
+      if (authData?.user) setUser(authData.user)
+    }).catch(err => console.error('Error persisting linked timetables:', err))
     supabase.from('activity_log').insert({
       user_id: user.id,
       action: 'SYNC_LINKED_TIMETABLES',
