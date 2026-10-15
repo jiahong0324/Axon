@@ -761,7 +761,92 @@ export default function TimetablePage() {
     }
   }
 
-  return (
+      {/* Semester progress badge element */}
+      const semesterProgressBadge = isLiveProfile && (
+        progressInfo?.isOngoing ? (
+          <button
+            type="button"
+            onClick={openSemesterModal}
+            className="group inline-flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/80 hover:bg-slate-800/90 border border-emerald-500/30 hover:border-emerald-400/60 shadow-lg shadow-emerald-500/5 backdrop-blur-md transition-all cursor-pointer shrink-0"
+            title={t('timetable.semesterSettings')}
+          >
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+            </span>
+            <span className="text-xs font-semibold text-white tracking-tight flex items-baseline gap-1">
+              <span>{t('timetable.week', { week: progressInfo.currentWeek })}</span>
+              <span className="text-[11px] font-normal text-slate-400">/ {progressInfo.totalWeeks}</span>
+            </span>
+            <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden shrink-0">
+              <div 
+                className="h-full bg-gradient-to-r from-theme-500 to-emerald-400 rounded-full transition-all duration-500"
+                style={{ width: `${progressInfo.percentage || 0}%` }}
+              />
+            </div>
+            <span className="text-[11px] text-emerald-400/80 group-hover:text-emerald-300 transition-colors hidden md:inline">
+              {progressInfo.remainingWeeks > 0
+                ? t('timetable.weeksLeft', { count: progressInfo.remainingWeeks })
+                : t('timetable.lastWeek')}
+            </span>
+          </button>
+        ) : isSemesterEnded ? (
+          <button
+            type="button"
+            onClick={openNewSemesterModal}
+            className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/30 hover:border-amber-400/60 shadow-lg shadow-amber-500/5 backdrop-blur-md transition-all cursor-pointer shrink-0"
+            title={t('timetable.startNewSemester')}
+          >
+            <span className="text-sm">🌴</span>
+            <span className="text-xs font-medium text-amber-200 group-hover:text-white transition-colors">
+              {t('timetable.semesterBreak')}
+            </span>
+            <span className="text-[11px] text-amber-300/90 group-hover:text-amber-100 flex items-center gap-1 font-medium bg-amber-500/15 group-hover:bg-amber-500/25 px-2 py-0.5 rounded-full transition-colors ml-0.5">
+              <span>{t('timetable.startNewSemester')}</span>
+              <span className="transition-transform group-hover:translate-x-0.5">→</span>
+            </span>
+          </button>
+        ) : progressInfo?.isUpcoming ? (
+          <button
+            type="button"
+            onClick={openSemesterModal}
+            className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800/90 border border-blue-500/30 hover:border-blue-400/60 shadow-lg shadow-blue-500/5 backdrop-blur-md transition-all cursor-pointer shrink-0"
+            title={t('timetable.semesterSettings')}
+          >
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
+            </span>
+            <span className="text-xs font-medium text-blue-300 group-hover:text-white transition-colors">
+              {t('timetable.semesterUpcoming', { days: progressInfo.daysUntil })}
+            </span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={openSemesterModal}
+            className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-dashed border-white/20 hover:border-theme-400/50 backdrop-blur-md transition-all text-xs text-slate-400 hover:text-white cursor-pointer shrink-0"
+            title={t('timetable.quickWeekTip')}
+          >
+            <Sparkles className="h-3.5 w-3.5 text-theme-400 group-hover:rotate-12 transition-transform" />
+            <span>{t('timetable.setAcademicWeek')}</span>
+          </button>
+        )
+      )
+
+      {/* Minimal, subtle "Set as Main" button */}
+      const promoteButton = !isLiveProfile && (
+        <button
+          type="button"
+          onClick={() => promoteToMain(activeProfileId)}
+          className="group inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+          title={t('timetable.promoteTitle')}
+        >
+          <span>{t('timetable.promoteConfirm')}</span>
+          <ArrowRight className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
+        </button>
+      )
+
+      return (
     <>
       <SEO title="Timetable | Axon" description="View and manage your weekly lecture, tutorial, and practical timetable schedule." />
       <main 
@@ -770,19 +855,19 @@ export default function TimetablePage() {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEndHandler}
       >
-      <div className="mb-6 flex flex-col gap-4">
+      <div className="mb-6 flex flex-col gap-2.5 sm:gap-4">
         <div className="flex items-center justify-between gap-3">
           {!loading ? (
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <div className="relative flex items-center group">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="relative flex items-center group min-w-0">
                 <button 
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-1.5 focus:outline-none group"
+                  className="flex items-center gap-1.5 focus:outline-none group text-left min-w-0"
                 >
-                  <h1 className="page-title mb-0 text-white group-hover:opacity-80 transition-opacity">
+                  <h1 className="text-xl sm:text-2xl font-bold font-heading text-white group-hover:opacity-80 transition-opacity truncate">
                     {isLiveProfile ? (semesterName || t('timetable.title')) : activeProfile?.name}
                   </h1>
-                  <ChevronDown className={`h-5 w-5 text-slate-400 group-hover:text-white transition-all duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
+                  <ChevronDown className={`h-5 w-5 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
                 </button>
 
                 {isDropdownOpen && (
@@ -852,93 +937,14 @@ export default function TimetablePage() {
                 )}
               </div>
 
-              {/* Compact Aesthetic Semester Badge */}
-              {isLiveProfile && (
-                progressInfo?.isOngoing ? (
-                  <button
-                    type="button"
-                    onClick={openSemesterModal}
-                    className="group inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/80 hover:bg-slate-800/90 border border-emerald-500/30 hover:border-emerald-400/60 shadow-lg shadow-emerald-500/5 backdrop-blur-md transition-all cursor-pointer"
-                    title={t('timetable.semesterSettings')}
-                  >
-                    <span className="relative flex h-2 w-2 shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-                    </span>
-                    <span className="text-xs font-semibold text-white tracking-tight flex items-baseline gap-1">
-                      <span>{t('timetable.week', { week: progressInfo.currentWeek })}</span>
-                      <span className="text-[11px] font-normal text-slate-400">/ {progressInfo.totalWeeks}</span>
-                    </span>
-                    <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden hidden sm:block shrink-0">
-                      <div 
-                        className="h-full bg-gradient-to-r from-theme-500 to-emerald-400 rounded-full transition-all duration-500"
-                        style={{ width: `${progressInfo.percentage || 0}%` }}
-                      />
-                    </div>
-                    <span className="text-[11px] text-emerald-400/80 group-hover:text-emerald-300 transition-colors hidden md:inline">
-                      {progressInfo.remainingWeeks > 0
-                        ? t('timetable.weeksLeft', { count: progressInfo.remainingWeeks })
-                        : t('timetable.lastWeek')}
-                    </span>
-                  </button>
-                ) : isSemesterEnded ? (
-                  <button
-                    type="button"
-                    onClick={openNewSemesterModal}
-                    className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/30 hover:border-amber-400/60 shadow-lg shadow-amber-500/5 backdrop-blur-md transition-all cursor-pointer"
-                    title={t('timetable.startNewSemester')}
-                  >
-                    <span className="text-sm">🌴</span>
-                    <span className="text-xs font-medium text-amber-200 group-hover:text-white transition-colors">
-                      {t('timetable.semesterBreak')}
-                    </span>
-                    <span className="text-[11px] text-amber-300/90 group-hover:text-amber-100 flex items-center gap-1 font-medium bg-amber-500/15 group-hover:bg-amber-500/25 px-2 py-0.5 rounded-full transition-colors ml-0.5">
-                      <span>{t('timetable.startNewSemester')}</span>
-                      <span className="transition-transform group-hover:translate-x-0.5">→</span>
-                    </span>
-                  </button>
-                ) : progressInfo?.isUpcoming ? (
-                  <button
-                    type="button"
-                    onClick={openSemesterModal}
-                    className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800/90 border border-blue-500/30 hover:border-blue-400/60 shadow-lg shadow-blue-500/5 backdrop-blur-md transition-all cursor-pointer"
-                    title={t('timetable.semesterSettings')}
-                  >
-                    <span className="relative flex h-2 w-2 shrink-0">
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
-                    </span>
-                    <span className="text-xs font-medium text-blue-300 group-hover:text-white transition-colors">
-                      {t('timetable.semesterUpcoming', { days: progressInfo.daysUntil })}
-                    </span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={openSemesterModal}
-                    className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-dashed border-white/20 hover:border-theme-400/50 backdrop-blur-md transition-all text-xs text-slate-400 hover:text-white cursor-pointer"
-                    title={t('timetable.quickWeekTip')}
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-theme-400 group-hover:rotate-12 transition-transform" />
-                    <span>{t('timetable.setAcademicWeek')}</span>
-                  </button>
-                )
-              )}
-
-              {/* Minimal, subtle "Set as Main" button */}
-              {!isLiveProfile && (
-                <button
-                  type="button"
-                  onClick={() => promoteToMain(activeProfileId)}
-                  className="group inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  title={t('timetable.promoteTitle')}
-                >
-                  <span>{t('timetable.promoteConfirm')}</span>
-                  <ArrowRight className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
-                </button>
-              )}
+              {/* Desktop / Tablet Badge & Promote Button */}
+              <div className="hidden sm:flex items-center gap-2.5 shrink-0">
+                {semesterProgressBadge}
+                {promoteButton}
+              </div>
             </div>
           ) : (
-            <h1 className="page-title mb-0">{t('timetable.title')}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold font-heading text-white">{t('timetable.title')}</h1>
           )}
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
             {!loading && (

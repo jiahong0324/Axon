@@ -32,6 +32,7 @@ import ManagerActivityPage from './pages/manager/ManagerActivityPage'
 import ManagerSettingsPage from './pages/manager/ManagerSettingsPage'
 import ManagerFeedbackPage from './pages/manager/ManagerFeedbackPage'
 import ManagerBlogPage from './pages/manager/ManagerBlogPage'
+import ManagerAIChatsPage from './pages/manager/ManagerAIChatsPage'
 
 import LandingLayout from './pages/landing/LandingLayout'
 import LandingHome from './pages/landing/LandingHome'
@@ -97,6 +98,7 @@ export default function App() {
               <Route path="/manager/feedback" element={<ProtectedRoute requireRole="manager"><ManagerFeedbackPage /></ProtectedRoute>} />
               <Route path="/manager/blog" element={<ProtectedRoute requireRole="manager"><ManagerBlogPage /></ProtectedRoute>} />
               <Route path="/manager/ai-helper" element={<ProtectedRoute requireRole="manager"><AIHelperPage role="manager" /></ProtectedRoute>} />
+              <Route path="/manager/ai-chats" element={<ProtectedRoute requireRole="manager"><ManagerAIChatsPage /></ProtectedRoute>} />
               <Route path="/manager/settings" element={<ProtectedRoute requireRole="manager"><ManagerSettingsPage /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/home" />} />
             </Routes>
