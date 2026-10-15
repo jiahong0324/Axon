@@ -997,7 +997,7 @@ function TimetableSessionRow({
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2.5 min-w-0 w-full">
           {/* Top Line on Mobile / Left Group on Desktop: Checkbox + Dot + Class Name + Type Badge */}
-          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 sm:max-w-[210px] w-full sm:w-auto">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 sm:max-w-[340px] md:max-w-[400px] lg:max-w-[460px] xl:max-w-[540px] 2xl:max-w-[620px] w-full sm:w-auto">
             {/* Rounded Checkbox */}
             <button
               type="button"
@@ -1087,7 +1087,7 @@ function TimetableSessionRow({
               <>
                 <span className="text-white/20 select-none shrink-0">·</span>
                 {/* Lecturer - min-w-0 so it gracefully truncates instead of stretching the row */}
-                <span className="inline-flex items-center gap-1 flex-1 min-w-0 truncate text-[11px] sm:text-xs">
+                <span className="inline-flex items-center gap-1 flex-1 min-w-0 max-w-[180px] truncate text-[11px] sm:text-xs">
                   <User className="h-3 w-3 text-slate-500 shrink-0" />
                   <span className="text-slate-300 truncate" title={item.lecturer}>
                     {item.lecturer}
@@ -1340,7 +1340,7 @@ function LiveTimetablePreview({
 
       {/* Grid container with scroll */}
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto scrollbar-hide p-2 relative">
-        <div className="min-w-[420px] flex flex-col h-full">
+        <div className="min-w-[420px] sm:min-w-[440px] w-full flex flex-col h-full">
           {/* Day Column Headers */}
           <div
             className="grid grid-cols-[46px_repeat(var(--day-count),1fr)] sticky top-0 z-10 bg-slate-950/95 backdrop-blur-md pb-1 border-b border-white/10"
@@ -1357,7 +1357,7 @@ function LiveTimetablePreview({
           </div>
 
           {/* Timetable Hour Grid */}
-          <div className="relative flex-1 mt-1" style={{ minHeight: `${totalHours * 44}px` }}>
+          <div className="relative flex-1 mt-1" style={{ minHeight: `${totalHours * 48}px` }}>
             {/* Horizontal Hour Lines & Labels */}
             {hoursList.map((h, i) => {
               const topPercent = (i / totalHours) * 100
@@ -1409,6 +1409,8 @@ function LiveTimetablePreview({
                       const typeConfig = CLASS_TYPE_CONFIG[item.class_type] || CLASS_TYPE_CONFIG.L
                       const isHovered = hoveredKey === item.key
                       const hasConflict = conflictMap.has(item.key)
+                      const durationMins = Math.max(0, eMins - sMins)
+                      const isSpacious = durationMins >= 90
 
                       return (
                         <div
@@ -1437,11 +1439,16 @@ function LiveTimetablePreview({
                           }`}
                           title={`${item.subject} (${item.class_type}) • ${formatTimeRange(item.start_time, item.end_time)}${item.classroom ? ` • ${item.classroom}` : ''}`}
                         >
-                          <div className="flex items-center justify-between gap-1 leading-tight">
-                            <span className="text-[10px] font-bold text-white truncate">
+                          <div className="flex items-start justify-between gap-1 leading-tight min-w-0">
+                            <span
+                              className={`text-[10px] font-bold text-white min-w-0 ${
+                                isSpacious ? 'line-clamp-2 break-words' : 'truncate'
+                              }`}
+                              title={item.subject || 'Class'}
+                            >
                               {item.subject || 'Class'}
                             </span>
-                            <span className={`text-[9px] font-bold px-1 rounded uppercase ${typeConfig.badge}`}>
+                            <span className={`text-[9px] font-bold px-1 rounded uppercase shrink-0 ${typeConfig.badge}`}>
                               {typeConfig.short}
                             </span>
                           </div>
