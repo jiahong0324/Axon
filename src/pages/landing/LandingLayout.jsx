@@ -137,9 +137,6 @@ export default function LandingLayout() {
               </Link>
             ) : (
               <>
-                <Link to="/login?guest=true" className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-50/80 dark:bg-emerald-500/10 px-3.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition">
-                  Try Guest
-                </Link>
                 <Link to="/login" className="inline-flex min-h-[44px] items-center justify-center rounded-xl px-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10">
                   Sign In
                 </Link>
@@ -176,9 +173,6 @@ export default function LandingLayout() {
                 </Link>
               ) : (
                 <>
-                  <Link to="/login?guest=true" onClick={() => setMenuOpen(false)} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 px-4 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                    Try Guest
-                  </Link>
                   <Link to="/login" onClick={() => setMenuOpen(false)} className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5">
                     Sign In
                   </Link>
