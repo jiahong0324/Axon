@@ -16,7 +16,7 @@ import { updatePreference, saveSemesterPreferences } from '../lib/preferences'
 import SEO from '../components/SEO'
 import DateInput from '../components/DateInput'
 
-const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue', is_replacement: false, date: '' }
+const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'C', color: 'cyan', is_replacement: false, date: '' }
 const LIVE_PROFILE_ID = 'account'
 const linkedKey = userId => `axon_linked_timetables_${userId}`
 const activeKey = userId => `axon_active_timetable_${userId}`
@@ -1220,7 +1220,23 @@ export default function TimetablePage() {
             <Field label={t('timetable.endTime')}><input className="input" type="time" required value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
           </div>
           <Field label={t('timetable.classType')}>
-            <div className="grid grid-cols-3 gap-2">{['L', 'T', 'P'].map(type => <button type="button" key={type} onClick={() => updateType(type)} className={`font-medium rounded-xl border px-1 py-3 text-[13px] sm:text-sm tracking-tight truncate ${form.class_type === type ? 'border-theme-500 bg-theme-500/20 text-theme-400' : 'border-white/10 text-slate-400'}`}>{type === 'L' ? t('timetable.lecture') : type === 'T' ? t('timetable.tutorial') : t('timetable.practical')}</button>)}</div>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { type: 'C', label: 'Class' },
+                { type: 'L', label: t('timetable.lecture') },
+                { type: 'T', label: t('timetable.tutorial') },
+                { type: 'P', label: t('timetable.practical') }
+              ].map(({ type, label }) => (
+                <button
+                  type="button"
+                  key={type}
+                  onClick={() => updateType(type)}
+                  className={`font-medium rounded-xl border px-1 py-3 text-[13px] sm:text-sm tracking-tight truncate ${form.class_type === type ? 'border-theme-500 bg-theme-500/20 text-theme-400' : 'border-white/10 text-slate-400'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label={t('timetable.classroom')}><input className="input" placeholder="e.g. DK1" value={form.classroom} onChange={e => setForm({ ...form, classroom: e.target.value })} /></Field>
@@ -1333,7 +1349,7 @@ function Field({ label, children, className = '' }) {
 }
 
 function DesktopClassTile({ item, onDelete }) {
-  const border = item.class_type === 'T' ? 'border-l-emerald-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-blue-500'
+  const border = item.class_type === 'T' ? 'border-l-emerald-500' : item.class_type === 'P' ? 'border-l-purple-500' : item.class_type === 'C' ? 'border-l-sky-500' : 'border-l-blue-500'
   return (
     <article className={`group relative rounded-xl border border-white/10 bg-[#192436] border-l-4 ${border} p-4 transition-colors hover:bg-[#202e45] shadow-sm`}>
       <button className="btn-danger absolute right-1 top-1 opacity-100 xl:opacity-0 xl:group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
@@ -1354,8 +1370,9 @@ function MobileClassTile({ item, onDelete }) {
     L: { border: 'border-l-blue-500', text: 'text-blue-400', badge: 'bg-blue-500/20 text-blue-400' },
     T: { border: 'border-l-emerald-500', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-400' },
     P: { border: 'border-l-purple-500', text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-400' },
+    C: { border: 'border-l-sky-500', text: 'text-sky-400', badge: 'bg-sky-500/20 text-sky-400' },
   }
-  const colors = typeColors[item.class_type] || typeColors['L']
+  const colors = typeColors[item.class_type] || typeColors['C']
 
   const formattedStart = formatTime(item.start_time)
   const formattedEnd = formatTime(item.end_time)

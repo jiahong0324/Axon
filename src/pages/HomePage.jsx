@@ -286,7 +286,7 @@ function Summary({ icon: Icon, label, value, tone, border, valueClass = '' }) {
 }
 
 function ClassCard({ item }) {
-  const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : 'border-l-theme-500'
+  const border = item.class_type === 'T' ? 'border-l-green-500' : item.class_type === 'P' ? 'border-l-purple-500' : item.class_type === 'C' ? 'border-l-sky-500' : 'border-l-theme-500'
   return (
     <div className={`class-card rounded-xl border border-l-4 border-white/10 ${border} p-4`}>
       <div className="mb-2 flex items-center justify-between gap-3"><p className="font-semibold">{item.subject}</p><ClassTypeBadge type={item.class_type} /></div>

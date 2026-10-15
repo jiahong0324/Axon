@@ -101,7 +101,7 @@ export function createStudentReportDoc({ student = {}, classes = [], assignments
     ['Subject', 'Type', 'Day', 'Time', 'Room', 'Lecturer'],
     classes.map(c => [
       c.subject,
-      c.class_type === 'L' ? 'Lecture' : c.class_type === 'T' ? 'Tutorial' : c.class_type === 'P' ? 'Practical' : c.class_type || '',
+      c.class_type === 'L' ? 'Lecture' : c.class_type === 'T' ? 'Tutorial' : c.class_type === 'P' ? 'Practical' : c.class_type === 'C' ? 'Class' : c.class_type || 'Class',
       c.day,
       `${formatTime(c.start_time)} - ${formatTime(c.end_time)}`,
       c.classroom || 'TBA',

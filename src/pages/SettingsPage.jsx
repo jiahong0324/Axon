@@ -217,7 +217,7 @@ export default function SettingsPage() {
         c.day,
         c.subject,
         `${formatTime(c.start_time)} - ${formatTime(c.end_time)}`,
-        c.class_type === 'L' ? 'Lecture' : c.class_type === 'T' ? 'Tutorial' : c.class_type === 'P' ? 'Practical' : c.class_type || '',
+        c.class_type === 'L' ? 'Lecture' : c.class_type === 'T' ? 'Tutorial' : c.class_type === 'P' ? 'Practical' : c.class_type === 'C' ? 'Class' : c.class_type || 'Class',
         c.classroom || 'TBA',
         c.lecturer || 'TBA'
       ])

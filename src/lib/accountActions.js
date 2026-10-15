@@ -47,11 +47,13 @@ function normalizeTime(timeStr, defaultTime = null) {
 }
 
 function normalizeClassType(typeStr) {
-  if (!typeStr) return 'L'
+  if (!typeStr) return 'C'
   const t = String(typeStr).trim().toUpperCase()
   if (t === 'P' || t.startsWith('PRAC') || t.startsWith('LAB')) return 'P'
   if (t === 'T' || t.startsWith('TUT')) return 'T'
-  return 'L'
+  if (t === 'L' || t.startsWith('LEC')) return 'L'
+  if (t === 'C' || t.startsWith('CLASS')) return 'C'
+  return 'C'
 }
 
 export const ACTION_SCHEMA_PROMPT = `
@@ -63,6 +65,7 @@ If the user asks you to add, record, schedule, or update something, but does NOT
 - DO NOT simply default, fabricate, or guess missing information!
   • NEVER assume Monday or any random day of the week for a class.
   • NEVER assume 09:00 or any random time slot for a class, exam, or reminder.
+  • NEVER assume "Lecture" (L) if the user did not explicitly state it is a lecture! If the user did not say "lecture", NEVER label it as "Lecture", NEVER call it "The [Subject] lecture", and do NOT set class_type: "L". Use class_type: "C" ("Class").
   • NEVER assume Grade 'A' or any arbitrary grade for an academic exam result.
   • NEVER assume today's date for an exam date or assignment deadline.
   • NEVER fabricate fake classrooms (e.g., "DK1") or fake lecturer names (e.g., "Dr Lee") if the user did not provide them.
@@ -73,10 +76,18 @@ If the user asks you to add, record, schedule, or update something, but does NOT
 WHEN TO ASK VS WHEN TO EXECUTE:
 1. Timetable Class (add_class):
    - ESSENTIAL REQUIRED: Course/Subject, Day of the week (e.g., Monday), and Start Time (or time range).
-   - If user asks to add a class (e.g., "Add BMCS1013 to my timetable", "I have a lecture for OOP") WITHOUT specifying the day or time:
+   - If user asks to add a class (e.g., "add a new timetable on Monday name math") WITHOUT specifying the time:
      -> DO NOT output <axon_action>!
-     -> Politely ASK: "What day of the week and what time is your class? (e.g., Tuesday 10:00 AM - 12:00 PM). Also let me know if you have the classroom/venue or lecturer name!"
-   - If user provides Subject, Day, and Time (e.g., "Add BMCS1013 lecture on Tuesday 10am-12pm"), but did not mention classroom or lecturer:
+     -> Politely ASK: "What time does your Math class run on Monday? (e.g., 10:00 AM - 1:00 PM). Also let me know if it is a Lecture, Tutorial, Practical, or general Class, and if you have a classroom or lecturer!"
+   - CLASS TYPE / LECTURE RULE (CRITICAL):
+     • ONLY set class_type to "L" and TYPE to "Lecture" if the user EXPLICITLY stated it is a lecture.
+     • If the user explicitly mentions "tutorial" -> class_type: "T", display TYPE as "Tutorial".
+     • If the user explicitly mentions "practical" or "lab" -> class_type: "P", display TYPE as "Practical".
+     • If the user did NOT state whether it is a lecture/tutorial/practical (e.g. user says "add a new timetable on Monday name math 10am to 1pm" or "for others dont know yet"):
+       -> NEVER DEFAULT TO "Lecture"!
+       -> Use class_type: "C", and in the summary table display TYPE as "Class" (NOT "Lecture")!
+       -> In your explanation text, say "The Math class is now scheduled..." (NEVER "The Math lecture")!
+   - If user provides Subject, Day, and Time, but did not mention classroom or lecturer:
      -> Execute the action! Use "TBA" for classroom and lecturer. NEVER make up fake rooms or lecturer names.
 
 2. Exam Result / Course Grade (add_exam_result):
@@ -196,23 +207,23 @@ Supported Action Types & Data Format (USE ONLY WHEN ALL ESSENTIAL INFO IS PRESEN
 </axon_action>
 
 7. Add Class / Timetable Class (Weekly Schedule):
-When user provides subject, day, and time (e.g. "Add to my timetable BMCS1013 on Monday 09:00-11:00", "I have lecture on Tuesday 10am"):
+When user provides subject, day, and time:
 <axon_action>
 {
   "type": "add_class",
   "data": {
-    "subject": "BMCS1013",
+    "subject": "Math",
     "day": "Monday",
-    "start_time": "09:00",
-    "end_time": "11:00",
+    "start_time": "10:00",
+    "end_time": "13:00",
     "classroom": "TBA",
     "lecturer": "TBA",
-    "class_type": "L",
-    "color": "blue"
+    "class_type": "C",
+    "color": "cyan"
   }
 }
 </axon_action>
-(day must be one of: 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'. class_type: 'L' for Lecture, 'T' for Tutorial, 'P' for Practical. Day and start_time are MANDATORY — if missing, ask user before adding. If classroom or lecturer are not mentioned by user, use "TBA" and NEVER invent fake room codes or names).
+(day must be one of: 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'. class_type: 'L' for Lecture, 'T' for Tutorial, 'P' for Practical, or 'C' for general Class. Day and start_time are MANDATORY — if missing, ask user before adding. If user did NOT state whether it is a lecture/tutorial/practical, use 'C' ('Class') and NEVER default to 'L' / 'Lecture').
 
 8. Update Class:
 <axon_action>
@@ -366,7 +377,8 @@ For an assignment:
 
 For a class:
 | TYPE | COURSE | DAY | TIME | VENUE | LECTURER |
-| Lecture | BMCS1013 | Monday | 09:00-11:00 | TBA | TBA |
+| Class | Math | Monday | 10:00-13:00 | TBA | TBA |
+(Under TYPE, use "Lecture", "Tutorial", "Practical", or "Class". NEVER display "Lecture" unless the user explicitly stated it is a lecture!).
 
 For a reminder:
 | REMINDER | TIME | REPEAT | STATUS |
@@ -377,8 +389,8 @@ For a workout:
 | Gym | 2026-10-15 | +20 XP | Active |
 
 3. Follow with bullet points:
-• What this does: Explain exactly where this item now appears in their account (e.g. "The test now appears in your “Upcoming Exams” list, and a reminder will pop up on 14 Oct (your default 1-day lead-time).")
-• Next steps: Provide a helpful suggestion on what they can adjust or provide next (e.g. "If you know the exact venue or time, just let me know and I'll update it.")
+• What this does: Explain exactly where this item now appears in their account (e.g. "The Math class is now scheduled for every Monday from 10:00 to 13:00 in your weekly timetable."). Refer to it as a "class", NOT a "lecture", unless the user explicitly stated it is a lecture.
+• Next steps: Provide a helpful suggestion on what they can adjust or provide next (e.g. "If you know the exact venue, lecturer, or class type, just let me know and I'll update it.")
 
 4. End with a warm, encouraging closing message (e.g. "Good luck prepping! 🎓 If you'd like a quick revision plan or any topic help, just ask.").
 `
@@ -647,7 +659,7 @@ export async function executeAccountAction(action, user) {
         const classroom = (data.classroom || '').trim() || 'TBA'
         const lecturer = (data.lecturer || '').trim() || 'TBA'
         const classType = normalizeClassType(data.class_type)
-        const color = data.color || (classType === 'L' ? 'blue' : classType === 'T' ? 'green' : 'purple')
+        const color = data.color || (classType === 'L' ? 'blue' : classType === 'T' ? 'green' : classType === 'P' ? 'purple' : 'cyan')
         const isReplacement = Boolean(data.is_replacement || data.date)
         const date = data.date || ''
 

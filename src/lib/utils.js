@@ -2,7 +2,7 @@ import { differenceInCalendarDays, format, parseISO } from 'date-fns'
 import katex from 'katex'
 
 export const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-export const classColors = { L: 'blue', T: 'green', P: 'purple' }
+export const classColors = { L: 'blue', T: 'green', P: 'purple', C: 'cyan' }
 
 export function dateLabel(value) {
   if (!value) return 'No date'
