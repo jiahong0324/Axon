@@ -33,10 +33,10 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
       onTouchEnd={e => e.stopPropagation()}
       onWheel={e => e.stopPropagation()}
     >
-      <div className={`glass flex h-auto ${resolvedMaxHeight} sm:max-h-[85dvh] sm:max-h-[85vh] w-full max-w-full box-border flex-col overflow-hidden rounded-t-3xl sm:rounded-2xl border border-white/10 pt-6 pb-6 px-5 sm:p-6 transition-transform overscroll-contain ${maxWidth}`}>
+      <div className={`glass flex h-auto ${resolvedMaxHeight} sm:max-h-[85dvh] sm:max-h-[85vh] w-full max-w-full box-border flex-col overflow-hidden rounded-t-3xl sm:rounded-2xl border border-white/10 p-5 sm:p-6 transition-[max-width,width,transform] duration-300 ease-out overscroll-contain ${maxWidth}`}>
         <div className="mb-4 flex shrink-0 items-center justify-between gap-3 min-w-0">
-          <h2 className="text-lg font-semibold truncate flex-1 min-w-0">{title}</h2>
-          <button type="button" onClick={onClose} className="!min-h-0 !min-w-0 h-9 w-9 shrink-0 flex items-center justify-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-white transition-colors">
+          <h2 className="text-base sm:text-lg font-semibold truncate flex-1 min-w-0">{title}</h2>
+          <button type="button" onClick={onClose} className="!min-h-0 !min-w-0 h-8 w-8 sm:h-9 sm:w-9 shrink-0 flex items-center justify-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-white transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>

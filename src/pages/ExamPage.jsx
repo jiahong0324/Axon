@@ -46,6 +46,7 @@ export default function ExamPage() {
   const [results, setResults] = useState([])
   const [modal, setModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
+  const [analyzerStep, setAnalyzerStep] = useState('upload')
   const [form, setForm] = useState(initialForm)
   const [editingId, setEditingId] = useState(null)
   const [subjects, setSubjects] = useState([])
@@ -208,8 +209,14 @@ export default function ExamPage() {
           <button disabled={isSubmitting} className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Saving...' : 'Save Exam'}</button>
         </form>
       </Modal>
-      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Exam Schedule from Screenshot" maxWidth="max-w-5xl" bodyClassName="overflow-hidden">
-        <ImageUploadAnalyzer type="exam" onResult={saveAll} />
+      <Modal
+        isOpen={analyzerOpen}
+        onClose={() => { setAnalyzerOpen(false); setAnalyzerStep('upload') }}
+        title="Import Exam Schedule from Screenshot"
+        maxWidth={analyzerStep === 'results' ? 'max-w-2xl' : 'max-w-lg'}
+        bodyClassName="overflow-hidden"
+      >
+        <ImageUploadAnalyzer type="exam" onResult={saveAll} onStepChange={setAnalyzerStep} />
       </Modal>
       {ConfirmDialog}
     </main>

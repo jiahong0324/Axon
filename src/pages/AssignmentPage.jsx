@@ -26,6 +26,7 @@ export default function AssignmentPage() {
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
+  const [analyzerStep, setAnalyzerStep] = useState('upload')
   const [aiModal, setAiModal] = useState(false)
   const [aiText, setAiText] = useState('')
   const [form, setForm] = useState(initialForm)
@@ -236,8 +237,14 @@ export default function AssignmentPage() {
       <Modal isOpen={aiModal} onClose={() => setAiModal(false)} title="AI Priority Plan">
         <div className="prose prose-invert max-w-none text-sm leading-6" dangerouslySetInnerHTML={{ __html: markdownToHtml(aiText) }} />
       </Modal>
-      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title="Import Assignment Screenshot" maxWidth="max-w-5xl" bodyClassName="overflow-hidden">
-        <ImageUploadAnalyzer type="assignment" onResult={saveAll} />
+      <Modal
+        isOpen={analyzerOpen}
+        onClose={() => { setAnalyzerOpen(false); setAnalyzerStep('upload') }}
+        title="Import Assignment Screenshot"
+        maxWidth={analyzerStep === 'results' ? 'max-w-2xl' : 'max-w-lg'}
+        bodyClassName="overflow-hidden"
+      >
+        <ImageUploadAnalyzer type="assignment" onResult={saveAll} onStepChange={setAnalyzerStep} />
       </Modal>
       {ConfirmDialog}
     </main>

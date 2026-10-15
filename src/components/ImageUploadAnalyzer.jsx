@@ -106,9 +106,10 @@ const colorClasses = {
   yellow: 'bg-yellow-500'
 }
 
-export default function ImageUploadAnalyzer({ type, onResult }) {
+export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
   const inputRef = useRef(null)
   const [step, setStep] = useState('upload')
+  const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState('')
   const [items, setItems] = useState([])
@@ -119,11 +120,35 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
   const messages = statusMessages[type] || statusMessages.timetable
 
   useEffect(() => {
+    onStepChange?.(step)
+  }, [step, onStepChange])
+
+  useEffect(() => {
     if (step !== 'analyzing') return undefined
     setMessageIndex(0)
     const id = setInterval(() => setMessageIndex(i => (i + 1) % messages.length), 2000)
     return () => clearInterval(id)
-  }, [step, type])
+  }, [step, type, messages.length])
+
+  // Support pasting screenshot from clipboard (Ctrl+V / Cmd+V)
+  useEffect(() => {
+    if (step !== 'upload') return
+    const handlePaste = (e) => {
+      const clipboardItems = e.clipboardData?.items
+      if (!clipboardItems) return
+      for (const item of clipboardItems) {
+        if (item.type && item.type.startsWith('image/')) {
+          const blob = item.getAsFile()
+          if (blob) {
+            pickFile(blob)
+            break
+          }
+        }
+      }
+    }
+    window.addEventListener('paste', handlePaste)
+    return () => window.removeEventListener('paste', handlePaste)
+  }, [step])
 
   function pickFile(nextFile) {
     if (!nextFile) return
@@ -218,106 +243,196 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
   const label = type === 'exam' ? 'EXAMS' : type === 'assignment' ? 'ASSIGNMENTS' : type === 'result' ? 'COURSE RESULTS' : 'CLASS SESSIONS'
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col">
+    <div className={`flex flex-1 min-h-0 flex-col ${step !== 'results' ? 'max-w-xl mx-auto w-full' : 'w-full'}`}>
       <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto pr-1">
         {step === 'upload' && (
-          <div className="flex flex-col items-center justify-center w-full py-2">
-            <button
-              type="button"
+          <div className="flex flex-col items-center justify-center w-full py-1 sm:py-2">
+            <div
               onClick={() => inputRef.current?.click()}
-              onDrop={e => { e.preventDefault(); pickFile(e.dataTransfer.files?.[0]) }}
-              onDragOver={e => e.preventDefault()}
-              className="group flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-theme-500/30 bg-theme-500/5 py-12 px-6 text-center transition-all duration-300 hover:border-theme-500/50 hover:bg-theme-500/10"
+              onDragEnter={e => { e.preventDefault(); setIsDragging(true) }}
+              onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
+              onDragLeave={e => { e.preventDefault(); setIsDragging(false) }}
+              onDrop={e => { e.preventDefault(); setIsDragging(false); pickFile(e.dataTransfer.files?.[0]) }}
+              className={`group relative flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center transition-all duration-200 ${
+                isDragging
+                  ? 'border-emerald-400 bg-emerald-500/15 shadow-lg shadow-emerald-500/10 scale-[1.01]'
+                  : 'border-white/15 bg-white/[0.02] hover:border-emerald-500/50 hover:bg-emerald-500/[0.04]'
+              }`}
             >
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
-                <Upload className="h-7 w-7" />
+              <div className={`mb-3.5 flex h-13 w-13 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border transition-all duration-300 ${
+                isDragging
+                  ? 'border-emerald-400 bg-emerald-500/25 text-emerald-300 scale-110 shadow-lg shadow-emerald-500/30'
+                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 group-hover:scale-105 group-hover:border-emerald-400/50 group-hover:bg-emerald-500/15'
+              }`}>
+                <Upload className="h-6 w-6" />
               </div>
-              <span className="text-xl font-bold tracking-tight text-white mb-2">Upload screenshot</span>
-              <span className="text-sm text-slate-400 max-w-[280px] leading-relaxed mb-6">
-                Take a screenshot of your {type === 'exam' ? 'exam dates' : type === 'assignment' ? 'assignments list' : type === 'result' ? 'exam results slip' : 'timetable'} and upload it here
+
+              <h3 className="text-base sm:text-lg font-semibold tracking-tight text-white mb-1.5">
+                {isDragging ? 'Drop screenshot here' : 'Upload screenshot'}
+              </h3>
+
+              <p className="text-xs sm:text-sm text-slate-400 max-w-[320px] leading-relaxed mb-5">
+                Drag & drop your {type === 'exam' ? 'exam schedule' : type === 'assignment' ? 'assignments list' : type === 'result' ? 'result slip' : 'timetable'} screenshot, or click to browse
+              </p>
+
+              <div className="flex flex-col items-center gap-2.5">
+                <span className="btn-import !py-2.5 !px-5 !min-h-0 text-sm shadow-md shadow-emerald-500/20">
+                  <Upload className="h-4 w-4" /> Browse Files
+                </span>
+
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 bg-white/5 px-2.5 py-1 rounded-full border border-white/10">
+                  or paste with <kbd className="px-1.5 py-0.5 rounded bg-black/40 text-slate-300 font-mono text-[10px] border border-white/10">Ctrl+V</kbd>
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-slate-400">
+              <span className="inline-flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                PNG, JPG, WebP
               </span>
-              <span className="btn-import pointer-events-none">Browse Files</span>
-            </button>
+              <span className="inline-flex items-center gap-1">
+                <Sparkles className="h-3 w-3 text-emerald-400" />
+                AI auto-extracts timetable details
+              </span>
+            </div>
           </div>
         )}
         <input ref={inputRef} className="hidden" type="file" accept="image/*" onChange={e => pickFile(e.target.files?.[0])} />
 
         {step === 'ready' && (
-          <div className="flex flex-col items-center justify-center w-full py-6 text-center">
-            <div className="relative group max-w-xs mb-6 rounded-2xl overflow-hidden border border-white/10 shadow-2xl transition-transform duration-300 hover:scale-[1.02]">
-              <img src={preview} alt={file?.name ? `Schedule or coursework document preview: ${file.name}` : "Uploaded academic document preview"} className="mx-auto max-h-64 object-contain rounded-2xl" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-center p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="text-xs text-slate-300">{file.name}</span>
+          <div className="flex flex-col items-center justify-center w-full py-3 sm:py-4 text-center animate-[fadeIn_.2s_ease]">
+            <div className="relative group max-w-sm w-full mb-4 rounded-2xl overflow-hidden border border-white/10 bg-black/30 shadow-2xl transition-transform duration-200">
+              <img
+                src={preview}
+                alt={file?.name ? `Schedule preview: ${file.name}` : "Uploaded document preview"}
+                className="mx-auto max-h-52 w-full object-contain rounded-2xl p-2"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3">
+                <span className="text-xs text-slate-300 truncate max-w-[200px]">{file?.name}</span>
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  className="text-xs bg-white/20 hover:bg-white/30 text-white px-2 py-1 rounded-md backdrop-blur-sm transition-colors"
+                >
+                  Change
+                </button>
               </div>
             </div>
-            <p className="text-sm text-slate-400 font-medium mb-6">
-              Selected: <span className="text-white">{file.name}</span> <span className="text-slate-600">·</span> {Math.round(file.size / 1024)} KB
-            </p>
-            <div className="flex flex-col w-full max-w-xs gap-3 sm:flex-row sm:max-w-md justify-center">
-              <button className="btn-ghost flex-1" onClick={() => inputRef.current?.click()}>Change Image</button>
-              <button className="btn-import flex-1" onClick={analyze}>
-                <Sparkles className="h-4 w-4 animate-pulse" /> Analyze with AI
+
+            <div className="flex items-center gap-2 text-xs text-slate-400 mb-5 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 max-w-xs truncate">
+              <span className="truncate text-slate-200 font-medium">{file?.name}</span>
+              <span className="text-slate-500">·</span>
+              <span className="shrink-0">{Math.round((file?.size || 0) / 1024)} KB</span>
+            </div>
+
+            <div className="flex flex-col w-full max-w-xs gap-2.5 sm:flex-row sm:max-w-sm justify-center">
+              <button
+                type="button"
+                className="btn-ghost !min-h-0 !py-2.5 text-sm flex-1"
+                onClick={() => inputRef.current?.click()}
+              >
+                Change Image
+              </button>
+              <button
+                type="button"
+                className="btn-import !min-h-0 !py-2.5 text-sm flex-1"
+                onClick={analyze}
+              >
+                <Sparkles className="h-4 w-4 animate-pulse" />
+                <span>Analyze with AI</span>
               </button>
             </div>
           </div>
         )}
 
         {step === 'analyzing' && (
-          <div className="flex flex-col items-center justify-center w-full py-12 text-center space-y-6">
+          <div className="flex flex-col items-center justify-center w-full py-7 text-center space-y-4 animate-[fadeIn_.2s_ease]">
             <div className="relative">
-              <img src={preview} alt="Academic schedule document being analyzed by AI" className="mx-auto h-24 w-24 rounded-2xl border border-white/10 object-cover blur-[1px] opacity-60" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]" />
+              <div className="relative h-28 w-28 rounded-2xl overflow-hidden border border-emerald-500/30 shadow-lg shadow-emerald-500/10">
+                <img
+                  src={preview}
+                  alt="Schedule document being analyzed"
+                  className="h-full w-full object-cover blur-[1px] opacity-50 scale-105"
+                />
+                <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.8)] animate-scan" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <Loader2 className="h-9 w-9 animate-spin text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                </div>
               </div>
             </div>
-            <div className="space-y-2 max-w-sm">
-              <h3 className="text-xl font-bold text-white tracking-tight">
-                {type === 'exam' ? 'Reading Your Exam Schedule'
-                  : type === 'assignment' ? 'Reading Your Assignments'
-                  : type === 'result' ? 'Reading Your Result Slip'
+
+            <div className="space-y-1.5 max-w-sm">
+              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                {type === 'exam' ? 'Reading Exam Schedule'
+                  : type === 'assignment' ? 'Reading Assignments'
+                  : type === 'result' ? 'Reading Result Slip'
                   : 'AI is Reading Your Image'}
               </h3>
-              <p className="text-emerald-400 font-semibold text-sm animate-pulse">{messages[messageIndex]}</p>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <p className="text-emerald-400 font-semibold text-xs sm:text-sm animate-pulse min-h-[20px]">
+                {messages[messageIndex]}
+              </p>
+              <p className="text-[11px] text-slate-400 leading-relaxed max-w-xs mx-auto">
                 {type === 'exam'
-                  ? 'This takes a few seconds. We are extracting exam dates, times, and venues from your screenshot.'
+                  ? 'Extracting exam dates, times, and venues directly from your screenshot.'
                   : type === 'assignment'
-                  ? 'This takes a few seconds. We are extracting assignment titles, deadlines, and priorities from your screenshot.'
+                  ? 'Extracting assignment titles, deadlines, and priorities.'
                   : type === 'result'
-                  ? 'This takes a few seconds. We are extracting your grades, credit hours, and course names from your result slip.'
-                  : 'This takes a few seconds. We are extracting classes, dates, and times directly from your screenshot.'}
+                  ? 'Extracting course codes, grades, and credit hours.'
+                  : 'Extracting classes, time slots, classrooms, and lecturers.'}
               </p>
             </div>
-            <div className="flex justify-center gap-1.5 pt-2">
-              <span className="typing-dot h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
-              <span className="typing-dot h-2.5 w-2.5 rounded-full bg-emerald-400/80" style={{ animationDelay: '0.2s' }} />
-              <span className="typing-dot h-2.5 w-2.5 rounded-full bg-emerald-400/80" style={{ animationDelay: '0.4s' }} />
+
+            <div className="flex justify-center gap-1.5 pt-1">
+              <span className="h-2 w-2 rounded-full bg-emerald-400/80 animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-emerald-400/80 animate-pulse [animation-delay:0.2s]" />
+              <span className="h-2 w-2 rounded-full bg-emerald-400/80 animate-pulse [animation-delay:0.4s]" />
             </div>
           </div>
         )}
 
         {step === 'error' && (
-          <div className="flex flex-col items-center justify-center w-full py-10 text-center">
-            <div className="h-16 w-16 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center mb-4">
-              <XCircle className="h-8 w-8" />
+          <div className="flex flex-col items-center justify-center w-full py-8 text-center animate-[fadeIn_.2s_ease]">
+            <div className="h-14 w-14 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mb-3.5 shadow-lg shadow-red-500/5">
+              <XCircle className="h-7 w-7" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Analysis Failed</h3>
-            <p className="text-red-400 font-medium text-sm mb-2">{error}</p>
-            <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-6">
-              Make sure the image is clear, text is readable, and contains a valid timetable structure.
+            <h3 className="text-base sm:text-lg font-bold text-white mb-1.5">Analysis Failed</h3>
+            <p className="text-red-400 text-xs sm:text-sm font-medium mb-2 max-w-xs leading-relaxed">{error}</p>
+            <p className="text-xs text-slate-400 max-w-xs leading-relaxed mb-5">
+              Make sure the image is clear and contains readable schedule information.
             </p>
-            <button className="btn-import w-full max-w-xs" onClick={startOver}>Try Again</button>
+            <div className="flex gap-2.5 w-full max-w-xs">
+              <button type="button" className="btn-ghost flex-1 !min-h-0 !py-2.5 text-sm" onClick={startOver}>
+                Upload Another
+              </button>
+              <button type="button" className="btn-import flex-1 !min-h-0 !py-2.5 text-sm" onClick={analyze}>
+                Try Again
+              </button>
+            </div>
           </div>
         )}
 
         {step === 'results' && (
-          <div className="animate-[fadeIn_.25s_ease] space-y-4">
-            <div className="rounded-2xl border border-white/10 bg-navy-950/30 p-4">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="text-sm font-bold tracking-wide text-slate-400">DETECTED {selected.length} {label}</h3>
-                <button className="min-h-0 min-w-0 text-sm font-semibold text-theme-400" onClick={() => setAll(selected.length !== items.length)}>{selected.length === items.length ? 'Deselect All' : 'Select All'}</button>
+          <div className="animate-[fadeIn_.25s_ease] space-y-3">
+            <div className="rounded-2xl border border-white/10 bg-navy-950/40 p-3 sm:p-4">
+              <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/5 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 items-center justify-center rounded-md bg-emerald-500/10 px-2 text-xs font-bold text-emerald-400 border border-emerald-500/20">
+                    {selected.length} / {items.length}
+                  </span>
+                  <h3 className="text-xs sm:text-sm font-semibold tracking-wide text-slate-300">
+                    {label} DETECTED
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  className="min-h-0 min-w-0 text-xs font-semibold text-theme-400 hover:text-theme-300 transition-colors"
+                  onClick={() => setAll(selected.length !== items.length)}
+                >
+                  {selected.length === items.length ? 'Deselect All' : 'Select All'}
+                </button>
               </div>
-              <div className="space-y-4 pr-1">
+              <div className="space-y-3 max-h-[52vh] overflow-y-auto pr-1">
                 {items.map((item, index) => type === 'timetable'
                   ? <TimetableResult key={item.key} item={item} index={index} updateItem={updateItem} />
                   : type === 'result'
@@ -328,23 +443,27 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
           </div>
         )}
       </div>
+
       {step === 'results' && (
-        <div className="mt-4 flex shrink-0 flex-col gap-3 border-t border-white/10 pt-4 md:flex-row md:justify-end">
-          <button className="btn-ghost" onClick={startOver}><RotateCcw className="h-4 w-4" /> Start Over</button>
+        <div className="mt-4 flex shrink-0 flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-white/10 pt-4">
+          <button type="button" className="btn-ghost w-full sm:w-auto !min-h-0 !py-2.5 text-sm" onClick={startOver}>
+            <RotateCcw className="h-4 w-4" /> Start Over
+          </button>
           <button
-            className="btn-import disabled:opacity-50 disabled:cursor-not-allowed"
+            type="button"
+            className="btn-import w-full sm:w-auto !min-h-0 !py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={selected.length === 0 || isImporting}
             onClick={handleImport}
           >
             {isImporting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Importing...
+                <span>Importing...</span>
               </>
             ) : (
               <>
                 <Check className="h-4 w-4" />
-                Import Selected ({selected.length})
+                <span>Import Selected ({selected.length})</span>
               </>
             )}
           </button>
@@ -356,133 +475,141 @@ export default function ImageUploadAnalyzer({ type, onResult }) {
 
 function TimetableResult({ item, index, updateItem }) {
   return (
-    <div className={`rounded-2xl border p-4 transition-all duration-300 ${
+    <div className={`rounded-xl border p-3.5 transition-all duration-200 ${
       item.selected 
-        ? 'border-emerald-500/30 bg-emerald-500/[0.02] shadow-sm shadow-emerald-500/5' 
-        : 'border-slate-800 bg-slate-900/10 opacity-60'
+        ? 'border-emerald-500/30 bg-emerald-500/[0.03] shadow-sm shadow-emerald-500/5' 
+        : 'border-white/5 bg-white/[0.01] opacity-50'
     }`}>
-      {/* Header Row: Checkbox + Subject Name */}
-      <div className="flex items-start gap-3">
+      {/* Top bar: Checkbox + Subject Name + Class Type toggle */}
+      <div className="flex items-center gap-2.5">
         <button 
+          type="button"
           className={`shrink-0 flex items-center justify-center rounded-lg transition-all duration-200 ${
             item.selected 
               ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/20' 
               : 'bg-slate-800 border border-slate-700 text-transparent hover:border-slate-600'
-          } h-9 w-9 mt-7`} 
+          } h-8 w-8 min-h-0 min-w-0`} 
           onClick={() => updateItem(index, { selected: !item.selected })}
         >
-          <Check className="h-5 w-5 stroke-[2.5]" />
+          <Check className="h-4 w-4 stroke-[2.5]" />
         </button>
         
         <div className="flex-1 min-w-0">
-          <Field label="Subject Name">
-            <input 
-              className="input transition-all duration-200 focus:ring-2 focus:ring-theme-500/20 focus:border-theme-500" 
-              value={item.subject} 
-              onChange={e => updateItem(index, { subject: e.target.value })} 
-              placeholder="e.g. CSCI 101"
-            />
-          </Field>
+          <input 
+            className="input !py-1.5 !min-h-0 text-sm font-semibold transition-all duration-200 focus:ring-2 focus:ring-theme-500/20 focus:border-theme-500" 
+            value={item.subject} 
+            onChange={e => updateItem(index, { subject: e.target.value })} 
+            placeholder="Subject Name (e.g. CSCI 101)"
+          />
+        </div>
+
+        {/* Quick Type selector (desktop) */}
+        <div className="hidden sm:flex gap-1 shrink-0">
+          {['L', 'T', 'P'].map(t => (
+            <button 
+              key={t} 
+              type="button"
+              className={`h-7 px-2.5 rounded-md border text-xs font-semibold transition-all ${
+                item.class_type === t 
+                  ? 'border-theme-500/40 bg-theme-500/20 text-theme-300 font-bold' 
+                  : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10'
+              }`} 
+              onClick={() => updateItem(index, { class_type: t, color: getColorFromType(t) })}
+            >
+              {t === 'L' ? 'Lec' : t === 'T' ? 'Tut' : 'Prac'}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Grid of other details */}
-      <div className="mt-4 grid grid-cols-2 gap-3 pl-0 lg:pl-12 lg:grid-cols-5">
-        <div className="col-span-2 lg:col-span-1">
-          <Field label="Day">
-            <select 
-              className="input" 
-              value={item.day} 
-              onChange={e => updateItem(index, { day: e.target.value })}
-            >
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
-                <option key={day}>{day}</option>
-              ))}
-            </select>
-          </Field>
+      {/* Grid of details */}
+      <div className="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2 pl-0 sm:pl-10">
+        <div>
+          <span className="label !text-[11px] block mb-1">Day</span>
+          <select 
+            className="input !py-1.5 !min-h-0 text-xs" 
+            value={item.day} 
+            onChange={e => updateItem(index, { day: e.target.value })}
+          >
+            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+              <option key={day}>{day}</option>
+            ))}
+          </select>
         </div>
         
         <div>
-          <Field label="Start Time">
+          <span className="label !text-[11px] block mb-1">Time</span>
+          <div className="flex items-center gap-1">
             <input 
-              className="input" 
+              className="input !py-1.5 !min-h-0 !px-1.5 text-xs text-center" 
               type="time" 
               value={item.start_time} 
               onChange={e => updateItem(index, { start_time: e.target.value })} 
             />
-          </Field>
-        </div>
-        
-        <div>
-          <Field label="End Time">
+            <span className="text-slate-500 text-xs">-</span>
             <input 
-              className="input" 
+              className="input !py-1.5 !min-h-0 !px-1.5 text-xs text-center" 
               type="time" 
               value={item.end_time} 
               onChange={e => updateItem(index, { end_time: e.target.value })} 
             />
-          </Field>
+          </div>
         </div>
         
         <div>
-          <Field label="Classroom">
-            <input 
-              className="input" 
-              value={item.classroom} 
-              onChange={e => updateItem(index, { classroom: e.target.value })} 
-              placeholder="Room"
-            />
-          </Field>
+          <span className="label !text-[11px] block mb-1">Room</span>
+          <input 
+            className="input !py-1.5 !min-h-0 text-xs" 
+            value={item.classroom} 
+            onChange={e => updateItem(index, { classroom: e.target.value })} 
+            placeholder="Room (e.g. D102)"
+          />
         </div>
         
-        <div className="col-span-2 lg:col-span-1">
-          <Field label="Lecturer">
-            <input 
-              className="input" 
-              value={item.lecturer} 
-              onChange={e => updateItem(index, { lecturer: e.target.value })} 
-              placeholder="Name"
-            />
-          </Field>
+        <div>
+          <span className="label !text-[11px] block mb-1">Lecturer</span>
+          <input 
+            className="input !py-1.5 !min-h-0 text-xs" 
+            value={item.lecturer} 
+            onChange={e => updateItem(index, { lecturer: e.target.value })} 
+            placeholder="Lecturer name"
+          />
         </div>
       </div>
 
-      {/* Class Type and Color picker */}
-      <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-white/5 pt-4 pl-0 lg:pl-12">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 mr-1">Class Type</span>
-          <div className="flex gap-1.5">
-            {['L', 'T', 'P'].map(type => (
-              <button 
-                key={type} 
-                className={`h-8 min-h-8 min-w-8 px-3 rounded-lg border text-sm font-semibold transition-all duration-200 ${
-                  item.class_type === type 
-                    ? 'border-theme-500/30 bg-theme-500/10 text-theme-400 font-bold' 
-                    : 'border-white/5 bg-white/5 text-slate-400 hover:bg-white/10'
-                }`} 
-                onClick={() => updateItem(index, { class_type: type, color: getColorFromType(type) })}
-              >
-                {type === 'L' ? 'Lec' : type === 'T' ? 'Tut' : 'Prac'}
-              </button>
-            ))}
-          </div>
+      {/* Mobile class type + Color picker row */}
+      <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/5 pt-2 pl-0 sm:pl-10">
+        <div className="flex sm:hidden items-center gap-1">
+          {['L', 'T', 'P'].map(t => (
+            <button 
+              key={t} 
+              type="button"
+              className={`h-6 px-2 rounded border text-[11px] font-semibold transition-all ${
+                item.class_type === t 
+                  ? 'border-theme-500/40 bg-theme-500/20 text-theme-300 font-bold' 
+                  : 'border-white/10 bg-white/5 text-slate-400'
+              }`} 
+              onClick={() => updateItem(index, { class_type: t, color: getColorFromType(t) })}
+            >
+              {t === 'L' ? 'Lec' : t === 'T' ? 'Tut' : 'Prac'}
+            </button>
+          ))}
         </div>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 mr-1">Theme Color</span>
-          <div className="flex gap-1.5">
-            {colors.map(color => (
-              <button 
-                key={color} 
-                className={`h-6 min-h-6 w-6 min-w-6 rounded-full transition-transform duration-200 hover:scale-110 ${colorClasses[color]} ${
-                  item.color === color 
-                    ? 'ring-2 ring-white ring-offset-2 ring-offset-navy-950 scale-105' 
-                    : 'opacity-80 hover:opacity-100'
-                }`} 
-                onClick={() => updateItem(index, { color })} 
-              />
-            ))}
-          </div>
+
+        <div className="flex items-center gap-1.5 ml-auto">
+          <span className="text-[10px] uppercase font-semibold text-slate-500 mr-1">Color</span>
+          {colors.map(color => (
+            <button 
+              key={color} 
+              type="button"
+              className={`h-4 w-4 rounded-full transition-transform duration-150 hover:scale-125 ${colorClasses[color]} ${
+                item.color === color 
+                  ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-900 scale-110' 
+                  : 'opacity-70 hover:opacity-100'
+              }`} 
+              onClick={() => updateItem(index, { color })} 
+            />
+          ))}
         </div>
       </div>
     </div>
@@ -491,38 +618,41 @@ function TimetableResult({ item, index, updateItem }) {
 
 function SimpleResult({ item, index, updateItem, type }) {
   return (
-    <div className={`rounded-2xl border p-4 transition-all duration-300 ${
+    <div className={`rounded-xl border p-3.5 transition-all duration-200 ${
       item.selected 
-        ? 'border-emerald-500/30 bg-emerald-500/[0.02] shadow-sm shadow-emerald-500/5' 
-        : 'border-slate-800 bg-slate-900/10 opacity-60'
+        ? 'border-emerald-500/30 bg-emerald-500/[0.03] shadow-sm shadow-emerald-500/5' 
+        : 'border-white/5 bg-white/[0.01] opacity-50'
     }`}>
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-2.5">
         <button 
+          type="button"
           className={`shrink-0 flex items-center justify-center rounded-lg transition-all duration-200 ${
             item.selected 
               ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/20' 
               : 'bg-slate-800 border border-slate-700 text-transparent hover:border-slate-600'
-          } h-9 w-9 mt-7`} 
+          } h-8 w-8 min-h-0 min-w-0`} 
           onClick={() => updateItem(index, { selected: !item.selected })}
         >
-          <Check className="h-5 w-5 stroke-[2.5]" />
+          <Check className="h-4 w-4 stroke-[2.5]" />
         </button>
-        <div className="flex-1 min-w-0 grid gap-3 md:grid-cols-2">
-          <Field label={type === 'exam' ? 'Subject Name' : 'Assignment Title'}>
+        <div className="flex-1 min-w-0 grid gap-2.5 sm:grid-cols-2">
+          <div>
+            <span className="label !text-[11px] block mb-1">{type === 'exam' ? 'Subject Name' : 'Assignment Title'}</span>
             <input 
-              className="input transition-all duration-200 focus:ring-2 focus:ring-theme-500/20 focus:border-theme-500" 
+              className="input !py-1.5 !min-h-0 text-sm font-semibold transition-all duration-200 focus:ring-2 focus:ring-theme-500/20 focus:border-theme-500" 
               value={type === 'exam' ? item.subject : item.title} 
               onChange={e => updateItem(index, type === 'exam' ? { subject: e.target.value } : { title: e.target.value })} 
               placeholder={type === 'exam' ? 'e.g. MATH 201' : 'e.g. Lab Report 1'}
             />
-          </Field>
-          <Field label={type === 'exam' ? 'Exam Date' : 'Due Date'}>
+          </div>
+          <div>
+            <span className="label !text-[11px] block mb-1">{type === 'exam' ? 'Exam Date' : 'Due Date'}</span>
             <DateInput 
-              className="input" 
+              className="input !py-1.5 !min-h-0 text-sm" 
               value={type === 'exam' ? item.exam_date : item.deadline} 
               onChange={e => updateItem(index, type === 'exam' ? { exam_date: e.target.value } : { deadline: e.target.value })} 
             />
-          </Field>
+          </div>
         </div>
       </div>
     </div>
@@ -532,57 +662,62 @@ function SimpleResult({ item, index, updateItem, type }) {
 function ResultItemRow({ item, index, updateItem }) {
   const grades = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'F']
   return (
-    <div className={`rounded-2xl border p-4 transition-all duration-300 ${
+    <div className={`rounded-xl border p-3.5 transition-all duration-200 ${
       item.selected 
-        ? 'border-emerald-500/30 bg-emerald-500/[0.02] shadow-sm shadow-emerald-500/5' 
-        : 'border-slate-800 bg-slate-900/10 opacity-60'
+        ? 'border-emerald-500/30 bg-emerald-500/[0.03] shadow-sm shadow-emerald-500/5' 
+        : 'border-white/5 bg-white/[0.01] opacity-50'
     }`}>
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-2.5">
         <button 
+          type="button"
           className={`shrink-0 flex items-center justify-center rounded-lg transition-all duration-200 ${
             item.selected 
               ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/20' 
               : 'bg-slate-800 border border-slate-700 text-transparent hover:border-slate-600'
-          } h-9 w-9 mt-7`} 
+          } h-8 w-8 min-h-0 min-w-0`} 
           onClick={() => updateItem(index, { selected: !item.selected })}
         >
-          <Check className="h-5 w-5 stroke-[2.5]" />
+          <Check className="h-4 w-4 stroke-[2.5]" />
         </button>
-        <div className="flex-1 min-w-0 grid gap-3 md:grid-cols-4">
-          <Field label="Course Code">
+        <div className="flex-1 min-w-0 grid gap-2 sm:grid-cols-4">
+          <div>
+            <span className="label !text-[11px] block mb-1">Course Code</span>
             <input 
-              className="input" 
+              className="input !py-1.5 !min-h-0 text-xs" 
               value={item.course_code || ''} 
               onChange={e => updateItem(index, { course_code: e.target.value })} 
               placeholder="e.g. AACS1074"
             />
-          </Field>
-          <Field label="Course Name">
+          </div>
+          <div>
+            <span className="label !text-[11px] block mb-1">Course Name</span>
             <input 
-              className="input" 
+              className="input !py-1.5 !min-h-0 text-xs" 
               value={item.course_name || ''} 
               onChange={e => updateItem(index, { course_name: e.target.value })} 
               placeholder="Course Title"
             />
-          </Field>
-          <Field label="Credit Hours">
+          </div>
+          <div>
+            <span className="label !text-[11px] block mb-1">Credits</span>
             <select 
-              className="input" 
+              className="input !py-1.5 !min-h-0 text-xs" 
               value={item.credit_hours || 3} 
               onChange={e => updateItem(index, { credit_hours: Number(e.target.value) })}
             >
               {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-          </Field>
-          <Field label="Grade">
+          </div>
+          <div>
+            <span className="label !text-[11px] block mb-1">Grade</span>
             <select 
-              className="input font-bold" 
+              className="input !py-1.5 !min-h-0 text-xs font-bold" 
               value={item.grade || 'A'} 
               onChange={e => updateItem(index, { grade: e.target.value })}
             >
               {grades.map(g => <option key={g} value={g}>{g}</option>)}
             </select>
-          </Field>
+          </div>
         </div>
       </div>
     </div>

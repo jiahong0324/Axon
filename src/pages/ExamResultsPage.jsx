@@ -73,6 +73,7 @@ export default function ExamResultsPage() {
   const [newSemesterName, setNewSemesterName] = useState('')
   const [showAddSemModal, setShowAddSemModal] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
+  const [analyzerStep, setAnalyzerStep] = useState('upload')
   const [targetSemesterId, setTargetSemesterId] = useState(null)
 
   // Quick Calculator State with synchronous local hydration
@@ -1433,13 +1434,14 @@ export default function ExamResultsPage() {
       {/* Modal: AI Screenshot Import */}
       <Modal
         isOpen={analyzerOpen}
-        onClose={() => setAnalyzerOpen(false)}
+        onClose={() => { setAnalyzerOpen(false); setAnalyzerStep('upload') }}
         title="AI Import Exam Results Slip"
-        maxWidth="max-w-4xl"
+        maxWidth={analyzerStep === 'results' ? 'max-w-3xl' : 'max-w-lg'}
       >
         <ImageUploadAnalyzer
           type="result"
           onResult={handleAIResultImport}
+          onStepChange={setAnalyzerStep}
         />
       </Modal>
 

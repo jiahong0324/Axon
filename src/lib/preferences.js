@@ -32,6 +32,16 @@ export async function syncPreferences(user) {
 
   // Sync to local storage
   Object.keys(mergedPrefs).forEach(key => {
+    if (['axon_semester_name', 'axon_semester_start_date', 'axon_semester_end_date'].includes(key)) {
+      const metaKey = key.replace('axon_', '')
+      const val = user.user_metadata?.[metaKey] !== undefined
+        ? String(user.user_metadata[metaKey] || '')
+        : (user.user_metadata?.preferences?.[key] !== undefined ? String(user.user_metadata.preferences[key] || '') : (localStorage.getItem(key) || ''))
+      localStorage.setItem(key, val)
+      mergedPrefs[key] = val
+      return
+    }
+
     const remoteVal = mergedPrefs[key]
     const localVal = localStorage.getItem(key)
 
@@ -56,7 +66,6 @@ export async function syncPreferences(user) {
     try {
       await supabase.auth.updateUser({
         data: {
-          ...user.user_metadata,
           preferences: mergedPrefs
         }
       })

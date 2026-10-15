@@ -103,6 +103,7 @@ export default function TimetablePage() {
   const [form, setForm] = useState(initialForm)
   const [showForm, setShowForm] = useState(false)
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
+  const [analyzerStep, setAnalyzerStep] = useState('upload')
   const [linkedProfiles, setLinkedProfiles] = useState([])
   const [activeProfileId, setActiveProfileId] = useState(LIVE_PROFILE_ID)
   const [newProfileName, setNewProfileName] = useState('')
@@ -1303,8 +1304,14 @@ export default function TimetablePage() {
           </div>
         </div>
       )}
-      <Modal isOpen={analyzerOpen} onClose={() => setAnalyzerOpen(false)} title={t('timetable.importTitle')} maxWidth="max-w-6xl" bodyClassName="overflow-hidden">
-        <ImageUploadAnalyzer type="timetable" onResult={saveAll} />
+      <Modal
+        isOpen={analyzerOpen}
+        onClose={() => { setAnalyzerOpen(false); setAnalyzerStep('upload') }}
+        title={t('timetable.importTitle')}
+        maxWidth={analyzerStep === 'results' ? 'max-w-3xl' : 'max-w-lg'}
+        bodyClassName="overflow-hidden"
+      >
+        <ImageUploadAnalyzer type="timetable" onResult={saveAll} onStepChange={setAnalyzerStep} />
       </Modal>
       {ConfirmDialog}
     </main>
