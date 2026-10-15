@@ -684,15 +684,15 @@ function TimetableResultsWorkspace({
   }
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col w-full">
+    <div className="flex flex-1 min-h-0 flex-col w-full max-w-full overflow-x-hidden">
       {/* 4. SMART REVIEW & HEADER STRIP */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-white/10 shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-white/10 shrink-0 w-full min-w-0">
         {/* Clickable Summary Strip */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
           <button
             type="button"
             onClick={() => setFilterMode('all')}
-            className={`!min-h-0 !min-w-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+            className={`!min-h-0 !min-w-0 px-2 py-1 rounded-lg text-xs font-medium transition-all ${
               filterMode === 'all'
                 ? 'bg-white/10 text-white font-semibold'
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -704,7 +704,7 @@ function TimetableResultsWorkspace({
           <button
             type="button"
             onClick={() => setFilterMode(filterMode === 'conflicts' ? 'all' : 'conflicts')}
-            className={`!min-h-0 !min-w-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+            className={`!min-h-0 !min-w-0 px-2 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
               filterMode === 'conflicts'
                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
                 : conflictData.pairCount > 0
@@ -720,7 +720,7 @@ function TimetableResultsWorkspace({
           <button
             type="button"
             onClick={() => setFilterMode(filterMode === 'review' ? 'all' : 'review')}
-            className={`!min-h-0 !min-w-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+            className={`!min-h-0 !min-w-0 px-2 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
               filterMode === 'review'
                 ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm'
                 : reviewMap.size > 0
@@ -735,12 +735,12 @@ function TimetableResultsWorkspace({
         </div>
 
         {/* Right Controls: Screenshot Toggle & Selection Status */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {preview && (
             <button
               type="button"
               onClick={() => setShowScreenshot(!showScreenshot)}
-              className={`!min-h-0 !min-w-0 px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 border transition-all ${
+              className={`!min-h-0 !min-w-0 px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 border transition-all ${
                 showScreenshot
                   ? 'bg-white/15 text-white border-white/20 shadow-sm'
                   : 'text-slate-400 hover:text-white bg-white/[0.03] border-white/10 hover:bg-white/5'
@@ -751,14 +751,14 @@ function TimetableResultsWorkspace({
               <span className="hidden sm:inline">{showScreenshot ? 'Hide Source' : 'View Source'}</span>
             </button>
           )}
-          <div className="flex items-center gap-2">
-            <span className="flex h-5 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 text-[11px] font-bold text-emerald-400">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="flex h-5 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 text-[10px] sm:text-[11px] font-bold text-emerald-400 shrink-0">
               {selectedCount} of {items.length} selected
             </span>
             <button
               type="button"
               onClick={() => setAll(selectedCount !== items.length)}
-              className="!min-h-0 !min-w-0 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+              className="!min-h-0 !min-w-0 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
             >
               {selectedCount === items.length ? 'Deselect all' : 'Select all'}
             </button>
@@ -768,7 +768,7 @@ function TimetableResultsWorkspace({
 
       {/* Collapsible Source Screenshot Drawer */}
       {showScreenshot && preview && (
-        <div className="my-2 rounded-xl border border-white/10 bg-black/40 p-2.5 shrink-0 animate-[fadeIn_.15s_ease] motion-reduce:animate-none">
+        <div className="my-2 rounded-xl border border-white/10 bg-black/40 p-2.5 shrink-0 animate-[fadeIn_.15s_ease] motion-reduce:animate-none w-full max-w-full overflow-hidden">
           <div className="flex items-center justify-between pb-1.5 px-1 border-b border-white/5 text-xs text-slate-400">
             <span className="font-semibold text-slate-300 flex items-center gap-1.5">
               <ImageIcon className="h-3.5 w-3.5 text-slate-400" /> Original Screenshot
@@ -793,57 +793,57 @@ function TimetableResultsWorkspace({
 
       {/* Active Filter Pill if filter is on */}
       {filterMode !== 'all' && (
-        <div className="my-2 flex items-center justify-between bg-white/[0.03] border border-white/10 px-3 py-1.5 rounded-lg text-xs text-slate-300 shrink-0">
-          <span>
+        <div className="my-2 flex items-center justify-between bg-white/[0.03] border border-white/10 px-3 py-1.5 rounded-lg text-xs text-slate-300 shrink-0 w-full min-w-0">
+          <span className="truncate min-w-0">
             Filtering by <strong className="text-white capitalize">{filterMode === 'conflicts' ? 'Time Conflicts' : 'Needs Review'}</strong> ({filteredItems.length} matching)
           </span>
           <button
             type="button"
             onClick={() => setFilterMode('all')}
-            className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold"
+            className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold shrink-0 ml-2"
           >
-            Show all sessions
+            Show all
           </button>
         </div>
       )}
 
       {/* MOBILE SEGMENTED TOGGLE (< 900px / lg) */}
-      <div className="flex lg:hidden p-1 bg-black/40 border border-white/10 rounded-xl my-2 shrink-0">
+      <div className="flex lg:hidden p-1 bg-black/40 border border-white/10 rounded-xl my-2 shrink-0 w-full min-w-0">
         <button
           type="button"
           onClick={() => setMobileTab('list')}
-          className={`!min-h-0 !min-w-0 flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+          className={`!min-h-0 !min-w-0 flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 truncate ${
             mobileTab === 'list'
               ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
               : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Calendar className="h-3.5 w-3.5" />
-          <span>Session List ({filteredItems.length})</span>
+          <Calendar className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Session List ({filteredItems.length})</span>
         </button>
         <button
           type="button"
           onClick={() => setMobileTab('week')}
-          className={`!min-h-0 !min-w-0 flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+          className={`!min-h-0 !min-w-0 flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 truncate ${
             mobileTab === 'week'
               ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
               : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Clock className="h-3.5 w-3.5" />
-          <span>Week Preview</span>
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Week Preview</span>
         </button>
       </div>
 
       {/* TWO-PANE LAYOUT */}
-      <div className="flex flex-1 min-h-0 pt-2 gap-4 overflow-hidden">
+      <div className="flex flex-1 min-h-0 pt-2 gap-4 overflow-hidden w-full max-w-full">
         {/* LEFT PANE: Day-grouped Session List (~60% desktop, full mobile when list tab) */}
         <div
-          className={`w-full lg:w-[58%] xl:w-[60%] flex-col min-h-0 ${
+          className={`w-full max-w-full min-w-0 lg:w-[58%] xl:w-[60%] flex-col min-h-0 overflow-hidden ${
             mobileTab === 'list' ? 'flex' : 'hidden lg:flex'
           }`}
         >
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide pr-1 rounded-xl border border-white/5 bg-slate-900/30">
+          <div className="flex-1 min-h-0 w-full max-w-full overflow-y-auto overflow-x-hidden scrollbar-hide rounded-xl border border-white/5 bg-slate-900/30">
             {groupedByDay.length === 0 ? (
               <div className="p-8 text-center text-slate-400 space-y-2">
                 <p className="text-sm">No sessions match the selected filter.</p>
@@ -857,20 +857,20 @@ function TimetableResultsWorkspace({
               </div>
             ) : (
               groupedByDay.map(({ day, items: dayItems }) => (
-                <div key={day} className="relative">
+                <div key={day} className="relative w-full min-w-0">
                   {/* Sticky Day Header */}
-                  <div className="sticky top-0 z-10 flex items-center justify-between bg-[#0b121e]/95 backdrop-blur-md px-3 py-1.5 border-b border-white/10 text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-emerald-400" />
-                      <span>{day}</span>
+                  <div className="sticky top-0 z-10 flex items-center justify-between w-full min-w-0 bg-[#0b121e]/95 backdrop-blur-md px-3 py-1.5 border-b border-white/10 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <Calendar className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                      <span className="truncate">{day}</span>
                     </span>
-                    <span className="text-[11px] font-normal text-slate-400 lowercase">
+                    <span className="text-[11px] font-normal text-slate-400 lowercase shrink-0">
                       {dayItems.length} {dayItems.length === 1 ? 'session' : 'sessions'}
                     </span>
                   </div>
 
                   {/* Sessions in day */}
-                  <div className="divide-y divide-white/5">
+                  <div className="divide-y divide-white/5 w-full min-w-0">
                     {dayItems.map(item => (
                       <TimetableSessionRow
                         key={item.key}
@@ -895,7 +895,7 @@ function TimetableResultsWorkspace({
 
         {/* RIGHT PANE: Live Weekly Timetable Preview (~40% desktop, full mobile when week tab) */}
         <div
-          className={`w-full lg:w-[42%] xl:w-[40%] flex-col min-h-0 pl-0 lg:pl-1 ${
+          className={`w-full max-w-full min-w-0 lg:w-[42%] xl:w-[40%] flex-col min-h-0 pl-0 lg:pl-1 overflow-hidden ${
             mobileTab === 'week' ? 'flex' : 'hidden lg:flex'
           }`}
         >
@@ -910,10 +910,10 @@ function TimetableResultsWorkspace({
       </div>
 
       {/* 5. STICKY FOOTER */}
-      <div className="mt-3 flex shrink-0 items-center justify-between gap-3 border-t border-white/10 pt-3">
+      <div className="mt-3 flex shrink-0 items-center justify-between gap-2.5 sm:gap-3 border-t border-white/10 pt-3 w-full min-w-0">
         <button
           type="button"
-          className="btn-ghost !min-h-0 !min-w-0 !py-2 !px-3.5 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors"
+          className="btn-ghost !min-h-0 !min-w-0 !py-2 !px-3 sm:!px-3.5 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors shrink-0"
           onClick={startOver}
         >
           <RotateCcw className="h-3.5 w-3.5" />
@@ -922,7 +922,7 @@ function TimetableResultsWorkspace({
 
         <button
           type="button"
-          className="btn-import !min-h-0 !min-w-0 !py-2.5 !px-5 text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-import !min-h-0 !min-w-0 !py-2.5 !px-3.5 sm:!px-5 text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           disabled={selectedCount === 0 || isImporting}
           onClick={handleImport}
         >
@@ -978,7 +978,7 @@ function TimetableSessionRow({
       }}
       onMouseEnter={() => setHoveredKey?.(item.key)}
       onMouseLeave={() => setHoveredKey?.(null)}
-      className={`group relative transition-colors duration-150 border-b border-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 motion-reduce:transition-none ${
+      className={`group relative transition-colors duration-150 border-b border-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 motion-reduce:transition-none w-full max-w-full min-w-0 overflow-hidden ${
         isHovered
           ? 'bg-white/[0.05]'
           : 'hover:bg-white/[0.02]'
@@ -993,11 +993,11 @@ function TimetableSessionRow({
       {/* Read-only row: single unified line on desktop, 2 lines on mobile */}
       <div
         onClick={onToggleExpand}
-        className="py-2.5 px-3 cursor-pointer select-none"
+        className="py-2 px-2.5 sm:py-2.5 sm:px-3 cursor-pointer select-none w-full max-w-full min-w-0 overflow-hidden"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2.5 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2.5 min-w-0 w-full">
           {/* Top Line on Mobile / Left Group on Desktop: Checkbox + Dot + Class Name + Type Badge */}
-          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 sm:max-w-[210px]">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 sm:max-w-[210px] w-full sm:w-auto">
             {/* Rounded Checkbox */}
             <button
               type="button"
@@ -1021,7 +1021,7 @@ function TimetableSessionRow({
               title={`${typeConfig.label} (${typeConfig.short})`}
             />
 
-            {/* Class Name (Course Code / Subject Title) - GUARANTEED TO SHOW! */}
+            {/* Class Name (Course Code / Subject Title) */}
             <span
               className="font-bold text-white text-sm tracking-wide truncate min-w-0 flex-1 sm:flex-initial"
               title={className}
@@ -1066,28 +1066,28 @@ function TimetableSessionRow({
           </div>
 
           {/* Bottom Line on Mobile / Middle & Right on Desktop: Time · Room · Lecturer */}
-          <div className="flex items-center gap-2 sm:gap-2.5 pl-7 sm:pl-0 flex-1 min-w-0 text-xs text-slate-400">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 pl-7 sm:pl-0 flex-1 min-w-0 w-full sm:w-auto text-[11px] sm:text-xs text-slate-400 overflow-hidden">
             {/* Time range */}
-            <span className="inline-flex items-center gap-1 font-mono text-slate-300 shrink-0">
+            <span className="inline-flex items-center gap-1 font-mono text-slate-300 shrink-0 text-[11px] sm:text-xs">
               <Clock className="h-3 w-3 text-emerald-400 shrink-0" />
               <span>{formatTimeRange(item.start_time, item.end_time)}</span>
             </span>
 
-            <span className="text-white/20 select-none">·</span>
+            <span className="text-white/20 select-none shrink-0">·</span>
 
             {/* Room */}
-            <span className="inline-flex items-center gap-1 shrink-0 max-w-[110px] truncate">
+            <span className="inline-flex items-center gap-1 shrink-0 max-w-[85px] sm:max-w-[110px] truncate text-[11px] sm:text-xs">
               <MapPin className="h-3 w-3 text-slate-500 shrink-0" />
-              <span className={item.classroom?.trim() ? 'text-slate-300 font-medium truncate' : 'text-amber-400/80 italic'}>
+              <span className={item.classroom?.trim() ? 'text-slate-300 font-medium truncate' : 'text-amber-400/80 italic truncate'}>
                 {item.classroom?.trim() || 'Room TBA'}
               </span>
             </span>
 
             {item.lecturer?.trim() && (
               <>
-                <span className="text-white/20 select-none">·</span>
-                {/* Lecturer */}
-                <span className="inline-flex items-center gap-1 flex-1 min-w-[70px] truncate">
+                <span className="text-white/20 select-none shrink-0">·</span>
+                {/* Lecturer - min-w-0 so it gracefully truncates instead of stretching the row */}
+                <span className="inline-flex items-center gap-1 flex-1 min-w-0 truncate text-[11px] sm:text-xs">
                   <User className="h-3 w-3 text-slate-500 shrink-0" />
                   <span className="text-slate-300 truncate" title={item.lecturer}>
                     {item.lecturer}
@@ -1145,25 +1145,25 @@ function TimetableSessionRow({
       {isExpanded && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="px-3 pb-3 pt-1 border-t border-white/5 space-y-3 bg-black/25 animate-[fadeIn_.15s_ease] motion-reduce:animate-none"
+          className="px-3 pb-3 pt-1 border-t border-white/5 space-y-3 bg-black/25 animate-[fadeIn_.15s_ease] motion-reduce:animate-none w-full max-w-full min-w-0 overflow-hidden"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full min-w-0">
             {/* Subject Input */}
-            <div>
+            <div className="min-w-0">
               <label className="text-[11px] font-medium text-slate-400 block mb-1">Course Code / Subject</label>
               <input
                 type="text"
                 value={item.subject || ''}
                 onChange={(e) => onUpdate({ subject: e.target.value })}
-                className="w-full bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+                className="w-full max-w-full box-border bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
                 placeholder="e.g. BMIS1043"
               />
             </div>
 
             {/* Class Type Pills */}
-            <div>
+            <div className="min-w-0">
               <label className="text-[11px] font-medium text-slate-400 block mb-1">Class Type</label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-4 gap-1 sm:gap-1.5 w-full min-w-0">
                 {['L', 'T', 'P', 'C'].map(ct => {
                   const isSelected = (item.class_type || 'L') === ct
                   const conf = CLASS_TYPE_CONFIG[ct]
@@ -1172,13 +1172,15 @@ function TimetableSessionRow({
                       key={ct}
                       type="button"
                       onClick={() => onUpdate({ class_type: ct, color: getColorFromType(ct) })}
-                      className={`!min-h-0 !min-w-0 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+                      className={`!min-h-0 !min-w-0 py-1.5 px-1 text-xs font-semibold rounded-lg border transition-all truncate text-center ${
                         isSelected
                           ? `${conf.badge} border-white/30 shadow-sm`
                           : 'bg-white/[0.03] text-slate-400 border-white/10 hover:bg-white/5'
                       }`}
+                      title={`${conf.short} - ${conf.label}`}
                     >
-                      {conf.short} ({conf.label.slice(0, 3)})
+                      <span>{conf.short}</span>
+                      <span className="hidden sm:inline text-[10px] font-normal ml-0.5">({conf.label.slice(0, 3)})</span>
                     </button>
                   )
                 })}
@@ -1186,13 +1188,13 @@ function TimetableSessionRow({
             </div>
 
             {/* Day and Times */}
-            <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              <div>
+            <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full min-w-0">
+              <div className="min-w-0">
                 <label className="text-[11px] font-medium text-slate-400 block mb-1">Day of Week</label>
                 <select
                   value={item.day || 'Monday'}
                   onChange={(e) => onUpdate({ day: e.target.value })}
-                  className="w-full bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none cursor-pointer"
+                  className="w-full max-w-full box-border bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none cursor-pointer"
                 >
                   {CLASS_DAYS.map(d => (
                     <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
@@ -1200,29 +1202,29 @@ function TimetableSessionRow({
                 </select>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="text-[11px] font-medium text-slate-400 block mb-1">Start Time</label>
                 <input
                   type="time"
                   value={item.start_time || '09:00'}
                   onChange={(e) => onUpdate({ start_time: e.target.value })}
-                  className="w-full bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white text-center focus:outline-none"
+                  className="w-full max-w-full box-border bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white text-center focus:outline-none"
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="text-[11px] font-medium text-slate-400 block mb-1">End Time</label>
                 <input
                   type="time"
                   value={item.end_time || '10:00'}
                   onChange={(e) => onUpdate({ end_time: e.target.value })}
-                  className="w-full bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white text-center focus:outline-none"
+                  className="w-full max-w-full box-border bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white text-center focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Room and Lecturer */}
-            <div>
+            <div className="min-w-0">
               <label className="text-[11px] font-medium text-slate-400 block mb-1">
                 Classroom / Room {(!item.classroom || !item.classroom.trim()) && <span className="text-amber-400">(Needs Room)</span>}
               </label>
@@ -1230,7 +1232,7 @@ function TimetableSessionRow({
                 type="text"
                 value={item.classroom || ''}
                 onChange={(e) => onUpdate({ classroom: e.target.value })}
-                className={`w-full bg-slate-900/90 border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 ${
+                className={`w-full max-w-full box-border bg-slate-900/90 border rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 ${
                   !item.classroom?.trim()
                     ? 'border-amber-500/50 focus:border-amber-400 focus:ring-amber-500/30'
                     : 'border-white/15 focus:border-emerald-500/50 focus:ring-emerald-500/40'
@@ -1239,24 +1241,24 @@ function TimetableSessionRow({
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="text-[11px] font-medium text-slate-400 block mb-1">Lecturer (Optional)</label>
               <input
                 type="text"
                 value={item.lecturer || ''}
                 onChange={(e) => onUpdate({ lecturer: e.target.value })}
-                className="w-full bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+                className="w-full max-w-full box-border bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
                 placeholder="e.g. Dr. Wong"
               />
             </div>
           </div>
 
           {/* Expanded Bottom Row */}
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center justify-between pt-1 w-full min-w-0">
             <button
               type="button"
               onClick={onDelete}
-              className="!min-h-0 !min-w-0 text-xs text-red-400 hover:text-red-300 flex items-center gap-1.5 py-1 px-2 rounded hover:bg-red-500/10 transition-colors"
+              className="!min-h-0 !min-w-0 text-xs text-red-400 hover:text-red-300 flex items-center gap-1.5 py-1 px-2 rounded hover:bg-red-500/10 transition-colors shrink-0"
             >
               <Trash2 className="h-3.5 w-3.5" />
               <span>Delete session</span>
@@ -1265,7 +1267,7 @@ function TimetableSessionRow({
             <button
               type="button"
               onClick={onToggleExpand}
-              className="!min-h-0 !min-w-0 text-xs font-semibold text-emerald-400 hover:text-emerald-300 py-1 px-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1"
+              className="!min-h-0 !min-w-0 text-xs font-semibold text-emerald-400 hover:text-emerald-300 py-1 px-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1 shrink-0"
             >
               <Check className="h-3.5 w-3.5" />
               <span>Done</span>
