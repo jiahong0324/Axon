@@ -812,11 +812,11 @@ export default function ExamResultsPage() {
 
       {/* Navigation Tabs */}
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div className="w-full sm:w-auto overflow-x-auto scrollbar-hide rounded-xl bg-[#111827] p-1.5 shadow-md">
-          <div className="flex items-center gap-1 min-w-full sm:min-w-0">
+        <div className="w-full sm:w-auto overflow-x-auto scrollbar-hide rounded-xl bg-[#111827] p-1.5 shadow-md scroll-smooth">
+          <div className="flex items-center gap-1 sm:gap-2 min-w-max">
             <button
               onClick={() => handleTabChange('records')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 whitespace-nowrap ${
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3.5 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 whitespace-nowrap ${
                 activeTab === 'records'
                   ? 'bg-blue-500 text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
@@ -827,7 +827,7 @@ export default function ExamResultsPage() {
             </button>
             <button
               onClick={() => handleTabChange('calculator')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 whitespace-nowrap ${
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3.5 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 whitespace-nowrap ${
                 activeTab === 'calculator'
                   ? 'bg-blue-500 text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
@@ -838,7 +838,7 @@ export default function ExamResultsPage() {
             </button>
             <button
               onClick={() => handleTabChange('course-calculator')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 whitespace-nowrap ${
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3.5 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 whitespace-nowrap ${
                 activeTab === 'course-calculator'
                   ? 'bg-blue-500 text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
@@ -1271,35 +1271,41 @@ export default function ExamResultsPage() {
 
                           <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
                             {/* Weight % */}
-                            <div className="relative flex-1 sm:w-36 min-w-0">
-                              <input
-                                type="number"
-                                inputMode="decimal"
-                                min="0"
-                                max="100"
-                                step="any"
-                                className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                placeholder="Weight"
-                                value={row.weight}
-                                onChange={e => handleUpdateCourseCalcRow(row.id, 'weight', e.target.value)}
-                              />
-                              <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
+                            <div className="flex-1 sm:w-36 min-w-0">
+                              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 sm:hidden">Weight</span>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  min="0"
+                                  max="100"
+                                  step="any"
+                                  className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  placeholder="Weight"
+                                  value={row.weight}
+                                  onChange={e => handleUpdateCourseCalcRow(row.id, 'weight', e.target.value)}
+                                />
+                                <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
+                              </div>
                             </div>
 
                             {/* Score % */}
-                            <div className="relative flex-1 sm:w-36 min-w-0">
-                              <input
-                                type="number"
-                                inputMode="decimal"
-                                min="0"
-                                max="100"
-                                step="any"
-                                className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                placeholder="Score"
-                                value={row.score}
-                                onChange={e => handleUpdateCourseCalcRow(row.id, 'score', e.target.value)}
-                              />
-                              <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
+                            <div className="flex-1 sm:w-36 min-w-0">
+                              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 sm:hidden">Score</span>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  min="0"
+                                  max="100"
+                                  step="any"
+                                  className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  placeholder="Score"
+                                  value={row.score}
+                                  onChange={e => handleUpdateCourseCalcRow(row.id, 'score', e.target.value)}
+                                />
+                                <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
+                              </div>
                             </div>
 
                             {/* Desktop Delete Row */}
@@ -1323,7 +1329,7 @@ export default function ExamResultsPage() {
                       className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent py-3 text-xs sm:text-sm font-semibold text-blue-400 hover:bg-white/[0.03] transition-all"
                     >
                       <Plus className="h-4 w-4" />
-                      <span>Add Assessment Component</span>
+                      <span>Add Row</span>
                     </button>
                     {courseCalcRows.some(r => r.name || r.weight || r.score) && (
                       <button
