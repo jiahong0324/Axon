@@ -902,9 +902,6 @@ export default function TimetablePage() {
                             className={`flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeProfileId === p.id ? 'bg-theme-500/20 text-theme-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
                           >
                             <span className="truncate">{p.name}</span>
-                            <span className="text-[10px] bg-white/10 text-slate-300 px-1.5 py-0.5 rounded font-mono ml-2 shrink-0">
-                              {t('timetable.archivedBadge')} ({p.classes?.length || 0})
-                            </span>
                           </button>
                         ))}
                         
@@ -1274,24 +1271,6 @@ export default function TimetablePage() {
               {t('timetable.backToLive')}
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Fresh New Semester Archive Notification */}
-      {!loading && isLiveProfile && classes.length === 0 && linkedProfiles.length > 0 && (
-        <div className="mb-4 p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-300 animate-in fade-in duration-200">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <ShieldCheck className="h-5 w-5 text-indigo-400 shrink-0" />
-            <div className="truncate">
-              <span>{t('timetable.archivedNotification', { name: linkedProfiles[linkedProfiles.length - 1].name, count: linkedProfiles[linkedProfiles.length - 1].classes?.length || 0 })}</span>
-            </div>
-          </div>
-          <button
-            onClick={() => switchProfile(linkedProfiles[linkedProfiles.length - 1].id)}
-            className="!min-h-0 !min-w-0 self-end sm:self-auto px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-xs font-semibold shrink-0 transition-colors"
-          >
-            {t('timetable.viewArchiveBtn')}
-          </button>
         </div>
       )}
 
