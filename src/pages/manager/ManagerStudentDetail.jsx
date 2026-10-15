@@ -1015,3 +1015,621 @@ function StudentAIChatsTab({ studentId, student, initialChats = [] }) {
   )
 }
 
+function RemindersTab({ reminders = [] }) {
+  const [filter, setFilter] = useState('all') // 'all' | 'active' | 'inactive'
+  const [search, setSearch] = useState('')
+
+  const activeCount = useMemo(() => reminders.filter(r => r.is_active).length, [reminders])
+  const inactiveCount = useMemo(() => reminders.filter(r => !r.is_active).length, [reminders])
+  const recurringCount = useMemo(() => reminders.filter(r => r.repeat_type && r.repeat_type !== 'once').length, [reminders])
+
+  const filtered = useMemo(() => {
+    return reminders.filter(r => {
+      if (filter === 'active' && !r.is_active) return false
+      if (filter === 'inactive' && r.is_active) return false
+      if (search.trim()) {
+        const query = search.toLowerCase()
+        const titleMatch = (r.title || '').toLowerCase().includes(query)
+        const timeMatch = (r.reminder_time || '').toLowerCase().includes(query)
+        const repeatMatch = (r.repeat_type || '').toLowerCase().includes(query)
+        return titleMatch || timeMatch || repeatMatch
+      }
+      return true
+    })
+  }, [reminders, filter, search])
+
+  return (
+    <div className="space-y-6">
+      {/* Metrics Row */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="card border-l-4 border-l-amber-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase text-slate-400">Total Reminders</p>
+              <p className="text-2xl font-bold text-white mt-1">{reminders.length}</p>
+            </div>
+            <div className="rounded-xl bg-amber-500/10 p-2.5 text-amber-400 border border-amber-500/20">
+              <Bell className="h-5 w-5" />
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 mt-2">Configured in student workspace</p>
+        </div>
+
+        <div className="card border-l-4 border-l-emerald-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase text-emerald-400">Active Alarms</p>
+              <p className="text-2xl font-bold text-white mt-1">{activeCount}</p>
+            </div>
+            <div className="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-400 border border-emerald-500/20">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 mt-2">Currently enabled & triggering alerts</p>
+        </div>
+
+        <div className="card border-l-4 border-l-slate-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase text-slate-400">Paused / Off</p>
+              <p className="text-2xl font-bold text-white mt-1">{inactiveCount}</p>
+            </div>
+            <div className="rounded-xl bg-slate-500/10 p-2.5 text-slate-400 border border-white/10">
+              <Clock className="h-5 w-5" />
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 mt-2">Temporarily disabled by student</p>
+        </div>
+
+        <div className="card border-l-4 border-l-purple-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase text-purple-400">Recurring</p>
+              <p className="text-2xl font-bold text-white mt-1">{recurringCount}</p>
+            </div>
+            <div className="rounded-xl bg-purple-500/10 p-2.5 text-purple-400 border border-purple-500/20">
+              <Sparkles className="h-5 w-5" />
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 mt-2">Daily or weekly schedule loops</p>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFilter('all')}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              filter === 'all'
+                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
+                : 'border border-white/10 text-slate-400 hover:text-white'
+            }`}
+          >
+            All ({reminders.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter('active')}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              filter === 'active'
+                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+                : 'border border-white/10 text-slate-400 hover:text-white'
+            }`}
+          >
+            Active ({activeCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter('inactive')}
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              filter === 'inactive'
+                ? 'bg-slate-600 text-white shadow-md'
+                : 'border border-white/10 text-slate-400 hover:text-white'
+            }`}
+          >
+            Paused ({inactiveCount})
+          </button>
+        </div>
+
+        <div className="relative min-w-[220px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            className="input !py-1.5 !pl-9 text-xs"
+            placeholder="Search reminders or time..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Reminders Grid */}
+      {filtered.length === 0 ? (
+        <div className="card py-12 text-center">
+          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <Bell className="h-6 w-6" />
+          </div>
+          <h4 className="text-base font-bold text-white">No Reminders Found</h4>
+          <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+            {reminders.length === 0
+              ? 'This student has not configured any personal study reminders or scheduled alarms in their Axon account yet.'
+              : 'No reminders match your current search or status filter.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map(r => {
+            const isRecurring = r.repeat_type && r.repeat_type !== 'once'
+            return (
+              <div
+                key={r.id}
+                className={`flex flex-col justify-between rounded-2xl border p-4 transition-all ${
+                  r.is_active
+                    ? 'border-amber-500/20 bg-amber-500/[0.03] hover:border-amber-500/40'
+                    : 'border-white/10 bg-white/[0.01] opacity-75'
+                }`}
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${
+                          r.is_active
+                            ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+                            : 'bg-white/5 text-slate-500 border border-white/10'
+                        }`}
+                      >
+                        <Bell className="h-4 w-4" />
+                      </div>
+                      <h4 className="text-sm font-bold text-white line-clamp-2">
+                        {r.title || 'Untitled Reminder'}
+                      </h4>
+                    </div>
+
+                    <span
+                      className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                        r.is_active
+                          ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
+                          : 'bg-slate-500/15 text-slate-400 border-white/10'
+                      }`}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full ${r.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                      {r.is_active ? 'Active' : 'Paused'}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/5 border border-white/10 px-2.5 py-1 text-xs font-semibold text-slate-200">
+                      <Clock className="h-3.5 w-3.5 text-amber-400" />
+                      {formatTime(r.reminder_time) || 'No time set'}
+                    </span>
+
+                    <span className={`inline-flex items-center rounded-lg px-2 py-1 text-xs font-medium capitalize border ${
+                      isRecurring
+                        ? 'bg-purple-500/15 text-purple-300 border-purple-500/25'
+                        : 'bg-blue-500/10 text-blue-300 border-blue-500/20'
+                    }`}>
+                      {r.repeat_type || 'once'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>ID: {r.id ? r.id.slice(0, 8) + '...' : 'N/A'}</span>
+                  <span>
+                    {r.created_at ? format(new Date(r.created_at), 'dd MMM yyyy') : 'Saved'}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function StudentSettingsTab({ student, preferences = {}, semesterSettings = {}, accountInfo = null, metadata = {} }) {
+  const { showToast } = useToast()
+  const [copiedId, setCopiedId] = useState(false)
+
+  // Merge defaults from DEFAULT_PREFERENCES
+  const prefs = useMemo(() => {
+    return {
+      axon_notify_minutes: '10',
+      axon_class_notify: 'true',
+      axon_exam_notify: 'true',
+      assignmentReminders: 'true',
+      examAlerts: 'true',
+      reminderLeadTime: '3 days',
+      aiLanguage: 'English',
+      aiStyle: 'Casual',
+      dailyTipEnabled: 'true',
+      firstDay: 'Monday',
+      timeFormat: '24hr',
+      theme: 'dark',
+      accentColor: student?.avatar_color || 'blue',
+      fontSize: 'medium',
+      fontFamily: 'sans',
+      compactMode: 'false',
+      appLanguage: 'en',
+      axon_attendance_notify: 'false',
+      axon_attendance_minutes: '10',
+      ...preferences
+    }
+  }, [preferences, student])
+
+  const copyStudentId = () => {
+    const idToCopy = student?.id || accountInfo?.id
+    if (idToCopy) {
+      navigator.clipboard?.writeText(idToCopy)
+      setCopiedId(true)
+      showToast('Student UUID copied to clipboard!', 'success')
+      setTimeout(() => setCopiedId(false), 2000)
+    }
+  }
+
+  // Accent color hex
+  const accentHex = {
+    blue: '#3B82F6',
+    purple: '#8B5CF6',
+    green: '#10B981',
+    cyan: '#06B6D4',
+    orange: '#F97316',
+    red: '#EF4444',
+    pink: '#EC4899'
+  }[prefs.accentColor] || prefs.accentColor || '#3B82F6'
+
+  return (
+    <div className="space-y-6">
+      {/* Banner / Info Header */}
+      <div className="card border-l-4 border-l-amber-500 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <Settings className="h-5 w-5 text-amber-400" />
+            <span>Student Configured Settings & Preferences</span>
+          </h3>
+          <p className="text-xs text-slate-400 mt-1">
+            Complete read-only inspection of this student's notification preferences, semester dates, theme, and AI tutor configuration.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-300">
+            <Shield className="h-3.5 w-3.5" /> Manager Inspection Mode
+          </span>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Section 1: Academic & Semester Configuration */}
+        <div className="card space-y-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-amber-400" /> Academic & Semester Setup
+            </h4>
+            <span className="text-[11px] text-slate-400">TAR UMT Academic Cycle</span>
+          </div>
+
+          <div className="space-y-3">
+            <SettingRow
+              label="Current Semester Name"
+              value={semesterSettings.name || metadata.semester_name || prefs.axon_semester_name || 'Not configured'}
+              badge={Boolean(semesterSettings.name || metadata.semester_name || prefs.axon_semester_name)}
+            />
+
+            <SettingRow
+              label="Semester Start Date"
+              value={semesterSettings.startDate || metadata.semester_start_date || prefs.axon_semester_start_date || 'Not set'}
+              description="Beginning of current academic term"
+            />
+
+            <SettingRow
+              label="Semester End Date"
+              value={semesterSettings.endDate || metadata.semester_end_date || prefs.axon_semester_end_date || 'Not set'}
+              description="Official conclusion / finals cutoff"
+            />
+
+            <SettingRow
+              label="Weekly Exercise Habit Goal"
+              value={`${metadata.axon_weekly_goal || prefs.axon_weekly_goal || 3} days / week`}
+              badge={true}
+              badgeColor="orange"
+            />
+
+            <SettingRow
+              label="First Day of Week"
+              value={prefs.firstDay || 'Monday'}
+            />
+          </div>
+        </div>
+
+        {/* Section 2: Notification & Alert Preferences */}
+        <div className="card space-y-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <Bell className="h-4 w-4 text-emerald-400" /> Notification & Alert Preferences
+            </h4>
+            <span className="text-[11px] text-slate-400">Background Alerts</span>
+          </div>
+
+          <div className="space-y-3">
+            <SettingToggleRow
+              label="Assignment Deadline Reminders"
+              enabled={prefs.assignmentReminders !== 'false'}
+              description="Alerts before coursework submissions"
+            />
+
+            <SettingToggleRow
+              label="Exam Starts & Date Alerts"
+              enabled={prefs.examAlerts !== 'false'}
+              description="Notifications for scheduled assessments"
+            />
+
+            <SettingRow
+              label="Deadline Alert Lead Time"
+              value={prefs.reminderLeadTime || '3 days'}
+              badge={true}
+              badgeColor="emerald"
+            />
+
+            <SettingToggleRow
+              label="Class Start Notifications"
+              enabled={prefs.axon_class_notify !== 'false'}
+              description="Alerts before live timetable lectures"
+            />
+
+            <SettingRow
+              label="Class Alert Lead Time"
+              value={`${prefs.axon_notify_minutes || '10'} minutes before class`}
+            />
+
+            <SettingToggleRow
+              label="Attendance Code Reminders"
+              enabled={prefs.axon_attendance_notify === 'true'}
+              description="Prompt to scan TAR UMT attendance QR code"
+            />
+
+            <SettingRow
+              label="Attendance Alert Lead Time"
+              value={`${prefs.axon_attendance_minutes || '10'} minutes before class ends`}
+            />
+          </div>
+        </div>
+
+        {/* Section 3: Appearance & UI Preferences */}
+        <div className="card space-y-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <Palette className="h-4 w-4 text-purple-400" /> Interface & Theme Customization
+            </h4>
+            <span className="text-[11px] text-slate-400">UI Styles</span>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between py-2 border-b border-white/5">
+              <div>
+                <p className="text-xs font-semibold text-slate-200">Theme Mode</p>
+                <p className="text-[11px] text-slate-500">Workspace brightness scheme</p>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-lg bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-300 capitalize border border-white/10">
+                {prefs.theme === 'light' ? <Sun className="h-3.5 w-3.5 text-amber-400" /> : <Moon className="h-3.5 w-3.5 text-blue-400" />}
+                <span>{prefs.theme || 'dark'}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between py-2 border-b border-white/5">
+              <div>
+                <p className="text-xs font-semibold text-slate-200">Accent Color</p>
+                <p className="text-[11px] text-slate-500">Highlights and active buttons</p>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-300 capitalize border border-white/10">
+                <span className="h-3.5 w-3.5 rounded-full shadow-sm" style={{ background: accentHex }} />
+                <span>{prefs.accentColor || 'blue'}</span>
+              </div>
+            </div>
+
+            <SettingRow
+              label="Font Size"
+              value={prefs.fontSize || 'medium'}
+            />
+
+            <SettingRow
+              label="Font Family / Typography"
+              value={prefs.fontFamily || 'sans'}
+            />
+
+            <SettingToggleRow
+              label="Compact Mode"
+              enabled={prefs.compactMode === 'true'}
+              description="High-density list spacing"
+            />
+
+            <SettingRow
+              label="Interface Language"
+              value={prefs.appLanguage === 'zh' ? '中文 (Simplified Chinese)' : 'English (en)'}
+              badge={true}
+              badgeColor="purple"
+            />
+
+            <SettingRow
+              label="Time Display Format"
+              value={prefs.timeFormat === '12hr' ? '12-Hour Clock (AM/PM)' : '24-Hour Clock (Standard)'}
+            />
+          </div>
+        </div>
+
+        {/* Section 4: AI Academic Assistant Configuration */}
+        <div className="card space-y-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <Bot className="h-4 w-4 text-cyan-400" /> AI Study Tutor Configuration
+            </h4>
+            <span className="text-[11px] text-slate-400">Groq LLM Persona</span>
+          </div>
+
+          <div className="space-y-3">
+            <SettingRow
+              label="AI Response Language"
+              value={prefs.aiLanguage || 'English'}
+              badge={true}
+              badgeColor="cyan"
+              description="Primary language for answers & explanations"
+            />
+
+            <SettingRow
+              label="AI Explanatory Tone"
+              value={prefs.aiStyle || 'Casual'}
+              badge={true}
+              description="Tutor communication style (Casual, Formal, etc.)"
+            />
+
+            <SettingToggleRow
+              label="Auto-generate Daily Tip"
+              enabled={prefs.dailyTipEnabled !== 'false'}
+              description="Daily academic insight on dashboard"
+            />
+
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs text-slate-400 leading-relaxed">
+              <p className="font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
+                <Info className="h-3.5 w-3.5 text-cyan-400" /> AI System Access Scope:
+              </p>
+              The AI Study Helper incorporates the student's timetable classes, active reminders, assignment deadlines, and TAR UMT courses when answering study questions.
+            </div>
+          </div>
+        </div>
+
+        {/* Section 5: Account & System Audit */}
+        <div className="card space-y-4 lg:col-span-2">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <User className="h-4 w-4 text-amber-400" /> Account Security & Profile Audit
+            </h4>
+            <span className="text-[11px] text-slate-400">Supabase Auth Record</span>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <p className="text-[11px] font-medium text-slate-500 uppercase">Student UUID</p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <p className="font-mono text-xs text-slate-300 truncate" title={student?.id || accountInfo?.id}>
+                  {student?.id || accountInfo?.id || 'N/A'}
+                </p>
+                <button
+                  type="button"
+                  onClick={copyStudentId}
+                  className="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                  title="Copy UUID"
+                >
+                  {copiedId ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <p className="text-[11px] font-medium text-slate-500 uppercase">Registered Email</p>
+              <p className="mt-1 text-xs font-semibold text-white truncate">
+                {student?.email || accountInfo?.email || 'N/A'}
+              </p>
+              <span className={`inline-flex items-center gap-1 mt-1 text-[10px] font-semibold ${
+                accountInfo?.email_confirmed_at ? 'text-emerald-400' : 'text-amber-400'
+              }`}>
+                {accountInfo?.email_confirmed_at ? '✓ Email Confirmed' : '• Verification Pending'}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <p className="text-[11px] font-medium text-slate-500 uppercase">Last Active Sign In</p>
+              <p className="mt-1 text-xs font-semibold text-white">
+                {accountInfo?.last_sign_in_at
+                  ? format(new Date(accountInfo.last_sign_in_at), 'dd MMM yyyy, hh:mm a')
+                  : 'No login record'}
+              </p>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                {accountInfo?.last_sign_in_at
+                  ? formatDistanceToNow(new Date(accountInfo.last_sign_in_at), { addSuffix: true })
+                  : '-'}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <p className="text-[11px] font-medium text-slate-500 uppercase">Account Created</p>
+              <p className="mt-1 text-xs font-semibold text-white">
+                {student?.created_at
+                  ? format(new Date(student.created_at), 'dd MMM yyyy')
+                  : 'N/A'}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <p className="text-[11px] font-medium text-slate-500 uppercase">University & Campus</p>
+              <p className="mt-1 text-xs font-semibold text-white truncate">
+                {student?.university || 'TAR UMT'}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <p className="text-[11px] font-medium text-slate-500 uppercase">Course & Student ID</p>
+              <p className="mt-1 text-xs font-semibold text-white truncate">
+                {student?.course || 'Not set'}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                ID: {student?.student_id || 'Not set'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SettingRow({ label, value, description, badge = false, badgeColor = 'amber' }) {
+  const badgeClasses = {
+    amber: 'bg-amber-500/15 text-amber-300 border-amber-500/20',
+    emerald: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20',
+    purple: 'bg-purple-500/15 text-purple-300 border-purple-500/20',
+    cyan: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/20',
+    orange: 'bg-orange-500/15 text-orange-300 border-orange-500/20'
+  }[badgeColor] || 'bg-amber-500/15 text-amber-300 border-amber-500/20'
+
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-white/5 gap-3">
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-slate-200">{label}</p>
+        {description && <p className="text-[11px] text-slate-500">{description}</p>}
+      </div>
+      <div className="shrink-0">
+        {badge ? (
+          <span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold border ${badgeClasses}`}>
+            {value}
+          </span>
+        ) : (
+          <span className="text-xs font-medium text-slate-300">{value}</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SettingToggleRow({ label, enabled, description }) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-white/5 gap-3">
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-slate-200">{label}</p>
+        {description && <p className="text-[11px] text-slate-500">{description}</p>}
+      </div>
+      <span
+        className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold border ${
+          enabled
+            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
+            : 'bg-slate-500/15 text-slate-400 border-white/10'
+        }`}
+      >
+        <span className={`h-1.5 w-1.5 rounded-full ${enabled ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+        {enabled ? 'Enabled' : 'Disabled'}
+      </span>
+    </div>
+  )
+}
+

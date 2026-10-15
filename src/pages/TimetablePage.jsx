@@ -436,16 +436,17 @@ export default function TimetablePage() {
     localStorage.setItem('axon_semester_start_date', nextStartDate)
     localStorage.setItem('axon_semester_end_date', nextEndDate)
 
+    const currentLinked = readLinkedProfiles(user.id)
     await Promise.all([
       updatePreference(user, 'axon_semester_name', nextName),
       updatePreference(user, 'axon_semester_start_date', nextStartDate),
       updatePreference(user, 'axon_semester_end_date', nextEndDate),
       supabase.auth.updateUser({
         data: {
-          ...user.user_metadata,
           semester_name: nextName,
           semester_start_date: nextStartDate,
-          semester_end_date: nextEndDate
+          semester_end_date: nextEndDate,
+          linked_timetables: currentLinked
         }
       })
     ])
@@ -482,6 +483,9 @@ export default function TimetablePage() {
         classes: classes.map(c => ({ ...c, profile_id: profileId }))
       }
       updatedProfiles.push(archivedProfile)
+      try {
+        localStorage.setItem(`axon_archived_backup_${user.id}_${profileId}`, JSON.stringify(archivedProfile))
+      } catch (_) {}
       persistLinkedProfiles(updatedProfiles)
     }
 
@@ -493,15 +497,16 @@ export default function TimetablePage() {
       return showToast(t('timetable.startNewSemesterFailed'), 'error')
     }
 
-    // Clear live replacements in auth
+    // Clear live replacements in auth while explicitly preserving linked_timetables
     const replacements = user.user_metadata?.replacement_classes || []
     const remainingReplacements = replacements.filter(r => r.profile_id && r.profile_id !== 'account' && r.profile_id !== LIVE_PROFILE_ID)
-    supabase.auth.updateUser({
+    const { data: authUpdateResult } = await supabase.auth.updateUser({
       data: {
-        ...user.user_metadata,
-        replacement_classes: remainingReplacements
+        replacement_classes: remainingReplacements,
+        linked_timetables: updatedProfiles
       }
     })
+    if (authUpdateResult?.user) setUser(authUpdateResult.user)
 
     clearCache(classesCacheKey(user.id))
     setClasses([])
@@ -526,19 +531,24 @@ export default function TimetablePage() {
     localStorage.setItem('axon_semester_start_date', nextStartDate)
     localStorage.setItem('axon_semester_end_date', nextEndDate)
 
-    await Promise.all([
-      updatePreference(user, 'axon_semester_name', nextName),
-      updatePreference(user, 'axon_semester_start_date', nextStartDate),
-      updatePreference(user, 'axon_semester_end_date', nextEndDate),
+    const currentLinked = readLinkedProfiles(user.id)
+
+    const [authRes] = await Promise.all([
       supabase.auth.updateUser({
         data: {
-          ...user.user_metadata,
           semester_name: nextName,
           semester_start_date: nextStartDate,
-          semester_end_date: nextEndDate
+          semester_end_date: nextEndDate,
+          linked_timetables: currentLinked
         }
-      })
+      }),
+      updatePreference(user, 'axon_semester_name', nextName),
+      updatePreference(user, 'axon_semester_start_date', nextStartDate),
+      updatePreference(user, 'axon_semester_end_date', nextEndDate)
     ])
+    if (authRes?.data?.user) {
+      setUser(authRes.data.user)
+    }
 
     sessionStorage.setItem('axon_rollover_wizard_dismissed', 'true')
     setShowRolloverWizard(false)
@@ -892,6 +902,9 @@ export default function TimetablePage() {
                             className={`flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeProfileId === p.id ? 'bg-theme-500/20 text-theme-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
                           >
                             <span className="truncate">{p.name}</span>
+                            <span className="text-[10px] bg-white/10 text-slate-300 px-1.5 py-0.5 rounded font-mono ml-2 shrink-0">
+                              {t('timetable.archivedBadge')} ({p.classes?.length || 0})
+                            </span>
                           </button>
                         ))}
                         
@@ -1235,6 +1248,53 @@ export default function TimetablePage() {
           </div>
         </div>
       )}
+
+      {/* Archive View Indicator Banner */}
+      {!loading && !isLiveProfile && (
+        <div className="mb-4 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-200 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <GraduationCap className="h-5 w-5 text-amber-400 shrink-0" />
+            <div className="truncate">
+              <span className="font-semibold text-amber-300">{t('timetable.viewingArchived')}:</span>{' '}
+              <span className="font-bold text-white">{activeProfile?.name}</span>
+              <span className="text-amber-300/70 ml-2">({classes.length} classes)</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <button
+              onClick={() => promoteToMain(activeProfileId)}
+              className="!min-h-0 !min-w-0 px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-xs font-semibold transition-colors"
+            >
+              {t('timetable.promoteConfirm')}
+            </button>
+            <button
+              onClick={() => switchProfile(LIVE_PROFILE_ID)}
+              className="!min-h-0 !min-w-0 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-colors"
+            >
+              {t('timetable.backToLive')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Fresh New Semester Archive Notification */}
+      {!loading && isLiveProfile && classes.length === 0 && linkedProfiles.length > 0 && (
+        <div className="mb-4 p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-300 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <ShieldCheck className="h-5 w-5 text-indigo-400 shrink-0" />
+            <div className="truncate">
+              <span>{t('timetable.archivedNotification', { name: linkedProfiles[linkedProfiles.length - 1].name, count: linkedProfiles[linkedProfiles.length - 1].classes?.length || 0 })}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => switchProfile(linkedProfiles[linkedProfiles.length - 1].id)}
+            className="!min-h-0 !min-w-0 self-end sm:self-auto px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-xs font-semibold shrink-0 transition-colors"
+          >
+            {t('timetable.viewArchiveBtn')}
+          </button>
+        </div>
+      )}
+
       <div className="pb-3">
         {loading ? <SkeletonTimetable /> : (
         <div className="w-full">
