@@ -161,6 +161,8 @@ export default function TimetablePage() {
   const [semesterForm, setSemesterForm] = useState({ name: '', start_date: '', end_date: '' })
   const [showNewSemesterModal, setShowNewSemesterModal] = useState(false)
   const [showRolloverWizard, setShowRolloverWizard] = useState(false)
+  const [rolloverStep, setRolloverStep] = useState(1)
+  const [savedArchiveName, setSavedArchiveName] = useState('')
   const [showRolloverCustomDates, setShowRolloverCustomDates] = useState(false)
   const hasCheckedRollover = useRef(false)
   const [newSemesterForm, setNewSemesterForm] = useState({ archiveName: '', newName: '', newStartDate: '', newEndDate: '' })
@@ -983,6 +985,14 @@ export default function TimetablePage() {
             )}
           </div>
         </div>
+
+        {/* Mobile-only Badge & Promote Button */}
+        {!loading && (semesterProgressBadge || promoteButton) && (
+          <div className="flex sm:hidden items-center gap-2 flex-wrap">
+            {semesterProgressBadge}
+            {promoteButton}
+          </div>
+        )}
       </div>
 
       {/* Semester Settings Modal */}

@@ -763,34 +763,36 @@ export default function ExamResultsPage() {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-heading text-white tracking-tight">
             {t('results.title')}
           </h1>
-          <div className="flex items-center gap-1 sm:gap-2 md:hidden">
-            <button
-              className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors flex items-center justify-center shrink-0"
-              onClick={() => {
-                setTargetSemesterId(null)
-                setAnalyzerOpen(true)
-              }}
-              title="AI Import Screenshot"
-            >
-              <Sparkles className="h-5 w-5" />
-            </button>
-            <button
-              className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors flex items-center justify-center shrink-0"
-              onClick={() => setShowAddSemModal(true)}
-              title="Add Semester"
-            >
-              <Plus className="h-5 w-5" />
-            </button>
-            {semesters.length > 0 && (
+          {activeTab === 'records' && (
+            <div className="flex items-center gap-1 sm:gap-2 md:hidden">
               <button
-                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0"
-                onClick={handleClearAllSemesters}
-                title="Clear All Semesters"
+                className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors flex items-center justify-center shrink-0"
+                onClick={() => {
+                  setTargetSemesterId(null)
+                  setAnalyzerOpen(true)
+                }}
+                title="AI Import Screenshot"
               >
-                <Trash2 className="h-5 w-5" />
+                <Sparkles className="h-5 w-5" />
               </button>
-            )}
-          </div>
+              <button
+                className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors flex items-center justify-center shrink-0"
+                onClick={() => setShowAddSemModal(true)}
+                title="Add Semester"
+              >
+                <Plus className="h-5 w-5" />
+              </button>
+              {semesters.length > 0 && (
+                <button
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0"
+                  onClick={handleClearAllSemesters}
+                  title="Clear All Semesters"
+                >
+                  <Trash2 className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Overall CGPA Banner */}
@@ -810,40 +812,42 @@ export default function ExamResultsPage() {
 
       {/* Navigation Tabs */}
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div className="inline-flex rounded-xl bg-[#111827] p-1.5 shadow-md flex-wrap sm:flex-nowrap">
-          <button
-            onClick={() => handleTabChange('records')}
-            className={`flex items-center gap-2 rounded-lg px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all ${
-              activeTab === 'records'
-                ? 'bg-blue-500 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <BookOpen className="h-4 w-4 shrink-0" />
-            <span>{t('results.mySemesters')}</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('calculator')}
-            className={`flex items-center gap-2 rounded-lg px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all ${
-              activeTab === 'calculator'
-                ? 'bg-blue-500 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Calculator className="h-4 w-4 shrink-0" />
-            <span>{t('results.gpaSimulator')}</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('course-calculator')}
-            className={`flex items-center gap-2 rounded-lg px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all ${
-              activeTab === 'course-calculator'
-                ? 'bg-blue-500 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Percent className="h-4 w-4 shrink-0" />
-            <span>{t('results.courseCalc')}</span>
-          </button>
+        <div className="w-full sm:w-auto overflow-x-auto scrollbar-hide rounded-xl bg-[#111827] p-1.5 shadow-md">
+          <div className="flex items-center gap-1 min-w-full sm:min-w-0">
+            <button
+              onClick={() => handleTabChange('records')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 whitespace-nowrap ${
+                activeTab === 'records'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <BookOpen className="h-4 w-4 shrink-0" />
+              <span>{t('results.mySemesters')}</span>
+            </button>
+            <button
+              onClick={() => handleTabChange('calculator')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 whitespace-nowrap ${
+                activeTab === 'calculator'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Calculator className="h-4 w-4 shrink-0" />
+              <span>{t('results.gpaSimulator')}</span>
+            </button>
+            <button
+              onClick={() => handleTabChange('course-calculator')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 whitespace-nowrap ${
+                activeTab === 'course-calculator'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Percent className="h-4 w-4 shrink-0" />
+              <span>{t('results.courseCalc')}</span>
+            </button>
+          </div>
         </div>
 
         {activeTab === 'records' && semesters.length > 0 && (
