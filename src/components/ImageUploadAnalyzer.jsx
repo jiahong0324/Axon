@@ -1,6 +1,7 @@
 import { Check, Loader2, RotateCcw, Sparkles, Upload, XCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { analyzeImageWithGroq } from '../lib/groq'
+import DateInput from './DateInput'
 
 const TIMETABLE_PROMPT = `
 Analyze this university timetable image. Extract ALL class sessions and return ONLY a valid JSON array, no markdown, no explanation.
@@ -516,9 +517,8 @@ function SimpleResult({ item, index, updateItem, type }) {
             />
           </Field>
           <Field label={type === 'exam' ? 'Exam Date' : 'Due Date'}>
-            <input 
+            <DateInput 
               className="input" 
-              type="date" 
               value={type === 'exam' ? item.exam_date : item.deadline} 
               onChange={e => updateItem(index, type === 'exam' ? { exam_date: e.target.value } : { deadline: e.target.value })} 
             />

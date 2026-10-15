@@ -16,6 +16,7 @@ import { SkeletonList } from '../components/SkeletonLoader'
 import { useLanguage } from '../components/LanguageProvider'
 import SubjectSelect from '../components/SubjectSelect'
 import SEO from '../components/SEO'
+import DateInput from '../components/DateInput'
 
 const statuses = ['Pending', 'In Progress', 'Done']
 const initialForm = { title: '', subject: '', deadline: '', priority: 'Medium', notes: '', status: 'Pending' }
@@ -226,7 +227,7 @@ export default function AssignmentPage() {
               subjects={subjects} 
             />
           </Field>
-          <Field label="Deadline"><input className="input" required type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} /></Field>
+          <Field label="Deadline"><DateInput required value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} /></Field>
           <Field label="Priority"><select className="input" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>{['High', 'Medium', 'Low'].map(p => <option key={p}>{p}</option>)}</select></Field>
           <Field label="Notes"><textarea className="input min-h-24" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></Field>
           <button disabled={isSubmitting} className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Saving...' : 'Save Assignment'}</button>

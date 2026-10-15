@@ -1,4 +1,4 @@
-import { ArrowLeft, Award, Bot, Calendar, Copy, Download, Dumbbell, Flame, Image, MessageSquareText, Pencil, Search, Shield, Trophy } from 'lucide-react'
+import { ArrowLeft, Award, Bot, Calendar, Copy, Download, Dumbbell, Flame, Image, Layers, MessageSquareText, Pencil, Search, Shield, Trophy } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { Link, useParams } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -12,7 +12,7 @@ import { useLanguage } from '../../components/LanguageProvider'
 import { downloadStudentReport } from '../../lib/generateReport'
 import { supabase } from '../../lib/supabase'
 import { dateLabel, days, daysFromToday, formatTime, initials, markdownToHtml } from '../../lib/utils'
-import { calculateOverallCGPA, calculateSemesterGPA } from '../../lib/tarumtGrading'
+import { calculateOverallCGPA, calculateSemesterGPA, getAcademicStanding, getGradeBadgeStyle } from '../../lib/tarumtGrading'
 import { ACTIVITY_ICONS, calculateStreakAndStats, fetchExerciseData, getLevelInfo, getTodayStr } from '../../lib/exerciseUtils'
 import { fetchFullStudentDetail } from '../../lib/manageStudent'
 
@@ -23,11 +23,14 @@ export default function ManagerStudentDetail() {
   const { studentId } = useParams()
   const [student, setStudent] = useState(null)
   const [classes, setClasses] = useState([])
+  const [linkedTimetables, setLinkedTimetables] = useState([])
+  const [replacementClasses, setReplacementClasses] = useState([])
   const [assignments, setAssignments] = useState([])
   const [exams, setExams] = useState([])
   const [results, setResults] = useState([])
   const [semesters, setSemesters] = useState([])
   const [activity, setActivity] = useState([])
+  const [initialChats, setInitialChats] = useState([])
   const [activeTab, setActiveTab] = useState('Timetable')
   const [editing, setEditing] = useState(false)
   const [resultExam, setResultExam] = useState(null)
@@ -37,28 +40,50 @@ export default function ManagerStudentDetail() {
   useEffect(() => { loadDetail() }, [studentId])
 
   async function loadDetail() {
-    const [studentRes, classesRes, assignmentsRes, examsRes, resultsRes, activityRes, semsRes, coursesRes] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', studentId).single(),
-      supabase.from('classes').select('*').eq('user_id', studentId),
-      supabase.from('assignments').select('*').eq('user_id', studentId).order('deadline'),
-      supabase.from('exams').select('*').eq('user_id', studentId).order('exam_date'),
-      supabase.from('exam_results').select('*').eq('student_id', studentId),
-      supabase.from('activity_log').select('*').eq('user_id', studentId).order('created_at', { ascending: false }),
-      supabase.from('student_semesters').select('*').eq('user_id', studentId).order('created_at'),
-      supabase.from('student_semester_courses').select('*').eq('user_id', studentId).order('created_at')
-    ])
-    setStudent(studentRes.data)
-    setClasses(classesRes.data || [])
-    setAssignments(assignmentsRes.data || [])
-    setExams(examsRes.data || [])
-    setResults(resultsRes.data || [])
-    setActivity(activityRes.data || [])
+    try {
+      const [studentRes, classesRes, assignmentsRes, examsRes, resultsRes, activityRes, semsRes, coursesRes, fullDetail] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', studentId).single(),
+        supabase.from('classes').select('*').eq('user_id', studentId),
+        supabase.from('assignments').select('*').eq('user_id', studentId).order('deadline'),
+        supabase.from('exams').select('*').eq('user_id', studentId).order('exam_date'),
+        supabase.from('exam_results').select('*').eq('student_id', studentId),
+        supabase.from('activity_log').select('*').eq('user_id', studentId).order('created_at', { ascending: false }),
+        supabase.from('student_semesters').select('*').eq('user_id', studentId).order('created_at'),
+        supabase.from('student_semester_courses').select('*').eq('user_id', studentId).order('created_at'),
+        fetchFullStudentDetail(studentId).catch(() => null)
+      ])
 
-    const sems = (semsRes.data || []).map(s => ({
-      ...s,
-      courses: (coursesRes.data || []).filter(c => c.semester_id === s.id)
-    }))
-    setSemesters(sems)
+      setStudent(studentRes.data)
+      setClasses(classesRes.data || fullDetail?.classes || [])
+      setAssignments(assignmentsRes.data || [])
+      setExams(examsRes.data || fullDetail?.exams || [])
+      setResults(resultsRes.data || fullDetail?.examResults || [])
+      setActivity(activityRes.data || [])
+
+      // Timetables
+      const linked = fullDetail?.linkedTimetables || fullDetail?.metadata?.linked_timetables || []
+      setLinkedTimetables(linked)
+      setReplacementClasses(fullDetail?.metadata?.replacement_classes || [])
+
+      // Semesters & Results: prioritize fullDetail.examResultsSemesters if populated
+      let sems = []
+      if (Array.isArray(fullDetail?.examResultsSemesters) && fullDetail.examResultsSemesters.length > 0) {
+        sems = fullDetail.examResultsSemesters
+      } else if (semsRes.data && semsRes.data.length > 0) {
+        sems = semsRes.data.map(s => ({
+          ...s,
+          courses: (coursesRes.data || []).filter(c => c.semester_id === s.id)
+        }))
+      }
+      setSemesters(sems)
+
+      // Chats
+      if (fullDetail?.chats && fullDetail.chats.length > 0) {
+        setInitialChats(fullDetail.chats)
+      }
+    } catch (err) {
+      console.error('loadDetail error:', err)
+    }
   }
 
   const resultByExam = useMemo(() => new Map(results.map(result => [result.exam_id, result])), [results])
@@ -143,12 +168,31 @@ export default function ManagerStudentDetail() {
         {tabs.map(tab => <button key={tab} className={`min-h-[44px] shrink-0 rounded-full px-4 text-sm font-medium ${activeTab === tab ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'border border-white/10 text-slate-400 hover:text-white'}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}
       </nav>
 
-      {activeTab === 'Timetable' && <TimetableTab classes={classes} />}
+      {activeTab === 'Timetable' && (
+        <TimetableTab
+          classes={classes}
+          linkedTimetables={linkedTimetables}
+          replacementClasses={replacementClasses}
+        />
+      )}
       {activeTab === 'Assignments' && <AssignmentsTab assignments={assignments} />}
-      {activeTab === 'Exams & Results' && <ExamsTab exams={exams} resultByExam={resultByExam} openResult={openResult} semesters={semesters} />}
+      {activeTab === 'Exams & Results' && (
+        <ExamsTab
+          exams={exams}
+          resultByExam={resultByExam}
+          openResult={openResult}
+          semesters={semesters}
+        />
+      )}
       {activeTab === 'Exercise' && <ExerciseManagerTab studentId={studentId} />}
       {activeTab === 'Activity' && <ActivityTab activity={activity} />}
-      {activeTab === 'AI Chats' && <StudentAIChatsTab studentId={studentId} student={student} />}
+      {activeTab === 'AI Chats' && (
+        <StudentAIChatsTab
+          studentId={studentId}
+          student={student}
+          initialChats={initialChats}
+        />
+      )}
 
       {editing && <EditStudentPanel student={student} onClose={() => setEditing(false)} onSaved={loadDetail} />}
       <Modal isOpen={Boolean(resultExam)} onClose={() => setResultExam(null)} title="Exam Result">
@@ -164,11 +208,149 @@ export default function ManagerStudentDetail() {
   )
 }
 
-function TimetableTab({ classes }) {
-  return <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">{days.map(day => {
-    const items = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
-    return <div key={day} className="card min-h-[320px]"><h2 className="mb-4 font-semibold">{day}</h2>{items.length === 0 ? <p className="muted">Free day</p> : <div className="space-y-3">{items.map(item => <article key={item.id} className="rounded-xl border border-white/10 p-3"><ClassTypeBadge type={item.class_type} /><p className="mt-2 font-semibold">{item.subject}</p><p className="muted">{formatTime(item.start_time)} - {formatTime(item.end_time)}</p><p className="muted">{item.classroom || 'TBA'} · {item.lecturer || 'TBA'}</p></article>)}</div>}</div>
-  })}</section>
+function TimetableTab({ classes = [], linkedTimetables = [], replacementClasses = [] }) {
+  const [selectedTimetableId, setSelectedTimetableId] = useState('main')
+
+  const mainClasses = useMemo(() => {
+    return [...classes, ...(replacementClasses || [])]
+  }, [classes, replacementClasses])
+
+  const { currentName, currentClasses, isMain } = useMemo(() => {
+    if (selectedTimetableId === 'main') {
+      return {
+        currentName: 'Primary Main Timetable',
+        currentClasses: mainClasses,
+        isMain: true
+      }
+    }
+    const found = linkedTimetables.find(p => p.id === selectedTimetableId)
+    return {
+      currentName: found?.name || 'Linked Timetable',
+      currentClasses: found?.classes || [],
+      isMain: false
+    }
+  }, [selectedTimetableId, mainClasses, linkedTimetables])
+
+  const totalClasses = currentClasses.length
+
+  return (
+    <div className="space-y-4">
+      {/* Timetable Selector Bar */}
+      <div className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-amber-400" />
+            <span>Timetable Profiles</span>
+            <span className="text-xs font-normal text-slate-400">
+              ({1 + linkedTimetables.length} total)
+            </span>
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Switch between the student's primary schedule and additional / linked timetables.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setSelectedTimetableId('main')}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              selectedTimetableId === 'main'
+                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
+                : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
+            }`}
+          >
+            <span>Primary Timetable</span>
+            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+              selectedTimetableId === 'main' ? 'bg-black/30 text-white' : 'bg-white/10 text-slate-300'
+            }`}>
+              {mainClasses.length}
+            </span>
+          </button>
+
+          {linkedTimetables.map(profile => {
+            const isSelected = selectedTimetableId === profile.id
+            const count = (profile.classes || []).length
+            return (
+              <button
+                key={profile.id}
+                type="button"
+                onClick={() => setSelectedTimetableId(profile.id)}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                  isSelected
+                    ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
+                    : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
+                }`}
+              >
+                <span>{profile.name || 'Unnamed Timetable'}</span>
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  isSelected ? 'bg-black/30 text-white' : 'bg-white/10 text-slate-300'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between px-1 text-xs text-slate-400">
+        <span>Viewing: <strong className="text-slate-200">{currentName}</strong> ({totalClasses} scheduled classes)</span>
+        {!isMain && <span className="text-amber-400/90 font-medium">★ Secondary / Linked Timetable</span>}
+      </div>
+
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {days.map(day => {
+          const items = currentClasses
+            .filter(c => c.day === day)
+            .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
+
+          return (
+            <div key={day} className="card min-h-[320px] flex flex-col">
+              <div className="mb-3 flex items-center justify-between border-b border-white/5 pb-2">
+                <h2 className="font-bold text-white text-sm">{day}</h2>
+                <span className="text-[11px] font-semibold text-slate-400">{items.length} {items.length === 1 ? 'class' : 'classes'}</span>
+              </div>
+              {items.length === 0 ? (
+                <div className="my-auto text-center py-8">
+                  <p className="text-xs text-slate-500">Free day</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {items.map((item, idx) => (
+                    <article
+                      key={item.id || idx}
+                      className={`rounded-xl border p-3 transition-colors ${
+                        item.is_replacement
+                          ? 'border-orange-500/30 bg-orange-500/5'
+                          : 'border-white/10 bg-white/[0.02]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <ClassTypeBadge type={item.class_type} />
+                        {item.is_replacement && (
+                          <span className="rounded-md bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-orange-300">
+                            Replacement {item.date ? `· ${item.date}` : ''}
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-semibold text-white text-sm leading-snug">{item.subject}</p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {formatTime(item.start_time)} - {formatTime(item.end_time)}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">
+                        {item.classroom || 'TBA'} · {item.lecturer || 'TBA'}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </section>
+    </div>
+  )
 }
 
 function AssignmentsTab({ assignments }) {
@@ -176,56 +358,151 @@ function AssignmentsTab({ assignments }) {
   return <section className="grid gap-4 xl:grid-cols-3">{statuses.map(status => <div key={status} className="card min-h-[360px]"><h2 className="mb-4 font-semibold">{status}</h2><div className="space-y-3">{assignments.filter(a => a.status === status).map(item => <article key={item.id} className="rounded-xl border border-white/10 p-3"><div className="mb-2 flex items-start justify-between gap-2"><p className="font-semibold">{item.title}</p><PriorityBadge priority={item.priority} /></div><p className="muted">{item.subject}</p><CountdownBadge deadline={item.deadline} status={item.status} /></article>)}</div></div>)}</section>
 }
 
-function ExamsTab({ exams, resultByExam, openResult, semesters = [] }) {
-  const { cgpa, totalCredits } = calculateOverallCGPA(semesters)
+function ExamsTab({ exams = [], resultByExam, openResult, semesters = [] }) {
+  const { cgpa, overallCredits } = calculateOverallCGPA(semesters)
+  const standing = getAcademicStanding(cgpa, overallCredits)
+
   return (
     <div className="space-y-6">
-      <div className="card border-l-4 border-l-amber-400 bg-gradient-to-r from-amber-500/10 to-transparent">
+      {/* TAR UMT Academic Standing Hero Card (Parity with Student View) */}
+      <div className="card border-l-4 border-l-amber-400 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-bold text-white flex items-center gap-2"><Award className="h-5 w-5 text-amber-400" /> TAR UMT Academic Standing</h3>
-            <p className="text-sm text-slate-400">Calculated across {semesters.length} semester record(s) ({totalCredits} total credit hours)</p>
+          <div className="max-w-xl">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Award className="h-5 w-5 text-amber-400" /> TAR UMT Academic Standing
+            </h3>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-300">
+                {standing.title}
+              </span>
+              <span className="text-xs font-semibold text-slate-400">· {standing.badge}</span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">{standing.description}</p>
+            <p className="text-xs text-slate-400 mt-1">
+              Calculated across {semesters.length} semester record(s) ({overallCredits} total credit hours)
+            </p>
           </div>
           <div className="text-right">
-            <span className="text-3xl font-black text-amber-400">{cgpa}</span>
+            <span className="text-4xl font-black text-amber-400 tracking-tight">{cgpa}</span>
             <span className="block text-xs text-slate-400 uppercase tracking-wider font-semibold">Cumulative CGPA</span>
           </div>
         </div>
       </div>
 
-      {semesters.length > 0 && (
-        <section className="space-y-4">
-          <h3 className="text-lg font-bold text-white">Semester Academic Records</h3>
-          <div className="grid gap-4 xl:grid-cols-2">
-            {semesters.map(sem => (
-              <div key={sem.id} className="card">
-                <div className="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
-                  <h4 className="font-bold text-white">{sem.name}</h4>
-                  <span className="text-sm font-semibold text-amber-400">GPA: {sem.gpa ?? '-'}</span>
-                </div>
-                <div className="space-y-2">
-                  {(sem.courses || []).map((c, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm rounded-lg bg-white/5 px-3 py-2">
-                      <div>
-                        <p className="font-medium text-white">{c.course_code ? `${c.course_code} - ` : ''}{c.course_name}</p>
-                        <p className="text-xs text-slate-400">{c.credit_hours} Credits</p>
-                      </div>
-                      <span className="rounded-md bg-amber-500/20 px-2.5 py-1 text-xs font-bold text-amber-300">{c.grade}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Semester Academic Records */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-white">Semester Academic Records ({semesters.length})</h3>
+          <span className="text-xs text-slate-400">Official student grade slip records</span>
+        </div>
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        {exams.map(exam => {
-          const result = resultByExam.get(exam.id)
-          const isPast = daysFromToday(exam.exam_date) < 0
-          return <article key={exam.id} className="card"><div className="mb-3 flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-bold">{exam.subject}</h3><p className="muted">{exam.exam_type} · {dateLabel(exam.exam_date)} · {exam.venue || 'TBA'}</p></div>{isPast && <button className="manager-primary-btn px-4 py-2 text-sm" onClick={() => openResult(exam)}>{result ? 'Edit Result' : 'Add Result'}</button>}</div>{result && <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3"><span className={`mr-3 text-2xl font-bold ${Number(result.score) >= 60 ? 'text-emerald-400' : 'text-red-400'}`}>{result.score}</span><span className="rounded-full bg-theme-500/20 px-2 py-0.5 text-sm font-semibold text-theme-300">{result.grade}</span>{result.remarks && <p className="muted mt-2 italic">{result.remarks}</p>}</div>}</article>
-        })}
+        {semesters.length === 0 ? (
+          <div className="card py-8 text-center border border-white/5 bg-white/[0.02]">
+            <Award className="mx-auto mb-2 h-8 w-8 text-slate-600" />
+            <p className="text-sm font-semibold text-slate-300">No Semester Academic Records</p>
+            <p className="text-xs text-slate-500 mt-1">
+              The student has not yet entered or imported semester examination slips.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {semesters.map(sem => {
+              const semStat = calculateSemesterGPA(sem.courses)
+              return (
+                <div key={sem.id} className="card flex flex-col justify-between">
+                  <div>
+                    <div className="mb-3.5 flex items-center justify-between border-b border-white/10 pb-3">
+                      <div>
+                        <h4 className="font-bold text-white text-base">{sem.name}</h4>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {sem.courses?.length || 0} Courses · <strong className="text-slate-300">{semStat.totalCredits}</strong> Total Credits
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/20 px-3 py-1.5 text-emerald-300">
+                        <span className="text-[10px] font-bold uppercase tracking-wider">GPA</span>
+                        <span className="font-mono text-sm font-black text-emerald-300">{semStat.gpa}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {(sem.courses || []).length === 0 ? (
+                        <p className="text-xs text-slate-500 italic py-2">No courses listed in this semester.</p>
+                      ) : (
+                        (sem.courses || []).map((c, idx) => (
+                          <div key={c.id || idx} className="flex items-center justify-between text-sm rounded-xl bg-white/5 px-3 py-2.5">
+                            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                              {c.course_code && (
+                                <span className="font-mono text-xs font-bold uppercase rounded-md bg-white/10 px-2 py-0.5 text-slate-300 shrink-0">
+                                  {c.course_code}
+                                </span>
+                              )}
+                              <span className="font-medium text-white truncate">{c.course_name || 'Course'}</span>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0">
+                              <span className="text-xs text-slate-400">{c.credit_hours || 0} Credits</span>
+                              <span className={`inline-flex items-center justify-center w-10 h-7 rounded-lg font-mono text-xs font-bold border ${getGradeBadgeStyle(c.grade)}`}>
+                                {c.grade || '-'}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Scheduled Timetable Exams & Assessment Scores */}
+      <section className="space-y-3 pt-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-amber-400" /> Scheduled Timetable Exams ({exams.length})
+          </h3>
+          <span className="text-xs text-slate-500">From student timetable exam schedule</span>
+        </div>
+
+        {exams.length === 0 ? (
+          <div className="card py-6 text-center">
+            <p className="text-xs text-slate-500">No upcoming or past timetable exams scheduled for this student.</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {exams.map(exam => {
+              const result = resultByExam.get(exam.id)
+              const isPast = daysFromToday(exam.exam_date) < 0
+              return (
+                <article key={exam.id} className="card">
+                  <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-base font-bold text-white">{exam.subject}</h4>
+                      <p className="muted text-xs">{exam.exam_type} · {dateLabel(exam.exam_date)} · {exam.venue || 'TBA'}</p>
+                    </div>
+                    {isPast && (
+                      <button className="manager-primary-btn px-3 py-1.5 text-xs" onClick={() => openResult(exam)}>
+                        {result ? 'Edit Score' : 'Add Score'}
+                      </button>
+                    )}
+                  </div>
+                  {result && (
+                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+                      <span className={`mr-3 text-xl font-bold ${Number(result.score) >= 60 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {result.score} marks
+                      </span>
+                      <span className="rounded-full bg-theme-500/20 px-2 py-0.5 text-xs font-semibold text-theme-300">
+                        {result.grade}
+                      </span>
+                      {result.remarks && <p className="muted mt-2 text-xs italic">{result.remarks}</p>}
+                    </div>
+                  )}
+                </article>
+              )
+            })}
+          </div>
+        )}
       </section>
     </div>
   )

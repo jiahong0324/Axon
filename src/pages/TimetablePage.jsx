@@ -818,88 +818,78 @@ export default function TimetablePage() {
     }
   }
 
-      {/* Semester progress badge element */}
-      const semesterProgressBadge = isLiveProfile && (
+      {/* Semester progress subtitle element (Apple Calendar style) */}
+      const semesterProgressSubtitle = isLiveProfile ? (
         progressInfo?.isOngoing ? (
           <button
             type="button"
             onClick={openSemesterModal}
-            className="group inline-flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/80 hover:bg-slate-800/90 border border-emerald-500/30 hover:border-emerald-400/60 shadow-lg shadow-emerald-500/5 backdrop-blur-md transition-all cursor-pointer shrink-0"
+            className="group inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer text-left py-0.5"
             title={t('timetable.semesterSettings')}
           >
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
             </span>
-            <span className="text-xs font-semibold text-white tracking-tight flex items-baseline gap-1">
-              <span>{t('timetable.week', { week: progressInfo.currentWeek })}</span>
-              <span className="text-[11px] font-normal text-slate-400">/ {progressInfo.totalWeeks}</span>
+            <span className="font-semibold text-emerald-400 group-hover:text-emerald-300 transition-colors">
+              {t('timetable.week', { week: progressInfo.currentWeek })}
+              <span className="text-slate-400 font-normal"> / {progressInfo.totalWeeks}</span>
             </span>
-            <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden hidden sm:block shrink-0">
-              <div 
-                className="h-full bg-gradient-to-r from-theme-500 to-emerald-400 rounded-full transition-all duration-500"
-                style={{ width: `${progressInfo.percentage || 0}%` }}
-              />
-            </div>
-            <span className="text-[11px] text-emerald-400/80 group-hover:text-emerald-300 transition-colors hidden md:inline shrink-0">
-              {progressInfo.remainingWeeks > 0
-                ? t('timetable.weeksLeft', { count: progressInfo.remainingWeeks })
-                : t('timetable.lastWeek')}
-            </span>
+            {progressInfo.remainingWeeks > 0 && (
+              <span className="text-slate-400 font-normal">
+                · {t('timetable.weeksLeft', { count: progressInfo.remainingWeeks })}
+              </span>
+            )}
+            <ChevronDown className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
           </button>
         ) : isSemesterEnded ? (
           <button
             type="button"
             onClick={openNewSemesterModal}
-            className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/30 hover:border-amber-400/60 shadow-lg shadow-amber-500/5 backdrop-blur-md transition-all cursor-pointer shrink-0"
+            className="group inline-flex items-center gap-1.5 text-xs text-amber-300 hover:text-white transition-colors cursor-pointer text-left py-0.5"
             title={t('timetable.startNewSemester')}
           >
-            <span className="text-sm">🌴</span>
-            <span className="text-xs font-medium text-amber-200 group-hover:text-white transition-colors">
-              {t('timetable.semesterBreak')}
+            <span className="text-xs">🌴</span>
+            <span className="font-medium text-amber-200 group-hover:text-white transition-colors">
+              {t('timetable.semesterBreak')} · {t('timetable.startNewSemester')}
             </span>
-            <span className="text-[11px] text-amber-300/90 group-hover:text-amber-100 flex items-center gap-1 font-medium bg-amber-500/15 group-hover:bg-amber-500/25 px-2 py-0.5 rounded-full transition-colors ml-0.5">
-              <span>{t('timetable.startNewSemester')}</span>
-              <span className="transition-transform group-hover:translate-x-0.5">→</span>
-            </span>
+            <ArrowRight className="h-3 w-3 text-amber-300/80 group-hover:text-white transition-transform group-hover:translate-x-0.5" />
           </button>
         ) : progressInfo?.isUpcoming ? (
           <button
             type="button"
             onClick={openSemesterModal}
-            className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800/90 border border-blue-500/30 hover:border-blue-400/60 shadow-lg shadow-blue-500/5 backdrop-blur-md transition-all cursor-pointer shrink-0"
+            className="group inline-flex items-center gap-1.5 text-xs text-blue-300 hover:text-white transition-colors cursor-pointer text-left py-0.5"
             title={t('timetable.semesterSettings')}
           >
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
             </span>
-            <span className="text-xs font-medium text-blue-300 group-hover:text-white transition-colors">
+            <span className="font-medium">
               {t('timetable.semesterUpcoming', { days: progressInfo.daysUntil })}
             </span>
+            <ChevronDown className="h-3 w-3 text-blue-400/80 group-hover:text-white transition-colors" />
           </button>
         ) : (
           <button
             type="button"
             onClick={openSemesterModal}
-            className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-dashed border-white/20 hover:border-theme-400/50 backdrop-blur-md transition-all text-xs text-slate-400 hover:text-white cursor-pointer shrink-0"
+            className="group inline-flex items-center gap-1 text-xs text-slate-400 hover:text-theme-300 transition-colors cursor-pointer text-left py-0.5"
             title={t('timetable.quickWeekTip')}
           >
-            <Sparkles className="h-3.5 w-3.5 text-theme-400 group-hover:rotate-12 transition-transform" />
-            <span>{t('timetable.setAcademicWeek')}</span>
+            <Sparkles className="h-3 w-3 text-theme-400 group-hover:rotate-12 transition-transform" />
+            <span>{t('timetable.setAcademicWeek')} →</span>
           </button>
         )
-      )
-
-      {/* Minimal, subtle "Set as Main" button */}
-      const promoteButton = !isLiveProfile && (
+      ) : (
         <button
           type="button"
           onClick={() => promoteToMain(activeProfileId)}
-          className="group inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+          className="group inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer text-left py-0.5"
           title={t('timetable.promoteTitle')}
         >
           <span>{t('timetable.promoteConfirm')}</span>
-          <ArrowRight className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
+          <ArrowRight className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-transform group-hover:translate-x-0.5" />
         </button>
       )
 
@@ -912,19 +902,19 @@ export default function TimetablePage() {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEndHandler}
       >
-      <div className="mb-6 flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-2 sm:gap-3">
+      <div className="mb-6 flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-3">
           {!loading ? (
-            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
-              <div className="relative flex items-center group min-w-0">
+            <div className="flex flex-col min-w-0 flex-1">
+              <div className="relative inline-flex items-center group max-w-full">
                 <button 
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-1 sm:gap-1.5 focus:outline-none group text-left min-w-0"
+                  className="inline-flex items-center gap-1.5 focus:outline-none group text-left max-w-full"
                 >
-                  <h1 className="text-lg sm:text-2xl font-bold font-heading text-white group-hover:opacity-80 transition-opacity truncate whitespace-nowrap">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold font-heading text-white group-hover:opacity-80 transition-opacity truncate">
                     {isLiveProfile ? (semesterName || t('timetable.title')) : activeProfile?.name}
                   </h1>
-                  <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
+                  <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
                 </button>
 
                 {isDropdownOpen && (
@@ -994,12 +984,13 @@ export default function TimetablePage() {
                 )}
               </div>
 
-              {/* Side-by-side Badge or Promote Button: ALWAYS LEFT AND RIGHT */}
-              {semesterProgressBadge}
-              {promoteButton}
+              {/* Apple Calendar-style Elegant Subtitle */}
+              <div className="mt-0.5 flex items-center">
+                {semesterProgressSubtitle}
+              </div>
             </div>
           ) : (
-            <h1 className="text-lg sm:text-2xl font-bold font-heading text-white">{t('timetable.title')}</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold font-heading text-white">{t('timetable.title')}</h1>
           )}
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
             {!loading && (
@@ -1296,6 +1287,52 @@ export default function TimetablePage() {
               />
             </div>
 
+            {/* Semester Duration (Total Weeks) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+                <label>{t('timetable.totalWeeksLabel')}</label>
+                <span className="text-[11px] font-normal text-slate-400">
+                  {t('timetable.dateFormatHint')}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleUpdateNewSemesterWeeks(14)}
+                  className={`flex-1 py-1.5 px-2.5 text-xs rounded-xl font-medium border transition-all text-center ${
+                    Number(newSemesterForm.totalWeeks) === 14
+                      ? 'bg-theme-500/20 border-theme-500 text-theme-300 font-bold'
+                      : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                  }`}
+                >
+                  {t('timetable.regularSem')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUpdateNewSemesterWeeks(7)}
+                  className={`flex-1 py-1.5 px-2.5 text-xs rounded-xl font-medium border transition-all text-center ${
+                    Number(newSemesterForm.totalWeeks) === 7
+                      ? 'bg-theme-500/20 border-theme-500 text-theme-300 font-bold'
+                      : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                  }`}
+                >
+                  {t('timetable.shortSem')}
+                </button>
+                <div className="w-20 relative flex items-center">
+                  <input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={newSemesterForm.totalWeeks || ''}
+                    onChange={e => handleUpdateNewSemesterWeeks(e.target.value)}
+                    className="input text-xs py-1.5 px-2 text-center"
+                    placeholder="wks"
+                    title={t('timetable.customWeeksPlaceholder')}
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Period of this semester (Quick Week Progress Selector) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
@@ -1314,7 +1351,7 @@ export default function TimetablePage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const { startDateStr, endDateStr } = inferDatesForBreak(14)
+                    const { startDateStr, endDateStr } = inferDatesForBreak(newSemesterForm.totalWeeks || 14)
                     setNewSemesterForm(prev => ({ ...prev, newStartDate: startDateStr, newEndDate: endDateStr }))
                   }}
                   className={`px-3 py-1.5 text-xs rounded-xl font-medium transition-all ${
@@ -1326,14 +1363,14 @@ export default function TimetablePage() {
                   {t('timetable.rolloverBreak')}
                 </button>
 
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(w => {
+                {Array.from({ length: Math.max(1, newSemesterForm.totalWeeks || 14) }, (_, i) => i + 1).map(w => {
                   const isSelected = newSemesterPreview?.currentWeek === w && !newSemesterPreview?.isUpcoming && !newSemesterPreview?.isEnded
                   return (
                     <button
                       key={w}
                       type="button"
                       onClick={() => {
-                        const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(w, 14)
+                        const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(w, newSemesterForm.totalWeeks || 14)
                         setNewSemesterForm(prev => ({ ...prev, newStartDate: startDateStr, newEndDate: endDateStr }))
                       }}
                       className={`px-2.5 py-1.5 text-xs rounded-xl font-medium transition-all ${
@@ -1347,6 +1384,16 @@ export default function TimetablePage() {
                   )
                 })}
               </div>
+
+              {/* Inferred Date Range Preview */}
+              {newSemesterForm.newStartDate && newSemesterForm.newEndDate && (
+                <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 pt-0.5">
+                  <span>{t('timetable.dateFormatHint')}:</span>
+                  <span className="font-mono text-slate-300">
+                    {formatIsoToDisplay(newSemesterForm.newStartDate)} – {formatIsoToDisplay(newSemesterForm.newEndDate)}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Optional Collapsible custom start/end dates */}
@@ -1364,19 +1411,37 @@ export default function TimetablePage() {
                 <div className="space-y-2.5 pt-2 animate-in fade-in duration-200">
                   <div className="grid grid-cols-2 gap-2.5">
                     <Field label={t('timetable.semesterStartDate')}>
-                      <input
-                        type="date"
+                      <DateInput
                         className="input text-xs"
                         value={newSemesterForm.newStartDate}
-                        onChange={e => setNewSemesterForm(prev => ({ ...prev, newStartDate: e.target.value }))}
+                        onChange={e => {
+                          const newStart = e.target.value
+                          setNewSemesterForm(prev => {
+                            const next = { ...prev, newStartDate: newStart }
+                            if (newStart && next.newEndDate) {
+                              const p = getSemesterProgress(newStart, next.newEndDate)
+                              if (p?.totalWeeks) next.totalWeeks = p.totalWeeks
+                            }
+                            return next
+                          })
+                        }}
                       />
                     </Field>
                     <Field label={t('timetable.semesterEndDate')}>
-                      <input
-                        type="date"
+                      <DateInput
                         className="input text-xs"
                         value={newSemesterForm.newEndDate}
-                        onChange={e => setNewSemesterForm(prev => ({ ...prev, newEndDate: e.target.value }))}
+                        onChange={e => {
+                          const newEnd = e.target.value
+                          setNewSemesterForm(prev => {
+                            const next = { ...prev, newEndDate: newEnd }
+                            if (next.newStartDate && newEnd) {
+                              const p = getSemesterProgress(next.newStartDate, newEnd)
+                              if (p?.totalWeeks) next.totalWeeks = p.totalWeeks
+                            }
+                            return next
+                          })
+                        }}
                       />
                     </Field>
                   </div>
@@ -1424,7 +1489,7 @@ export default function TimetablePage() {
             <label htmlFor="is_replacement" className="text-sm font-medium text-slate-300">Replacement class (specific date)</label>
           </div>
           {form.is_replacement ? (
-            <Field label="Date"><input className="input" type="date" required value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></Field>
+            <Field label="Date"><DateInput required value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></Field>
           ) : (
             <Field label={t('timetable.day')}><select className="input" value={form.day} onChange={e => setForm({ ...form, day: e.target.value })}>{days.map(d => <option key={d} value={d}>{t(`timetable.days.${d}`)}</option>)}</select></Field>
           )}

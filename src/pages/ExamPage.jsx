@@ -12,6 +12,7 @@ import { useLanguage } from '../components/LanguageProvider'
 import SubjectSelect from '../components/SubjectSelect'
 import { SkeletonList } from '../components/SkeletonLoader'
 import SEO from '../components/SEO'
+import DateInput from '../components/DateInput'
 
 
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
@@ -196,7 +197,7 @@ export default function ExamPage() {
               subjects={subjects} 
             />
           </Field>
-          <Field label="Exam Date"><input className="input" required type="date" value={form.exam_date} onChange={e => setForm({ ...form, exam_date: e.target.value })} /></Field>
+          <Field label="Exam Date"><DateInput required value={form.exam_date} onChange={e => setForm({ ...form, exam_date: e.target.value })} /></Field>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Start Time"><input className="input" type="time" placeholder="e.g. 09:00" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
             <Field label="End Time"><input className="input" type="time" placeholder="e.g. 11:00" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
