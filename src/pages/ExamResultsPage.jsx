@@ -1032,18 +1032,25 @@ export default function ExamResultsPage() {
                         key={row.id}
                         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
                       >
-                        <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
+                        <div className="flex items-center justify-between gap-2 flex-1 w-full sm:w-auto min-w-0">
                           <input
                             className="bg-transparent flex-1 text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none min-w-0 w-full"
                             placeholder={`Course ${index + 1}`}
                             value={row.name}
                             onChange={e => handleUpdateCalcRow(row.id, 'name', e.target.value)}
                           />
+                          <button
+                            onClick={() => handleDeleteCalcRow(row.id)}
+                            className="p-1 text-slate-500 hover:text-red-400 transition-colors shrink-0 sm:hidden"
+                            title="Remove row"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
 
-                        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0 pt-1 sm:pt-0 border-t sm:border-0 border-white/5">
+                        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
                           <select
-                            className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                            className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none flex-1 sm:flex-initial"
                             value={row.credits}
                             onChange={e => handleUpdateCalcRow(row.id, 'credits', e.target.value)}
                           >
@@ -1052,7 +1059,7 @@ export default function ExamResultsPage() {
                           </select>
 
                           <select
-                            className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                            className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none flex-1 sm:flex-initial"
                             value={row.grade}
                             onChange={e => handleUpdateCalcRow(row.id, 'grade', e.target.value)}
                           >
@@ -1062,7 +1069,7 @@ export default function ExamResultsPage() {
 
                           <button
                             onClick={() => handleDeleteCalcRow(row.id)}
-                            className="p-2 text-slate-500 hover:text-red-400 transition-colors ml-auto"
+                            className="p-2 text-slate-500 hover:text-red-400 transition-colors ml-auto hidden sm:block shrink-0"
                             title="Remove row"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1245,59 +1252,60 @@ export default function ExamResultsPage() {
                           key={row.id}
                           className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
                         >
-                          {/* Component Name */}
-                          <div className="flex-1 min-w-0">
+                          {/* Component Name & Mobile Delete */}
+                          <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
                             <input
-                              className="bg-transparent text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none w-full"
+                              className="bg-transparent text-sm sm:text-base font-semibold text-white placeholder:text-slate-500 focus:outline-none w-full min-w-0"
                               placeholder={index === 0 ? "e.g. Final Exam" : index === 1 ? "e.g. Assignment" : index === 2 ? "e.g. Midterm Test" : `Component ${index + 1}`}
                               value={row.name}
                               onChange={e => handleUpdateCourseCalcRow(row.id, 'name', e.target.value)}
                             />
+                            <button
+                              onClick={() => handleDeleteCourseCalcRow(row.id)}
+                              className="p-1 text-slate-500 hover:text-red-400 transition-colors shrink-0 sm:hidden"
+                              title="Remove component"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
 
-                          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
+                          <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
                             {/* Weight % */}
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-slate-400 sm:hidden">Weight:</span>
-                              <div className="relative w-28 sm:w-36">
-                                <input
-                                  type="number"
-                                  inputMode="decimal"
-                                  min="0"
-                                  max="100"
-                                  step="any"
-                                  className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                  placeholder="Weight"
-                                  value={row.weight}
-                                  onChange={e => handleUpdateCourseCalcRow(row.id, 'weight', e.target.value)}
-                                />
-                                <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
-                              </div>
+                            <div className="relative flex-1 sm:w-36 min-w-0">
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                min="0"
+                                max="100"
+                                step="any"
+                                className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                placeholder="Weight"
+                                value={row.weight}
+                                onChange={e => handleUpdateCourseCalcRow(row.id, 'weight', e.target.value)}
+                              />
+                              <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
                             </div>
 
                             {/* Score % */}
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-slate-400 sm:hidden">Score:</span>
-                              <div className="relative w-28 sm:w-36">
-                                <input
-                                  type="number"
-                                  inputMode="decimal"
-                                  min="0"
-                                  max="100"
-                                  step="any"
-                                  className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                  placeholder="Score"
-                                  value={row.score}
-                                  onChange={e => handleUpdateCourseCalcRow(row.id, 'score', e.target.value)}
-                                />
-                                <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
-                              </div>
+                            <div className="relative flex-1 sm:w-36 min-w-0">
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                min="0"
+                                max="100"
+                                step="any"
+                                className="w-full bg-[#1a2236] rounded-xl px-3.5 py-2.5 pr-8 text-sm font-semibold text-white placeholder:text-slate-500 border border-transparent focus:border-blue-500/50 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                placeholder="Score"
+                                value={row.score}
+                                onChange={e => handleUpdateCourseCalcRow(row.id, 'score', e.target.value)}
+                              />
+                              <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold pointer-events-none">%</span>
                             </div>
 
-                            {/* Delete Row */}
+                            {/* Desktop Delete Row */}
                             <button
                               onClick={() => handleDeleteCourseCalcRow(row.id)}
-                              className="p-2 text-slate-500 hover:text-red-400 transition-colors shrink-0"
+                              className="p-2 text-slate-500 hover:text-red-400 transition-colors shrink-0 hidden sm:block"
                               title="Remove component"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1553,10 +1561,10 @@ function SemesterCard({
                   />
                 </div>
 
-                <div className="flex items-center justify-between md:justify-end gap-2.5 w-full md:w-auto shrink-0 pt-1 md:pt-0 border-t md:border-0 border-white/5">
-                  <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-between md:justify-end gap-2.5 w-full md:w-auto shrink-0 pt-2 md:pt-0 border-t md:border-0 border-white/5">
+                  <div className="flex items-center gap-2.5 flex-1 md:flex-initial">
                     <select
-                      className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                      className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none flex-1 md:flex-initial"
                       value={course.credit_hours || ''}
                       onChange={e => onUpdateCourse(semester.id, course.id, { credit_hours: e.target.value })}
                     >
@@ -1565,7 +1573,7 @@ function SemesterCard({
                     </select>
 
                     <select
-                      className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none"
+                      className="bg-[#1a2236] rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 border-0 focus:outline-none flex-1 md:flex-initial"
                       value={course.grade || ''}
                       onChange={e => onUpdateCourse(semester.id, course.id, { grade: e.target.value })}
                     >
@@ -1576,7 +1584,7 @@ function SemesterCard({
 
                   <button
                     onClick={() => onDeleteCourse(semester.id, course.id)}
-                    className="p-2 text-slate-500 hover:text-red-400 transition-colors"
+                    className="p-2 text-slate-500 hover:text-red-400 transition-colors shrink-0"
                     title="Remove course"
                   >
                     <Trash2 className="h-4 w-4" />
