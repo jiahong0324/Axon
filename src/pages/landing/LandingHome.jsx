@@ -211,37 +211,12 @@ export default function LandingHome() {
                   <Link to="/register" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700">
                     Get Started <ArrowRight className="h-5 w-5" />
                   </Link>
-                  <button
-                    id="hero-guest-btn"
-                    type="button"
-                    onClick={handleGuestDemo}
-                    disabled={guestLoading}
-                    className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl border-2 border-emerald-500/50 bg-emerald-50 px-6 text-base font-bold text-emerald-800 transition hover:bg-emerald-100 hover:border-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300 dark:hover:bg-emerald-500/25 shadow-sm"
-                  >
-                    {guestLoading ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span>Launching Demo...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                        <span>Try as guest - no signup</span>
-                      </>
-                    )}
-                  </button>
                   <Link to="/login" className="inline-flex min-h-[56px] items-center justify-center rounded-xl border border-slate-200 bg-white px-7 text-base font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
                     Sign In
                   </Link>
                 </>
               )}
             </div>
-            {!hasSession && (
-              <p className="mt-3 text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                <span className="flex h-2 w-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                Instant 1-click guest access &bull; No registration or password required
-              </p>
-            )}
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-4">
               <HeroStat value="6" label="Study tools" />
               <HeroStat value="24/7" label="AI support" />
@@ -298,6 +273,7 @@ export default function LandingHome() {
             </Link>
             {!hasSession && (
               <button
+                id="guest-demo-btn"
                 type="button"
                 onClick={handleGuestDemo}
                 disabled={guestLoading}

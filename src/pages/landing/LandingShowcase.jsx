@@ -496,8 +496,12 @@ export default function LandingShowcase() {
               <button
                 onClick={() => {
                   setShowVideoModal(false)
-                  const guestBtn = document.getElementById('hero-guest-btn')
-                  if (guestBtn) guestBtn.click()
+                  const guestBtn = document.getElementById('guest-demo-btn') || document.getElementById('hero-guest-btn')
+                  if (guestBtn) {
+                    guestBtn.click()
+                  } else {
+                    window.location.href = '/login?guest=true'
+                  }
                 }}
                 className="font-bold text-theme-400 hover:underline"
               >
