@@ -778,7 +778,7 @@ export default function TimetablePage() {
           <button
             type="button"
             onClick={openSemesterModal}
-            className="group inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer text-left py-0.5"
+            className="group inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer text-left py-0"
             title={t('timetable.semesterSettings')}
           >
             <span className="relative flex h-2 w-2 shrink-0">
@@ -800,7 +800,7 @@ export default function TimetablePage() {
           <button
             type="button"
             onClick={openNewSemesterModal}
-            className="group inline-flex items-center gap-1.5 text-xs text-amber-300 hover:text-white transition-colors cursor-pointer text-left py-0.5"
+            className="group inline-flex items-center gap-1.5 text-xs text-amber-300 hover:text-white transition-colors cursor-pointer text-left py-0"
             title={t('timetable.startNewSemester')}
           >
             <span className="text-xs">🌴</span>
@@ -813,7 +813,7 @@ export default function TimetablePage() {
           <button
             type="button"
             onClick={openSemesterModal}
-            className="group inline-flex items-center gap-1.5 text-xs text-blue-300 hover:text-white transition-colors cursor-pointer text-left py-0.5"
+            className="group inline-flex items-center gap-1.5 text-xs text-blue-300 hover:text-white transition-colors cursor-pointer text-left py-0"
             title={t('timetable.semesterSettings')}
           >
             <span className="relative flex h-2 w-2 shrink-0">
@@ -828,7 +828,7 @@ export default function TimetablePage() {
           <button
             type="button"
             onClick={openSemesterModal}
-            className="group inline-flex items-center gap-1 text-xs text-slate-400 hover:text-theme-300 transition-colors cursor-pointer text-left py-0.5"
+            className="group inline-flex items-center gap-1 text-xs text-slate-400 hover:text-theme-300 transition-colors cursor-pointer text-left py-0"
             title={t('timetable.quickWeekTip')}
           >
             <Sparkles className="h-3 w-3 text-theme-400 group-hover:rotate-12 transition-transform" />
@@ -839,7 +839,7 @@ export default function TimetablePage() {
         <button
           type="button"
           onClick={() => promoteToMain(activeProfileId)}
-          className="group inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer text-left py-0.5"
+          className="group inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer text-left py-0"
           title={t('timetable.promoteTitle')}
         >
           <span>{t('timetable.promoteConfirm')}</span>
@@ -865,7 +865,7 @@ export default function TimetablePage() {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="inline-flex items-center gap-1.5 focus:outline-none group text-left max-w-full"
                 >
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-heading text-white group-hover:opacity-80 transition-opacity truncate">
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-heading text-white group-hover:opacity-80 transition-opacity truncate leading-tight">
                     {isLiveProfile ? (semesterName || t('timetable.title')) : activeProfile?.name}
                   </h1>
                   <ChevronDown className={`h-4 w-4 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
@@ -939,7 +939,7 @@ export default function TimetablePage() {
               </div>
 
               {/* Apple Calendar-style Elegant Subtitle */}
-              <div className="mt-0.5 flex items-center">
+              <div className="-mt-0.5 sm:-mt-1 flex items-center">
                 {semesterProgressSubtitle}
               </div>
             </div>
