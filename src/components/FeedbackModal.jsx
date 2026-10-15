@@ -3,9 +3,7 @@ import {
   AlertCircle,
   CheckCircle2,
   FileImage,
-  ImageIcon,
   Loader2,
-  MessageSquare,
   Send,
   Trash2,
   UploadCloud,
@@ -181,69 +179,51 @@ export default function FeedbackModal({ isOpen, onClose }) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Send Feedback" maxWidth="max-w-lg">
-      <div className="mb-4 flex items-start gap-3 rounded-xl border border-theme-500/20 bg-theme-500/10 p-3.5">
-        <MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-theme-600 dark:text-theme-400" />
-        <div className="text-xs sm:text-sm text-theme-800 dark:text-theme-200">
-          <p className="font-medium">Have a suggestion, found a bug, or need help?</p>
-          <p className="mt-0.5 text-theme-700/80 dark:text-theme-300/80">
-            Attach a screenshot or image below so admins can quickly pinpoint and resolve the issue.
-          </p>
-        </div>
-      </div>
-
+    <Modal isOpen={isOpen} onClose={onClose} title="Send Feedback" maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* If guest/anonymous, prompt for contact info */}
         {!currentUser && (
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="label text-xs">Your Name (optional)</span>
+            <div>
+              <label className="label text-xs">Name (optional)</label>
               <input
                 type="text"
                 className="input py-2 text-sm"
-                placeholder="e.g. Alex Tan"
+                placeholder="Your name"
                 value={name}
                 onChange={e => setName(e.target.value)}
               />
-            </label>
-            <label className="block">
-              <span className="label text-xs">Your Email (optional)</span>
+            </div>
+            <div>
+              <label className="label text-xs">Email (optional)</label>
               <input
                 type="email"
                 className="input py-2 text-sm"
-                placeholder="e.g. alex@example.com"
+                placeholder="your@email.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
-            </label>
+            </div>
           </div>
         )}
 
         {/* Message Input */}
-        <label className="block">
-          <div className="flex items-center justify-between">
-            <span className="label">Describe the problem or suggestion</span>
-            <span className="text-[11px] text-slate-400">
-              {message.length} chars
-            </span>
-          </div>
+        <div>
+          <label className="label text-xs">Message</label>
           <textarea
-            className="input min-h-[105px] text-sm leading-relaxed"
-            placeholder="What happened? What did you expect? Or what feature would make Axon better for you?"
+            className="input min-h-[110px] text-sm leading-relaxed"
+            placeholder="Tell us what happened or how we can improve..."
             value={message}
             onChange={e => setMessage(e.target.value)}
             required={!selectedImage}
             autoFocus
           />
-        </label>
+        </div>
 
         {/* Image Upload / Attachment Section */}
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <label className="label text-xs flex items-center gap-1.5">
-              <ImageIcon className="h-4 w-4 text-theme-500" />
-              <span>Attach Image / Screenshot (Recommended)</span>
-            </label>
+            <label className="label text-xs">Screenshot (optional)</label>
             {selectedImage && (
               <button
                 type="button"
@@ -251,7 +231,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
                 className="text-xs text-red-400 hover:text-red-300 hover:underline flex items-center gap-1"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                Remove image
+                Remove
               </button>
             )}
           </div>
@@ -265,38 +245,34 @@ export default function FeedbackModal({ isOpen, onClose }) {
           />
 
           {isProcessingImage ? (
-            <div className="flex items-center justify-center gap-3 rounded-2xl border border-dashed border-theme-500/40 bg-theme-500/5 p-6 text-sm text-theme-600 dark:text-theme-400">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Optimizing screenshot image...</span>
+            <div className="flex items-center justify-center gap-2.5 rounded-xl border border-dashed border-theme-500/30 bg-theme-500/5 py-4 text-xs text-theme-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Optimizing image...</span>
             </div>
           ) : selectedImage ? (
             /* Attached Image Preview Card */
-            <div className="relative overflow-hidden rounded-2xl border border-theme-500/30 bg-slate-900/50 p-3 shadow-inner">
+            <div className="relative overflow-hidden rounded-xl border border-theme-500/30 bg-slate-900/50 p-2.5 shadow-inner">
               <div className="flex items-center gap-3">
-                <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black flex items-center justify-center">
+                <div className="relative h-12 w-14 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black flex items-center justify-center">
                   <img
                     src={selectedImage.dataUrl}
-                    alt="Feedback screenshot preview"
+                    alt="Screenshot preview"
                     className="h-full w-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-semibold text-white">
+                    <p className="truncate text-xs sm:text-sm font-medium text-white">
                       {selectedImage.fileName}
                     </p>
                     <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
                       <CheckCircle2 className="h-3 w-3" /> Attached
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-slate-400">
+                  <p className="mt-0.5 text-[11px] text-slate-400">
                     {formatBytes(selectedImage.fileSize)}
                     {selectedImage.width && ` • ${selectedImage.width}×${selectedImage.height}px`}
-                  </p>
-                  <p className="mt-1 text-[11px] text-theme-400">
-                    Screenshot ready for review by admin
                   </p>
                 </div>
 
@@ -305,7 +281,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
-                    title="Change Image"
+                    title="Change image"
                   >
                     <FileImage className="h-4 w-4" />
                   </button>
@@ -313,7 +289,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
                     type="button"
                     onClick={removeImage}
                     className="rounded-lg p-1.5 text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
-                    title="Remove Image"
+                    title="Remove image"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -327,21 +303,16 @@ export default function FeedbackModal({ isOpen, onClose }) {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`group flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-5 text-center transition-all ${
+              className={`group flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed py-3.5 px-4 text-center transition-all ${
                 dragActive
                   ? 'border-theme-500 bg-theme-500/10 scale-[1.01]'
-                  : 'border-slate-300 dark:border-white/10 hover:border-theme-500/50 hover:bg-white/[0.02]'
+                  : 'border-slate-300 dark:border-white/10 hover:border-theme-500/40 hover:bg-white/[0.02]'
               }`}
             >
-              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-theme-500/10 text-theme-600 dark:text-theme-400 group-hover:scale-110 transition-transform">
-                <UploadCloud className="h-5 w-5" />
-              </div>
-              <p className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">
-                Click to upload screenshot or drag & drop here
-              </p>
-              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                Supports PNG, JPG, WEBP, GIF (up to 15MB) • You can also paste directly (<kbd className="rounded bg-black/20 px-1 py-0.5 text-[10px]">Ctrl+V</kbd>)
-              </p>
+              <UploadCloud className="h-4 w-4 text-slate-400 group-hover:text-theme-400 transition-colors shrink-0" />
+              <span className="text-xs text-slate-600 dark:text-slate-300">
+                Upload image or paste <kbd className="rounded bg-black/20 dark:bg-white/10 px-1.5 py-0.5 text-[10px] text-slate-400 font-mono">Ctrl+V</kbd>
+              </span>
             </div>
           )}
 
@@ -359,14 +330,14 @@ export default function FeedbackModal({ isOpen, onClose }) {
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="btn-ghost flex-1 py-2.5"
+            className="btn-ghost flex-1 py-2.5 text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading || isProcessingImage || (!message.trim() && !selectedImage)}
-            className="btn-primary flex-1 py-2.5 flex items-center justify-center gap-2"
+            className="btn-primary flex-1 py-2.5 text-sm flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
