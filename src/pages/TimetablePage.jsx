@@ -1246,34 +1246,6 @@ export default function TimetablePage() {
         </div>
       )}
 
-      {/* Archive View Indicator Banner */}
-      {!loading && !isLiveProfile && (
-        <div className="mb-4 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-200 animate-in fade-in duration-200">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <GraduationCap className="h-5 w-5 text-amber-400 shrink-0" />
-            <div className="truncate">
-              <span className="font-semibold text-amber-300">{t('timetable.viewingArchived')}:</span>{' '}
-              <span className="font-bold text-white">{activeProfile?.name}</span>
-              <span className="text-amber-300/70 ml-2">({classes.length} classes)</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-            <button
-              onClick={() => promoteToMain(activeProfileId)}
-              className="!min-h-0 !min-w-0 px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-xs font-semibold transition-colors"
-            >
-              {t('timetable.promoteConfirm')}
-            </button>
-            <button
-              onClick={() => switchProfile(LIVE_PROFILE_ID)}
-              className="!min-h-0 !min-w-0 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-colors"
-            >
-              {t('timetable.backToLive')}
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="pb-3">
         {loading ? <SkeletonTimetable /> : (
         <div className="w-full">
