@@ -14,7 +14,7 @@ import { useLanguage } from '../components/LanguageProvider'
 import { clearCache, readCache, writeCache } from '../lib/cache'
 import { updatePreference } from '../lib/preferences'
 import SEO from '../components/SEO'
-import DateInput, { formatIsoToDisplay } from '../components/DateInput'
+import DateInput from '../components/DateInput'
 
 const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue', is_replacement: false, date: '' }
 const LIVE_PROFILE_ID = 'account'
@@ -99,50 +99,6 @@ export function getSemesterProgress(startDateStr, endDateStr) {
   }
 }
 
-export function inferDatesFromCurrentWeek(weekNumber, totalWeeks = 14) {
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-  
-  const day = today.getDay()
-  const diffToMonday = day === 0 ? -6 : 1 - day
-  const thisMonday = new Date(today)
-  thisMonday.setDate(today.getDate() + diffToMonday)
-
-  // Start date = thisMonday - (weekNumber - 1) * 7 days
-  const startDate = new Date(thisMonday)
-  startDate.setDate(thisMonday.getDate() - (weekNumber - 1) * 7)
-
-  // End date = startDate + totalWeeks * 7 - 3 days (Friday of last week)
-  const endDate = new Date(startDate)
-  endDate.setDate(startDate.getDate() + totalWeeks * 7 - 3)
-
-  const fmt = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-
-  return {
-    startDateStr: fmt(startDate),
-    endDateStr: fmt(endDate)
-  }
-}
-
-export function inferDatesForBreak(totalWeeks = 14) {
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-  const day = today.getDay()
-  const diffToNextMonday = day === 0 ? 1 : 8 - day
-  const nextMonday = new Date(today)
-  nextMonday.setDate(today.getDate() + diffToNextMonday)
-
-  const endDate = new Date(nextMonday)
-  endDate.setDate(nextMonday.getDate() + totalWeeks * 7 - 3)
-
-  const fmt = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-
-  return {
-    startDateStr: fmt(nextMonday),
-    endDateStr: fmt(endDate)
-  }
-}
-
 export default function TimetablePage() {
   const [user, setUser] = useState(null)
   const [classes, setClasses] = useState([])
@@ -159,14 +115,13 @@ export default function TimetablePage() {
   const [semesterStartDate, setSemesterStartDate] = useState(() => localStorage.getItem('axon_semester_start_date') || '')
   const [semesterEndDate, setSemesterEndDate] = useState(() => localStorage.getItem('axon_semester_end_date') || '')
   const [showSemesterModal, setShowSemesterModal] = useState(false)
-  const [semesterForm, setSemesterForm] = useState({ name: '', start_date: '', end_date: '', totalWeeks: 14 })
+  const [semesterForm, setSemesterForm] = useState({ name: '', start_date: '', end_date: '' })
   const [showNewSemesterModal, setShowNewSemesterModal] = useState(false)
   const [showRolloverWizard, setShowRolloverWizard] = useState(false)
   const [rolloverStep, setRolloverStep] = useState(1)
   const [savedArchiveName, setSavedArchiveName] = useState('')
-  const [showRolloverCustomDates, setShowRolloverCustomDates] = useState(false)
   const hasCheckedRollover = useRef(false)
-  const [newSemesterForm, setNewSemesterForm] = useState({ archiveName: '', newName: '', totalWeeks: 14, newStartDate: '', newEndDate: '' })
+  const [newSemesterForm, setNewSemesterForm] = useState({ archiveName: '', newName: '', newStartDate: '', newEndDate: '' })
   const [mobileDay, setMobileDay] = useState(() => {
     const day = new Date().getDay()
     return day >= 1 && day <= 5 ? day - 1 : 0
@@ -396,62 +351,24 @@ export default function TimetablePage() {
   }
 
   function openSemesterModal() {
-    let initWeeks = 14
-    if (semesterStartDate && semesterEndDate) {
-      const p = getSemesterProgress(semesterStartDate, semesterEndDate)
-      if (p?.totalWeeks) initWeeks = p.totalWeeks
-    }
     setSemesterForm({
       name: semesterName,
       start_date: semesterStartDate,
-      end_date: semesterEndDate,
-      totalWeeks: initWeeks
+      end_date: semesterEndDate
     })
     setShowSemesterModal(true)
   }
 
   function openRolloverWizard() {
-    const defaultWeeks = 14
-    const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(1, defaultWeeks)
     setNewSemesterForm({
       archiveName: '',
       newName: 'My Timetable',
-      totalWeeks: defaultWeeks,
-      newStartDate: startDateStr,
-      newEndDate: endDateStr
+      newStartDate: '',
+      newEndDate: ''
     })
     setSavedArchiveName('')
     setRolloverStep(classes.length > 0 ? 1 : 2)
-    setShowRolloverCustomDates(false)
     setShowRolloverWizard(true)
-  }
-
-  const handleUpdateNewSemesterWeeks = (weeks) => {
-    const clamped = Math.max(1, Math.min(30, Number(weeks) || 14))
-    const currentW = newSemesterPreview?.currentWeek && !newSemesterPreview.isEnded && !newSemesterPreview.isUpcoming
-      ? Math.min(newSemesterPreview.currentWeek, clamped)
-      : 1
-    const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(currentW, clamped)
-    setNewSemesterForm(prev => ({
-      ...prev,
-      totalWeeks: clamped,
-      newStartDate: startDateStr,
-      newEndDate: endDateStr
-    }))
-  }
-
-  const handleUpdateSemesterModalWeeks = (weeks) => {
-    const clamped = Math.max(1, Math.min(30, Number(weeks) || 14))
-    const currentW = previewProgress?.currentWeek && !previewProgress.isEnded && !previewProgress.isUpcoming
-      ? Math.min(previewProgress.currentWeek, clamped)
-      : 1
-    const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(currentW, clamped)
-    setSemesterForm(prev => ({
-      ...prev,
-      totalWeeks: clamped,
-      start_date: startDateStr,
-      end_date: endDateStr
-    }))
   }
 
   function openNewSemesterModal() {
@@ -1043,123 +960,17 @@ export default function TimetablePage() {
             />
           </Field>
 
-          {/* Quick Week Inferrer & Duration */}
-          <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-theme-300 flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-theme-400" />
-                {t('timetable.quickWeekSelect')}
-              </span>
-              <span className="text-[11px] text-slate-400">
-                {t('timetable.dateFormatHint')}
-              </span>
-            </div>
-
-            {/* Semester Duration Presets & Custom Input */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-slate-300">
-                {t('timetable.totalWeeksLabel')}
-              </label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleUpdateSemesterModalWeeks(14)}
-                  className={`flex-1 py-1.5 px-2 text-xs rounded-lg font-medium border transition-all text-center ${
-                    Number(semesterForm.totalWeeks) === 14
-                      ? 'bg-theme-500/20 border-theme-500 text-theme-300 font-bold'
-                      : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  {t('timetable.regularSem')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUpdateSemesterModalWeeks(7)}
-                  className={`flex-1 py-1.5 px-2 text-xs rounded-lg font-medium border transition-all text-center ${
-                    Number(semesterForm.totalWeeks) === 7
-                      ? 'bg-theme-500/20 border-theme-500 text-theme-300 font-bold'
-                      : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  {t('timetable.shortSem')}
-                </button>
-                <div className="w-20 relative flex items-center">
-                  <input
-                    type="number"
-                    min="1"
-                    max="30"
-                    value={semesterForm.totalWeeks || ''}
-                    onChange={e => handleUpdateSemesterModalWeeks(e.target.value)}
-                    className="input text-xs py-1.5 px-2 text-center"
-                    placeholder="wks"
-                    title={t('timetable.customWeeksPlaceholder')}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-slate-400 leading-relaxed">{t('timetable.quickWeekTip')}</p>
-
-            {/* Dynamic Week Buttons */}
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {Array.from({ length: Math.max(1, semesterForm.totalWeeks || 14) }, (_, i) => i + 1).map(w => {
-                const isSelected = previewProgress?.currentWeek === w && !previewProgress?.isEnded && !previewProgress?.isUpcoming
-                return (
-                  <button
-                    key={w}
-                    type="button"
-                    onClick={() => {
-                      const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(w, semesterForm.totalWeeks || 14)
-                      setSemesterForm(prev => ({
-                        ...prev,
-                        start_date: startDateStr,
-                        end_date: endDateStr
-                      }))
-                    }}
-                    className={`py-1.5 px-2.5 text-xs rounded-lg font-medium transition-all ${
-                      isSelected
-                        ? 'bg-theme-500 text-white shadow-sm shadow-theme-500/30 font-semibold'
-                        : 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5'
-                    }`}
-                  >
-                    W{w}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label={t('timetable.semesterStartDate')}>
               <DateInput
                 value={semesterForm.start_date}
-                onChange={e => {
-                  const newStart = e.target.value
-                  setSemesterForm(prev => {
-                    const next = { ...prev, start_date: newStart }
-                    if (newStart && next.end_date) {
-                      const p = getSemesterProgress(newStart, next.end_date)
-                      if (p?.totalWeeks) next.totalWeeks = p.totalWeeks
-                    }
-                    return next
-                  })
-                }}
+                onChange={e => setSemesterForm(prev => ({ ...prev, start_date: e.target.value }))}
               />
             </Field>
             <Field label={t('timetable.semesterEndDate')}>
               <DateInput
                 value={semesterForm.end_date}
-                onChange={e => {
-                  const newEnd = e.target.value
-                  setSemesterForm(prev => {
-                    const next = { ...prev, end_date: newEnd }
-                    if (next.start_date && newEnd) {
-                      const p = getSemesterProgress(next.start_date, newEnd)
-                      if (p?.totalWeeks) next.totalWeeks = p.totalWeeks
-                    }
-                    return next
-                  })
-                }}
+                onChange={e => setSemesterForm(prev => ({ ...prev, end_date: e.target.value }))}
               />
             </Field>
           </div>
@@ -1287,167 +1098,41 @@ export default function TimetablePage() {
               />
             </div>
 
-            {/* Semester Duration (Total Weeks) */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-                <label>{t('timetable.totalWeeksLabel')}</label>
-                <span className="text-[11px] font-normal text-slate-400">
-                  {t('timetable.dateFormatHint')}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleUpdateNewSemesterWeeks(14)}
-                  className={`flex-1 py-1.5 px-2.5 text-xs rounded-xl font-medium border transition-all text-center ${
-                    Number(newSemesterForm.totalWeeks) === 14
-                      ? 'bg-theme-500/20 border-theme-500 text-theme-300 font-bold'
-                      : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  {t('timetable.regularSem')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUpdateNewSemesterWeeks(7)}
-                  className={`flex-1 py-1.5 px-2.5 text-xs rounded-xl font-medium border transition-all text-center ${
-                    Number(newSemesterForm.totalWeeks) === 7
-                      ? 'bg-theme-500/20 border-theme-500 text-theme-300 font-bold'
-                      : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  {t('timetable.shortSem')}
-                </button>
-                <div className="w-20 relative flex items-center">
-                  <input
-                    type="number"
-                    min="1"
-                    max="30"
-                    value={newSemesterForm.totalWeeks || ''}
-                    onChange={e => handleUpdateNewSemesterWeeks(e.target.value)}
-                    className="input text-xs py-1.5 px-2 text-center"
-                    placeholder="wks"
-                    title={t('timetable.customWeeksPlaceholder')}
-                  />
-                </div>
-              </div>
+            {/* Semester Start Date & End Date */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <Field label={t('timetable.semesterStartDate')}>
+                <DateInput
+                  className="input text-xs"
+                  value={newSemesterForm.newStartDate}
+                  onChange={e => setNewSemesterForm(prev => ({ ...prev, newStartDate: e.target.value }))}
+                />
+              </Field>
+              <Field label={t('timetable.semesterEndDate')}>
+                <DateInput
+                  className="input text-xs"
+                  value={newSemesterForm.newEndDate}
+                  onChange={e => setNewSemesterForm(prev => ({ ...prev, newEndDate: e.target.value }))}
+                />
+              </Field>
             </div>
 
-            {/* Period of this semester (Quick Week Progress Selector) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-                <span>{t('timetable.semesterPeriodLabel')}</span>
-                {newSemesterPreview && !newSemesterPreview.isInvalid && (
-                  <span className="text-[11px] font-medium text-emerald-400">
+            {newSemesterPreview && !newSemesterPreview.isInvalid && (
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-slate-300 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-theme-400 shrink-0" />
+                  <span>
                     {newSemesterPreview.isUpcoming
                       ? t('timetable.semesterUpcoming', { days: newSemesterPreview.daysUntil })
                       : t('timetable.weekOf', { week: newSemesterPreview.currentWeek, total: newSemesterPreview.totalWeeks })}
                   </span>
+                </div>
+                {newSemesterPreview.remainingWeeks > 0 && !newSemesterPreview.isEnded && !newSemesterPreview.isUpcoming && (
+                  <span className="text-emerald-400 font-medium">
+                    {t('timetable.weeksLeft', { count: newSemesterPreview.remainingWeeks })}
+                  </span>
                 )}
               </div>
-
-              {/* Status Chips */}
-              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const { startDateStr, endDateStr } = inferDatesForBreak(newSemesterForm.totalWeeks || 14)
-                    setNewSemesterForm(prev => ({ ...prev, newStartDate: startDateStr, newEndDate: endDateStr }))
-                  }}
-                  className={`px-3 py-1.5 text-xs rounded-xl font-medium transition-all ${
-                    newSemesterPreview?.isUpcoming
-                      ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
-                      : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5'
-                  }`}
-                >
-                  {t('timetable.rolloverBreak')}
-                </button>
-
-                {Array.from({ length: Math.max(1, newSemesterForm.totalWeeks || 14) }, (_, i) => i + 1).map(w => {
-                  const isSelected = newSemesterPreview?.currentWeek === w && !newSemesterPreview?.isUpcoming && !newSemesterPreview?.isEnded
-                  return (
-                    <button
-                      key={w}
-                      type="button"
-                      onClick={() => {
-                        const { startDateStr, endDateStr } = inferDatesFromCurrentWeek(w, newSemesterForm.totalWeeks || 14)
-                        setNewSemesterForm(prev => ({ ...prev, newStartDate: startDateStr, newEndDate: endDateStr }))
-                      }}
-                      className={`px-2.5 py-1.5 text-xs rounded-xl font-medium transition-all ${
-                        isSelected
-                          ? 'bg-theme-500 text-white font-bold shadow-md shadow-theme-500/30'
-                          : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5'
-                      }`}
-                    >
-                      W{w}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Inferred Date Range Preview */}
-              {newSemesterForm.newStartDate && newSemesterForm.newEndDate && (
-                <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 pt-0.5">
-                  <span>{t('timetable.dateFormatHint')}:</span>
-                  <span className="font-mono text-slate-300">
-                    {formatIsoToDisplay(newSemesterForm.newStartDate)} – {formatIsoToDisplay(newSemesterForm.newEndDate)}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Optional Collapsible custom start/end dates */}
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowRolloverCustomDates(v => !v)}
-                className="text-[11px] text-slate-400 hover:text-slate-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
-              >
-                <span>{t('timetable.rolloverCustomDates')}</span>
-                <ChevronDown className={`h-3 w-3 transition-transform ${showRolloverCustomDates ? 'rotate-180' : ''}`} />
-              </button>
-
-              {showRolloverCustomDates && (
-                <div className="space-y-2.5 pt-2 animate-in fade-in duration-200">
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <Field label={t('timetable.semesterStartDate')}>
-                      <DateInput
-                        className="input text-xs"
-                        value={newSemesterForm.newStartDate}
-                        onChange={e => {
-                          const newStart = e.target.value
-                          setNewSemesterForm(prev => {
-                            const next = { ...prev, newStartDate: newStart }
-                            if (newStart && next.newEndDate) {
-                              const p = getSemesterProgress(newStart, next.newEndDate)
-                              if (p?.totalWeeks) next.totalWeeks = p.totalWeeks
-                            }
-                            return next
-                          })
-                        }}
-                      />
-                    </Field>
-                    <Field label={t('timetable.semesterEndDate')}>
-                      <DateInput
-                        className="input text-xs"
-                        value={newSemesterForm.newEndDate}
-                        onChange={e => {
-                          const newEnd = e.target.value
-                          setNewSemesterForm(prev => {
-                            const next = { ...prev, newEndDate: newEnd }
-                            if (next.newStartDate && newEnd) {
-                              const p = getSemesterProgress(next.newStartDate, newEnd)
-                              if (p?.totalWeeks) next.totalWeeks = p.totalWeeks
-                            }
-                            return next
-                          })
-                        }}
-                      />
-                    </Field>
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
 
             {/* Action Buttons for Step 2 */}
             <div className="pt-2 flex flex-col gap-2">
