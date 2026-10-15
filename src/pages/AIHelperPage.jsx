@@ -22,12 +22,15 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq, analyzeImageWithGroq, transcribeAudioWithGroq } from '../lib/groq'
+import { parseAndExecuteActions, stripActionTags } from '../lib/accountActions'
 import { markdownToHtml } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
+import { useToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
 import SEO from '../components/SEO'
 
 const studentActions = [
+  { icon: CalendarClock, mobile: 'Record test', desktop: 'Record exam / test', prompt: 'I have a BMCS1013 practical test on 15 October 2026 help me record inside' },
   { icon: Table, mobile: 'Show in table', tKey: 'table' },
   { icon: Brain, mobile: 'Explain', tKey: 'explain' },
   { icon: FileText, mobile: 'Summarize', tKey: 'summarize' },
@@ -49,7 +52,7 @@ const managerActions = [
 
 const studentWelcome = {
   role: 'assistant',
-  content: `Selamat datang! I am your dedicated AI Study Helper.\n\nHow can I support your software engineering studies today? You can ask me to explain algorithms, summarize notes, generate mock interview questions, or plan out your semester schedules!\n\nNote: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, active reminders, academic exam results & CGPA, your exercise streak & workout history, or study articles & FAQ from our Public Landing Blog! I also know your Settings profile (University & Major) to tailor tips to your course!`,
+  content: `Selamat datang! I am your dedicated AI Study Helper with direct authority to manage your account.\n\nYou can ask me to do anything to your account — like "I have a BMCS1013 practical test on 15 October 2026 help me record inside", add assignments and deadlines, schedule classes, set reminders, log your workouts (+XP), or update your profile!\n\nNote: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, active reminders, academic exam results & CGPA, your exercise streak & workout history, or study articles & FAQ from our Public Landing Blog! I also know your Settings profile (University & Major) to tailor tips to your course!`,
   timestamp: new Date()
 }
 
@@ -64,6 +67,7 @@ export default function AIHelperPage({ role = 'student' }) {
   const welcomeMessage = isManager ? managerWelcome : studentWelcome
   const quickActions = isManager ? managerActions : studentActions
   const { t } = useLanguage()
+  const { showToast } = useToast()
 
   const [messages, setMessages] = useState(() => {
     const saved = JSON.parse(localStorage.getItem(isManager ? 'aiManagerChat' : 'aiChat') || '[]')
@@ -417,6 +421,17 @@ export default function AIHelperPage({ role = 'student' }) {
         const context = await buildUserContext()
         answer = await askGroq(userText, context, messages)
       }
+
+      // Execute autonomous account actions requested by user
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      const actionResults = await parseAndExecuteActions(answer, currentUser)
+      if (actionResults && actionResults.length > 0) {
+        const successes = actionResults.filter(r => r.success)
+        if (successes.length > 0) {
+          showToast(successes[0].message || 'Updated your account schedule', 'success')
+        }
+      }
+
       const assistantMsg = { role: 'assistant', content: answer, timestamp: new Date() }
       setMessages(prev => [...prev, assistantMsg])
       saveMessageToCloud(assistantMsg)
@@ -622,7 +637,7 @@ function Message({ msg }) {
         <Bot className="h-3.5 w-3.5 md:h-4 md:w-4" />
       </div>
       <div className="ai-assistant-bubble min-w-0 max-w-[calc(100%-2.25rem)] break-words rounded-2xl rounded-bl-md px-3.5 py-3 text-sm leading-relaxed overflow-hidden md:max-w-[88%] md:px-5 md:py-4">
-        {isWelcomeMessage(msg.content) ? <WelcomeContent content={msg.content} /> : <div className="ai-formatted-content w-full min-w-0 overflow-x-auto" dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />}
+        {isWelcomeMessage(msg.content) ? <WelcomeContent content={msg.content} /> : <div className="ai-formatted-content w-full min-w-0 overflow-x-auto" dangerouslySetInnerHTML={{ __html: markdownToHtml(stripActionTags(msg.content)) }} />}
       </div>
     </div>
   )

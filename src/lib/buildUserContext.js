@@ -222,7 +222,7 @@ Course / Major: ${course}
 Student ID: ${studentId}
 AI Preferences: Language (${aiLanguage}), Style (${aiStyle})
 Planner Settings: First Day of Week (${firstDay}), Time Format (${timeFormat}), Deadline Alert Lead Time (${reminderLeadTime})
-Today: ${dayName}, ${format(today, 'dd MMMM yyyy')}
+Today's Date: ${todayStr} (${dayName}, ${format(today, 'dd MMMM yyyy')})
 
 === ACADEMIC EXAM RESULTS & CGPA ===
 Overall CGPA: ${overall.cgpa} (${overall.overallCredits} Total Credits)
@@ -230,23 +230,23 @@ ${semesters.length === 0 ? 'No semester exam records recorded.' : semesters.map(
   const semStat = calculateSemesterGPA(sem.courses)
   const validCourses = (sem.courses || []).filter(c => c.course_name || c.grade)
   return `Semester: ${sem.name} (GPA: ${semStat.gpa}, Credits: ${semStat.totalCredits})\n` +
-    validCourses.map(c => `  - ${c.course_code ? c.course_code + ' ' : ''}${c.course_name}: Grade ${c.grade || 'N/A'} (${c.credit_hours} cr)`).join('\n')
+    validCourses.map(c => `  - [Course ID: ${c.id}] ${c.course_code ? c.course_code + ' ' : ''}${c.course_name}: Grade ${c.grade || 'N/A'} (${c.credit_hours} cr)`).join('\n')
 }).join('\n\n')}
 
 === TODAY'S CLASSES (${dayName}) ===
-${todayClasses.length === 0 ? 'No classes today.' : todayClasses.map(c => `- ${c.subject} [${c.class_type}] from ${formatTime(c.start_time)} to ${formatTime(c.end_time)} at ${c.classroom || 'TBA'} with ${c.lecturer || 'TBA'}`).join('\n')}
+${todayClasses.length === 0 ? 'No classes today.' : todayClasses.map(c => `- [Class ID: ${c.id}] ${c.subject} [${c.class_type}] from ${formatTime(c.start_time)} to ${formatTime(c.end_time)} at ${c.classroom || 'TBA'} with ${c.lecturer || 'TBA'}`).join('\n')}
 
 === ALL CLASSES (Weekly Timetable) ===
-${classes.length === 0 ? 'No classes scheduled.' : classes.map(c => `- ${c.subject} [${c.class_type}] on ${c.day} ${formatTime(c.start_time)}-${formatTime(c.end_time)}, Room: ${c.classroom || 'TBA'}, Lecturer: ${c.lecturer || 'TBA'}`).join('\n')}
+${classes.length === 0 ? 'No classes scheduled.' : classes.map(c => `- [Class ID: ${c.id}] ${c.subject} [${c.class_type}] on ${c.day} ${formatTime(c.start_time)}-${formatTime(c.end_time)}, Room: ${c.classroom || 'TBA'}, Lecturer: ${c.lecturer || 'TBA'}`).join('\n')}
 
 === PENDING & IN-PROGRESS ASSIGNMENTS ===
-${assignments.length === 0 ? 'No pending assignments.' : assignments.map(a => `- "${a.title}" (${a.subject}) - Due: ${a.deadline}, Priority: ${a.priority}, Status: ${a.status}${a.notes ? ', Notes: ' + a.notes : ''}`).join('\n')}
+${assignments.length === 0 ? 'No pending assignments.' : assignments.map(a => `- [Assignment ID: ${a.id}] "${a.title}" (${a.subject}) - Due: ${a.deadline}, Priority: ${a.priority}, Status: ${a.status}${a.notes ? ', Notes: ' + a.notes : ''}`).join('\n')}
 
 === UPCOMING EXAMS ===
-${exams.length === 0 ? 'No upcoming exams.' : exams.map(e => `- ${e.subject} ${e.exam_type} on ${e.exam_date} at ${e.venue || 'TBA'}${e.start_time && e.end_time ? `, Time: ${formatTime(e.start_time)}\u2013${formatTime(e.end_time)}` : ''}${e.notes ? ', Notes: ' + e.notes : ''}`).join('\n')}
+${exams.length === 0 ? 'No upcoming exams.' : exams.map(e => `- [Exam ID: ${e.id}] ${e.subject} ${e.exam_type} on ${e.exam_date} at ${e.venue || 'TBA'}${e.start_time && e.end_time ? `, Time: ${formatTime(e.start_time)}\u2013${formatTime(e.end_time)}` : ''}${e.notes ? ', Notes: ' + e.notes : ''}`).join('\n')}
 
 === ACTIVE REMINDERS ===
-${reminders.length === 0 ? 'No active reminders.' : reminders.map(r => `- "${r.title}" at ${formatTime(r.reminder_time) || 'no time set'} (${r.repeat_type})`).join('\n')}
+${reminders.length === 0 ? 'No active reminders.' : reminders.map(r => `- [Reminder ID: ${r.id}] "${r.title}" at ${formatTime(r.reminder_time) || 'no time set'} (${r.repeat_type})`).join('\n')}
 
 === EXERCISE & HABIT TRACKING ===
 Current Streak: ${exerciseStats.currentStreak} days (Longest: ${exerciseStats.longestStreak} days)

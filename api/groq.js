@@ -247,8 +247,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: `Vision API error: ${summaryError}` })
     } else {
       const modelsToTry = [
-        { model: CHAT_MODEL, maxTokens: 1024 },
-        { model: 'openai/gpt-oss-20b', maxTokens: 1500 }
+        { model: CHAT_MODEL, maxTokens: 2048 },
+        { model: 'llama-3.3-70b-versatile', maxTokens: 2048 },
+        { model: 'llama-3.1-8b-instant', maxTokens: 2048 },
+        { model: 'openai/gpt-oss-20b', maxTokens: 2048 }
       ]
 
       let lastError = 'Groq API error'
@@ -284,6 +286,34 @@ export default async function handler(req, res) {
           lastStatus = groqRes.status || 500
           lastError = data.error?.message || `Groq API error (${lastStatus})`
         }
+      }
+
+      // Fallback to Gemini if configured
+      const geminiFallbackKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+      if (geminiFallbackKey) {
+        try {
+          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiFallbackKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: 'user',
+                  parts: [{ text: `${systemContext || ''}\n\nUser request: ${prompt}` }]
+                }
+              ],
+              generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+            })
+          })
+          if (geminiRes.ok) {
+            const gData = await geminiRes.json().catch(() => ({}))
+            const gContent = gData.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''
+            if (gContent) {
+              const cleanContent = gContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+              return res.status(200).json({ content: cleanContent })
+            }
+          }
+        } catch (e) {}
       }
 
       return res.status(lastStatus).json({ error: lastError })
