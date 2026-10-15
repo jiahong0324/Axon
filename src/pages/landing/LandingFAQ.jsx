@@ -33,7 +33,7 @@ export const faqs = [
   },
   {
     question: 'Is my data secure?',
-    answer: 'Yes. Your data is strictly protected in accordance with the Personal Data Protection Act 2010 (PDPA) of Malaysia. We employ industry-standard encryption (TLS 1.3 / AES-256) and Row-Level Security so your course schedules and notes remain confidential.'
+    answer: 'Yes. Your data is securely stored and protected. We employ industry-standard encryption (TLS 1.3 / AES-256) and Row-Level Security so your course schedules, assignments, and study notes remain private.'
   },
   {
     question: 'Can I use Axon on my phone?',
