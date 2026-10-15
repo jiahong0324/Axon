@@ -415,10 +415,16 @@ export default function AIHelperPage({ role = 'student' }) {
 
     try {
       let answer = ''
+      const context = await buildUserContext()
       if (imgData) {
-        answer = await analyzeImageWithGroq(imgData.base64, imgData.mimeType, userText || 'Describe this image', messages)
+        answer = await analyzeImageWithGroq(
+          imgData.base64,
+          imgData.mimeType,
+          userText || 'Describe this image and identify any academic tasks, tests, or schedule items shown',
+          messages,
+          context
+        )
       } else {
-        const context = await buildUserContext()
         answer = await askGroq(userText, context, messages)
       }
 

@@ -18,7 +18,7 @@ export const COMMON_SE_COURSES = {
 }
 
 function normalizeDay(dayStr) {
-  if (!dayStr) return 'Monday'
+  if (!dayStr) return null
   const d = String(dayStr).trim().toLowerCase()
   if (d.startsWith('mon')) return 'Monday'
   if (d.startsWith('tue')) return 'Tuesday'
@@ -27,10 +27,10 @@ function normalizeDay(dayStr) {
   if (d.startsWith('fri')) return 'Friday'
   if (d.startsWith('sat')) return 'Saturday'
   if (d.startsWith('sun')) return 'Sunday'
-  return 'Monday'
+  return null
 }
 
-function normalizeTime(timeStr, defaultTime = '09:00') {
+function normalizeTime(timeStr, defaultTime = null) {
   if (!timeStr) return defaultTime
   let s = String(timeStr).trim().toLowerCase()
   const isPm = s.includes('pm')
@@ -57,9 +57,61 @@ function normalizeClassType(typeStr) {
 export const ACTION_SCHEMA_PROMPT = `
 === AUTONOMOUS ACCOUNT ACTIONS ENGINE ===
 You have FULL AUTONOMOUS AUTHORITY and DIRECT DATABASE ACCESS to modify, create, update, and manage the student's account records.
-When the user asks you to record, add, schedule, log, track, edit, update, complete, or delete ANYTHING in their account (or mentions having an exam, practical test, quiz, assignment, class, reminder, workout session, profile detail, or course grade), you MUST execute the action by including one or more <axon_action> blocks in your response.
 
-Supported Action Types & Data Format:
+CRITICAL MANDATORY PRINCIPLE: NEVER SIMPLY DEFAULT OR FABRICATE MISSING INFORMATION!
+If the user asks you to add, record, schedule, or update something, but does NOT provide the essential details needed:
+- DO NOT simply default, fabricate, or guess missing information!
+  • NEVER assume Monday or any random day of the week for a class.
+  • NEVER assume 09:00 or any random time slot for a class, exam, or reminder.
+  • NEVER assume Grade 'A' or any arbitrary grade for an academic exam result.
+  • NEVER assume today's date for an exam date or assignment deadline.
+  • NEVER fabricate fake classrooms (e.g., "DK1") or fake lecturer names (e.g., "Dr Lee") if the user did not provide them.
+- DO NOT output an <axon_action> block when essential information is missing!
+- DO NOT claim "✅ Added to your..." when you have not received the necessary details!
+- INSTEAD, ask the user politely and clearly for the missing information BEFORE adding it!
+
+WHEN TO ASK VS WHEN TO EXECUTE:
+1. Timetable Class (add_class):
+   - ESSENTIAL REQUIRED: Course/Subject, Day of the week (e.g., Monday), and Start Time (or time range).
+   - If user asks to add a class (e.g., "Add BMCS1013 to my timetable", "I have a lecture for OOP") WITHOUT specifying the day or time:
+     -> DO NOT output <axon_action>!
+     -> Politely ASK: "What day of the week and what time is your class? (e.g., Tuesday 10:00 AM - 12:00 PM). Also let me know if you have the classroom/venue or lecturer name!"
+   - If user provides Subject, Day, and Time (e.g., "Add BMCS1013 lecture on Tuesday 10am-12pm"), but did not mention classroom or lecturer:
+     -> Execute the action! Use "TBA" for classroom and lecturer. NEVER make up fake rooms or lecturer names.
+
+2. Exam Result / Course Grade (add_exam_result):
+   - ESSENTIAL REQUIRED: Course Code or Course Name, AND the Grade (or marks achieved).
+   - If user asks to record an exam result (e.g., "Add my exam result for BMCS1013", "Record my grade for Web Development") WITHOUT stating what grade they received:
+     -> DO NOT default to 'A'! DO NOT output <axon_action>!
+     -> Politely ASK: "What grade (e.g. A, A-, B+, B, C) or marks did you get for BMCS1013? And which semester should this be recorded under (e.g. Year 1 Semester 1)?"
+   - If user provides both Course and Grade (e.g., "Add my BMCS1013 result Grade A"), and the semester is mentioned or identifiable:
+     -> Execute the action!
+
+3. Upcoming Exam / Test / Quiz (add_exam):
+   - ESSENTIAL REQUIRED: Subject / Course name, AND Exam Date (exact date or clear relative date like "tomorrow", "this Friday", "15 Oct 2026").
+   - If user mentions an exam (e.g., "I have an exam for BMCS1013 add it") WITHOUT a date:
+     -> DO NOT default to today or tomorrow! DO NOT output <axon_action>!
+     -> Politely ASK: "What date is your BMCS1013 exam scheduled for? Also, what time does it start and do you know the venue?"
+   - If user gives the date and time (e.g., "I got a practical test tomorrow at 11am for problem solving and programming"):
+     -> Calculate the date based on Today's Date in context and execute the action. If venue is unstated, use "TBA".
+
+4. Assignment / Coursework (add_assignment):
+   - ESSENTIAL REQUIRED: Title or Subject, AND Deadline Date.
+   - If user asks to add an assignment WITHOUT a deadline:
+     -> DO NOT default to today! DO NOT output <axon_action>!
+     -> Politely ASK: "When is the deadline (due date) for this assignment, and what is the assignment title or topic?"
+
+5. Reminder (add_reminder):
+   - ESSENTIAL REQUIRED: Reminder Title/Task, AND Reminder Time.
+   - If user asks to set a reminder without a time:
+     -> DO NOT output <axon_action>!
+     -> Politely ASK: "What time would you like to receive this reminder?"
+
+6. Exercise / Workout Check-in (log_exercise):
+   - ESSENTIAL REQUIRED: Activity type (e.g. Gym, Run, Yoga, Sports, Swim, Walk).
+   - If user says "Log my workout" without specifying what they did, ask: "Awesome job working out! What activity did you do (e.g. Gym, Running, Swimming, Sports)?"
+
+Supported Action Types & Data Format (USE ONLY WHEN ALL ESSENTIAL INFO IS PRESENT):
 1. Add Exam / Practical Test / Quiz:
 <axon_action>
 {
@@ -68,14 +120,14 @@ Supported Action Types & Data Format:
     "subject": "BMCS1013",
     "exam_date": "2026-10-15",
     "exam_type": "Practical Test",
-    "start_time": "09:00",
-    "end_time": "11:00",
-    "venue": "TBD",
+    "start_time": "11:00",
+    "end_time": "13:00",
+    "venue": "TBA",
     "notes": "Problem Solving and Programming – Practical Test"
   }
 }
 </axon_action>
-(exam_type can be 'Final', 'Midterm', 'Practical Test', 'Quiz', or 'Test'. If time or venue is not specified, use a standard university exam slot like 09:00-11:00 and venue "TBD").
+(exam_type can be 'Final', 'Midterm', 'Practical Test', 'Quiz', or 'Test'. Exam date is MANDATORY — if missing, ask user before adding. If venue is not mentioned by user, use "TBA").
 
 2. Update Exam:
 <axon_action>
@@ -118,7 +170,7 @@ Supported Action Types & Data Format:
   }
 }
 </axon_action>
-(priority can be 'High', 'Medium', or 'Low'. status can be 'Pending', 'In Progress', or 'Done').
+(priority can be 'High', 'Medium', or 'Low'. status can be 'Pending', 'In Progress', or 'Done'. Deadline is MANDATORY — if missing, ask user before adding).
 
 5. Update Assignment (e.g. mark as Done or update deadline):
 <axon_action>
@@ -144,7 +196,7 @@ Supported Action Types & Data Format:
 </axon_action>
 
 7. Add Class / Timetable Class (Weekly Schedule):
-When user asks to add a class, timetable entry, or replacement class (e.g. "Add to my timetable BMCS1013 on Monday 09:00-11:00", "I have lecture on Tuesday 10am", "Add class"):
+When user provides subject, day, and time (e.g. "Add to my timetable BMCS1013 on Monday 09:00-11:00", "I have lecture on Tuesday 10am"):
 <axon_action>
 {
   "type": "add_class",
@@ -153,14 +205,14 @@ When user asks to add a class, timetable entry, or replacement class (e.g. "Add 
     "day": "Monday",
     "start_time": "09:00",
     "end_time": "11:00",
-    "classroom": "DK1",
-    "lecturer": "Dr Lee",
+    "classroom": "TBA",
+    "lecturer": "TBA",
     "class_type": "L",
     "color": "blue"
   }
 }
 </axon_action>
-(day must be one of: 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'. class_type: 'L' for Lecture, 'T' for Tutorial, 'P' for Practical. If multiple classes are requested, output an <axon_action> block for each or a JSON array).
+(day must be one of: 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'. class_type: 'L' for Lecture, 'T' for Tutorial, 'P' for Practical. Day and start_time are MANDATORY — if missing, ask user before adding. If classroom or lecturer are not mentioned by user, use "TBA" and NEVER invent fake room codes or names).
 
 8. Update Class:
 <axon_action>
@@ -196,7 +248,7 @@ When user asks to add a class, timetable entry, or replacement class (e.g. "Add 
   }
 }
 </axon_action>
-(repeat_type can be 'once', 'daily', 'weekdays', or 'weekly').
+(repeat_type can be 'once', 'daily', 'weekdays', or 'weekly'. Reminder time is MANDATORY — if missing, ask user before adding).
 
 11. Update / Toggle Reminder:
 <axon_action>
@@ -268,7 +320,7 @@ When user asks to add a class, timetable entry, or replacement class (e.g. "Add 
 (keys include: 'aiLanguage', 'aiStyle', 'reminderLeadTime', 'firstDay', 'timeFormat', 'theme', 'accentColor').
 
 17. Add Academic Course Grade / Exam Result (Exam Results & CGPA):
-When user asks to record an exam result, course grade, or semester GPA (e.g. "Add my result for BMCS1013 Grade A", "Record my grade A for BMCS1013", "My result is BMCS1013 A (3 credits)", "Record result for semester 1"):
+When user provides course and grade (e.g. "Add my result for BMCS1013 Grade A", "Record my grade A for BMCS1013", "My result is BMCS1013 A (3 credits)"):
 <axon_action>
 {
   "type": "add_exam_result",
@@ -281,7 +333,7 @@ When user asks to record an exam result, course grade, or semester GPA (e.g. "Ad
   }
 }
 </axon_action>
-(grade: 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'F'. credit_hours: defaults to 3. If semester_name is not specified, use the student's active semester or "Year 1 Semester 1").
+(grade: 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'F'. Grade is MANDATORY — NEVER default to 'A', ask user for their grade if not provided. credit_hours: defaults to 3 if standard course credit is known. If semester_name is not specified, use the student's active semester from academic context).
 
 18. Delete Course Result:
 <axon_action>
@@ -295,6 +347,9 @@ When user asks to record an exam result, course grade, or semester GPA (e.g. "Ad
 </axon_action>
 
 === RESPONSE PRESENTATION RULES (MANDATORY FORMAT) ===
+CRITICAL: Only output the "✅ Added to..." header, confirmation table, and <axon_action> block when you actually execute an action because all required information is known.
+If you are asking the user for missing information (e.g. day, time, grade, deadline), DO NOT output any <axon_action> block, DO NOT output a "✅ Added" header, and DO NOT output an action confirmation table. Simply ask your questions warmly and clearly.
+
 Whenever you perform an account action (such as adding an exam, assignment, class, reminder, or workout), structure your visible response EXACTLY like this:
 1. Lead with a clear action status header with a green checkmark emoji, e.g.:
 ✅ Added to your schedule
@@ -303,7 +358,7 @@ Whenever you perform an account action (such as adding an exam, assignment, clas
 2. Follow immediately with a clean, beautifully formatted Markdown table with uppercase column headers detailing the entry:
 For an exam/test:
 | TYPE | COURSE | TITLE (PRACTICAL TEST) | DATE (YYYY-MM-DD) | TIME | LOCATION | REMINDER |
-| Practical Test | BMCS1013 | Problem Solving and Programming – Practical Test | 2026-10-15 | 09:00-11:00 *(adjust if you know the exact slot)* | TBD | Alert on 14 Oct 2026 (24 h before) |
+| Practical Test | BMCS1013 | Problem Solving and Programming – Practical Test | 2026-10-15 | 11:00-13:00 | TBA | Alert on 14 Oct 2026 (24 h before) |
 
 For an assignment:
 | ASSIGNMENT | COURSE | DEADLINE | PRIORITY | STATUS |
@@ -311,7 +366,7 @@ For an assignment:
 
 For a class:
 | TYPE | COURSE | DAY | TIME | VENUE | LECTURER |
-| Lecture | BMCS1013 | Monday | 09:00-11:00 | DK1 | Dr Lee |
+| Lecture | BMCS1013 | Monday | 09:00-11:00 | TBA | TBA |
 
 For a reminder:
 | REMINDER | TIME | REPEAT | STATUS |
@@ -388,14 +443,31 @@ export async function executeAccountAction(action, user) {
     switch (type) {
       // 1. ADD EXAM
       case 'add_exam': {
+        const subject = (data.subject || '').trim()
+        const examDate = (data.exam_date || '').trim()
+        if (!subject) {
+          return { success: false, error: 'Cannot add exam: Course or subject name is missing.' }
+        }
+        if (!examDate) {
+          return { success: false, error: 'Cannot add exam: Exam date is missing. Please ask the user for the exam date.' }
+        }
+
+        const startTime = normalizeTime(data.start_time)
+        let endTime = normalizeTime(data.end_time)
+        if (startTime && !endTime) {
+          const [h, m] = startTime.split(':').map(Number)
+          const endH = Math.min(23, h + 2)
+          endTime = `${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+        }
+
         const payload = {
           user_id: currentUser.id,
-          subject: (data.subject || 'Exam').trim(),
-          exam_date: (data.exam_date || getTodayStr()).trim(),
-          start_time: data.start_time ? data.start_time.trim() : '09:00',
-          end_time: data.end_time ? data.end_time.trim() : '11:00',
-          exam_type: data.exam_type ? data.exam_type.trim() : 'Final',
-          venue: data.venue ? data.venue.trim() : 'TBD',
+          subject,
+          exam_date: examDate,
+          start_time: startTime || '09:00',
+          end_time: endTime || '11:00',
+          exam_type: data.exam_type ? data.exam_type.trim() : 'Exam',
+          venue: (data.venue || '').trim() || 'TBA',
           notes: data.notes ? data.notes.trim() : ''
         }
 
@@ -467,11 +539,20 @@ export async function executeAccountAction(action, user) {
 
       // 4. ADD ASSIGNMENT
       case 'add_assignment': {
+        const title = (data.title || data.subject || '').trim()
+        const deadline = (data.deadline || '').trim()
+        if (!title) {
+          return { success: false, error: 'Cannot add assignment: Assignment title is missing.' }
+        }
+        if (!deadline) {
+          return { success: false, error: 'Cannot add assignment: Deadline due date is missing. Please ask the user when it is due.' }
+        }
+
         const payload = {
           user_id: currentUser.id,
-          title: (data.title || 'Assignment').trim(),
+          title,
           subject: (data.subject || '').trim(),
-          deadline: (data.deadline || getTodayStr()).trim(),
+          deadline,
           priority: data.priority || 'Medium',
           status: data.status || 'Pending',
           notes: (data.notes || '').trim()
@@ -542,12 +623,29 @@ export async function executeAccountAction(action, user) {
 
       // 7. ADD CLASS / REPLACEMENT CLASS
       case 'add_class': {
-        const subject = (data.subject || 'Class').trim()
+        const subject = (data.subject || '').trim()
         const day = normalizeDay(data.day)
-        const startTime = normalizeTime(data.start_time, '09:00')
-        const endTime = normalizeTime(data.end_time, '10:00')
-        const classroom = (data.classroom || 'TBA').trim()
-        const lecturer = (data.lecturer || 'TBA').trim()
+        const startTime = normalizeTime(data.start_time)
+
+        if (!subject) {
+          return { success: false, error: 'Cannot add class: Course or subject name is missing.' }
+        }
+        if (!day) {
+          return { success: false, error: 'Cannot add class: Day of the week is missing. Please ask the user which day.' }
+        }
+        if (!startTime) {
+          return { success: false, error: 'Cannot add class: Class start time is missing. Please ask the user what time.' }
+        }
+
+        let endTime = normalizeTime(data.end_time)
+        if (!endTime) {
+          const [h, m] = startTime.split(':').map(Number)
+          const endH = Math.min(23, h + 1)
+          endTime = `${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+        }
+
+        const classroom = (data.classroom || '').trim() || 'TBA'
+        const lecturer = (data.lecturer || '').trim() || 'TBA'
         const classType = normalizeClassType(data.class_type)
         const color = data.color || (classType === 'L' ? 'blue' : classType === 'T' ? 'green' : 'purple')
         const isReplacement = Boolean(data.is_replacement || data.date)
@@ -704,10 +802,19 @@ export async function executeAccountAction(action, user) {
 
       // 10. ADD REMINDER
       case 'add_reminder': {
+        const title = (data.title || '').trim()
+        const reminderTime = normalizeTime(data.reminder_time)
+        if (!title) {
+          return { success: false, error: 'Cannot add reminder: Reminder task or title is missing.' }
+        }
+        if (!reminderTime) {
+          return { success: false, error: 'Cannot add reminder: Reminder time is missing. Please ask the user what time.' }
+        }
+
         const payload = {
           user_id: currentUser.id,
-          title: (data.title || 'Reminder').trim(),
-          reminder_time: data.reminder_time || '09:00',
+          title,
+          reminder_time: reminderTime,
           repeat_type: data.repeat_type || 'once',
           is_active: data.is_active !== false
         }
@@ -775,7 +882,10 @@ export async function executeAccountAction(action, user) {
 
       // 13. LOG EXERCISE
       case 'log_exercise': {
-        const activityType = data.activity_type || 'Gym'
+        const activityType = (data.activity_type || '').trim()
+        if (!activityType) {
+          return { success: false, error: 'Cannot log workout: Activity type is missing (e.g. Gym, Run, Yoga, Sports).' }
+        }
         const logDate = data.log_date || getTodayStr()
 
         const exerciseData = await fetchExerciseData(currentUser.id)
@@ -855,10 +965,21 @@ export async function executeAccountAction(action, user) {
       // 17. ADD EXAM RESULT / COURSE GRADE
       case 'add_exam_result': {
         const rawCode = (data.course_code || '').trim().toUpperCase()
-        const courseName = (data.course_name || COMMON_SE_COURSES[rawCode] || rawCode || 'Course').trim()
-        const courseCode = rawCode || (Object.keys(COMMON_SE_COURSES).find(k => COMMON_SE_COURSES[k].toLowerCase() === courseName.toLowerCase()) || '')
+        const rawName = (data.course_name || '').trim()
+        const courseCode = rawCode || (Object.keys(COMMON_SE_COURSES).find(k => COMMON_SE_COURSES[k].toLowerCase() === rawName.toLowerCase()) || '')
+        const courseName = rawName || COMMON_SE_COURSES[rawCode] || rawCode || ''
+
+        if (!courseCode && !courseName) {
+          return { success: false, error: 'Cannot record exam result: Course code or name is missing.' }
+        }
+
+        const rawGrade = (data.grade || '').trim().toUpperCase()
+        if (!rawGrade) {
+          return { success: false, error: 'Cannot record exam result: Grade is missing (e.g. A, B+, C). Please ask the user what grade they received.' }
+        }
+
         const creditHours = Number(data.credit_hours) || 3
-        const grade = (data.grade || 'A').trim().toUpperCase()
+        const grade = rawGrade
         const targetSemName = (data.semester_name || '').trim()
 
         // 1. Load existing semesters from localStorage / user_metadata / SQL

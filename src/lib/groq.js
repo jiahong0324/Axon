@@ -35,7 +35,7 @@ export async function askGroq(prompt, systemContext = '', history = []) {
   return data.content || 'AI is unavailable right now.'
 }
 
-export async function analyzeImageWithGroq(base64Image, mimeType, prompt, history = []) {
+export async function analyzeImageWithGroq(base64Image, mimeType, prompt, history = [], systemContext = '') {
   const response = await fetch('/api/groq', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -44,6 +44,7 @@ export async function analyzeImageWithGroq(base64Image, mimeType, prompt, histor
       base64Image,
       mimeType,
       prompt,
+      systemContext,
       history
     })
   })

@@ -1,4 +1,4 @@
-import { Check, Loader2, RotateCcw, Sparkles, Upload, XCircle } from 'lucide-react'
+import { Calendar, Check, Clock, Loader2, MapPin, RotateCcw, Sparkles, Trash2, Upload, User, XCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { analyzeImageWithGroq } from '../lib/groq'
 import DateInput from './DateInput'
@@ -227,6 +227,10 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
     setItems(prev => prev.map((item, i) => i === index ? { ...item, ...updates } : item))
   }
 
+  function deleteItem(index) {
+    setItems(prev => prev.filter((_, i) => i !== index))
+  }
+
   function setAll(selected) {
     setItems(prev => prev.map(item => ({ ...item, selected })))
   }
@@ -392,31 +396,32 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
 
         {step === 'results' && (
           <div className="animate-[fadeIn_.25s_ease] space-y-3">
-            <div className="rounded-2xl border border-white/10 bg-navy-950/40 p-3 sm:p-4">
-              <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/5 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-6 items-center justify-center rounded-md bg-emerald-500/10 px-2 text-xs font-bold text-emerald-400 border border-emerald-500/20">
-                    {selected.length} / {items.length}
-                  </span>
-                  <h3 className="text-xs sm:text-sm font-semibold tracking-wide text-slate-300">
-                    {label} DETECTED
-                  </h3>
-                </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-6 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 text-xs font-bold text-emerald-400">
+                  {selected.length} of {items.length} selected
+                </span>
+                <span className="text-xs sm:text-sm font-semibold text-slate-300 tracking-wide">
+                  {label} DETECTED
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className="min-h-0 min-w-0 text-xs font-semibold text-theme-400 hover:text-theme-300 transition-colors"
+                  className="text-xs font-semibold text-theme-400 hover:text-theme-300 transition-colors"
                   onClick={() => setAll(selected.length !== items.length)}
                 >
                   {selected.length === items.length ? 'Deselect All' : 'Select All'}
                 </button>
               </div>
-              <div className="space-y-3 max-h-[52vh] overflow-y-auto pr-1">
-                {items.map((item, index) => type === 'timetable'
-                  ? <TimetableResult key={item.key} item={item} index={index} updateItem={updateItem} />
-                  : type === 'result'
-                  ? <ResultItemRow key={item.key} item={item} index={index} updateItem={updateItem} />
-                  : <SimpleResult key={item.key} item={item} index={index} updateItem={updateItem} type={type} />)}
-              </div>
+            </div>
+
+            <div className="space-y-3 max-h-[58vh] overflow-y-auto pr-1">
+              {items.map((item, index) => type === 'timetable'
+                ? <TimetableResult key={item.key} item={item} index={index} updateItem={updateItem} onDelete={() => deleteItem(index)} />
+                : type === 'result'
+                ? <ResultItemRow key={item.key} item={item} index={index} updateItem={updateItem} onDelete={() => deleteItem(index)} />
+                : <SimpleResult key={item.key} item={item} index={index} updateItem={updateItem} onDelete={() => deleteItem(index)} type={type} />)}
             </div>
           </div>
         )}
@@ -424,12 +429,17 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
 
       {step === 'results' && (
         <div className="mt-4 flex shrink-0 flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-white/10 pt-4">
-          <button type="button" className="btn-ghost w-full sm:w-auto !min-h-0 !py-2.5 text-sm" onClick={startOver}>
-            <RotateCcw className="h-4 w-4" /> Start Over
+          <button
+            type="button"
+            className="btn-ghost w-full sm:w-auto !min-h-0 !py-2.5 !px-4 text-sm font-medium hover:bg-white/5 transition-colors"
+            onClick={startOver}
+          >
+            <RotateCcw className="h-4 w-4" />
+            <span>Start Over</span>
           </button>
           <button
             type="button"
-            className="btn-import w-full sm:w-auto !min-h-0 !py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-import w-full sm:w-auto !min-h-0 !py-2.5 !px-6 text-sm font-semibold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={selected.length === 0 || isImporting}
             onClick={handleImport}
           >
@@ -440,7 +450,7 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
               </>
             ) : (
               <>
-                <Check className="h-4 w-4" />
+                <Check className="h-4 w-4 stroke-[2.5]" />
                 <span>Import Selected ({selected.length})</span>
               </>
             )}
@@ -451,251 +461,332 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
   )
 }
 
-function TimetableResult({ item, index, updateItem }) {
+function TimetableResult({ item, index, updateItem, onDelete }) {
+  const currentColor = item.color || getColorFromType(item.class_type || 'L')
+
   return (
-    <div className={`rounded-xl border p-3.5 transition-all duration-200 ${
-      item.selected 
-        ? 'border-emerald-500/30 bg-emerald-500/[0.03] shadow-sm shadow-emerald-500/5' 
-        : 'border-white/5 bg-white/[0.01] opacity-50'
-    }`}>
-      {/* Top bar: Checkbox + Subject Name + Class Type toggle */}
-      <div className="flex items-center gap-2.5">
-        <button 
-          type="button"
-          className={`shrink-0 flex items-center justify-center rounded-lg transition-all duration-200 ${
-            item.selected 
-              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/20' 
-              : 'bg-slate-800 border border-slate-700 text-transparent hover:border-slate-600'
-          } h-8 w-8 min-h-0 min-w-0`} 
-          onClick={() => updateItem(index, { selected: !item.selected })}
-        >
-          <Check className="h-4 w-4 stroke-[2.5]" />
-        </button>
-        
-        <div className="flex-1 min-w-0">
-          <input 
-            className="input !py-1.5 !min-h-0 text-sm font-semibold transition-all duration-200 focus:ring-2 focus:ring-theme-500/20 focus:border-theme-500" 
-            value={item.subject} 
-            onChange={e => updateItem(index, { subject: e.target.value })} 
-            placeholder="Subject Name (e.g. CSCI 101)"
-          />
-        </div>
+    <div
+      className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden ${
+        item.selected
+          ? 'border-white/10 bg-[#162033]/90 shadow-md hover:border-white/20'
+          : 'border-white/5 bg-slate-900/30 opacity-50 hover:opacity-75'
+      }`}
+    >
+      {/* Top accent stripe indicating class theme color */}
+      <div className={`h-1 w-full ${colorClasses[currentColor] || 'bg-emerald-500'}`} />
 
-        {/* Quick Type selector (desktop) */}
-        <div className="hidden sm:flex gap-1 shrink-0">
-          {['L', 'T', 'P'].map(t => (
-            <button 
-              key={t} 
-              type="button"
-              className={`h-7 px-2.5 rounded-md border text-xs font-semibold transition-all ${
-                item.class_type === t 
-                  ? 'border-theme-500/40 bg-theme-500/20 text-theme-300 font-bold' 
-                  : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10'
-              }`} 
-              onClick={() => updateItem(index, { class_type: t, color: getColorFromType(t) })}
-            >
-              {t === 'L' ? 'Lec' : t === 'T' ? 'Tut' : 'Prac'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Grid of details */}
-      <div className="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2 pl-0 sm:pl-10">
-        <div>
-          <span className="label !text-[11px] block mb-1">Day</span>
-          <select 
-            className="input !py-1.5 !min-h-0 text-xs" 
-            value={item.day} 
-            onChange={e => updateItem(index, { day: e.target.value })}
+      <div className="p-4 sm:p-5 space-y-3">
+        {/* Row 1: Checkbox + Subject Name Input + Type Segmented Switch + Trash */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => updateItem(index, { selected: !item.selected })}
+            className={`h-7 w-7 shrink-0 flex items-center justify-center rounded-lg transition-all duration-150 ${
+              item.selected
+                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 ring-2 ring-emerald-500/20'
+                : 'border border-slate-700 bg-slate-800 text-transparent hover:border-slate-500'
+            }`}
+            title={item.selected ? 'Deselect session' : 'Select session'}
           >
-            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
-              <option key={day}>{day}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div>
-          <span className="label !text-[11px] block mb-1">Time</span>
-          <div className="flex items-center gap-1">
-            <input 
-              className="input !py-1.5 !min-h-0 !px-1.5 text-xs text-center" 
-              type="time" 
-              value={item.start_time} 
-              onChange={e => updateItem(index, { start_time: e.target.value })} 
-            />
-            <span className="text-slate-500 text-xs">-</span>
-            <input 
-              className="input !py-1.5 !min-h-0 !px-1.5 text-xs text-center" 
-              type="time" 
-              value={item.end_time} 
-              onChange={e => updateItem(index, { end_time: e.target.value })} 
+            <Check className="h-4 w-4 stroke-[3]" />
+          </button>
+
+          <div className="flex-1 min-w-0">
+            <input
+              className="w-full bg-slate-900/60 hover:bg-slate-900/90 focus:bg-slate-900 border border-white/10 focus:border-theme-500/60 rounded-xl px-3.5 py-2 text-sm sm:text-base font-bold text-white tracking-wide placeholder-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-theme-500/20"
+              value={item.subject || ''}
+              onChange={e => updateItem(index, { subject: e.target.value })}
+              placeholder="e.g. BMIS1043 Web Development"
             />
           </div>
-        </div>
-        
-        <div>
-          <span className="label !text-[11px] block mb-1">Room</span>
-          <input 
-            className="input !py-1.5 !min-h-0 text-xs" 
-            value={item.classroom} 
-            onChange={e => updateItem(index, { classroom: e.target.value })} 
-            placeholder="Room (e.g. D102)"
-          />
-        </div>
-        
-        <div>
-          <span className="label !text-[11px] block mb-1">Lecturer</span>
-          <input 
-            className="input !py-1.5 !min-h-0 text-xs" 
-            value={item.lecturer} 
-            onChange={e => updateItem(index, { lecturer: e.target.value })} 
-            placeholder="Lecturer name"
-          />
-        </div>
-      </div>
 
-      {/* Mobile class type + Color picker row */}
-      <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/5 pt-2 pl-0 sm:pl-10">
-        <div className="flex sm:hidden items-center gap-1">
-          {['L', 'T', 'P'].map(t => (
-            <button 
-              key={t} 
-              type="button"
-              className={`h-6 px-2 rounded border text-[11px] font-semibold transition-all ${
-                item.class_type === t 
-                  ? 'border-theme-500/40 bg-theme-500/20 text-theme-300 font-bold' 
-                  : 'border-white/10 bg-white/5 text-slate-400'
-              }`} 
-              onClick={() => updateItem(index, { class_type: t, color: getColorFromType(t) })}
+          {/* Class Type Segmented Switch */}
+          <div className="hidden sm:flex items-center bg-slate-900/80 p-1 rounded-xl border border-white/10 shrink-0">
+            {[
+              { id: 'L', label: 'Lec', typeName: 'Lecture' },
+              { id: 'T', label: 'Tut', typeName: 'Tutorial' },
+              { id: 'P', label: 'Prac', typeName: 'Practical' }
+            ].map(type => {
+              const active = item.class_type === type.id
+              return (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() => updateItem(index, { class_type: type.id, color: getColorFromType(type.id) })}
+                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all duration-150 ${
+                    active
+                      ? type.id === 'L'
+                        ? 'bg-theme-500 text-white shadow-sm'
+                        : type.id === 'T'
+                        ? 'bg-emerald-500 text-white shadow-sm'
+                        : 'bg-purple-500 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                  title={type.typeName}
+                >
+                  {type.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Delete item button */}
+          <button
+            type="button"
+            onClick={onDelete}
+            className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            title="Remove class"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Row 2: Grid of properties (Day, Time, Room, Lecturer) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {/* Day */}
+          <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5 focus-within:border-white/20 transition-colors">
+            <Calendar className="h-4 w-4 text-theme-400 shrink-0" />
+            <select
+              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium focus:outline-none cursor-pointer"
+              value={item.day || 'Monday'}
+              onChange={e => updateItem(index, { day: e.target.value })}
             >
-              {t === 'L' ? 'Lec' : t === 'T' ? 'Tut' : 'Prac'}
-            </button>
-          ))}
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
+                <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Time Range */}
+          <div className="flex items-center gap-1.5 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5 focus-within:border-white/20 transition-colors">
+            <Clock className="h-4 w-4 text-emerald-400 shrink-0" />
+            <input
+              type="time"
+              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium focus:outline-none text-center"
+              value={item.start_time || '09:00'}
+              onChange={e => updateItem(index, { start_time: e.target.value })}
+            />
+            <span className="text-slate-500 text-xs font-bold">-</span>
+            <input
+              type="time"
+              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium focus:outline-none text-center"
+              value={item.end_time || '10:00'}
+              onChange={e => updateItem(index, { end_time: e.target.value })}
+            />
+          </div>
+
+          {/* Room */}
+          <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5 focus-within:border-white/20 transition-colors">
+            <MapPin className="h-4 w-4 text-purple-400 shrink-0" />
+            <input
+              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium placeholder-slate-500 focus:outline-none"
+              value={item.classroom || ''}
+              onChange={e => updateItem(index, { classroom: e.target.value })}
+              placeholder="Room / Venue"
+            />
+          </div>
+
+          {/* Lecturer */}
+          <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5 focus-within:border-white/20 transition-colors">
+            <User className="h-4 w-4 text-amber-400 shrink-0" />
+            <input
+              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium placeholder-slate-500 focus:outline-none truncate"
+              value={item.lecturer || ''}
+              onChange={e => updateItem(index, { lecturer: e.target.value })}
+              placeholder="Lecturer name"
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5 ml-auto">
-          <span className="text-[10px] uppercase font-semibold text-slate-500 mr-1">Color</span>
-          {colors.map(color => (
-            <button 
-              key={color} 
-              type="button"
-              className={`h-4 w-4 rounded-full transition-transform duration-150 hover:scale-125 ${colorClasses[color]} ${
-                item.color === color 
-                  ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-900 scale-110' 
-                  : 'opacity-70 hover:opacity-100'
-              }`} 
-              onClick={() => updateItem(index, { color })} 
-            />
-          ))}
+        {/* Row 3: Mobile Class Type + Color Swatches */}
+        <div className="flex items-center justify-between pt-1 border-t border-white/5">
+          <div className="flex sm:hidden items-center bg-slate-900 p-0.5 rounded-lg border border-white/10">
+            {['L', 'T', 'P'].map(t => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => updateItem(index, { class_type: t, color: getColorFromType(t) })}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md ${
+                  item.class_type === t ? 'bg-theme-500 text-white' : 'text-slate-400'
+                }`}
+              >
+                {t === 'L' ? 'Lec' : t === 'T' ? 'Tut' : 'Prac'}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Color:</span>
+            <div className="flex items-center gap-1.5">
+              {colors.map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => updateItem(index, { color: c })}
+                  className={`h-4 w-4 rounded-full transition-all duration-150 ${colorClasses[c]} ${
+                    currentColor === c
+                      ? 'ring-2 ring-white ring-offset-2 ring-offset-[#162033] scale-125'
+                      : 'opacity-40 hover:opacity-100 hover:scale-110'
+                  }`}
+                  title={c}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-function SimpleResult({ item, index, updateItem, type }) {
+function SimpleResult({ item, index, updateItem, onDelete, type }) {
   return (
-    <div className={`rounded-xl border p-3.5 transition-all duration-200 ${
-      item.selected 
-        ? 'border-emerald-500/30 bg-emerald-500/[0.03] shadow-sm shadow-emerald-500/5' 
-        : 'border-white/5 bg-white/[0.01] opacity-50'
-    }`}>
-      <div className="flex items-center gap-2.5">
-        <button 
-          type="button"
-          className={`shrink-0 flex items-center justify-center rounded-lg transition-all duration-200 ${
-            item.selected 
-              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/20' 
-              : 'bg-slate-800 border border-slate-700 text-transparent hover:border-slate-600'
-          } h-8 w-8 min-h-0 min-w-0`} 
-          onClick={() => updateItem(index, { selected: !item.selected })}
-        >
-          <Check className="h-4 w-4 stroke-[2.5]" />
-        </button>
-        <div className="flex-1 min-w-0 grid gap-2.5 sm:grid-cols-2">
-          <div>
-            <span className="label !text-[11px] block mb-1">{type === 'exam' ? 'Subject Name' : 'Assignment Title'}</span>
-            <input 
-              className="input !py-1.5 !min-h-0 text-sm font-semibold transition-all duration-200 focus:ring-2 focus:ring-theme-500/20 focus:border-theme-500" 
-              value={type === 'exam' ? item.subject : item.title} 
-              onChange={e => updateItem(index, type === 'exam' ? { subject: e.target.value } : { title: e.target.value })} 
-              placeholder={type === 'exam' ? 'e.g. MATH 201' : 'e.g. Lab Report 1'}
+    <div
+      className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden ${
+        item.selected
+          ? 'border-white/10 bg-[#162033]/90 shadow-md hover:border-white/20'
+          : 'border-white/5 bg-slate-900/30 opacity-50 hover:opacity-75'
+      }`}
+    >
+      <div className={`h-1 w-full ${type === 'exam' ? 'bg-purple-500' : 'bg-blue-500'}`} />
+      <div className="p-4 sm:p-5 space-y-3">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => updateItem(index, { selected: !item.selected })}
+            className={`h-7 w-7 shrink-0 flex items-center justify-center rounded-lg transition-all duration-150 ${
+              item.selected
+                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 ring-2 ring-emerald-500/20'
+                : 'border border-slate-700 bg-slate-800 text-transparent hover:border-slate-500'
+            }`}
+          >
+            <Check className="h-4 w-4 stroke-[3]" />
+          </button>
+
+          <div className="flex-1 min-w-0">
+            <input
+              className="w-full bg-slate-900/60 hover:bg-slate-900/90 focus:bg-slate-900 border border-white/10 focus:border-theme-500/60 rounded-xl px-3.5 py-2 text-sm sm:text-base font-bold text-white tracking-wide placeholder-slate-500 transition-colors focus:outline-none"
+              value={type === 'exam' ? (item.subject || '') : (item.title || '')}
+              onChange={e => updateItem(index, type === 'exam' ? { subject: e.target.value } : { title: e.target.value })}
+              placeholder={type === 'exam' ? 'e.g. MATH 201 Advanced Calculus' : 'e.g. Lab Report 1'}
             />
           </div>
-          <div>
-            <span className="label !text-[11px] block mb-1">{type === 'exam' ? 'Exam Date' : 'Due Date'}</span>
-            <DateInput 
-              className="input !py-1.5 !min-h-0 text-sm" 
-              value={type === 'exam' ? item.exam_date : item.deadline} 
-              onChange={e => updateItem(index, type === 'exam' ? { exam_date: e.target.value } : { deadline: e.target.value })} 
+
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              title="Remove item"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5">
+            <Calendar className="h-4 w-4 text-theme-400 shrink-0" />
+            <DateInput
+              className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium focus:outline-none"
+              value={type === 'exam' ? (item.exam_date || '') : (item.deadline || '')}
+              onChange={e => updateItem(index, type === 'exam' ? { exam_date: e.target.value } : { deadline: e.target.value })}
             />
           </div>
+
+          {type === 'exam' ? (
+            <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5">
+              <MapPin className="h-4 w-4 text-purple-400 shrink-0" />
+              <input
+                className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium placeholder-slate-500 focus:outline-none"
+                value={item.venue || ''}
+                onChange={e => updateItem(index, { venue: e.target.value })}
+                placeholder="Venue / Exam Hall"
+              />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 bg-slate-900/60 rounded-xl px-3 py-2 border border-white/5">
+              <span className="text-xs text-slate-400 font-medium shrink-0">Priority:</span>
+              <select
+                className="w-full bg-transparent text-xs sm:text-sm text-slate-200 font-medium focus:outline-none cursor-pointer"
+                value={item.priority || 'Medium'}
+                onChange={e => updateItem(index, { priority: e.target.value })}
+              >
+                {['High', 'Medium', 'Low'].map(p => (
+                  <option key={p} value={p} className="bg-slate-900 text-white">{p}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-function ResultItemRow({ item, index, updateItem }) {
+function ResultItemRow({ item, index, updateItem, onDelete }) {
   const grades = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'F']
   return (
-    <div className={`rounded-xl border p-3.5 transition-all duration-200 ${
-      item.selected 
-        ? 'border-emerald-500/30 bg-emerald-500/[0.03] shadow-sm shadow-emerald-500/5' 
-        : 'border-white/5 bg-white/[0.01] opacity-50'
-    }`}>
-      <div className="flex items-center gap-2.5">
-        <button 
-          type="button"
-          className={`shrink-0 flex items-center justify-center rounded-lg transition-all duration-200 ${
-            item.selected 
-              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25 ring-2 ring-emerald-500/20' 
-              : 'bg-slate-800 border border-slate-700 text-transparent hover:border-slate-600'
-          } h-8 w-8 min-h-0 min-w-0`} 
-          onClick={() => updateItem(index, { selected: !item.selected })}
-        >
-          <Check className="h-4 w-4 stroke-[2.5]" />
-        </button>
-        <div className="flex-1 min-w-0 grid gap-2 sm:grid-cols-4">
-          <div>
-            <span className="label !text-[11px] block mb-1">Course Code</span>
-            <input 
-              className="input !py-1.5 !min-h-0 text-xs" 
-              value={item.course_code || ''} 
-              onChange={e => updateItem(index, { course_code: e.target.value })} 
+    <div
+      className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden ${
+        item.selected
+          ? 'border-white/10 bg-[#162033]/90 shadow-md hover:border-white/20'
+          : 'border-white/5 bg-slate-900/30 opacity-50 hover:opacity-75'
+      }`}
+    >
+      <div className="h-1 w-full bg-emerald-500" />
+      <div className="p-4 sm:p-5 space-y-3">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => updateItem(index, { selected: !item.selected })}
+            className={`h-7 w-7 shrink-0 flex items-center justify-center rounded-lg transition-all duration-150 ${
+              item.selected
+                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 ring-2 ring-emerald-500/20'
+                : 'border border-slate-700 bg-slate-800 text-transparent hover:border-slate-500'
+            }`}
+          >
+            <Check className="h-4 w-4 stroke-[3]" />
+          </button>
+
+          <div className="w-32 shrink-0">
+            <input
+              className="w-full bg-slate-900/60 hover:bg-slate-900/90 focus:bg-slate-900 border border-white/10 focus:border-theme-500/60 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white tracking-wide uppercase placeholder-slate-500 transition-colors focus:outline-none"
+              value={item.course_code || ''}
+              onChange={e => updateItem(index, { course_code: e.target.value.toUpperCase() })}
               placeholder="e.g. AACS1074"
             />
           </div>
-          <div>
-            <span className="label !text-[11px] block mb-1">Course Name</span>
-            <input 
-              className="input !py-1.5 !min-h-0 text-xs" 
-              value={item.course_name || ''} 
-              onChange={e => updateItem(index, { course_name: e.target.value })} 
+
+          <div className="flex-1 min-w-0">
+            <input
+              className="w-full bg-slate-900/60 hover:bg-slate-900/90 focus:bg-slate-900 border border-white/10 focus:border-theme-500/60 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold text-white tracking-wide placeholder-slate-500 transition-colors focus:outline-none truncate"
+              value={item.course_name || ''}
+              onChange={e => updateItem(index, { course_name: e.target.value })}
               placeholder="Course Title"
             />
           </div>
-          <div>
-            <span className="label !text-[11px] block mb-1">Credits</span>
-            <select 
-              className="input !py-1.5 !min-h-0 text-xs" 
-              value={item.credit_hours || 3} 
-              onChange={e => updateItem(index, { credit_hours: Number(e.target.value) })}
-            >
-              {[1, 2, 3, 4, 5, 6].map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <span className="label !text-[11px] block mb-1">Grade</span>
-            <select 
-              className="input !py-1.5 !min-h-0 text-xs font-bold" 
-              value={item.grade || 'A'} 
+
+          <div className="w-20 shrink-0">
+            <select
+              className="w-full bg-slate-900/60 border border-white/10 rounded-xl px-2 py-2 text-xs font-bold text-emerald-400 focus:outline-none cursor-pointer"
+              value={item.grade || 'A'}
               onChange={e => updateItem(index, { grade: e.target.value })}
             >
-              {grades.map(g => <option key={g} value={g}>{g}</option>)}
+              {grades.map(g => <option key={g} value={g} className="bg-slate-900 text-white">{g}</option>)}
             </select>
           </div>
+
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              title="Remove course"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>
