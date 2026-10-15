@@ -8,7 +8,7 @@ export default function PrivacyPage() {
       <SEO
         title="Privacy Policy | Axon"
         description="Learn how Axon protects your academic records, encrypts your data, and safeguards student privacy."
-        keywords="Axon privacy policy, student data security, FERPA compliance, education privacy, encrypted student dashboard"
+        keywords="Axon privacy policy, student data security, Malaysia PDPA 2010 compliance, education privacy, encrypted student dashboard"
       />
       <main
         className="h-screen h-[100dvh] overflow-y-auto overscroll-contain bg-[radial-gradient(circle_at_top,#E0E7FF,#EEF4FB_55%)] text-slate-900 dark:bg-[radial-gradient(circle_at_top,#1E1040,#0F172A_55%)] dark:text-white px-4 py-10 transition-colors duration-300"
@@ -202,10 +202,10 @@ export default function PrivacyPage() {
 
             <section>
               <h2 className="text-lg font-bold text-slate-950 dark:text-white mb-2 flex items-center gap-2">
-                <span className="font-heading text-theme-600 dark:text-theme-400">11.</span> Children&apos;s Privacy (COPPA / Age Limits)
+                <span className="font-heading text-theme-600 dark:text-theme-400">11.</span> Age Eligibility &amp; Minor Protection
               </h2>
               <p>
-                Axon is designed for higher education, high school, and secondary students. The Service is not intended for children under 13 years of age (or the minimum legal age of digital consent in your jurisdiction). We do not knowingly collect personal data from children under 13. If you become aware that a child under 13 has created an account without parental consent, please contact us immediately so we can promptly terminate the account and purge their data.
+                Axon is designed for higher education, college, and secondary school students. The Service is not directed to individuals under 13 years of age. In accordance with Malaysian child protection principles, users under the age of majority should obtain consent from a parent or legal guardian prior to registering an account or uploading study schedules. If you become aware that a minor under 13 has provided personal data without parental authorization, please notify us immediately so we can promptly terminate the account and purge their data.
               </p>
             </section>
 

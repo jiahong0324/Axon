@@ -46,8 +46,8 @@ export default function TermsPage() {
             </div>
             <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 p-4">
               <ShieldCheck className="h-5 w-5 text-emerald-500 mb-2" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Capped Liability</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">To the maximum extent allowed by law, aggregate operator liability is strictly capped at $10.00 USD.</p>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Malaysian Jurisdiction</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Governed strictly by the laws of Malaysia with total liability exclusions to the fullest extent of the law.</p>
             </div>
           </div>
 
@@ -206,10 +206,10 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-lg font-bold text-slate-950 dark:text-white mb-2 flex items-center gap-2">
-                <span className="font-heading text-theme-600 dark:text-theme-400">12.</span> MAXIMUM AGGREGATE LIABILITY CAP
+                <span className="font-heading text-theme-600 dark:text-theme-400">12.</span> EXCLUSION &amp; LIMITATION OF MONETARY LIABILITY
               </h2>
               <p>
-                Notwithstanding anything to the contrary in these Terms, in no event shall the total cumulative liability of Axon, its founders, and operators for all claims arising out of or related to the Service, under any cause of action, exceed the total amount actually paid by you to Axon in the twelve (12) months immediately preceding the event giving rise to liability, or <strong>$10.00 USD (Ten United States Dollars)</strong>, whichever amount is greater.
+                To the fullest extent permitted under the laws of Malaysia, all liability of Axon, its founders, operators, and developers is wholly excluded. If, notwithstanding the other provisions of these Terms, Axon is determined to be liable to you under any cause of action, Axon&apos;s aggregate liability shall under no circumstances exceed the actual fees (if any) paid by you to Axon in the three (3) months immediately preceding the event, or <strong>RM 0 (Zero Ringgit Malaysia)</strong> for all free, trial, or guest users.
               </p>
             </section>
 
@@ -233,16 +233,19 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-lg font-bold text-slate-950 dark:text-white mb-2 flex items-center gap-2">
-                <span className="font-heading text-theme-600 dark:text-theme-400">15.</span> Dispute Resolution &amp; Class Action Waiver
+                <span className="font-heading text-theme-600 dark:text-theme-400">15.</span> Governing Law, Dispute Resolution &amp; Jurisdiction
               </h2>
               <p className="mb-2">
-                <strong>Informal Resolution:</strong> Before initiating any formal legal proceeding, you agree to contact us in writing and attempt in good faith to resolve the dispute informally for at least thirty (30) days.
+                <strong>Governing Law:</strong> These Terms and Conditions, your access to and use of the Service, and all related matters shall be governed by, and construed exclusively in accordance with, the <strong>laws of Malaysia</strong>, without regard to conflict of law principles.
               </p>
               <p className="mb-2">
-                <strong>Mandatory Individual Arbitration:</strong> Any dispute, controversy, or claim arising out of or relating to these Terms or the Service that cannot be informally resolved shall be settled through confidential, binding individual arbitration, rather than in court.
+                <strong>Exclusive Jurisdiction:</strong> You irrevocably agree that the courts of Malaysia shall have exclusive jurisdiction to settle any dispute, controversy, difference, or claim arising out of or in connection with these Terms or the Service.
+              </p>
+              <p className="mb-2">
+                <strong>Informal Resolution First:</strong> Prior to commencing any formal proceedings, you agree to contact us in writing and attempt in good faith to resolve the dispute amicably for a period of at least thirty (30) days.
               </p>
               <p>
-                <strong>CLASS ACTION WAIVER:</strong> YOU AND AXON AGREE THAT ANY PROCEEDINGS TO RESOLVE OR LITIGATE DISPUTES WILL BE CONDUCTED SOLELY ON AN INDIVIDUAL BASIS. NEITHER YOU NOR AXON WILL SEEK TO HAVE ANY DISPUTE HEARD AS A CLASS ACTION, COLLECTIVE ACTION, PRIVATE ATTORNEY GENERAL ACTION, OR IN ANY OTHER PROCEEDING IN WHICH EITHER PARTY ACTS OR PROPOSES TO ACT IN A REPRESENTATIVE CAPACITY.
+                <strong>CLASS ACTION WAIVER:</strong> To the fullest extent permitted by Malaysian law, all proceedings to resolve disputes will be conducted strictly on an individual basis. You agree not to participate in any class, consolidated, or representative proceeding against Axon or its operators.
               </p>
             </section>
 
