@@ -1329,7 +1329,7 @@ export default function TimetablePage() {
         onClose={() => { setAnalyzerOpen(false); setAnalyzerStep('upload') }}
         title={t('timetable.importTitle')}
         maxWidth={analyzerStep === 'results' ? 'max-w-[1100px] w-full sm:w-[92vw] sm:max-w-[1100px]' : 'max-w-lg'}
-        panelClassName={analyzerStep === 'results' ? 'h-full sm:!h-[85vh] sm:!max-h-[85vh] !p-3 sm:!p-5 rounded-none sm:rounded-2xl' : ''}
+        panelClassName={analyzerStep === 'results' ? 'sm:!h-[85vh] sm:!max-h-[85vh]' : ''}
         bodyClassName="overflow-hidden"
         fullScreenMobile={analyzerStep === 'results'}
       >

@@ -692,7 +692,7 @@ function TimetableResultsWorkspace({
           <button
             type="button"
             onClick={() => setFilterMode('all')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+            className={`!min-h-0 !min-w-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
               filterMode === 'all'
                 ? 'bg-white/10 text-white font-semibold'
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -704,7 +704,7 @@ function TimetableResultsWorkspace({
           <button
             type="button"
             onClick={() => setFilterMode(filterMode === 'conflicts' ? 'all' : 'conflicts')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+            className={`!min-h-0 !min-w-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
               filterMode === 'conflicts'
                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
                 : conflictData.pairCount > 0
@@ -720,7 +720,7 @@ function TimetableResultsWorkspace({
           <button
             type="button"
             onClick={() => setFilterMode(filterMode === 'review' ? 'all' : 'review')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+            className={`!min-h-0 !min-w-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
               filterMode === 'review'
                 ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm'
                 : reviewMap.size > 0
@@ -740,7 +740,7 @@ function TimetableResultsWorkspace({
             <button
               type="button"
               onClick={() => setShowScreenshot(!showScreenshot)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 border transition-all ${
+              className={`!min-h-0 !min-w-0 px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 border transition-all ${
                 showScreenshot
                   ? 'bg-white/15 text-white border-white/20 shadow-sm'
                   : 'text-slate-400 hover:text-white bg-white/[0.03] border-white/10 hover:bg-white/5'
@@ -758,7 +758,7 @@ function TimetableResultsWorkspace({
             <button
               type="button"
               onClick={() => setAll(selectedCount !== items.length)}
-              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+              className="!min-h-0 !min-w-0 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
             >
               {selectedCount === items.length ? 'Deselect all' : 'Select all'}
             </button>
@@ -812,7 +812,7 @@ function TimetableResultsWorkspace({
         <button
           type="button"
           onClick={() => setMobileTab('list')}
-          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+          className={`!min-h-0 !min-w-0 flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
             mobileTab === 'list'
               ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
               : 'text-slate-400 hover:text-white'
@@ -824,7 +824,7 @@ function TimetableResultsWorkspace({
         <button
           type="button"
           onClick={() => setMobileTab('week')}
-          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+          className={`!min-h-0 !min-w-0 flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
             mobileTab === 'week'
               ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
               : 'text-slate-400 hover:text-white'
@@ -913,7 +913,7 @@ function TimetableResultsWorkspace({
       <div className="mt-3 flex shrink-0 items-center justify-between gap-3 border-t border-white/10 pt-3">
         <button
           type="button"
-          className="btn-ghost !min-h-0 !py-2 !px-3.5 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors"
+          className="btn-ghost !min-h-0 !min-w-0 !py-2 !px-3.5 text-xs sm:text-sm font-medium hover:bg-white/5 transition-colors"
           onClick={startOver}
         >
           <RotateCcw className="h-3.5 w-3.5" />
@@ -922,7 +922,7 @@ function TimetableResultsWorkspace({
 
         <button
           type="button"
-          className="btn-import !min-h-0 !py-2.5 !px-5 text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-import !min-h-0 !min-w-0 !py-2.5 !px-5 text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={selectedCount === 0 || isImporting}
           onClick={handleImport}
         >
@@ -958,6 +958,7 @@ function TimetableSessionRow({
   const typeConfig = CLASS_TYPE_CONFIG[item.class_type] || CLASS_TYPE_CONFIG.L
   const hasConflict = conflicts.length > 0
   const needsReview = reviewIssues.length > 0
+  const className = (item.subject || item.course_code || item.course_name || item.course || item.subject_code || item.class_name || item.title || item.name || '').trim() || 'Class'
 
   return (
     <div
@@ -975,8 +976,8 @@ function TimetableSessionRow({
           onToggleExpand()
         }
       }}
-      onMouseEnter={() => setHoveredKey(item.key)}
-      onMouseLeave={() => setHoveredKey(null)}
+      onMouseEnter={() => setHoveredKey?.(item.key)}
+      onMouseLeave={() => setHoveredKey?.(null)}
       className={`group relative transition-colors duration-150 border-b border-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 motion-reduce:transition-none ${
         isHovered
           ? 'bg-white/[0.05]'
@@ -989,109 +990,154 @@ function TimetableSessionRow({
         isExpanded ? 'bg-white/[0.03]' : ''
       }`}
     >
-      {/* Read-only compact row (~58-64px) */}
+      {/* Read-only row: single unified line on desktop, 2 lines on mobile */}
       <div
         onClick={onToggleExpand}
-        className="min-h-[58px] py-2.5 px-3 flex items-center gap-3 cursor-pointer select-none"
+        className="py-2.5 px-3 cursor-pointer select-none"
       >
-        {/* Rounded Checkbox */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggleSelect()
-          }}
-          className={`h-5 w-5 shrink-0 flex items-center justify-center rounded-md transition-all motion-reduce:transition-none ${
-            item.selected
-              ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
-              : 'border border-slate-600 bg-slate-800/80 text-transparent hover:border-slate-400'
-          }`}
-          title={item.selected ? 'Deselect session' : 'Select session'}
-        >
-          <Check className="h-3.5 w-3.5 stroke-[3]" />
-        </button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2.5 min-w-0">
+          {/* Top Line on Mobile / Left Group on Desktop: Checkbox + Dot + Class Name + Type Badge */}
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 sm:max-w-[210px]">
+            {/* Rounded Checkbox */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleSelect()
+              }}
+              className={`!min-h-0 !min-w-0 !h-5 !w-5 h-5 w-5 shrink-0 flex items-center justify-center rounded-md transition-all motion-reduce:transition-none ${
+                item.selected
+                  ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
+                  : 'border border-slate-600 bg-slate-800/80 text-transparent hover:border-slate-400'
+              }`}
+              title={item.selected ? 'Deselect session' : 'Select session'}
+            >
+              <Check className="h-3.5 w-3.5 stroke-[3]" />
+            </button>
 
-        {/* Class Type Dot */}
-        <span
-          className={`w-2.5 h-2.5 rounded-full shrink-0 ${typeConfig.dot}`}
-          title={`${typeConfig.label} (${typeConfig.short})`}
-        />
+            {/* Class Type Dot */}
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${typeConfig.dot}`}
+              title={`${typeConfig.label} (${typeConfig.short})`}
+            />
 
-        {/* Course Code */}
-        <span
-          className="font-bold text-white text-sm tracking-wide truncate max-w-[140px] sm:max-w-[180px]"
-          title={item.subject}
-        >
-          {item.subject || 'Untitled Subject'}
-        </span>
+            {/* Class Name (Course Code / Subject Title) - GUARANTEED TO SHOW! */}
+            <span
+              className="font-bold text-white text-sm tracking-wide truncate min-w-0 flex-1 sm:flex-initial"
+              title={className}
+            >
+              {className}
+            </span>
 
-        {/* Plain text type badge (L / T / P / C) */}
-        <span
-          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase shrink-0 ${typeConfig.badge}`}
-        >
-          {typeConfig.short}
-        </span>
+            {/* Plain text type badge (L / T / P / C) */}
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase shrink-0 ${typeConfig.badge}`}
+            >
+              {typeConfig.short}
+            </span>
 
-        {/* Time range */}
-        <span className="text-xs text-slate-300 font-mono shrink-0">
-          {formatTimeRange(item.start_time, item.end_time)}
-        </span>
-
-        {/* Room + Lecturer secondary text */}
-        <span className="text-xs text-slate-400 truncate flex-1 min-w-0 flex items-center gap-1.5">
-          <span>{item.classroom?.trim() || <span className="text-amber-400/80 italic">Room TBA</span>}</span>
-          {item.lecturer?.trim() && (
-            <>
-              <span className="text-slate-600">·</span>
-              <span className="truncate">{item.lecturer}</span>
-            </>
-          )}
-        </span>
-
-        {/* Conflict Warning Icon */}
-        {hasConflict && (
-          <div
-            className="shrink-0 flex items-center text-amber-400 cursor-help"
-            title={`Time conflict with: ${conflicts.map(c => `${c.subject} (${c.time})`).join(', ')}`}
-          >
-            <AlertTriangle className="h-4 w-4" />
+            {/* Mobile Actions on line 1 */}
+            <div className="sm:hidden ml-auto flex items-center gap-1 shrink-0">
+              {hasConflict && (
+                <div
+                  className="shrink-0 flex items-center text-amber-400"
+                  title={`Conflict: ${conflicts.map(c => `${c.subject} (${c.time})`).join(', ')}`}
+                >
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                </div>
+              )}
+              {needsReview && (
+                <span className="text-[9px] font-medium px-1 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                  Review
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleExpand()
+                }}
+                className="!min-h-0 !min-w-0 h-6 w-6 flex items-center justify-center rounded text-slate-400 hover:text-white"
+                title="Edit session"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+            </div>
           </div>
-        )}
 
-        {/* Review Needed Badge */}
-        {needsReview && (
-          <span
-            className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 cursor-help"
-            title={reviewIssues.join(' • ')}
-          >
-            {reviewIssues[0] || 'Review'}
-          </span>
-        )}
+          {/* Bottom Line on Mobile / Middle & Right on Desktop: Time · Room · Lecturer */}
+          <div className="flex items-center gap-2 sm:gap-2.5 pl-7 sm:pl-0 flex-1 min-w-0 text-xs text-slate-400">
+            {/* Time range */}
+            <span className="inline-flex items-center gap-1 font-mono text-slate-300 shrink-0">
+              <Clock className="h-3 w-3 text-emerald-400 shrink-0" />
+              <span>{formatTimeRange(item.start_time, item.end_time)}</span>
+            </span>
 
-        {/* Hover-only Edit & Delete Actions */}
-        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggleExpand()
-            }}
-            className="h-7 w-7 flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-            title="Edit session"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete()
-            }}
-            className="h-7 w-7 flex items-center justify-center rounded-md text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-            title="Delete session"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+            <span className="text-white/20 select-none">·</span>
+
+            {/* Room */}
+            <span className="inline-flex items-center gap-1 shrink-0 max-w-[110px] truncate">
+              <MapPin className="h-3 w-3 text-slate-500 shrink-0" />
+              <span className={item.classroom?.trim() ? 'text-slate-300 font-medium truncate' : 'text-amber-400/80 italic'}>
+                {item.classroom?.trim() || 'Room TBA'}
+              </span>
+            </span>
+
+            {item.lecturer?.trim() && (
+              <>
+                <span className="text-white/20 select-none">·</span>
+                {/* Lecturer */}
+                <span className="inline-flex items-center gap-1 flex-1 min-w-[70px] truncate">
+                  <User className="h-3 w-3 text-slate-500 shrink-0" />
+                  <span className="text-slate-300 truncate" title={item.lecturer}>
+                    {item.lecturer}
+                  </span>
+                </span>
+              </>
+            )}
+
+            {/* Desktop Actions */}
+            <div className="hidden sm:flex items-center gap-1 ml-auto shrink-0">
+              {hasConflict && (
+                <div
+                  className="shrink-0 flex items-center text-amber-400 cursor-help"
+                  title={`Conflict with: ${conflicts.map(c => `${c.subject} (${c.time})`).join(', ')}`}
+                >
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                </div>
+              )}
+              {needsReview && (
+                <span
+                  className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 cursor-help"
+                  title={reviewIssues.join(' • ')}
+                >
+                  Review
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleExpand()
+                }}
+                className="!min-h-0 !min-w-0 h-6 w-6 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                title="Edit session"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDelete()
+                }}
+                className="!min-h-0 !min-w-0 h-6 w-6 flex items-center justify-center rounded text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-70 group-hover:opacity-100"
+                title="Delete session"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1126,7 +1172,7 @@ function TimetableSessionRow({
                       key={ct}
                       type="button"
                       onClick={() => onUpdate({ class_type: ct, color: getColorFromType(ct) })}
-                      className={`py-1 text-xs font-semibold rounded-lg border transition-all ${
+                      className={`!min-h-0 !min-w-0 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
                         isSelected
                           ? `${conf.badge} border-white/30 shadow-sm`
                           : 'bg-white/[0.03] text-slate-400 border-white/10 hover:bg-white/5'
@@ -1210,7 +1256,7 @@ function TimetableSessionRow({
             <button
               type="button"
               onClick={onDelete}
-              className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1.5 py-1 px-2 rounded hover:bg-red-500/10 transition-colors"
+              className="!min-h-0 !min-w-0 text-xs text-red-400 hover:text-red-300 flex items-center gap-1.5 py-1 px-2 rounded hover:bg-red-500/10 transition-colors"
             >
               <Trash2 className="h-3.5 w-3.5" />
               <span>Delete session</span>
@@ -1219,7 +1265,7 @@ function TimetableSessionRow({
             <button
               type="button"
               onClick={onToggleExpand}
-              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 py-1 px-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1"
+              className="!min-h-0 !min-w-0 text-xs font-semibold text-emerald-400 hover:text-emerald-300 py-1 px-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1"
             >
               <Check className="h-3.5 w-3.5" />
               <span>Done</span>
@@ -1634,10 +1680,25 @@ function ResultItemRow({ item, index, updateItem, onDelete }) {
 function Field({ label, children }) { return <label className="block"><span className="label">{label}</span>{children}</label> }
 function getColorFromType(classType) { return classType === 'T' ? 'green' : classType === 'P' ? 'purple' : classType === 'C' ? 'pink' : 'blue' }
 function normalizeItem(item, type, index) {
-  const class_type = ['L', 'T', 'P', 'C'].includes(item.class_type) ? item.class_type : 'L'
+  const class_type = ['L', 'T', 'P', 'C'].includes(item.class_type || item.classType || item.type)
+    ? (item.class_type || item.classType || item.type)
+    : 'L'
+  const subject = (item.subject || item.course_code || item.course_name || item.course || item.subject_code || item.class_name || item.title || item.name || '').trim() || 'Class'
+  const classroom = (item.classroom || item.room || item.venue || item.location || '').trim()
+  const lecturer = (item.lecturer || item.teacher || item.instructor || item.lecturer_name || item.lecturerName || '').trim()
+  const start_time = item.start_time || item.startTime || ''
+  const end_time = item.end_time || item.endTime || ''
+  const day = item.day || item.day_of_week || item.dayOfWeek || 'Monday'
+
   const base = {
     ...item,
-    key: `${index}-${item.subject || item.title || item.course_name || index}`,
+    subject,
+    classroom,
+    lecturer,
+    start_time,
+    end_time,
+    day,
+    key: `${index}-${subject || item.title || item.course_name || index}`,
     selected: true,
   }
   if (type === 'timetable') {
@@ -1664,15 +1725,16 @@ function normalizeItem(item, type, index) {
 }
 function cleanItem({ key, selected, class_type, color, ...item }, type) {
   if (type === 'timetable') {
+    const resolvedType = class_type || item.classType || 'L'
     return {
-      subject: item.subject || '',
-      day: item.day || 'Monday',
-      start_time: item.start_time || '09:00',
-      end_time: item.end_time || '10:00',
-      lecturer: item.lecturer || '',
-      classroom: item.classroom || '',
-      class_type: class_type || 'L',
-      color: color || getColorFromType(class_type || 'L')
+      subject: (item.subject || item.course_code || item.course_name || item.course || item.subject_code || item.class_name || item.title || '').trim() || 'Class',
+      day: item.day || item.day_of_week || 'Monday',
+      start_time: item.start_time || item.startTime || '09:00',
+      end_time: item.end_time || item.endTime || '10:00',
+      lecturer: (item.lecturer || item.teacher || item.instructor || item.lecturer_name || '').trim(),
+      classroom: (item.classroom || item.room || item.venue || item.location || '').trim(),
+      class_type: resolvedType,
+      color: color || getColorFromType(resolvedType)
     }
   }
   if (type === 'exam') {
