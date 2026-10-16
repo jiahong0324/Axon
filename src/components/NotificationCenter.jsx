@@ -364,32 +364,37 @@ export default function NotificationCenter({ user, profile }) {
     <>
       {/* Notification Drawer Modal */}
       {isOpen && (
-        <div
-          className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm transition-opacity"
-          onClick={() => {
-            closeDetail(true)
-            setIsOpen(false)
-          }}
-        >
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Sibling Backdrop without blurring the drawer */}
           <div
-            className="flex h-full w-full max-w-md flex-col bg-white dark:bg-[#0f172a] border-l border-slate-200 dark:border-white/10 shadow-2xl transition-transform"
-            onClick={e => e.stopPropagation()}
-            style={{
-              paddingTop: 'max(0px, env(safe-area-inset-top, 0px))',
-              paddingBottom: 'max(0px, env(safe-area-inset-bottom, 0px))'
+            className="fixed inset-0 bg-black/70 transition-opacity animate-in fade-in duration-200"
+            onClick={() => {
+              closeDetail(true)
+              setIsOpen(false)
             }}
+          />
+
+          {/* Drawer Container */}
+          <div
+            className="fixed inset-y-0 right-0 flex h-full w-full max-w-md flex-col bg-[#0F172A] border-l border-white/10 shadow-2xl z-10 animate-in slide-in-from-right duration-200"
+            onClick={e => e.stopPropagation()}
           >
-            {/* Drawer Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 px-4 py-3.5">
+            {/* Drawer Header - cleared below iPhone status bar & Dynamic Island */}
+            <div
+              className="flex items-center justify-between border-b border-white/10 px-4 sm:px-5 pb-3.5 bg-[#0F172A] shrink-0"
+              style={{
+                paddingTop: 'max(48px, env(safe-area-inset-top, 48px))'
+              }}
+            >
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500 dark:text-blue-400">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/25 shrink-0">
                   <Megaphone className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="font-heading text-base font-bold text-slate-900 dark:text-white">
+                  <h2 className="font-heading text-lg font-bold text-white tracking-tight leading-snug">
                     Notifications
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-400 mt-0.5">
                     Manager Announcements
                   </p>
                 </div>
@@ -401,7 +406,7 @@ export default function NotificationCenter({ user, profile }) {
                   setIsOpen(false)
                 }}
                 aria-label="Close notifications"
-                className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-white transition-colors"
+                className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white active:bg-white/15 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -689,15 +694,15 @@ export function NotificationBellButton({ className = '', size = 'default', showL
     <button
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent('axon_open_notifications'))}
-      className={`relative inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 shadow-sm transition-all hover:scale-105 active:scale-95 ${className}`}
-      title="Notifications & Announcements"
+      className={`relative inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all ${className}`}
+      title="Notifications"
       aria-label="Notifications"
     >
-      <Bell className={size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'} />
+      <Bell className="h-5 w-5" />
       {showLabel && <span className="text-xs font-medium ml-2">Notifications</span>}
       {unreadCount > 0 && (
-        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm shadow-red-500/50 animate-pulse">
-          {unreadCount > 9 ? '9+' : unreadCount}
+        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-[#0A0F1E] leading-none">
+          {unreadCount > 99 ? '99+' : unreadCount}
         </span>
       )}
     </button>
