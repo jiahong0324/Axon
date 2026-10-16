@@ -1,4 +1,4 @@
-import { Activity, BookOpen, CheckSquare, FileText, Megaphone, Plus, Users, Mail, MessageSquareText } from 'lucide-react'
+import { Activity, BookOpen, CheckSquare, FileText, Megaphone, Plus, Users, Mail, MessageSquareText, Search, Square } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
@@ -21,7 +21,7 @@ export default function ManagerDashboard() {
   const [studentOpen, setStudentOpen] = useState(false)
   const [announcement, setAnnouncement] = useState(announcementInitial)
   const [emailOpen, setEmailOpen] = useState(false)
-  const [emailForm, setEmailForm] = useState({ subject: '', message: '', audience: 'all', emails: '' })
+  const [emailForm, setEmailForm] = useState({ subject: '', message: '', audience: 'students', emails: '' })
   const [emailLoading, setEmailLoading] = useState(false)
   const { showToast } = useToast()
 
@@ -70,26 +70,41 @@ export default function ManagerDashboard() {
     loadDashboard()
   }
 
-  async function sendEmailBroadcast(e) {
-    e.preventDefault()
+  async function sendEmailBroadcast(e, selectedRecipients) {
+    e?.preventDefault?.()
     setEmailLoading(true)
     try {
       const payload = {
         subject: emailForm.subject,
         message: emailForm.message,
-        audience: emailForm.audience,
+        audience: 'custom',
       }
       if (emailForm.audience === 'custom') {
-        payload.emails = emailForm.emails.split(',').map(email => email.trim()).filter(Boolean)
-        if (payload.emails.length === 0) {
+        const emailList = emailForm.emails.split(',').map(email => email.trim()).filter(Boolean)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        const invalidEmails = emailList.filter(e => !emailRegex.test(e))
+        if (emailList.length === 0) {
           showToast('Please enter at least one email address.', 'error')
           setEmailLoading(false)
           return
         }
+        if (invalidEmails.length > 0) {
+          showToast(`Invalid email format: ${invalidEmails.slice(0, 2).join(', ')}`, 'error')
+          setEmailLoading(false)
+          return
+        }
+        payload.emails = emailList
+      } else {
+        if (!selectedRecipients || selectedRecipients.length === 0) {
+          showToast('Please select at least one student recipient.', 'error')
+          setEmailLoading(false)
+          return
+        }
+        payload.emails = selectedRecipients
       }
       const res = await studentManager.sendPromotionalEmail(payload)
       showToast(`Email broadcast sent successfully to ${res.data?.count || 0} user(s).`, 'success')
-      setEmailForm({ subject: '', message: '', audience: 'all', emails: '' })
+      setEmailForm({ subject: '', message: '', audience: 'students', emails: '' })
       setEmailOpen(false)
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to send email broadcast.', 'error')
@@ -143,7 +158,7 @@ export default function ManagerDashboard() {
 
       <AnnouncementModal isOpen={announcementOpen} onClose={() => setAnnouncementOpen(false)} form={announcement} setForm={setAnnouncement} onSubmit={sendAnnouncement} />
       <AddStudentModal isOpen={studentOpen} onClose={() => setStudentOpen(false)} onCreated={loadDashboard} />
-      <SendEmailModal isOpen={emailOpen} onClose={() => setEmailOpen(false)} form={emailForm} setForm={setEmailForm} onSubmit={sendEmailBroadcast} loading={emailLoading} />
+      <SendEmailModal isOpen={emailOpen} onClose={() => setEmailOpen(false)} form={emailForm} setForm={setEmailForm} onSubmit={sendEmailBroadcast} loading={emailLoading} students={profiles} />
     </main>
   )
 }
@@ -197,32 +212,224 @@ export function AnnouncementModal({ isOpen, onClose, form, setForm, onSubmit }) 
   )
 }
 
-export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loading }) {
+export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loading, students = [] }) {
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [search, setSearch] = useState('')
+
+  // Filter students who have a valid email address
+  const validStudents = useMemo(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return (students || []).filter(s => {
+      const email = (s.email || '').trim()
+      return email && emailRegex.test(email) && !email.toLowerCase().endsWith('.local')
+    })
+  }, [students])
+
+  const missingEmailCount = (students || []).length - validStudents.length
+
+  // Select all valid students by default when opening modal
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedIds(new Set(validStudents.map(s => s.id)))
+      setSearch('')
+    }
+  }, [isOpen, validStudents])
+
+  const toggleStudent = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  // Filtered by search query
+  const filteredStudents = useMemo(() => {
+    if (!search.trim()) return validStudents
+    const q = search.toLowerCase()
+    return validStudents.filter(s =>
+      (s.full_name || '').toLowerCase().includes(q) ||
+      (s.email || '').toLowerCase().includes(q) ||
+      (s.course || '').toLowerCase().includes(q) ||
+      (s.student_id || '').toLowerCase().includes(q)
+    )
+  }, [validStudents, search])
+
+  const allFilteredSelected = filteredStudents.length > 0 && filteredStudents.every(s => selectedIds.has(s.id))
+
+  const handleToggleFiltered = () => {
+    if (allFilteredSelected) {
+      setSelectedIds(prev => {
+        const next = new Set(prev)
+        filteredStudents.forEach(s => next.delete(s.id))
+        return next
+      })
+    } else {
+      setSelectedIds(prev => {
+        const next = new Set(prev)
+        filteredStudents.forEach(s => next.add(s.id))
+        return next
+      })
+    }
+  }
+
+  const isStudentsAudience = form.audience !== 'custom'
+  const selectedCount = selectedIds.size
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (isStudentsAudience) {
+      const selectedRecipients = validStudents
+        .filter(s => selectedIds.has(s.id))
+        .map(s => ({
+          email: s.email.trim(),
+          name: (s.full_name || 'Student').trim()
+        }))
+      onSubmit(e, selectedRecipients)
+    } else {
+      onSubmit(e)
+    }
+  }
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Send Email Broadcast">
-      <form onSubmit={onSubmit} className="space-y-4">
+    <Modal isOpen={isOpen} onClose={onClose} title="Send Email Broadcast" maxWidth="max-w-xl">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Subject">
-          <input className="input" required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder="e.g. New Feature Release!" />
+          <input
+            className="input"
+            required
+            value={form.subject}
+            onChange={e => setForm({ ...form, subject: e.target.value })}
+            placeholder="e.g. New Feature: Archive & Start a New Semester in Axon"
+          />
         </Field>
+
         <div>
           <p className="label">Audience</p>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { id: 'all', label: 'All Students' },
+              { id: 'students', label: `Select Students (${selectedCount}/${validStudents.length})` },
               { id: 'custom', label: 'Custom List' }
-            ].map(aud => (
-              <button
-                type="button"
-                key={aud.id}
-                onClick={() => setForm({ ...form, audience: aud.id })}
-                className={`rounded-xl border px-3 py-2 text-sm capitalize ${form.audience === aud.id ? 'border-amber-500 bg-amber-500/20 text-amber-300' : 'border-white/10 text-slate-400'}`}
-              >
-                {aud.label}
-              </button>
-            ))}
+            ].map(aud => {
+              const active = (aud.id === 'students' && isStudentsAudience) || (aud.id === 'custom' && form.audience === 'custom')
+              return (
+                <button
+                  type="button"
+                  key={aud.id}
+                  onClick={() => setForm({ ...form, audience: aud.id })}
+                  className={`rounded-xl border px-3 py-2 text-sm font-medium transition-all ${
+                    active
+                      ? 'border-amber-500 bg-amber-500/20 text-amber-300'
+                      : 'border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                  }`}
+                >
+                  {aud.label}
+                </button>
+              )
+            })}
           </div>
         </div>
-        {form.audience === 'custom' && (
+
+        {isStudentsAudience ? (
+          <div className="space-y-2 rounded-xl border border-white/10 bg-slate-900/60 p-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="text"
+                  className="input h-8 pl-8 text-xs py-1 w-full bg-slate-950/60 border-white/10 placeholder:text-slate-500"
+                  placeholder="Search students by name, email, course..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={handleToggleFiltered}
+                  className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  {allFilteredSelected ? (
+                    <>
+                      <Square className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Deselect All</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckSquare className="h-3.5 w-3.5 text-amber-400" />
+                      <span>Select All</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between px-1 text-xs text-slate-400">
+              <span>
+                Selected: <strong className="text-amber-300">{selectedCount}</strong> of {validStudents.length} student{validStudents.length === 1 ? '' : 's'}
+              </span>
+              {search.trim() && (
+                <span className="text-slate-500">
+                  Showing {filteredStudents.length} of {validStudents.length}
+                </span>
+              )}
+            </div>
+
+            <div className="max-h-52 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-white/10">
+              {filteredStudents.length === 0 ? (
+                <p className="py-6 text-center text-xs text-slate-500">No students match your search.</p>
+              ) : (
+                filteredStudents.map(student => {
+                  const isChecked = selectedIds.has(student.id)
+                  return (
+                    <label
+                      key={student.id}
+                      className={`flex items-center gap-2.5 rounded-lg p-2 text-xs cursor-pointer transition-colors border select-none ${
+                        isChecked
+                          ? 'border-amber-500/30 bg-amber-500/10 text-white'
+                          : 'border-transparent bg-white/[0.02] text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="rounded border-white/20 bg-slate-900 text-amber-500 focus:ring-amber-400/20 h-4 w-4 shrink-0 cursor-pointer"
+                        checked={isChecked}
+                        onChange={() => toggleStudent(student.id)}
+                      />
+                      <div
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold text-white shadow-sm"
+                        style={{ background: student.avatar_color || '#F59E0B' }}
+                      >
+                        {initials(student.full_name || student.email || 'S')}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="font-medium truncate text-slate-200">{student.full_name || 'Unnamed Student'}</p>
+                          {student.course && (
+                            <span className="hidden sm:inline-block text-[10px] text-slate-500 truncate max-w-[120px]">
+                              {student.course}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400 truncate">{student.email}</p>
+                      </div>
+                    </label>
+                  )
+                })
+              )}
+            </div>
+
+            {missingEmailCount > 0 && (
+              <p className="text-[11px] text-slate-500 px-1 pt-1 italic">
+                * {missingEmailCount} student{missingEmailCount === 1 ? '' : 's'} excluded (no email address on file)
+              </p>
+            )}
+          </div>
+        ) : (
           <Field label="Recipients (Comma-separated emails)">
             <textarea
               className="input min-h-20"
@@ -233,17 +440,28 @@ export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loadi
             />
           </Field>
         )}
+
         <Field label="Message Content">
           <textarea
-            className="input min-h-36"
+            className="input min-h-28"
             required
             value={form.message}
             onChange={e => setForm({ ...form, message: e.target.value })}
             placeholder="Type your promotional or announcement message here..."
           />
         </Field>
-        <button className="manager-primary-btn w-full" disabled={loading}>
-          {loading ? 'Sending Broadcast...' : 'Send Broadcast'}
+
+        <button
+          className="manager-primary-btn w-full"
+          disabled={loading || (isStudentsAudience && selectedCount === 0)}
+        >
+          {loading
+            ? 'Sending Broadcast...'
+            : isStudentsAudience
+              ? selectedCount === 0
+                ? 'No Students Selected'
+                : `Send Broadcast to ${selectedCount} Student${selectedCount === 1 ? '' : 's'}`
+              : 'Send Broadcast'}
         </button>
       </form>
     </Modal>

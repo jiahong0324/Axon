@@ -13,6 +13,25 @@ function json(body: Record<string, unknown>, status = 200) {
   })
 }
 
+function isValidEmail(email: unknown): email is string {
+  if (typeof email !== 'string') return false
+  const trimmed = email.trim()
+  if (!trimmed || trimmed.length > 254) return false
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(trimmed)) return false
+  if (trimmed.toLowerCase().endsWith('.local')) return false
+  return true
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -347,25 +366,77 @@ Deno.serve(async req => {
         if (!brevoKey) return json({ error: 'BREVO_API_KEY not configured' }, 500)
 
         const { subject, htmlContent, message, audience, emails } = data || {}
-        if (!subject) return json({ error: 'Subject is required' }, 400)
+        if (!subject || !subject.trim()) return json({ error: 'Subject is required' }, 400)
 
-        let targetEmails: { email: string, name?: string }[] = []
+        const recipientMap = new Map<string, { email: string; name?: string }>()
 
         if (audience === 'all') {
           const { data: students, error: fetchError } = await adminClient
             .from('profiles')
-            .select('email, full_name')
+            .select('id, email, full_name, role')
             .eq('is_active', true)
           
-          if (fetchError || !students) return json({ error: 'Failed to fetch students' }, 500)
-          targetEmails = students.map(s => ({ email: s.email, name: s.full_name || 'Student' }))
+          if (fetchError || !students) return json({ error: 'Failed to fetch students from database' }, 500)
+
+          // Backfill emails from auth.users for any profiles where email column in profiles is missing
+          const authUserMap = new Map<string, string>()
+          try {
+            const { data: authData } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 })
+            if (authData?.users) {
+              for (const u of authData.users) {
+                if (u.id && u.email && !u.is_anonymous) {
+                  authUserMap.set(u.id, u.email.trim())
+                }
+              }
+            }
+          } catch (authErr) {
+            console.warn('Could not list auth users for email backfill:', authErr)
+          }
+
+          for (const s of students) {
+            let email = (s.email || '').trim()
+            if (!email && s.id && authUserMap.has(s.id)) {
+              email = authUserMap.get(s.id)!
+            }
+
+            if (isValidEmail(email)) {
+              const lower = email.toLowerCase()
+              if (!recipientMap.has(lower)) {
+                const name = (s.full_name || '').trim()
+                recipientMap.set(lower, {
+                  email: lower,
+                  ...(name ? { name } : {})
+                })
+              }
+            }
+          }
         } else if (Array.isArray(emails) && emails.length > 0) {
-          targetEmails = emails.map(e => ({ email: e }))
+          for (const item of emails) {
+            const rawEmail = typeof item === 'string' ? item : item?.email
+            const rawName = typeof item === 'object' && item?.name ? item.name : undefined
+            if (isValidEmail(rawEmail)) {
+              const lower = rawEmail.trim().toLowerCase()
+              if (!recipientMap.has(lower)) {
+                const name = (rawName || '').trim()
+                recipientMap.set(lower, {
+                  email: lower,
+                  ...(name ? { name } : {})
+                })
+              }
+            }
+          }
         } else {
           return json({ error: 'No recipients specified. Provide audience="all" or an emails array.' }, 400)
         }
 
-        if (targetEmails.length === 0) return json({ error: 'No active recipients found' }, 404)
+        const targetEmails = Array.from(recipientMap.values())
+
+        if (targetEmails.length === 0) {
+          return json({ error: 'No active recipients with valid email addresses found' }, 400)
+        }
+
+        const safeSubject = escapeHtml(subject.trim())
+        const formattedMessage = escapeHtml(message || 'We have an update for you!').replace(/\n/g, '<br/>')
 
         const finalHtmlContent = htmlContent || `
 <!DOCTYPE html>
@@ -378,18 +449,20 @@ Deno.serve(async req => {
     .card { background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
     .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
     h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
-    p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; white-space: pre-line; text-align: left; }
+    .content { color: #94a3b8; font-size: 16px; line-height: 1.6; margin-bottom: 32px; text-align: left; }
     .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="card">
-      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1>${subject}</h1>
-      <p>${message || 'We have an update for you!'}</p>
+<body style="background-color: #0f172a; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div class="card" style="background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155;">
+      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px;">
+      <h1 style="color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px;">${safeSubject}</h1>
+      <div class="content" style="color: #94a3b8; font-size: 16px; line-height: 1.6; margin-bottom: 32px; text-align: left;">
+        ${formattedMessage}
+      </div>
     </div>
-    <div class="footer">
+    <div class="footer" style="text-align: center; margin-top: 32px; color: #64748b; font-size: 14px;">
       &copy; 2026 Axon. All rights reserved.
     </div>
   </div>
@@ -397,18 +470,24 @@ Deno.serve(async req => {
 </html>
         `
 
-        // Split into chunks of 1000 versions if necessary (Brevo limits 1000 max message versions)
-        const chunkSize = 999
-        let chunks = []
+        // Split into chunks of 500 versions if necessary (Brevo limits 1000 max message versions)
+        const chunkSize = 500
+        const chunks = []
         for (let i = 0; i < targetEmails.length; i += chunkSize) {
           chunks.push(targetEmails.slice(i, i + chunkSize))
         }
 
         let totalSuccess = 0
         for (const chunk of chunks) {
-          const messageVersions = chunk.map(recipient => ({
-            to: [{ email: recipient.email, name: recipient.name }]
-          }))
+          const messageVersions = chunk.map(recipient => {
+            const toObj: { email: string; name?: string } = { email: recipient.email }
+            if (recipient.name && recipient.name.trim()) {
+              toObj.name = recipient.name.trim()
+            }
+            return {
+              to: [toObj]
+            }
+          })
 
           const res = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
@@ -418,14 +497,14 @@ Deno.serve(async req => {
             },
             body: JSON.stringify({
               sender: { name: 'Axon', email: Deno.env.get('BREVO_SENDER_EMAIL') || 'noreply@axon-app.com' },
-              subject: subject,
+              subject: subject.trim(),
               htmlContent: finalHtmlContent,
               messageVersions: messageVersions
             })
           })
           
           if (!res.ok) {
-            const errData = await res.json()
+            const errData = await res.json().catch(() => ({}))
             console.error('Brevo API Error:', errData)
             return json({ error: errData.message || 'Failed to send promotional email via Brevo' }, 500)
           }
