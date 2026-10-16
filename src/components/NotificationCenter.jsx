@@ -13,7 +13,7 @@ import {
   AlertTriangle,
   Info
 } from 'lucide-react'
-import { formatDistanceToNow, format } from 'date-fns'
+import { format } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { parseAnnouncement } from '../lib/announcements'
 
@@ -464,7 +464,7 @@ export default function NotificationCenter({ user, profile }) {
                   const isRead = readIds.has(item.id)
                   const createdDate = item.created_at ? new Date(item.created_at) : null
                   const timeLabel = createdDate
-                    ? formatDistanceToNow(createdDate, { addSuffix: true })
+                    ? format(createdDate, 'PP · p')
                     : ''
 
                   return (
@@ -594,25 +594,17 @@ export default function NotificationCenter({ user, profile }) {
               ref={contentRef}
               className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 text-slate-900 dark:text-white scrollbar-hide"
             >
-              {/* Priority badge + relative time + full timestamp */}
-              <div className="flex flex-wrap items-center gap-2.5 pb-1">
+              {/* Priority badge + date and time */}
+              <div className="flex flex-wrap items-center gap-2 pb-1">
                 {getTypeBadge(selectedAnnouncement.type)}
-                <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 font-medium">
-                  <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  <span>
-                    {selectedAnnouncement.created_at
-                      ? formatDistanceToNow(new Date(selectedAnnouncement.created_at), { addSuffix: true })
-                      : ''}
+                {selectedAnnouncement.created_at && (
+                  <span className="text-xs text-slate-400 flex items-center gap-1.5 font-medium">
+                    <Clock className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                    <span>
+                      {format(new Date(selectedAnnouncement.created_at), 'PPP · p')}
+                    </span>
                   </span>
-                  {selectedAnnouncement.created_at && (
-                    <>
-                      <span className="text-slate-300 dark:text-slate-600">•</span>
-                      <span className="text-slate-400 dark:text-slate-400">
-                        {format(new Date(selectedAnnouncement.created_at), 'PPP · p')}
-                      </span>
-                    </>
-                  )}
-                </span>
+                )}
               </div>
 
               {/* Title (large, bold) */}
