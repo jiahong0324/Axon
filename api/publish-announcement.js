@@ -50,9 +50,8 @@ export default async function handler(req, res) {
       message,
       type = 'info',
       expires_at = null,
-      target_type = 'all', // 'all' | 'individual' | 'group'
+      target_type = 'all', // 'all' | 'individual'
       target_ids = [],
-      target_group = '',
       channels = { in_app: true, push: true, email: false }
     } = req.body || {}
 
@@ -74,7 +73,6 @@ export default async function handler(req, res) {
         expires_at: expires_at ? new Date(expires_at).toISOString() : null,
         target_type,
         target_ids: target_type === 'individual' ? target_ids : null,
-        target_group: target_type === 'group' ? target_group : null,
         channels
       }
 
@@ -129,20 +127,6 @@ export default async function handler(req, res) {
         // Filter subscriptions based on audience target
         if (target_type === 'individual' && Array.isArray(target_ids) && target_ids.length > 0) {
           query = query.in('user_id', target_ids)
-        } else if (target_type === 'group' && target_group) {
-          // Find matching student user IDs by course or university
-          const { data: groupProfiles } = await adminSupabase
-            .from('profiles')
-            .select('id')
-            .or(`course.eq.${target_group},university.eq.${target_group}`)
-          
-          const groupUserIds = (groupProfiles || []).map(p => p.id)
-          if (groupUserIds.length > 0) {
-            query = query.in('user_id', groupUserIds)
-          } else {
-            // Group has no students
-            query = query.in('user_id', ['00000000-0000-0000-0000-000000000000'])
-          }
         }
 
         const { data: subscriptions, error: subError } = await query

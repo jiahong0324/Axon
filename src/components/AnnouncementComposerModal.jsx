@@ -1,6 +1,24 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Bell, Check, Globe, GraduationCap, Mail, Megaphone, Search, Send, Smartphone, User, Users, X } from 'lucide-react'
-import Modal from './Modal'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import {
+  Bell,
+  Check,
+  Globe,
+  Mail,
+  Megaphone,
+  Search,
+  Send,
+  Smartphone,
+  User,
+  Users,
+  X,
+  Info,
+  AlertTriangle,
+  ShieldAlert,
+  Loader2,
+  Calendar,
+  Eye,
+  AlertCircle
+} from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { studentManager } from '../lib/manageStudent'
 import { useToast } from './Toast'
@@ -14,85 +32,124 @@ export default function AnnouncementComposerModal({
   const { showToast } = useToast()
   const [loading, setLoading] = useState(false)
   const [students, setStudents] = useState([])
-  const [courses, setCourses] = useState([])
-  const [universities, setUniversities] = useState([])
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
 
-  // Form State
+  // =========================================================================
+  // NO DEFAULTS: Everything starts completely empty!
+  // =========================================================================
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
-  const [type, setType] = useState('info') // 'info' | 'warning' | 'urgent'
+  const [type, setType] = useState('') // '' | 'info' | 'warning' | 'urgent' (none selected initially)
   const [expiresAt, setExpiresAt] = useState('')
 
-  // Targeting State
-  const [targetType, setTargetType] = useState('all') // 'all' | 'individual' | 'group'
+  // Audience: '' | 'all' | 'individual' (neither selected initially)
+  const [targetType, setTargetType] = useState('')
   const [selectedStudentIds, setSelectedStudentIds] = useState(new Set())
-  const [selectedGroup, setSelectedGroup] = useState('')
   const [studentSearch, setStudentSearch] = useState('')
 
-  // 3-in-1 Channels State
+  // Delivery Channels: All 3 start UNCHECKED
   const [channels, setChannels] = useState({
-    in_app: true,
-    push: true,
+    in_app: false,
+    push: false,
     email: false
   })
 
-  // Load students & groups
-  useEffect(() => {
-    if (isOpen) {
-      loadStudentsAndGroups()
-      if (editingAnnouncement) {
-        setTitle(editingAnnouncement.title || '')
-        setMessage(editingAnnouncement.message || '')
-        setType(editingAnnouncement.type || 'info')
-        setExpiresAt(editingAnnouncement.expires_at ? editingAnnouncement.expires_at.slice(0, 10) : '')
-        setTargetType(editingAnnouncement.target_type || 'all')
-        setSelectedStudentIds(new Set(editingAnnouncement.target_ids || []))
-        setSelectedGroup(editingAnnouncement.target_group || '')
-        setChannels(editingAnnouncement.channels || { in_app: true, push: false, email: false })
-      } else {
-        resetForm()
-      }
-    }
-  }, [isOpen, editingAnnouncement])
+  // Has attempted submit (for validation cues if needed)
+  const [hasSubmitted, setHasSubmitted] = useState(false)
 
+  // Reset form to empty state
   function resetForm() {
     setTitle('')
     setMessage('')
-    setType('info')
+    setType('')
     setExpiresAt('')
-    setTargetType('all')
+    setTargetType('')
     setSelectedStudentIds(new Set())
-    setSelectedGroup('')
     setStudentSearch('')
-    setChannels({ in_app: true, push: true, email: false })
+    setChannels({ in_app: false, push: false, email: false })
+    setHasSubmitted(false)
+    setShowDiscardConfirm(false)
   }
 
-  async function loadStudentsAndGroups() {
+  // Load students & handle open/close resets
+  useEffect(() => {
+    if (isOpen) {
+      loadStudents()
+      if (editingAnnouncement) {
+        setTitle(editingAnnouncement.title || '')
+        setMessage(editingAnnouncement.message || '')
+        setType(editingAnnouncement.type || '')
+        setExpiresAt(editingAnnouncement.expires_at ? editingAnnouncement.expires_at.slice(0, 10) : '')
+        setTargetType(editingAnnouncement.target_type || '')
+        setSelectedStudentIds(new Set(editingAnnouncement.target_ids || []))
+        setChannels(editingAnnouncement.channels || { in_app: false, push: false, email: false })
+      } else {
+        resetForm()
+      }
+    } else {
+      resetForm()
+    }
+  }, [isOpen, editingAnnouncement])
+
+  // Escape key handler
+  useEffect(() => {
+    if (!isOpen) return
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        handleAttemptClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, title, message, type, targetType, channels, selectedStudentIds])
+
+  async function loadStudents() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, email, course, university, student_id')
+        .select('id, full_name, email, student_id')
         .eq('role', 'student')
         .eq('is_active', true)
         .order('full_name')
 
       if (!error && data) {
         setStudents(data)
-
-        const courseSet = new Set()
-        const uniSet = new Set()
-        data.forEach(s => {
-          if (s.course && s.course.trim()) courseSet.add(s.course.trim())
-          if (s.university && s.university.trim()) uniSet.add(s.university.trim())
-        })
-        setCourses(Array.from(courseSet).sort())
-        setUniversities(Array.from(uniSet).sort())
       }
     } catch (e) {
-      console.error('Failed to load students for targeting:', e)
+      console.error('Failed to load students:', e)
     }
   }
 
+  // Check if form has unsaved content
+  const isDirty = useMemo(() => {
+    return Boolean(
+      title.trim() ||
+      message.trim() ||
+      type ||
+      targetType ||
+      expiresAt ||
+      channels.in_app ||
+      channels.push ||
+      channels.email ||
+      selectedStudentIds.size > 0
+    )
+  }, [title, message, type, targetType, expiresAt, channels, selectedStudentIds])
+
+  function handleAttemptClose() {
+    if (isDirty && !showDiscardConfirm) {
+      setShowDiscardConfirm(true)
+    } else {
+      resetForm()
+      onClose()
+    }
+  }
+
+  function handleConfirmDiscard() {
+    resetForm()
+    onClose()
+  }
+
+  // Student filtering for multi-select
   const filteredStudents = useMemo(() => {
     if (!studentSearch.trim()) return students
     const q = studentSearch.toLowerCase()
@@ -102,6 +159,10 @@ export default function AnnouncementComposerModal({
       (s.student_id || '').toLowerCase().includes(q)
     )
   }, [students, studentSearch])
+
+  const selectedStudentsList = useMemo(() => {
+    return students.filter(s => selectedStudentIds.has(s.id))
+  }, [students, selectedStudentIds])
 
   function toggleStudent(id) {
     setSelectedStudentIds(prev => {
@@ -124,36 +185,40 @@ export default function AnnouncementComposerModal({
     setSelectedStudentIds(new Set())
   }
 
-  // Calculate target recipients
-  const targetRecipientStudents = useMemo(() => {
-    if (targetType === 'all') return students
-    if (targetType === 'individual') {
-      return students.filter(s => selectedStudentIds.has(s.id))
-    }
-    if (targetType === 'group' && selectedGroup) {
-      const g = selectedGroup.toLowerCase()
-      return students.filter(s =>
-        (s.course || '').toLowerCase() === g ||
-        (s.university || '').toLowerCase() === g
-      )
-    }
-    return []
-  }, [students, targetType, selectedStudentIds, selectedGroup])
+  // =========================================================================
+  // Validation Logic (Must satisfy ALL to enable Send button)
+  // =========================================================================
+  const isAudienceValid = Boolean(
+    targetType === 'all' || (targetType === 'individual' && selectedStudentIds.size > 0)
+  )
+  const isChannelsValid = Boolean(channels.in_app || channels.push || channels.email)
+  const isPriorityValid = Boolean(type === 'info' || type === 'warning' || type === 'urgent')
+  const isTitleValid = Boolean(title.trim().length > 0)
+  const isMessageValid = Boolean(message.trim().length > 0)
 
+  const isFormValid = isAudienceValid && isChannelsValid && isPriorityValid && isTitleValid && isMessageValid
+
+  // Target count description
+  const recipientCount = targetType === 'all'
+    ? students.length
+    : targetType === 'individual'
+    ? selectedStudentIds.size
+    : 0
+
+  const activeChannelsCount = [channels.in_app, channels.push, channels.email].filter(Boolean).length
+
+  // Submission handler
   async function handleSubmit(e) {
-    e.preventDefault()
-    if (!title.trim()) return showToast('Please enter an announcement title.', 'error')
-    if (!message.trim()) return showToast('Please enter an announcement message.', 'error')
+    e?.preventDefault?.()
+    setHasSubmitted(true)
 
-    if (!channels.in_app && !channels.push && !channels.email) {
-      return showToast('Please select at least one delivery channel.', 'error')
-    }
-
-    if (targetType === 'individual' && selectedStudentIds.size === 0) {
-      return showToast('Please select at least one student.', 'error')
-    }
-    if (targetType === 'group' && !selectedGroup) {
-      return showToast('Please select a course or university group.', 'error')
+    if (!isFormValid) {
+      if (!isAudienceValid) return showToast('Please choose a target audience.', 'error')
+      if (!isChannelsValid) return showToast('Please select at least one delivery channel.', 'error')
+      if (!isTitleValid) return showToast('Please enter an announcement title.', 'error')
+      if (!isPriorityValid) return showToast('Please choose a priority level.', 'error')
+      if (!isMessageValid) return showToast('Please write the announcement message.', 'error')
+      return
     }
 
     setLoading(true)
@@ -163,7 +228,7 @@ export default function AnnouncementComposerModal({
 
       const targetIdsArray = targetType === 'individual' ? Array.from(selectedStudentIds) : null
 
-      // 1. If editing an existing announcement, update directly
+      // 1. If editing an existing announcement
       if (editingAnnouncement) {
         const payload = {
           title: title.trim(),
@@ -172,7 +237,6 @@ export default function AnnouncementComposerModal({
           expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
           target_type: targetType,
           target_ids: targetIdsArray,
-          target_group: targetType === 'group' ? selectedGroup : null,
           channels
         }
 
@@ -184,11 +248,12 @@ export default function AnnouncementComposerModal({
         if (updateError) throw updateError
         showToast('Announcement updated successfully.', 'success')
         onSuccess?.()
+        resetForm()
         onClose()
         return
       }
 
-      // 2. Publish New Announcement via Serverless API (handles in-app store + web push)
+      // 2. Publish New Announcement via Serverless API
       let pushCount = 0
       try {
         const response = await fetch('/api/publish-announcement', {
@@ -204,7 +269,6 @@ export default function AnnouncementComposerModal({
             expires_at: expiresAt || null,
             target_type: targetType,
             target_ids: targetIdsArray,
-            target_group: targetType === 'group' ? selectedGroup : null,
             channels
           })
         })
@@ -217,8 +281,8 @@ export default function AnnouncementComposerModal({
         const resData = await response.json()
         pushCount = resData.pushStats?.sent || 0
       } catch (apiErr) {
-        // Fallback: If api/publish-announcement fails (e.g. local dev without serverless), write directly to Supabase if in_app enabled
-        if (channels.in_app !== false) {
+        // Fallback: If in_app is enabled, insert directly
+        if (channels.in_app) {
           console.warn('API publish fallback to direct Supabase insert:', apiErr)
           const { error: directError } = await supabase.from('announcements').insert({
             manager_id: session.user.id,
@@ -228,17 +292,16 @@ export default function AnnouncementComposerModal({
             expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
             target_type: targetType,
             target_ids: targetIdsArray,
-            target_group: targetType === 'group' ? selectedGroup : null,
             channels
           })
           if (directError) throw directError
         }
       }
 
-      // 3. Email Broadcast (if checked)
+      // 3. Email Broadcast (if enabled)
       let emailSuccessCount = 0
       if (channels.email) {
-        const emailRecipients = targetRecipientStudents
+        const emailRecipients = (targetType === 'all' ? students : selectedStudentsList)
           .filter(s => s.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.email))
           .map(s => ({
             email: s.email.trim(),
@@ -256,7 +319,7 @@ export default function AnnouncementComposerModal({
             emailSuccessCount = emailRes.data?.count || emailRecipients.length
           } catch (emailErr) {
             console.warn('Email broadcast error:', emailErr)
-            showToast(`In-app announcement published, but email broadcast could not be sent: ${emailErr.message}`, 'warning')
+            showToast(`Announcement published, but email broadcast failed: ${emailErr.message}`, 'warning')
           }
         }
       }
@@ -269,6 +332,7 @@ export default function AnnouncementComposerModal({
 
       showToast(`Announcement published! ${summaryParts.join(' • ')}`, 'success')
       onSuccess?.()
+      resetForm()
       onClose()
     } catch (err) {
       console.error('Save announcement failed:', err)
@@ -278,360 +342,593 @@ export default function AnnouncementComposerModal({
     }
   }
 
+  if (!isOpen) return null
+
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={editingAnnouncement ? 'Edit Announcement' : 'New Announcement & Notification'}
-      maxWidth="max-w-2xl"
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      onClick={e => {
+        if (e.target === e.currentTarget) handleAttemptClose()
+      }}
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <div
+        className="w-full max-w-[920px] max-h-[92vh] sm:max-h-[88vh] flex flex-col rounded-2xl border border-white/10 bg-[#0F172A] shadow-2xl overflow-hidden text-slate-200"
+        onClick={e => e.stopPropagation()}
+      >
         {/* =========================================================================
-            1. TARGET AUDIENCE SELECTOR
+            STICKY HEADER
         ========================================================================= */}
-        <div>
-          <label className="label mb-2 block font-semibold text-slate-200">
-            Target Audience
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => setTargetType('all')}
-              className={`flex flex-col items-center justify-center gap-1 rounded-xl border p-3 text-xs font-semibold transition-all ${
-                targetType === 'all'
-                  ? 'border-amber-500 bg-amber-500/20 text-amber-300 shadow-sm'
-                  : 'border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200'
-              }`}
-            >
-              <Globe className="h-4 w-4" />
-              <span>All Students ({students.length})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setTargetType('individual')}
-              className={`flex flex-col items-center justify-center gap-1 rounded-xl border p-3 text-xs font-semibold transition-all ${
-                targetType === 'individual'
-                  ? 'border-amber-500 bg-amber-500/20 text-amber-300 shadow-sm'
-                  : 'border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200'
-              }`}
-            >
-              <User className="h-4 w-4" />
-              <span>
-                {selectedStudentIds.size > 0
-                  ? `${selectedStudentIds.size} Selected`
-                  : 'Specific Students'}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setTargetType('group')}
-              className={`flex flex-col items-center justify-center gap-1 rounded-xl border p-3 text-xs font-semibold transition-all ${
-                targetType === 'group'
-                  ? 'border-amber-500 bg-amber-500/20 text-amber-300 shadow-sm'
-                  : 'border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200'
-              }`}
-            >
-              <GraduationCap className="h-4 w-4" />
-              <span>Course / Group</span>
-            </button>
+        <header className="shrink-0 px-5 sm:px-6 py-4 border-b border-white/10 bg-[#0F172A]/95 backdrop-blur-md flex items-center justify-between gap-3 sticky top-0 z-20">
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl font-semibold text-white tracking-tight flex items-center gap-2">
+              <Megaphone className="h-5 w-5 text-blue-500 shrink-0" />
+              <span>{editingAnnouncement ? 'Edit Announcement' : 'New Announcement & Notification'}</span>
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Send a message to your students across web, device push, and email.
+            </p>
           </div>
 
-          {/* Individual Student Selector Drawer */}
-          {targetType === 'individual' && (
-            <div className="mt-3 space-y-2 rounded-xl border border-white/10 bg-slate-900/80 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-                  <input
-                    type="text"
-                    className="input h-8 pl-8 text-xs py-0 w-full bg-slate-950/60 border-white/10 placeholder:text-slate-500"
-                    placeholder="Search by name, email, or student ID..."
-                    value={studentSearch}
-                    onChange={e => setStudentSearch(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center gap-2 text-xs shrink-0">
-                  <button
-                    type="button"
-                    onClick={selectAllFiltered}
-                    className="text-amber-400 hover:underline font-medium"
-                  >
-                    Select All
-                  </button>
-                  <span className="text-slate-600">•</span>
-                  <button
-                    type="button"
-                    onClick={clearSelection}
-                    className="text-slate-400 hover:underline"
-                  >
-                    Clear
-                  </button>
-                </div>
-              </div>
+          <button
+            type="button"
+            onClick={handleAttemptClose}
+            className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+            title="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </header>
 
-              <div className="max-h-48 overflow-y-auto space-y-1 pr-1 scrollbar-hide">
-                {filteredStudents.length === 0 ? (
-                  <p className="py-4 text-center text-xs text-slate-500">No students found</p>
-                ) : (
-                  filteredStudents.map(student => {
-                    const isChecked = selectedStudentIds.has(student.id)
-                    return (
-                      <label
-                        key={student.id}
-                        className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs cursor-pointer select-none transition-colors ${
-                          isChecked
-                            ? 'bg-amber-500/15 text-slate-200 border border-amber-500/30'
-                            : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          className="rounded border-white/20 bg-slate-900 text-amber-500 focus:ring-amber-400/20 h-3.5 w-3.5 shrink-0 cursor-pointer"
-                          checked={isChecked}
-                          onChange={() => toggleStudent(student.id)}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-slate-200 truncate">
-                            {student.full_name || 'Unnamed Student'}
-                          </p>
-                          <p className="text-[11px] text-slate-400 truncate">
-                            {student.email} {student.student_id ? `• ${student.student_id}` : ''}
-                          </p>
-                        </div>
-                      </label>
-                    )
-                  })
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Group Selector */}
-          {targetType === 'group' && (
-            <div className="mt-3 rounded-xl border border-white/10 bg-slate-900/80 p-3 space-y-2">
-              <label className="text-xs text-slate-400 block">Select Course or University Group:</label>
-              <select
-                className="input text-xs py-2 h-10 w-full bg-slate-950/60"
-                value={selectedGroup}
-                onChange={e => setSelectedGroup(e.target.value)}
-                required={targetType === 'group'}
+        {/* Discard confirmation warning banner */}
+        {showDiscardConfirm && (
+          <div className="shrink-0 bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-center justify-between text-xs text-amber-300">
+            <span className="flex items-center gap-1.5 font-medium">
+              <AlertCircle className="h-4 w-4" /> You have unsaved changes. Discard draft?
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDiscardConfirm(false)}
+                className="px-2.5 py-1 rounded-md bg-white/10 text-white hover:bg-white/15 transition-colors font-medium"
               >
-                <option value="">-- Choose Course or University --</option>
-                {courses.length > 0 && (
-                  <optgroup label="Courses">
-                    {courses.map(c => (
-                      <option key={`course-${c}`} value={c}>
-                        Course: {c}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {universities.length > 0 && (
-                  <optgroup label="Universities">
-                    {universities.map(u => (
-                      <option key={`uni-${u}`} value={u}>
-                        University: {u}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
+                Keep Editing
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDiscard}
+                className="px-2.5 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
+              >
+                Discard
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* =========================================================================
-            2. THE 3 COMBINED DELIVERY CHANNELS
+            SCROLLABLE BODY (2 Columns on Desktop: Form + Phone Preview)
         ========================================================================= */}
-        <div>
-          <label className="label mb-2 block font-semibold text-slate-200">
-            Delivery Channels (3-in-1)
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            {/* Channel 1: In-App Announcement */}
-            <label
-              className={`flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer select-none transition-all ${
-                channels.in_app
-                  ? 'border-amber-500/50 bg-amber-500/10 text-slate-200'
-                  : 'border-white/10 bg-slate-900/40 text-slate-400 hover:border-white/20'
-              }`}
-            >
-              <input
-                type="checkbox"
-                className="mt-0.5 rounded border-white/20 bg-slate-900 text-amber-500 focus:ring-amber-400/20 h-4 w-4 shrink-0 cursor-pointer"
-                checked={channels.in_app}
-                onChange={e => setChannels({ ...channels, in_app: e.target.checked })}
-              />
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 font-semibold text-xs text-amber-300">
-                  <Smartphone className="h-3.5 w-3.5" /> In-App Alert
+        <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+          <form id="announcement-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[1.25fr_0.85fr] gap-6 items-start">
+            {/* LEFT COLUMN: FORM SECTIONS */}
+            <div className="space-y-5">
+              {/* 1. TARGET AUDIENCE */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    Target Audience
+                  </label>
+                  {!targetType && (
+                    <span className="text-xs text-slate-500 font-normal">Choose an audience</span>
+                  )}
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1 leading-snug">
-                  Appears on top when user opens app & stored in Bell drawer
-                </p>
-              </div>
-            </label>
 
-            {/* Channel 2: Push Notification */}
-            <label
-              className={`flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer select-none transition-all ${
-                channels.push
-                  ? 'border-amber-500/50 bg-amber-500/10 text-slate-200'
-                  : 'border-white/10 bg-slate-900/40 text-slate-400 hover:border-white/20'
-              }`}
-            >
-              <input
-                type="checkbox"
-                className="mt-0.5 rounded border-white/20 bg-slate-900 text-amber-500 focus:ring-amber-400/20 h-4 w-4 shrink-0 cursor-pointer"
-                checked={channels.push}
-                onChange={e => setChannels({ ...channels, push: e.target.checked })}
-              />
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 font-semibold text-xs text-amber-300">
-                  <Bell className="h-3.5 w-3.5" /> Push Alert
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1 leading-snug">
-                  Standard device notification (lock screen & upper banner)
-                </p>
-              </div>
-            </label>
-
-            {/* Channel 3: Email Broadcast */}
-            <label
-              className={`flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer select-none transition-all ${
-                channels.email
-                  ? 'border-amber-500/50 bg-amber-500/10 text-slate-200'
-                  : 'border-white/10 bg-slate-900/40 text-slate-400 hover:border-white/20'
-              }`}
-            >
-              <input
-                type="checkbox"
-                className="mt-0.5 rounded border-white/20 bg-slate-900 text-amber-500 focus:ring-amber-400/20 h-4 w-4 shrink-0 cursor-pointer"
-                checked={channels.email}
-                onChange={e => setChannels({ ...channels, email: e.target.checked })}
-              />
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 font-semibold text-xs text-amber-300">
-                  <Mail className="h-3.5 w-3.5" /> Email Broadcast
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1 leading-snug">
-                  Delivers email message directly to students' inboxes
-                </p>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        {/* =========================================================================
-            3. ANNOUNCEMENT CONTENT
-        ========================================================================= */}
-        <div className="space-y-4">
-          <div>
-            <label className="label mb-1.5 block">Title</label>
-            <input
-              className="input"
-              required
-              placeholder="e.g. Campus Closed Due to Weather, Exam Dates Released"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label mb-1.5 block">Priority / Urgency</label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'info', label: 'Info' },
-                  { id: 'warning', label: 'Notice' },
-                  { id: 'urgent', label: 'Urgent' }
-                ].map(item => (
+                <div className="grid grid-cols-2 gap-2">
                   <button
-                    key={item.id}
                     type="button"
-                    onClick={() => setType(item.id)}
-                    className={`rounded-xl border py-2 text-xs font-semibold capitalize transition-all ${
-                      type === item.id
-                        ? item.id === 'urgent'
-                          ? 'border-red-500 bg-red-500/20 text-red-300'
-                          : item.id === 'warning'
-                          ? 'border-yellow-500 bg-yellow-500/20 text-yellow-300'
-                          : 'border-amber-500 bg-amber-500/20 text-amber-300'
-                        : 'border-white/10 text-slate-400 hover:bg-white/5'
+                    onClick={() => setTargetType('all')}
+                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all duration-150 ${
+                      targetType === 'all'
+                        ? 'border-blue-500 bg-blue-500/10 text-white shadow-sm ring-1 ring-blue-500/30'
+                        : 'border-white/10 bg-slate-900/40 text-slate-400 hover:border-white/20 hover:text-slate-200'
                     }`}
                   >
-                    {item.label}
+                    <div className="flex items-center gap-2">
+                      <Globe className={`h-4 w-4 ${targetType === 'all' ? 'text-blue-400' : 'text-slate-500'}`} />
+                      <span>All Students</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                      targetType === 'all' ? 'bg-blue-500/20 text-blue-300' : 'bg-white/5 text-slate-400'
+                    }`}>
+                      {students.length}
+                    </span>
                   </button>
-                ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setTargetType('individual')}
+                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all duration-150 ${
+                      targetType === 'individual'
+                        ? 'border-blue-500 bg-blue-500/10 text-white shadow-sm ring-1 ring-blue-500/30'
+                        : 'border-white/10 bg-slate-900/40 text-slate-400 hover:border-white/20 hover:text-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Users className={`h-4 w-4 ${targetType === 'individual' ? 'text-blue-400' : 'text-slate-500'}`} />
+                      <span>Specific Students</span>
+                    </div>
+                    {selectedStudentIds.size > 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/20 text-blue-300">
+                        {selectedStudentIds.size}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Specific Students Multi-Select Drawer */}
+                {targetType === 'individual' && (
+                  <div className="mt-2 space-y-2.5 rounded-xl border border-white/10 bg-slate-900/70 p-3 animate-in fade-in duration-150">
+                    {/* Selected chips row */}
+                    {selectedStudentsList.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 p-2 bg-slate-950/50 rounded-lg border border-white/5 max-h-24 overflow-y-auto scrollbar-thin">
+                        {selectedStudentsList.map(s => (
+                          <span
+                            key={s.id}
+                            className="inline-flex items-center gap-1.5 rounded-md bg-blue-500/15 border border-blue-500/30 text-blue-300 text-[11px] px-2 py-0.5 font-medium"
+                          >
+                            <span className="truncate max-w-[120px]">{s.full_name || s.email}</span>
+                            <button
+                              type="button"
+                              onClick={() => toggleStudent(s.id)}
+                              className="text-blue-400 hover:text-white rounded p-0.5"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Search & Actions Bar */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+                        <input
+                          type="text"
+                          className="h-8 pl-8 text-xs py-0 w-full rounded-lg bg-slate-950/70 border border-white/10 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
+                          placeholder="Search student name, email, or ID..."
+                          value={studentSearch}
+                          onChange={e => setStudentSearch(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs shrink-0">
+                        <button
+                          type="button"
+                          onClick={selectAllFiltered}
+                          className="text-blue-400 hover:underline font-medium text-[11px]"
+                        >
+                          Select All
+                        </button>
+                        <span className="text-slate-600">•</span>
+                        <button
+                          type="button"
+                          onClick={clearSelection}
+                          className="text-slate-400 hover:underline text-[11px]"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Scrollable Student List */}
+                    <div className="max-h-40 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+                      {filteredStudents.length === 0 ? (
+                        <p className="py-4 text-center text-xs text-slate-500">No students match your search</p>
+                      ) : (
+                        filteredStudents.map(student => {
+                          const isChecked = selectedStudentIds.has(student.id)
+                          return (
+                            <label
+                              key={student.id}
+                              className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs cursor-pointer select-none transition-colors ${
+                                isChecked
+                                  ? 'bg-blue-500/10 text-slate-100 border border-blue-500/30'
+                                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                className="rounded border-white/20 bg-slate-900 text-blue-500 focus:ring-blue-400/20 h-3.5 w-3.5 shrink-0 cursor-pointer"
+                                checked={isChecked}
+                                onChange={() => toggleStudent(student.id)}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-slate-200 truncate">
+                                  {student.full_name || 'Unnamed Student'}
+                                </p>
+                                <p className="text-[11px] text-slate-400 truncate">
+                                  {student.email} {student.student_id ? `• ${student.student_id}` : ''}
+                                </p>
+                              </div>
+                            </label>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 2. DELIVERY CHANNELS */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    Delivery Channels
+                  </label>
+                  {!isChannelsValid && (
+                    <span className="text-xs text-slate-500 font-normal">Select at least one channel</span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* Channel 1: In-App */}
+                  <div
+                    onClick={() => setChannels({ ...channels, in_app: !channels.in_app })}
+                    className={`flex flex-col justify-between p-3 rounded-xl border cursor-pointer select-none transition-all duration-150 ${
+                      channels.in_app
+                        ? 'border-blue-500 bg-blue-500/10 shadow-sm ring-1 ring-blue-500/30'
+                        : 'border-white/10 bg-slate-900/40 hover:border-white/20 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`p-1.5 rounded-lg ${channels.in_app ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-500'}`}>
+                        <Smartphone className="h-4 w-4" />
+                      </div>
+                      {/* Modern Switch UI */}
+                      <div className={`w-8 h-4.5 rounded-full transition-colors relative ${channels.in_app ? 'bg-blue-600' : 'bg-slate-700'}`}>
+                        <div className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-white transition-transform ${channels.in_app ? 'translate-x-3.5' : 'translate-x-0'}`} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className={`font-semibold text-xs ${channels.in_app ? 'text-white' : 'text-slate-300'}`}>
+                        In-App Alert
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                        Top banner & Notification Center
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Channel 2: Push */}
+                  <div
+                    onClick={() => setChannels({ ...channels, push: !channels.push })}
+                    className={`flex flex-col justify-between p-3 rounded-xl border cursor-pointer select-none transition-all duration-150 ${
+                      channels.push
+                        ? 'border-blue-500 bg-blue-500/10 shadow-sm ring-1 ring-blue-500/30'
+                        : 'border-white/10 bg-slate-900/40 hover:border-white/20 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`p-1.5 rounded-lg ${channels.push ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-500'}`}>
+                        <Bell className="h-4 w-4" />
+                      </div>
+                      <div className={`w-8 h-4.5 rounded-full transition-colors relative ${channels.push ? 'bg-blue-600' : 'bg-slate-700'}`}>
+                        <div className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-white transition-transform ${channels.push ? 'translate-x-3.5' : 'translate-x-0'}`} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className={`font-semibold text-xs ${channels.push ? 'text-white' : 'text-slate-300'}`}>
+                        Push Notification
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                        Lock screen & device top banner
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Channel 3: Email */}
+                  <div
+                    onClick={() => setChannels({ ...channels, email: !channels.email })}
+                    className={`flex flex-col justify-between p-3 rounded-xl border cursor-pointer select-none transition-all duration-150 ${
+                      channels.email
+                        ? 'border-blue-500 bg-blue-500/10 shadow-sm ring-1 ring-blue-500/30'
+                        : 'border-white/10 bg-slate-900/40 hover:border-white/20 text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`p-1.5 rounded-lg ${channels.email ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-500'}`}>
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      <div className={`w-8 h-4.5 rounded-full transition-colors relative ${channels.email ? 'bg-blue-600' : 'bg-slate-700'}`}>
+                        <div className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-white transition-transform ${channels.email ? 'translate-x-3.5' : 'translate-x-0'}`} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className={`font-semibold text-xs ${channels.email ? 'text-white' : 'text-slate-300'}`}>
+                        Email Broadcast
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                        Direct to student email inboxes
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. TITLE INPUT */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    Title
+                  </label>
+                  <span className={`text-[11px] font-mono ${title.length > 90 ? 'text-amber-400' : 'text-slate-500'}`}>
+                    {title.length}/100
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  maxLength={100}
+                  className="w-full rounded-xl px-3.5 py-2.5 text-sm bg-slate-900/60 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  placeholder="e.g. Campus Closed Tomorrow, Exam Schedules Released"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                />
+              </div>
+
+              {/* 4. PRIORITY & EXPIRES ON (SAME ROW) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Priority */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      Priority
+                    </label>
+                    {!type && (
+                      <span className="text-xs text-slate-500 font-normal">Choose a priority</span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Info = Blue */}
+                    <button
+                      type="button"
+                      onClick={() => setType('info')}
+                      className={`flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-xs font-semibold transition-all duration-150 ${
+                        type === 'info'
+                          ? 'border-blue-500/50 bg-blue-500/15 text-blue-400 shadow-sm ring-1 ring-blue-500/30'
+                          : 'border-white/10 bg-slate-900/40 text-slate-400 hover:border-white/20 hover:text-slate-200'
+                      }`}
+                    >
+                      <Info className="h-3.5 w-3.5" />
+                      <span>Info</span>
+                    </button>
+
+                    {/* Notice = Amber */}
+                    <button
+                      type="button"
+                      onClick={() => setType('warning')}
+                      className={`flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-xs font-semibold transition-all duration-150 ${
+                        type === 'warning'
+                          ? 'border-amber-500/50 bg-amber-500/15 text-amber-400 shadow-sm ring-1 ring-amber-500/30'
+                          : 'border-white/10 bg-slate-900/40 text-slate-400 hover:border-white/20 hover:text-slate-200'
+                      }`}
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      <span>Notice</span>
+                    </button>
+
+                    {/* Urgent = Red */}
+                    <button
+                      type="button"
+                      onClick={() => setType('urgent')}
+                      className={`flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-xs font-semibold transition-all duration-150 ${
+                        type === 'urgent'
+                          ? 'border-red-500/50 bg-red-500/15 text-red-400 shadow-sm ring-1 ring-red-500/30'
+                          : 'border-white/10 bg-slate-900/40 text-slate-400 hover:border-white/20 hover:text-slate-200'
+                      }`}
+                    >
+                      <ShieldAlert className="h-3.5 w-3.5" />
+                      <span>Urgent</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expires On */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      Expires On <span className="text-slate-500 font-normal normal-case">(Optional)</span>
+                    </label>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      className="w-full rounded-xl px-3.5 py-2 text-sm bg-slate-900/60 border border-white/10 text-slate-200 [color-scheme:dark] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all h-[42px]"
+                      value={expiresAt}
+                      onChange={e => setExpiresAt(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. MESSAGE BODY */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    Message Body
+                  </label>
+                  <span className={`text-[11px] font-mono ${message.length > 450 ? 'text-amber-400' : 'text-slate-500'}`}>
+                    {message.length}/500
+                  </span>
+                </div>
+                <textarea
+                  maxLength={500}
+                  className="w-full rounded-xl px-3.5 py-3 text-sm bg-slate-900/60 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all min-h-[120px] leading-relaxed resize-y"
+                  placeholder="Type the full announcement message here..."
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                />
               </div>
             </div>
 
-            <div>
-              <label className="label mb-1.5 block">Expires On (Optional)</label>
-              <input
-                type="date"
-                className="input"
-                value={expiresAt}
-                onChange={e => setExpiresAt(e.target.value)}
-              />
-            </div>
-          </div>
+            {/* RIGHT COLUMN: LIVE PHONE PREVIEW */}
+            <div className="lg:sticky lg:top-0 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <Eye className="h-3.5 w-3.5 text-blue-400" /> Live Student Preview
+                </span>
+                <span className="text-[11px] text-slate-500">iOS / Android</span>
+              </div>
 
-          <div>
-            <label className="label mb-1.5 block">Message Body</label>
-            <textarea
-              className="input min-h-32 text-sm leading-relaxed"
-              required
-              placeholder="Write the full message details for the students..."
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-            />
-          </div>
+              {/* Phone Mockup Frame */}
+              <div className="rounded-[28px] border-4 border-slate-700/80 bg-[#0B0F19] p-3 shadow-2xl shadow-black/80 w-full max-w-[320px] mx-auto text-left select-none">
+                {/* Phone Top Notch / Status Bar */}
+                <div className="flex items-center justify-between px-2 pt-1 pb-3 text-[10px] text-slate-400 font-medium">
+                  <span>9:41</span>
+                  <div className="w-16 h-3 bg-slate-800 rounded-full mx-auto" />
+                  <div className="flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                    <span className="h-2 w-3 border border-slate-400 rounded-sm" />
+                  </div>
+                </div>
+
+                {/* Lock Screen Notification Banner Card */}
+                <div className="rounded-2xl border border-white/10 bg-slate-800/90 backdrop-blur-md p-3 shadow-lg transition-all duration-200">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <img src="/icons/logo.png" alt="Axon" className="h-4 w-4 rounded-md object-contain" />
+                      <span className="text-[10px] font-bold tracking-wider text-slate-300 uppercase">AXON</span>
+                      <span className="text-[10px] text-slate-500">• now</span>
+                    </div>
+
+                    {type ? (
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                        type === 'urgent'
+                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                          : type === 'warning'
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                      }`}>
+                        {type === 'warning' ? 'NOTICE' : type.toUpperCase()}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] text-slate-500">No priority</span>
+                    )}
+                  </div>
+
+                  {/* Notification Content */}
+                  <div className="space-y-1">
+                    <p className={`text-xs font-bold leading-snug ${title.trim() ? 'text-white' : 'text-slate-500 italic'}`}>
+                      {title.trim() ? title : 'Announcement title preview...'}
+                    </p>
+                    <p className={`text-[11px] leading-relaxed line-clamp-3 ${message.trim() ? 'text-slate-300' : 'text-slate-500 italic'}`}>
+                      {message.trim() ? message : 'Message preview will appear here in real time as you type...'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Dispatch Summary Inside Phone */}
+                <div className="mt-4 p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-1.5 text-[11px]">
+                  <p className="font-semibold text-slate-400 flex items-center justify-between">
+                    <span>Summary</span>
+                    <span className="text-slate-500 font-mono text-[10px]">
+                      {activeChannelsCount} channel{activeChannelsCount === 1 ? '' : 's'}
+                    </span>
+                  </p>
+                  <div className="flex items-center justify-between text-slate-400 text-[10px]">
+                    <span>Audience:</span>
+                    <span className="font-medium text-slate-200">
+                      {targetType === 'all'
+                        ? `All (${students.length})`
+                        : targetType === 'individual'
+                        ? `${selectedStudentIds.size} student${selectedStudentIds.size === 1 ? '' : 's'}`
+                        : 'None chosen'}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {channels.in_app && (
+                      <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[9px] font-medium border border-blue-500/20">
+                        In-App
+                      </span>
+                    )}
+                    {channels.push && (
+                      <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[9px] font-medium border border-blue-500/20">
+                        Push
+                      </span>
+                    )}
+                    {channels.email && (
+                      <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[9px] font-medium border border-blue-500/20">
+                        Email
+                      </span>
+                    )}
+                    {!activeChannelsCount && (
+                      <span className="text-[10px] text-slate-500 italic">No channels active</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
         </div>
 
         {/* =========================================================================
-            4. ACTION BUTTONS
+            STICKY FOOTER
         ========================================================================= */}
-        <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/10">
-          <p className="text-xs text-slate-400">
-            Sending to{' '}
-            <strong className="text-amber-300">
-              {targetType === 'all'
-                ? `All ${students.length} students`
-                : targetType === 'individual'
-                ? `${selectedStudentIds.size} student${selectedStudentIds.size === 1 ? '' : 's'}`
-                : selectedGroup
-                ? `Group: ${selectedGroup}`
-                : 'Select group'}
-            </strong>
-          </p>
+        <footer className="shrink-0 px-5 sm:px-6 py-4 border-t border-white/10 bg-[#0F172A]/95 backdrop-blur-md flex items-center justify-between gap-3 sticky bottom-0 z-20">
+          <div className="text-xs text-slate-400 min-w-0">
+            {isFormValid ? (
+              <span className="text-emerald-400 font-medium flex items-center gap-1.5 truncate">
+                <Check className="h-4 w-4 shrink-0" />
+                <span>Ready to send to {recipientCount} student{recipientCount === 1 ? '' : 's'} via {activeChannelsCount} channel{activeChannelsCount === 1 ? '' : 's'}</span>
+              </span>
+            ) : (
+              <span className="text-slate-500 truncate block">
+                {!isAudienceValid
+                  ? '• Choose an audience'
+                  : !isChannelsValid
+                  ? '• Select at least one channel'
+                  : !isTitleValid
+                  ? '• Enter a title'
+                  : !isPriorityValid
+                  ? '• Select a priority'
+                  : '• Enter message body'}
+              </span>
+            )}
+          </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleAttemptClose}
               disabled={loading}
-              className="btn-ghost px-4 py-2 text-xs min-h-0"
+              className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-xl hover:bg-white/5 transition-colors"
             >
               Cancel
             </button>
+
             <button
               type="submit"
-              disabled={loading}
-              className="manager-primary-btn px-5 py-2 text-xs min-h-0 flex items-center gap-2"
+              form="announcement-form"
+              disabled={!isFormValid || loading}
+              className={`px-5 py-2.5 rounded-xl font-semibold text-xs inline-flex items-center gap-2 transition-all duration-150 ${
+                isFormValid && !loading
+                  ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 active:scale-95 cursor-pointer'
+                  : 'bg-slate-800 text-slate-500 border border-white/5 opacity-50 cursor-not-allowed'
+              }`}
             >
-              <Send className="h-3.5 w-3.5" />
-              {loading
-                ? 'Publishing...'
-                : editingAnnouncement
-                ? 'Update Announcement'
-                : 'Publish & Send'}
+              {loading ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Publishing...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-3.5 w-3.5" />
+                  <span>{editingAnnouncement ? 'Save Changes' : 'Send Announcement'}</span>
+                </>
+              )}
             </button>
           </div>
-        </div>
-      </form>
-    </Modal>
+        </footer>
+      </div>
+    </div>
   )
 }
