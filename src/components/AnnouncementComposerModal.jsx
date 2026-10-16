@@ -21,6 +21,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { studentManager } from '../lib/manageStudent'
 import { useToast } from './Toast'
+import { parseAnnouncement, encodeAnnouncementMessage } from '../lib/announcements'
 
 export default function AnnouncementComposerModal({
   isOpen,
@@ -75,13 +76,14 @@ export default function AnnouncementComposerModal({
     if (isOpen) {
       loadStudents()
       if (editingAnnouncement) {
-        setTitle(editingAnnouncement.title || '')
-        setMessage(editingAnnouncement.message || '')
-        setType(editingAnnouncement.type || '')
-        setExpiresAt(editingAnnouncement.expires_at ? editingAnnouncement.expires_at.slice(0, 10) : '')
-        setTargetType(editingAnnouncement.target_type || '')
-        setSelectedStudentIds(new Set(editingAnnouncement.target_ids || []))
-        setChannels(editingAnnouncement.channels || { in_app: false, push: false, email: false })
+        const parsed = parseAnnouncement(editingAnnouncement)
+        setTitle(parsed.title || '')
+        setMessage(parsed.message || '')
+        setType(parsed.type || '')
+        setExpiresAt(parsed.expires_at ? parsed.expires_at.slice(0, 10) : '')
+        setTargetType(parsed.target_type || '')
+        setSelectedStudentIds(new Set(parsed.target_ids || []))
+        setChannels(parsed.channels || { in_app: false, push: false, email: false })
       } else {
         resetForm()
       }
@@ -244,7 +246,28 @@ export default function AnnouncementComposerModal({
           .update(payload)
           .eq('id', editingAnnouncement.id)
 
-        if (updateError) throw updateError
+        if (updateError) {
+          // If columns do not exist yet, fallback to core columns with metadata in message
+          console.warn('Update with full schema failed, falling back to core columns:', updateError.message)
+          const encodedMessage = encodeAnnouncementMessage(message.trim(), {
+            channels,
+            target_type: targetType,
+            target_ids: targetIdsArray
+          })
+          const fallbackPayload = {
+            title: title.trim(),
+            message: encodedMessage,
+            type,
+            expires_at: expiresAt ? new Date(expiresAt).toISOString() : null
+          }
+          const { error: fallbackErr } = await supabase
+            .from('announcements')
+            .update(fallbackPayload)
+            .eq('id', editingAnnouncement.id)
+
+          if (fallbackErr) throw fallbackErr
+        }
+
         showToast('Announcement updated successfully.', 'success')
         onSuccess?.()
         resetForm()
@@ -280,20 +303,33 @@ export default function AnnouncementComposerModal({
         const resData = await response.json()
         pushCount = resData.pushStats?.sent || 0
       } catch (apiErr) {
-        // Fallback: If in_app is enabled, insert directly
-        if (channels.in_app) {
-          console.warn('API publish fallback to direct Supabase insert:', apiErr)
-          const { error: directError } = await supabase.from('announcements').insert({
+        // Fallback: direct Supabase insert
+        console.warn('API publish fallback to direct Supabase insert:', apiErr)
+        const { error: directError } = await supabase.from('announcements').insert({
+          manager_id: session.user.id,
+          title: title.trim(),
+          message: message.trim(),
+          type,
+          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+          target_type: targetType,
+          target_ids: targetIdsArray,
+          channels
+        })
+        if (directError) {
+          // Direct fallback with encoded metadata in message
+          const encodedMessage = encodeAnnouncementMessage(message.trim(), {
+            channels,
+            target_type: targetType,
+            target_ids: targetIdsArray
+          })
+          const { error: fbError } = await supabase.from('announcements').insert({
             manager_id: session.user.id,
             title: title.trim(),
-            message: message.trim(),
+            message: encodedMessage,
             type,
-            expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-            target_type: targetType,
-            target_ids: targetIdsArray,
-            channels
+            expires_at: expiresAt ? new Date(expiresAt).toISOString() : null
           })
-          if (directError) throw directError
+          if (fbError) throw fbError
         }
       }
 

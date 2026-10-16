@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v5-background-push'
+const CACHE_NAME = 'axon-v6-sharp-notifications'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {

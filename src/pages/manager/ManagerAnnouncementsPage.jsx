@@ -6,6 +6,7 @@ import { useToast } from '../../components/Toast'
 import { supabase } from '../../lib/supabase'
 import { dateLabel } from '../../lib/utils'
 import AnnouncementComposerModal from '../../components/AnnouncementComposerModal'
+import { parseAnnouncement } from '../../lib/announcements'
 
 export default function ManagerAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([])
@@ -18,7 +19,7 @@ export default function ManagerAnnouncementsPage() {
 
   async function loadAnnouncements() {
     const { data } = await supabase.from('announcements').select('*').order('created_at', { ascending: false })
-    setAnnouncements(data || [])
+    setAnnouncements((data || []).map(parseAnnouncement))
   }
 
   function openNew() {
@@ -93,6 +94,9 @@ function AnnouncementCard({ item, onEdit, onDelete }) {
 
   const channels = item.channels || { in_app: true, push: false, email: false }
   const targetType = item.target_type || 'all'
+  const hasInApp = Boolean(channels.in_app)
+  const hasPush = Boolean(channels.push)
+  const hasEmail = Boolean(channels.email)
 
   return (
     <article className="card flex flex-col justify-between">
@@ -125,20 +129,23 @@ function AnnouncementCard({ item, onEdit, onDelete }) {
         {/* Delivery Channels used */}
         <div className="mb-3 flex flex-wrap items-center gap-1.5 pt-2 border-t border-white/5">
           <span className="text-[11px] text-slate-400 mr-1">Channels:</span>
-          {channels.in_app !== false && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-theme-500/10 border border-theme-500/20 px-2 py-0.5 text-[11px] text-theme-300 font-medium">
+          {hasInApp && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/25 px-2 py-0.5 text-[11px] text-blue-300 font-medium">
               <Smartphone className="h-3 w-3" /> In-App
             </span>
           )}
-          {channels.push && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[11px] text-amber-300 font-medium">
+          {hasPush && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 text-[11px] text-amber-300 font-medium">
               <Bell className="h-3 w-3" /> Push
             </span>
           )}
-          {channels.email && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 text-[11px] text-purple-300 font-medium">
+          {hasEmail && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 border border-purple-500/25 px-2 py-0.5 text-[11px] text-purple-300 font-medium">
               <Mail className="h-3 w-3" /> Email
             </span>
+          )}
+          {!hasInApp && !hasPush && !hasEmail && (
+            <span className="text-[11px] text-slate-500 italic">None</span>
           )}
         </div>
 

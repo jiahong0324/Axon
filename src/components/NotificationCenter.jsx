@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { supabase } from '../lib/supabase'
+import { parseAnnouncement } from '../lib/announcements'
 
 export default function NotificationCenter({ user, profile }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -117,12 +118,13 @@ export default function NotificationCenter({ user, profile }) {
         .maybeSingle()
 
       if (data && !error) {
+        const parsed = parseAnnouncement(data)
         setAnnouncements(prev => {
-          if (prev.some(a => String(a.id) === String(data.id))) return prev
-          return [data, ...prev]
+          if (prev.some(a => String(a.id) === String(parsed.id))) return prev
+          return [parsed, ...prev]
         })
-        setSelectedAnnouncement(data)
-        markAsRead(data.id)
+        setSelectedAnnouncement(parsed)
+        markAsRead(parsed.id)
       }
     } catch (e) {
       console.warn('Failed to fetch target announcement:', e)
@@ -177,22 +179,29 @@ export default function NotificationCenter({ user, profile }) {
         console.warn('Error fetching announcements:', annError.message)
       }
 
-      // Filter announcements relevant to this student (shows all manager announcements, push or in-app)
-      const userAnnouncements = (rawAnnouncements || []).filter(item => {
-        const targetType = item.target_type || 'all'
-        if (targetType === 'all') return true
-        if (targetType === 'individual') {
-          const ids = item.target_ids || []
-          return ids.includes(user.id)
-        }
-        if (targetType === 'group' && item.target_group) {
-          const group = item.target_group.trim().toLowerCase()
-          const course = (profile?.course || '').trim().toLowerCase()
-          const uni = (profile?.university || '').trim().toLowerCase()
-          return group === course || group === uni
-        }
-        return true
-      })
+      // Filter announcements relevant to this student (push or in-app, excluding email-only)
+      const userAnnouncements = (rawAnnouncements || [])
+        .map(parseAnnouncement)
+        .filter(item => {
+          // If neither in-app nor push was selected (e.g. email-only), do not show in notifications drawer
+          if (item.channels && item.channels.in_app === false && item.channels.push === false) {
+            return false
+          }
+
+          const targetType = item.target_type || 'all'
+          if (targetType === 'all') return true
+          if (targetType === 'individual') {
+            const ids = item.target_ids || []
+            return ids.includes(user.id)
+          }
+          if (targetType === 'group' && item.target_group) {
+            const group = item.target_group.trim().toLowerCase()
+            const course = (profile?.course || '').trim().toLowerCase()
+            const uni = (profile?.university || '').trim().toLowerCase()
+            return group === course || group === uni
+          }
+          return true
+        })
 
       // 2. Fetch read receipts
       let readSet = new Set()
@@ -364,10 +373,11 @@ export default function NotificationCenter({ user, profile }) {
     <>
       {/* Notification Drawer Modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
+        <div className="fixed inset-0 z-50 overflow-hidden" style={{ isolation: 'isolate' }}>
           {/* Sibling Backdrop without blurring the drawer */}
           <div
             className="fixed inset-0 bg-black/70 transition-opacity animate-in fade-in duration-200"
+            style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
             onClick={() => {
               closeDetail(true)
               setIsOpen(false)
@@ -377,16 +387,34 @@ export default function NotificationCenter({ user, profile }) {
           {/* Drawer Container */}
           <div
             className="fixed inset-y-0 right-0 flex h-full w-full max-w-md flex-col bg-[#0F172A] border-l border-white/10 shadow-2xl z-10 animate-in slide-in-from-right duration-200"
+            style={{
+              isolation: 'isolate',
+              backdropFilter: 'none',
+              WebkitBackdropFilter: 'none',
+              backgroundColor: '#0F172A'
+            }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Drawer Header - cleared below iPhone status bar & Dynamic Island */}
+            {/* Dedicated Status Bar Spacer for iPhone / PWA */}
             <div
-              className="flex items-center justify-between border-b border-white/10 px-4 sm:px-5 pb-3.5 bg-[#0F172A] shrink-0"
+              className="w-full shrink-0 bg-[#0F172A]"
               style={{
-                paddingTop: 'max(48px, env(safe-area-inset-top, 48px))'
+                height: 'max(env(safe-area-inset-top, 0px), 48px)',
+                minHeight: '48px',
+                backgroundColor: '#0F172A'
+              }}
+            />
+
+            {/* Drawer Header - strictly below the status bar */}
+            <div
+              className="flex items-center justify-between border-b border-white/10 px-4 sm:px-5 py-3.5 bg-[#0F172A] shrink-0"
+              style={{
+                backgroundColor: '#0F172A',
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none'
               }}
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/25 shrink-0">
                   <Megaphone className="h-5 w-5" />
                 </div>
@@ -545,7 +573,8 @@ export default function NotificationCenter({ user, profile }) {
       ========================================================================= */}
       {selectedAnnouncement && (
         <div
-          className="fixed inset-0 z-[70] flex flex-col justify-end sm:justify-center sm:items-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 transition-opacity duration-200"
+          className="fixed inset-0 z-[70] flex flex-col justify-end sm:justify-center sm:items-center bg-black/75 p-0 sm:p-4 transition-opacity duration-200"
+          style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
           onClick={() => closeDetail(true)}
         >
           <div
@@ -557,6 +586,9 @@ export default function NotificationCenter({ user, profile }) {
             style={{
               transform: touchOffset > 0 ? `translateY(${touchOffset}px)` : undefined,
               transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              isolation: 'isolate',
+              backdropFilter: 'none',
+              WebkitBackdropFilter: 'none'
             }}
             className="w-full sm:max-w-lg max-h-[92vh] sm:max-h-[85vh] h-full sm:h-auto flex flex-col rounded-t-[28px] sm:rounded-2xl bg-white dark:bg-[#0F172A] border-t sm:border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden animate-in fade-in sm:zoom-in-95 duration-150"
           >
@@ -567,8 +599,12 @@ export default function NotificationCenter({ user, profile }) {
 
             {/* 3. STICKY HEADER */}
             <header
-              className="sticky top-0 z-20 shrink-0 flex items-center justify-between px-3 sm:px-4 py-2 border-b border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md"
-              style={{ paddingTop: 'max(8px, env(safe-area-inset-top, 0px))' }}
+              className="sticky top-0 z-20 shrink-0 flex items-center justify-between px-3 sm:px-4 py-2 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#0F172A]"
+              style={{
+                paddingTop: 'max(8px, env(safe-area-inset-top, 0px))',
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none'
+              }}
             >
               {/* 2. Top-Left ← Back button (min 44x44px tap target) */}
               <button
@@ -650,8 +686,12 @@ export default function NotificationCenter({ user, profile }) {
 
             {/* 5. STICKY BOTTOM FOOTER WITH FULL-WIDTH CLOSE BUTTON */}
             <footer
-              className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md px-5 py-3 sm:py-3.5"
-              style={{ paddingBottom: 'max(14px, env(safe-area-inset-bottom, 0px))' }}
+              className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#0F172A] px-5 py-3 sm:py-3.5"
+              style={{
+                paddingBottom: 'max(14px, env(safe-area-inset-bottom, 0px))',
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none'
+              }}
             >
               <button
                 type="button"

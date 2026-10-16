@@ -17,6 +17,7 @@ import { useLanguage } from '../components/LanguageProvider'
 import { readCache, writeCache } from '../lib/cache'
 import SEO from '../components/SEO'
 import { NotificationBellButton } from '../components/NotificationCenter'
+import { parseAnnouncement } from '../lib/announcements'
 
 export default function HomePage() {
   const [user, setUser] = useState(null)
@@ -103,10 +104,12 @@ export default function HomePage() {
       }
 
       const { data: userProfile } = await supabase.from('profiles').select('course, university').eq('id', activeUser.id).maybeSingle()
-      const validAnnouncements = (announcementRowsRes.data || []).filter(a => {
-        if (a.channels && a.channels.in_app === false) return false
-        if (sessionStorage.getItem(`axon_ann_dismissed_${a.id}`)) return false
-        if (localStorage.getItem(`axon_ann_read_${a.id}`)) return false
+      const validAnnouncements = (announcementRowsRes.data || [])
+        .map(parseAnnouncement)
+        .filter(a => {
+          if (a.channels && a.channels.in_app === false) return false
+          if (sessionStorage.getItem(`axon_ann_dismissed_${a.id}`)) return false
+          if (localStorage.getItem(`axon_ann_read_${a.id}`)) return false
 
         const targetType = a.target_type || 'all'
         if (targetType === 'all') return true

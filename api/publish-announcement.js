@@ -82,12 +82,23 @@ export default async function handler(req, res) {
       .maybeSingle()
 
     if (insertError) {
-      // If table lacks new columns yet, fallback to inserting core columns
+      // If table lacks new columns yet, fallback to inserting core columns with encoded metadata
       console.warn('Inserting announcement with full schema failed, trying core columns fallback:', insertError.message)
+      const metaClean = {
+        channels: {
+          in_app: Boolean(channels?.in_app),
+          push: Boolean(channels?.push),
+          email: Boolean(channels?.email)
+        },
+        target_type: target_type || 'all',
+        target_ids: target_type === 'individual' ? target_ids : []
+      }
+      const encodedMessage = `<!--AXON_META:${JSON.stringify(metaClean)}-->\n${message.trim()}`
+
       const fallbackPayload = {
         manager_id: caller.id,
         title: title.trim(),
-        message: message.trim(),
+        message: encodedMessage,
         type,
         expires_at: expires_at ? new Date(expires_at).toISOString() : null
       }
