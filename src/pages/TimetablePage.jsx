@@ -206,6 +206,9 @@ export default function TimetablePage() {
       return
     }
     setupProfiles(currentUser)
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) setupProfiles(data.user)
+    }).catch(() => {})
   }
 
   function setupProfiles(currentUser) {
@@ -230,6 +233,21 @@ export default function TimetablePage() {
         }
       })
     }
+    try {
+      const backupPrefix = `axon_archived_backup_${currentUser.id}_`
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith(backupPrefix)) {
+          const raw = localStorage.getItem(key)
+          if (raw) {
+            const backedProfile = JSON.parse(raw)
+            if (backedProfile && backedProfile.id && !profileMap.has(backedProfile.id)) {
+              profileMap.set(backedProfile.id, backedProfile)
+            }
+          }
+        }
+      }
+    } catch (_) {}
     const profiles = Array.from(profileMap.values())
     
     saveLinkedProfiles(currentUser.id, profiles)
@@ -367,7 +385,7 @@ export default function TimetablePage() {
   }
 
   function addLinkedProfile() {
-    if (linkedProfiles.length >= 5) return showToast('Maximum 5 linked timetables allowed.', 'error')
+    if (linkedProfiles.length >= 10) return showToast(t('timetable.maxArchivedReached'), 'error')
     const name = newProfileName.trim()
     if (!name) return showToast(t('timetable.profileRequired'), 'error')
     if (linkedProfiles.some(profile => profile.name.toLowerCase() === name.toLowerCase())) {
@@ -403,8 +421,11 @@ export default function TimetablePage() {
   }
 
   function openRolloverWizard() {
+    const currentName = semesterName && semesterName !== 'My Timetable' && semesterName !== t('timetable.liveProfile')
+      ? semesterName
+      : ''
     setNewSemesterForm({
-      archiveName: '',
+      archiveName: currentName,
       newName: 'My Timetable',
       newStartDate: '',
       newEndDate: ''
@@ -473,43 +494,53 @@ export default function TimetablePage() {
     const freshProfiles = readLinkedProfiles(user.id)
     let updatedProfiles = [...freshProfiles]
 
-    // 1. If live profile has classes, automatically archive them into linkedProfiles
+    // 1. If live profile has classes, prepare archived profile
     if (classes.length > 0) {
       if (freshProfiles.length >= 10) {
         setIsSubmitting(false)
-        return showToast('Maximum saved timetables reached. Please remove one first.', 'error')
+        return showToast(t('timetable.maxArchivedReached'), 'error')
       }
       const profileId = `profile-${Date.now()}`
       const archivedProfile = {
         id: profileId,
         name: archiveLabel,
-        classes: classes.map(c => ({ ...c, profile_id: profileId }))
+        classes: classes.map(c => ({ ...c, profile_id: profileId })),
+        startDate: semesterStartDate || '',
+        endDate: semesterEndDate || ''
       }
       updatedProfiles.push(archivedProfile)
       try {
         localStorage.setItem(`axon_archived_backup_${user.id}_${profileId}`, JSON.stringify(archivedProfile))
       } catch (_) {}
-      persistLinkedProfiles(updatedProfiles)
     }
 
-    // 2. Clear live classes in Supabase
-    const { error } = await supabase.from('classes').delete().eq('user_id', user.id)
-    if (error) {
-      console.error('Error clearing live classes for new semester:', error)
-      setIsSubmitting(false)
-      return showToast(t('timetable.startNewSemesterFailed'), 'error')
-    }
+    // 2. Persist to local storage and UI state
+    saveLinkedProfiles(user.id, updatedProfiles)
+    setLinkedProfiles(updatedProfiles)
 
-    // Clear live replacements in auth while explicitly preserving linked_timetables
+    // 3. Persist to Supabase Auth FIRST before clearing live classes
     const replacements = user.user_metadata?.replacement_classes || []
     const remainingReplacements = replacements.filter(r => r.profile_id && r.profile_id !== 'account' && r.profile_id !== LIVE_PROFILE_ID)
-    const { data: authUpdateResult } = await supabase.auth.updateUser({
+    const { data: authUpdateResult, error: authErr } = await supabase.auth.updateUser({
       data: {
         replacement_classes: remainingReplacements,
         linked_timetables: updatedProfiles
       }
     })
+    if (authErr) {
+      console.error('Error saving archived timetable to cloud auth:', authErr)
+      setIsSubmitting(false)
+      return showToast(t('timetable.startNewSemesterFailed'), 'error')
+    }
     if (authUpdateResult?.user) setUser(authUpdateResult.user)
+
+    // 4. Archive is safely stored in cloud & local, now clear live classes in DB
+    const { error: dbDeleteErr } = await supabase.from('classes').delete().eq('user_id', user.id)
+    if (dbDeleteErr) {
+      console.error('Error clearing live classes for new semester:', dbDeleteErr)
+      setIsSubmitting(false)
+      return showToast(t('timetable.startNewSemesterFailed'), 'error')
+    }
 
     clearCache(classesCacheKey(user.id))
     setClasses([])
@@ -521,12 +552,16 @@ export default function TimetablePage() {
 
   async function handleFinishNewSemester(uploadForAI = false) {
     if (!user) return
-    setIsSubmitting(true)
 
     const nextName = newSemesterForm.newName.trim() || 'My Timetable'
     const nextStartDate = newSemesterForm.newStartDate.trim()
     const nextEndDate = newSemesterForm.newEndDate.trim()
 
+    if (nextStartDate && nextEndDate && nextStartDate > nextEndDate) {
+      return showToast(t('timetable.invalidDateRange'), 'error')
+    }
+
+    setIsSubmitting(true)
     setSemesterName(nextName)
     setSemesterStartDate(nextStartDate)
     setSemesterEndDate(nextEndDate)
@@ -577,13 +612,18 @@ export default function TimetablePage() {
     if (currentLiveClasses && currentLiveClasses.length > 0) {
       const liveArchiveName = semesterName || t('timetable.previousSemester')
       const newArchivedId = `profile-${Date.now()}`
-      nextProfiles.push({
+      const archivedProfile = {
         id: newArchivedId,
         name: liveArchiveName,
-        classes: currentLiveClasses.map(c => ({ ...c, profile_id: newArchivedId }))
-      })
+        classes: currentLiveClasses.map(c => ({ ...c, profile_id: newArchivedId })),
+        startDate: semesterStartDate || '',
+        endDate: semesterEndDate || ''
+      }
+      nextProfiles.push(archivedProfile)
+      try {
+        localStorage.setItem(`axon_archived_backup_${user.id}_${newArchivedId}`, JSON.stringify(archivedProfile))
+      } catch (_) {}
     }
-    persistLinkedProfiles(nextProfiles)
 
     // Clear live classes and insert targetProfile classes
     await supabase.from('classes').delete().eq('user_id', user.id)
@@ -592,13 +632,26 @@ export default function TimetablePage() {
         ...item,
         user_id: user.id
       }))
-      await supabase.from('classes').insert(liveRows)
+      const { error: insertErr } = await supabase.from('classes').insert(liveRows)
+      if (insertErr) {
+        console.error('Error restoring classes into live:', insertErr)
+      }
     }
 
     clearCache(classesCacheKey(user.id))
+    const targetStartDate = targetProfile.startDate || ''
+    const targetEndDate = targetProfile.endDate || ''
     setSemesterName(targetProfile.name)
-    localStorage.setItem('axon_semester_name', targetProfile.name)
-    await updatePreference(user, 'axon_semester_name', targetProfile.name)
+    setSemesterStartDate(targetStartDate)
+    setSemesterEndDate(targetEndDate)
+
+    const updatedUser = await saveSemesterPreferences(user, {
+      name: targetProfile.name,
+      startDate: targetStartDate,
+      endDate: targetEndDate,
+      linkedProfiles: nextProfiles
+    })
+    if (updatedUser) setUser(updatedUser)
 
     switchProfile(LIVE_PROFILE_ID)
     setIsSubmitting(false)
@@ -1168,6 +1221,12 @@ export default function TimetablePage() {
                     {t('timetable.weeksLeft', { count: newSemesterPreview.remainingWeeks })}
                   </span>
                 )}
+              </div>
+            )}
+
+            {newSemesterPreview?.isInvalid && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 flex items-center gap-2">
+                <span>⚠️ {t('timetable.invalidDateRange')}</span>
               </div>
             )}
 
