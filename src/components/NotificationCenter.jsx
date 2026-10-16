@@ -748,3 +748,34 @@ export function NotificationBellButton({ className = '', size = 'default', showL
     </button>
   )
 }
+
+export function NotificationBadge({ className = '' }) {
+  const [unreadCount, setUnreadCount] = useState(() => {
+    return parseInt(localStorage.getItem('axon_unread_announcements_count') || '0', 10)
+  })
+
+  useEffect(() => {
+    function onUpdate(e) {
+      if (e?.detail?.count !== undefined) {
+        setUnreadCount(e.detail.count)
+      } else {
+        const count = parseInt(localStorage.getItem('axon_unread_announcements_count') || '0', 10)
+        setUnreadCount(count)
+      }
+    }
+    window.addEventListener('axon_unread_count_updated', onUpdate)
+    window.addEventListener('axon_announcements_updated', onUpdate)
+    return () => {
+      window.removeEventListener('axon_unread_count_updated', onUpdate)
+      window.removeEventListener('axon_announcements_updated', onUpdate)
+    }
+  }, [])
+
+  if (unreadCount <= 0) return null
+
+  return (
+    <span className={`inline-flex h-4 min-w-[16px] px-1.5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm leading-none ${className}`}>
+      {unreadCount > 99 ? '99+' : unreadCount}
+    </span>
+  )
+}
