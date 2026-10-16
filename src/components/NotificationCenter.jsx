@@ -419,31 +419,45 @@ export default function NotificationCenter({ user, profile }) {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1.5">
-                {unreadCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={markAllAsRead}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-blue-400 hover:bg-white/5 transition-colors"
-                    title="Mark all as read"
-                  >
-                    <CheckCheck className="h-3.5 w-3.5" />
-                    <span>Mark all read</span>
-                  </button>
-                )}
+              <button
+                type="button"
+                onClick={() => {
+                  closeDetail(true)
+                  setIsOpen(false)
+                }}
+                aria-label="Close notifications"
+                className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white active:bg-white/15 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Top Action Bar: Status summary + Dedicated "Mark all as read" button */}
+            {announcements.length > 0 && (
+              <div className="flex items-center justify-between border-b border-white/5 px-4 sm:px-5 py-2.5 bg-slate-950/40 shrink-0">
+                <span className="text-xs text-slate-400 font-medium">
+                  {unreadCount > 0 ? (
+                    <span><strong className="text-blue-400 font-semibold">{unreadCount}</strong> unread</span>
+                  ) : (
+                    <span className="text-slate-500">All caught up</span>
+                  )}
+                </span>
+
                 <button
                   type="button"
-                  onClick={() => {
-                    closeDetail(true)
-                    setIsOpen(false)
-                  }}
-                  aria-label="Close notifications"
-                  className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white active:bg-white/15 transition-colors"
+                  onClick={markAllAsRead}
+                  disabled={unreadCount === 0}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    unreadCount > 0
+                      ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 active:scale-95 cursor-pointer shadow-sm'
+                      : 'text-slate-600 border border-white/5 opacity-40 cursor-not-allowed'
+                  }`}
                 >
-                  <X className="h-5 w-5" />
+                  <CheckCheck className="h-3.5 w-3.5" />
+                  <span>Mark all as read</span>
                 </button>
               </div>
-            </div>
+            )}
 
             {/* Notification List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2.5 scrollbar-hide">
