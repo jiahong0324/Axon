@@ -730,20 +730,24 @@ export function NotificationBellButton({ className = '', size = 'default', showL
     }
   }, [])
 
+  const isSmall = size === 'sm'
+
   return (
     <button
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent('axon_open_notifications'))}
-      className={`inline-flex items-center justify-center p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all ${className}`}
+      className={`inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all ${className}`}
       title="Notifications"
       aria-label="Notifications"
     >
       <span className="relative inline-flex items-center justify-center">
-        <Bell className={size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'} />
+        <Bell className={isSmall ? 'h-4 w-4' : 'h-5 w-5'} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-1.5 ring-[#0A0F1E] leading-none">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
+          <span
+            className={`absolute top-0 right-0 rounded-full bg-red-500 ring-2 ring-[#0A0F1E] shadow-sm pointer-events-none ${
+              isSmall ? 'h-2 w-2' : 'h-2.5 w-2.5'
+            }`}
+          />
         )}
       </span>
       {showLabel && <span className="text-xs font-medium ml-2">Notifications</span>}
@@ -776,8 +780,6 @@ export function NotificationBadge({ className = '' }) {
   if (unreadCount <= 0) return null
 
   return (
-    <span className={`inline-flex h-4 min-w-[16px] px-1.5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm leading-none ${className}`}>
-      {unreadCount > 99 ? '99+' : unreadCount}
-    </span>
+    <span className={`inline-block h-2.5 w-2.5 rounded-full bg-red-500 shadow-sm ${className}`} />
   )
 }
