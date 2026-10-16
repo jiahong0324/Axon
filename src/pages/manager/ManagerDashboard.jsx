@@ -215,6 +215,7 @@ export function AnnouncementModal({ isOpen, onClose, form, setForm, onSubmit }) 
 export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loading, students = [] }) {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [search, setSearch] = useState('')
+  const [showPicker, setShowPicker] = useState(false)
 
   // Filter students who have a valid email address
   const validStudents = useMemo(() => {
@@ -225,27 +226,26 @@ export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loadi
     })
   }, [students])
 
-  const missingEmailCount = (students || []).length - validStudents.length
-
   // Select all valid students by default when opening modal
   useEffect(() => {
     if (isOpen) {
       setSelectedIds(new Set(validStudents.map(s => s.id)))
       setSearch('')
+      setShowPicker(false)
     }
   }, [isOpen, validStudents])
 
   const toggleStudent = (id) => {
     setSelectedIds(prev => {
       const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
+
+  const selectAll = () => setSelectedIds(new Set(validStudents.map(s => s.id)))
+  const deselectAll = () => setSelectedIds(new Set())
 
   // Filtered by search query
   const filteredStudents = useMemo(() => {
@@ -253,32 +253,14 @@ export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loadi
     const q = search.toLowerCase()
     return validStudents.filter(s =>
       (s.full_name || '').toLowerCase().includes(q) ||
-      (s.email || '').toLowerCase().includes(q) ||
-      (s.course || '').toLowerCase().includes(q) ||
-      (s.student_id || '').toLowerCase().includes(q)
+      (s.email || '').toLowerCase().includes(q)
     )
   }, [validStudents, search])
 
-  const allFilteredSelected = filteredStudents.length > 0 && filteredStudents.every(s => selectedIds.has(s.id))
-
-  const handleToggleFiltered = () => {
-    if (allFilteredSelected) {
-      setSelectedIds(prev => {
-        const next = new Set(prev)
-        filteredStudents.forEach(s => next.delete(s.id))
-        return next
-      })
-    } else {
-      setSelectedIds(prev => {
-        const next = new Set(prev)
-        filteredStudents.forEach(s => next.add(s.id))
-        return next
-      })
-    }
-  }
-
   const isStudentsAudience = form.audience !== 'custom'
   const selectedCount = selectedIds.size
+  const isAllSelected = selectedCount === validStudents.length
+  const excludedCount = validStudents.length - selectedCount
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -296,7 +278,7 @@ export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loadi
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Send Email Broadcast" maxWidth="max-w-xl">
+    <Modal isOpen={isOpen} onClose={onClose} title="Send Email Broadcast" maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Subject">
           <input
@@ -312,7 +294,7 @@ export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loadi
           <p className="label">Audience</p>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { id: 'students', label: `Select Students (${selectedCount}/${validStudents.length})` },
+              { id: 'students', label: `All Students (${validStudents.length})` },
               { id: 'custom', label: 'Custom List' }
             ].map(aud => {
               const active = (aud.id === 'students' && isStudentsAudience) || (aud.id === 'custom' && form.audience === 'custom')
@@ -332,104 +314,95 @@ export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loadi
               )
             })}
           </div>
-        </div>
 
-        {isStudentsAudience ? (
-          <div className="space-y-2 rounded-xl border border-white/10 bg-slate-900/60 p-3">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-                <input
-                  type="text"
-                  className="input h-8 pl-8 text-xs py-1 w-full bg-slate-950/60 border-white/10 placeholder:text-slate-500"
-                  placeholder="Search students by name, email, course..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-2 text-xs">
+          {/* Clean recipient summary & toggle for students audience */}
+          {isStudentsAudience && (
+            <div className="mt-2.5">
+              <div className="flex items-center justify-between text-xs text-slate-400 px-0.5">
+                <span>
+                  {isAllSelected ? (
+                    <>Sending to <strong className="text-amber-300 font-semibold">all {validStudents.length}</strong> students</>
+                  ) : (
+                    <>Sending to <strong className="text-amber-300 font-semibold">{selectedCount}</strong> of {validStudents.length} students <span className="text-amber-400/80">({excludedCount} excluded)</span></>
+                  )}
+                </span>
                 <button
                   type="button"
-                  onClick={handleToggleFiltered}
-                  className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+                  onClick={() => setShowPicker(!showPicker)}
+                  className="font-medium text-amber-400 hover:text-amber-300 transition-colors"
                 >
-                  {allFilteredSelected ? (
-                    <>
-                      <Square className="h-3.5 w-3.5 text-slate-400" />
-                      <span>Deselect All</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckSquare className="h-3.5 w-3.5 text-amber-400" />
-                      <span>Select All</span>
-                    </>
-                  )}
+                  {showPicker ? 'Done' : isAllSelected ? 'Exclude students' : 'Edit selection'}
                 </button>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between px-1 text-xs text-slate-400">
-              <span>
-                Selected: <strong className="text-amber-300">{selectedCount}</strong> of {validStudents.length} student{validStudents.length === 1 ? '' : 's'}
-              </span>
-              {search.trim() && (
-                <span className="text-slate-500">
-                  Showing {filteredStudents.length} of {validStudents.length}
-                </span>
-              )}
-            </div>
-
-            <div className="max-h-52 overflow-y-auto space-y-1 pr-1 scrollbar-thin scrollbar-thumb-white/10">
-              {filteredStudents.length === 0 ? (
-                <p className="py-6 text-center text-xs text-slate-500">No students match your search.</p>
-              ) : (
-                filteredStudents.map(student => {
-                  const isChecked = selectedIds.has(student.id)
-                  return (
-                    <label
-                      key={student.id}
-                      className={`flex items-center gap-2.5 rounded-lg p-2 text-xs cursor-pointer transition-colors border select-none ${
-                        isChecked
-                          ? 'border-amber-500/30 bg-amber-500/10 text-white'
-                          : 'border-transparent bg-white/[0.02] text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                      }`}
-                    >
+              {/* Collapsible student selection drawer */}
+              {showPicker && (
+                <div className="mt-2 space-y-2 rounded-xl border border-white/10 bg-slate-900/70 p-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
                       <input
-                        type="checkbox"
-                        className="rounded border-white/20 bg-slate-900 text-amber-500 focus:ring-amber-400/20 h-4 w-4 shrink-0 cursor-pointer"
-                        checked={isChecked}
-                        onChange={() => toggleStudent(student.id)}
+                        type="text"
+                        className="input h-7 pl-7 text-xs py-0 w-full bg-slate-950/60 border-white/10 placeholder:text-slate-500"
+                        placeholder="Search student or email..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
                       />
-                      <div
-                        className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold text-white shadow-sm"
-                        style={{ background: student.avatar_color || '#F59E0B' }}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs shrink-0">
+                      <button
+                        type="button"
+                        onClick={selectAll}
+                        className="text-amber-400 hover:text-amber-300 hover:underline"
                       >
-                        {initials(student.full_name || student.email || 'S')}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <p className="font-medium truncate text-slate-200">{student.full_name || 'Unnamed Student'}</p>
-                          {student.course && (
-                            <span className="hidden sm:inline-block text-[10px] text-slate-500 truncate max-w-[120px]">
-                              {student.course}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-400 truncate">{student.email}</p>
-                      </div>
-                    </label>
-                  )
-                })
+                        Select all
+                      </button>
+                      <span className="text-slate-600">•</span>
+                      <button
+                        type="button"
+                        onClick={deselectAll}
+                        className="text-slate-400 hover:text-slate-300 hover:underline"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="max-h-40 overflow-y-auto space-y-0.5 pr-0.5 scrollbar-thin scrollbar-thumb-white/10">
+                    {filteredStudents.length === 0 ? (
+                      <p className="py-3 text-center text-xs text-slate-500">No matching students</p>
+                    ) : (
+                      filteredStudents.map(student => {
+                        const isChecked = selectedIds.has(student.id)
+                        return (
+                          <label
+                            key={student.id}
+                            className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs cursor-pointer select-none transition-colors ${
+                              isChecked
+                                ? 'bg-amber-500/10 text-slate-200'
+                                : 'text-slate-500 hover:bg-white/5 hover:text-slate-300'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="rounded border-white/20 bg-slate-900 text-amber-500 focus:ring-amber-400/20 h-3.5 w-3.5 shrink-0 cursor-pointer"
+                              checked={isChecked}
+                              onChange={() => toggleStudent(student.id)}
+                            />
+                            <span className="font-medium truncate">{student.full_name || 'Unnamed Student'}</span>
+                            <span className="text-[11px] text-slate-400 truncate ml-auto">{student.email}</span>
+                          </label>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
               )}
             </div>
+          )}
+        </div>
 
-            {missingEmailCount > 0 && (
-              <p className="text-[11px] text-slate-500 px-1 pt-1 italic">
-                * {missingEmailCount} student{missingEmailCount === 1 ? '' : 's'} excluded (no email address on file)
-              </p>
-            )}
-          </div>
-        ) : (
+        {form.audience === 'custom' && (
           <Field label="Recipients (Comma-separated emails)">
             <textarea
               className="input min-h-20"
@@ -443,11 +416,11 @@ export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loadi
 
         <Field label="Message Content">
           <textarea
-            className="input min-h-28"
+            className="input min-h-32"
             required
             value={form.message}
             onChange={e => setForm({ ...form, message: e.target.value })}
-            placeholder="Type your promotional or announcement message here..."
+            placeholder="Type your announcement or update here..."
           />
         </Field>
 
@@ -460,7 +433,9 @@ export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loadi
             : isStudentsAudience
               ? selectedCount === 0
                 ? 'No Students Selected'
-                : `Send Broadcast to ${selectedCount} Student${selectedCount === 1 ? '' : 's'}`
+                : selectedCount === validStudents.length
+                  ? 'Send Broadcast'
+                  : `Send to ${selectedCount} Student${selectedCount === 1 ? '' : 's'}`
               : 'Send Broadcast'}
         </button>
       </form>
