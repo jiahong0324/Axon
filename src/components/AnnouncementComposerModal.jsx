@@ -217,20 +217,22 @@ export default function AnnouncementComposerModal({
         const resData = await response.json()
         pushCount = resData.pushStats?.sent || 0
       } catch (apiErr) {
-        // Fallback: If api/publish-announcement fails (e.g. local dev without serverless), write directly to Supabase
-        console.warn('API publish fallback to direct Supabase insert:', apiErr)
-        const { error: directError } = await supabase.from('announcements').insert({
-          manager_id: session.user.id,
-          title: title.trim(),
-          message: message.trim(),
-          type,
-          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-          target_type: targetType,
-          target_ids: targetIdsArray,
-          target_group: targetType === 'group' ? selectedGroup : null,
-          channels
-        })
-        if (directError) throw directError
+        // Fallback: If api/publish-announcement fails (e.g. local dev without serverless), write directly to Supabase if in_app enabled
+        if (channels.in_app !== false) {
+          console.warn('API publish fallback to direct Supabase insert:', apiErr)
+          const { error: directError } = await supabase.from('announcements').insert({
+            manager_id: session.user.id,
+            title: title.trim(),
+            message: message.trim(),
+            type,
+            expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+            target_type: targetType,
+            target_ids: targetIdsArray,
+            target_group: targetType === 'group' ? selectedGroup : null,
+            channels
+          })
+          if (directError) throw directError
+        }
       }
 
       // 3. Email Broadcast (if checked)

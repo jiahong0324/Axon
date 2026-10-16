@@ -63,48 +63,60 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Announcement message is required' })
     }
 
-    // 1. Insert announcement record into Supabase
-    const announcementPayload = {
-      manager_id: caller.id,
-      title: title.trim(),
-      message: message.trim(),
-      type,
-      expires_at: expires_at ? new Date(expires_at).toISOString() : null,
-      target_type,
-      target_ids: target_type === 'individual' ? target_ids : null,
-      target_group: target_type === 'group' ? target_group : null,
-      channels
-    }
-
+    // 1. Insert announcement record into Supabase ONLY if in_app channel is enabled
     let insertedAnnouncement = null
-    const { data: inserted, error: insertError } = await adminSupabase
-      .from('announcements')
-      .insert(announcementPayload)
-      .select()
-      .maybeSingle()
-
-    if (insertError) {
-      // If table lacks new columns yet, fallback to inserting core columns
-      console.warn('Inserting announcement with full schema failed, trying core columns fallback:', insertError.message)
-      const fallbackPayload = {
+    if (channels.in_app !== false) {
+      const announcementPayload = {
         manager_id: caller.id,
         title: title.trim(),
         message: message.trim(),
         type,
-        expires_at: expires_at ? new Date(expires_at).toISOString() : null
+        expires_at: expires_at ? new Date(expires_at).toISOString() : null,
+        target_type,
+        target_ids: target_type === 'individual' ? target_ids : null,
+        target_group: target_type === 'group' ? target_group : null,
+        channels
       }
-      const { data: fallbackInserted, error: fallbackError } = await adminSupabase
+
+      const { data: inserted, error: insertError } = await adminSupabase
         .from('announcements')
-        .insert(fallbackPayload)
+        .insert(announcementPayload)
         .select()
         .maybeSingle()
 
-      if (fallbackError) {
-        return res.status(500).json({ error: fallbackError.message })
+      if (insertError) {
+        // If table lacks new columns yet, fallback to inserting core columns
+        console.warn('Inserting announcement with full schema failed, trying core columns fallback:', insertError.message)
+        const fallbackPayload = {
+          manager_id: caller.id,
+          title: title.trim(),
+          message: message.trim(),
+          type,
+          expires_at: expires_at ? new Date(expires_at).toISOString() : null
+        }
+        const { data: fallbackInserted, error: fallbackError } = await adminSupabase
+          .from('announcements')
+          .insert(fallbackPayload)
+          .select()
+          .maybeSingle()
+
+        if (fallbackError) {
+          return res.status(500).json({ error: fallbackError.message })
+        }
+        insertedAnnouncement = fallbackInserted
+      } else {
+        insertedAnnouncement = inserted
       }
-      insertedAnnouncement = fallbackInserted
     } else {
-      insertedAnnouncement = inserted
+      // Push or email only: log to activity_log for manager records without cluttering student in-app feed
+      try {
+        await adminSupabase.from('activity_log').insert({
+          user_id: caller.id,
+          action: 'Sent push notification',
+          entity_type: 'push_notification',
+          entity_name: title.trim()
+        })
+      } catch (_) {}
     }
 
     let pushStats = { sent: 0, failed: 0, totalSubscriptions: 0 }

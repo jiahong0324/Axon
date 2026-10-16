@@ -16,6 +16,7 @@ import { daysFromToday, dateLabel, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
 import { readCache, writeCache } from '../lib/cache'
 import SEO from '../components/SEO'
+import { NotificationBellButton } from '../components/NotificationCenter'
 
 export default function HomePage() {
   const [user, setUser] = useState(null)
@@ -103,6 +104,7 @@ export default function HomePage() {
 
       const { data: userProfile } = await supabase.from('profiles').select('course, university').eq('id', activeUser.id).maybeSingle()
       const validAnnouncements = (announcementRowsRes.data || []).filter(a => {
+        if (a.channels && a.channels.in_app === false) return false
         if (sessionStorage.getItem(`axon_ann_dismissed_${a.id}`)) return false
         if (localStorage.getItem(`axon_ann_read_${a.id}`)) return false
 
@@ -235,9 +237,15 @@ export default function HomePage() {
         </div>
       ))}
 
-      <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-end">
-        <h1 className="font-heading text-2xl font-bold">{greeting}, {user?.user_metadata?.full_name || 'student'} 👋</h1>
-        <p className="muted tabular-nums">{format(currentTime, 'EEEE, dd MMMM yyyy · hh:mm:ss a')}</p>
+      <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-center">
+        <div className="flex items-center justify-between w-full md:w-auto">
+          <h1 className="font-heading text-xl md:text-2xl font-bold">{greeting}, {user?.user_metadata?.full_name || 'student'} 👋</h1>
+          <NotificationBellButton className="md:hidden h-8 w-8 shrink-0" size="sm" />
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="muted tabular-nums text-xs md:text-sm">{format(currentTime, 'EEEE, dd MMMM yyyy · hh:mm:ss a')}</p>
+          <NotificationBellButton className="hidden md:inline-flex h-8 w-8 shrink-0" size="sm" />
+        </div>
       </header>
 
       <section className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">

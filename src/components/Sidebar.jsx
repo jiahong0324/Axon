@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { initials } from '../lib/utils'
 import { useLanguage } from './LanguageProvider'
 import { markExplicitLogout } from '../lib/authEvents'
+import { NotificationBellButton } from './NotificationCenter'
 
 const navItems = [
   { label: 'Home', tKey: 'sidebar.home', path: '/home', icon: LayoutDashboard },
@@ -41,12 +42,15 @@ export default function Sidebar({ user }) {
   return (
     <>
       <aside className="student-sidebar hidden w-60 shrink-0 border-r border-slate-200 dark:border-white/10 bg-white dark:bg-[#1E293B] p-4 md:flex md:flex-col">
-        <div className="mb-5 flex items-center gap-3 px-2 shrink-0">
-          <img src="/icons/logo.png" alt="Axon logo" className="h-8 w-8 rounded-lg object-contain" />
-          <div>
-            <p className="font-heading text-lg font-bold gradient-text">Axon</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{t('sidebar.tagline')}</p>
+        <div className="mb-5 flex items-center justify-between px-2 shrink-0">
+          <div className="flex items-center gap-3">
+            <img src="/icons/logo.png" alt="Axon logo" className="h-8 w-8 rounded-lg object-contain" />
+            <div>
+              <p className="font-heading text-lg font-bold gradient-text">Axon</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t('sidebar.tagline')}</p>
+            </div>
           </div>
+          <NotificationBellButton className="h-8 w-8 shrink-0" size="sm" />
         </div>
         <nav className="flex flex-1 flex-col gap-1.5 overflow-y-auto scrollbar-hide py-1">
           {navItems.map(item => (
@@ -115,6 +119,20 @@ export default function Sidebar({ user }) {
                   {item.tKey ? t(item.tKey) : item.label}
                 </NavLink>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false)
+                  window.dispatchEvent(new CustomEvent('axon_open_notifications'))
+                }}
+                className="flex min-h-[52px] items-center justify-between rounded-xl px-3 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5"
+              >
+                <div className="flex items-center gap-3">
+                  <Bell className="h-5 w-5 text-theme-500 dark:text-theme-400" />
+                  <span>Notifications</span>
+                </div>
+                <NotificationBellButton className="h-7 w-7 border-none bg-transparent shadow-none" size="sm" />
+              </button>
               <div className="my-2 h-px bg-slate-200 dark:bg-white/10" />
               <NavLink to="/?view=true" onClick={() => setMoreOpen(false)} className="flex min-h-[52px] items-center gap-3 rounded-xl px-3 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5">
                 <Globe className="h-5 w-5 text-slate-500 dark:text-slate-400" />

@@ -17,6 +17,7 @@ import { useLanguage } from '../components/LanguageProvider'
 import SubjectSelect from '../components/SubjectSelect'
 import SEO from '../components/SEO'
 import DateInput from '../components/DateInput'
+import { NotificationBellButton } from '../components/NotificationCenter'
 
 const statuses = ['Pending', 'In Progress', 'Done']
 const initialForm = { title: '', subject: '', deadline: '', priority: 'Medium', notes: '', status: 'Pending' }
@@ -143,6 +144,7 @@ export default function AssignmentPage() {
         <div className="flex items-center justify-between w-full">
           <h1 className="page-title mb-0">{t('assignments.title')}</h1>
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
+            <NotificationBellButton className="h-8 w-8 md:hidden shrink-0" size="sm" />
             {!loading && (
               <>
                 <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('assignments.extract')}>

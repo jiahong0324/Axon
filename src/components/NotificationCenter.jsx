@@ -12,6 +12,12 @@ export default function NotificationCenter({ user, profile }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const handleOpen = () => setIsOpen(true)
+    window.addEventListener('axon_open_notifications', handleOpen)
+    return () => window.removeEventListener('axon_open_notifications', handleOpen)
+  }, [])
+
+  useEffect(() => {
     if (!user) return
     loadData()
 
@@ -51,6 +57,8 @@ export default function NotificationCenter({ user, profile }) {
 
       // Filter announcements relevant to this student
       const userAnnouncements = (rawAnnouncements || []).filter(item => {
+        if (item.channels && item.channels.in_app === false) return false
+
         const targetType = item.target_type || 'all'
         if (targetType === 'all') return true
         if (targetType === 'individual') {
@@ -175,25 +183,13 @@ export default function NotificationCenter({ user, profile }) {
     )
   }
 
+  useEffect(() => {
+    localStorage.setItem('axon_unread_announcements_count', String(unreadCount))
+    window.dispatchEvent(new CustomEvent('axon_unread_count_updated', { detail: { count: unreadCount } }))
+  }, [unreadCount])
+
   return (
     <>
-      {/* Option A: Fixed Top-Right Bell Button across all student views */}
-      <div className="fixed top-[calc(env(safe-area-inset-top)+0.75rem)] right-4 md:right-8 z-30">
-        <button
-          onClick={() => setIsOpen(true)}
-          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-slate-700 dark:text-slate-200 shadow-md hover:scale-105 active:scale-95 transition-all"
-          title="Notifications & Announcements"
-          aria-label="Notifications"
-        >
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white shadow-sm shadow-red-500/50 animate-pulse">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </button>
-      </div>
-
       {/* Notification Drawer Modal */}
       {isOpen && (
         <div
@@ -380,5 +376,46 @@ export default function NotificationCenter({ user, profile }) {
         </div>
       )}
     </>
+  )
+}
+
+export function NotificationBellButton({ className = '', size = 'default', showLabel = false }) {
+  const [unreadCount, setUnreadCount] = useState(() => {
+    return parseInt(localStorage.getItem('axon_unread_announcements_count') || '0', 10)
+  })
+
+  useEffect(() => {
+    function onUpdate(e) {
+      if (e?.detail?.count !== undefined) {
+        setUnreadCount(e.detail.count)
+      } else {
+        const count = parseInt(localStorage.getItem('axon_unread_announcements_count') || '0', 10)
+        setUnreadCount(count)
+      }
+    }
+    window.addEventListener('axon_unread_count_updated', onUpdate)
+    window.addEventListener('axon_announcements_updated', onUpdate)
+    return () => {
+      window.removeEventListener('axon_unread_count_updated', onUpdate)
+      window.removeEventListener('axon_announcements_updated', onUpdate)
+    }
+  }, [])
+
+  return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new CustomEvent('axon_open_notifications'))}
+      className={`relative inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 shadow-sm transition-all hover:scale-105 active:scale-95 ${className}`}
+      title="Notifications & Announcements"
+      aria-label="Notifications"
+    >
+      <Bell className={size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'} />
+      {showLabel && <span className="text-xs font-medium ml-2">Notifications</span>}
+      {unreadCount > 0 && (
+        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm shadow-red-500/50 animate-pulse">
+          {unreadCount > 9 ? '9+' : unreadCount}
+        </span>
+      )}
+    </button>
   )
 }
