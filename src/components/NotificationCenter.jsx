@@ -732,25 +732,23 @@ export function NotificationBellButton({ className = '', size = 'default', showL
 
   const iconClass =
     size === 'sm'
-      ? 'h-5 w-5'
-      : size === 'md'
-      ? 'h-6 w-6'
+      ? 'h-4 w-4'
+      : size === 'lg'
+      ? 'h-[22px] w-[22px]'
       : size === 'xl'
-      ? 'h-8 w-8'
-      : 'h-7 w-7'
+      ? 'h-6 w-6'
+      : 'h-5 w-5'
 
   const dotClass =
     size === 'sm'
-      ? 'top-0 right-0 h-2 w-2'
-      : size === 'md'
-      ? 'top-0.5 right-0.5 h-2.5 w-2.5'
-      : 'top-0.5 right-0.5 h-2.5 w-2.5'
+      ? 'top-0 right-0 h-1.5 w-1.5'
+      : 'top-0 right-0 h-2 w-2'
 
   return (
     <button
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent('axon_open_notifications'))}
-      className={`min-w-0 min-h-0 inline-flex items-center justify-center p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 active:scale-95 transition-all ${className}`}
+      className={`min-w-0 min-h-0 inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 active:scale-95 transition-all ${className}`}
       title="Notifications"
       aria-label="Notifications"
     >
@@ -758,7 +756,7 @@ export function NotificationBellButton({ className = '', size = 'default', showL
         <Bell className={iconClass} />
         {unreadCount > 0 && (
           <span
-            className={`absolute rounded-full bg-red-500 ring-2 ring-white dark:ring-[#0B1120] shadow-sm pointer-events-none ${dotClass}`}
+            className={`absolute rounded-full bg-red-500 ring-2 ring-white dark:ring-[#0F172A] shadow-sm pointer-events-none ${dotClass}`}
           />
         )}
       </span>
