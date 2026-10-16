@@ -395,19 +395,19 @@ export default function NotificationCenter({ user, profile }) {
             }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Dedicated Status Bar Spacer for iPhone / PWA */}
+            {/* Dedicated Status Bar Spacer for iPhone / PWA - only on mobile */}
             <div
-              className="w-full shrink-0 bg-[#0F172A]"
+              className="block sm:hidden w-full shrink-0 bg-[#0F172A]"
               style={{
-                height: 'max(env(safe-area-inset-top, 0px), 48px)',
-                minHeight: '48px',
+                height: 'max(env(safe-area-inset-top, 0px) + 14px, 64px)',
+                minHeight: '64px',
                 backgroundColor: '#0F172A'
               }}
             />
 
-            {/* Drawer Header - strictly below the status bar */}
+            {/* Drawer Header - strictly below the status bar on mobile, flush at top on laptop */}
             <div
-              className="flex items-center justify-between border-b border-white/10 px-4 sm:px-5 py-3.5 bg-[#0F172A] shrink-0"
+              className="flex items-center justify-between border-b border-white/10 px-4 sm:px-5 pt-1.5 sm:pt-4 pb-3 sm:pb-4 bg-[#0F172A] shrink-0"
               style={{
                 backgroundColor: '#0F172A',
                 backdropFilter: 'none',
@@ -734,17 +734,19 @@ export function NotificationBellButton({ className = '', size = 'default', showL
     <button
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent('axon_open_notifications'))}
-      className={`relative inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all ${className}`}
+      className={`inline-flex items-center justify-center p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all ${className}`}
       title="Notifications"
       aria-label="Notifications"
     >
-      <Bell className="h-5 w-5" />
+      <span className="relative inline-flex items-center justify-center">
+        <Bell className={size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'} />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-1.5 ring-[#0A0F1E] leading-none">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </span>
       {showLabel && <span className="text-xs font-medium ml-2">Notifications</span>}
-      {unreadCount > 0 && (
-        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-[#0A0F1E] leading-none">
-          {unreadCount > 99 ? '99+' : unreadCount}
-        </span>
-      )}
     </button>
   )
 }
