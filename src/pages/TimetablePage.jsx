@@ -120,10 +120,39 @@ export default function TimetablePage() {
   const [savedArchiveName, setSavedArchiveName] = useState('')
   const hasCheckedRollover = useRef(false)
   const [newSemesterForm, setNewSemesterForm] = useState({ archiveName: '', newName: '', newStartDate: '', newEndDate: '' })
-  const [mobileDay, setMobileDay] = useState(() => {
-    const day = new Date().getDay()
-    return day >= 1 && day <= 5 ? day - 1 : 0
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    return dayNames[new Date().getDay()]
   })
+
+  const displayedDays = useMemo(() => {
+    const presentDays = new Set(
+      classes
+        .map(c => (c.day ? c.day.trim().toLowerCase() : ''))
+        .filter(Boolean)
+    )
+    return days.filter(d => presentDays.has(d.toLowerCase()))
+  }, [classes])
+
+  const activeMobileDay = useMemo(() => {
+    if (displayedDays.length === 0) return 'Monday'
+    if (displayedDays.includes(selectedDay)) return selectedDay
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const todayName = dayNames[new Date().getDay()]
+    if (displayedDays.includes(todayName)) return todayName
+    return displayedDays[0]
+  }, [displayedDays, selectedDay])
+
+  const gridColsClass = useMemo(() => {
+    const count = displayedDays.length
+    if (count <= 1) return 'grid-cols-1 max-w-lg'
+    if (count === 2) return 'grid-cols-1 md:grid-cols-2 max-w-3xl'
+    if (count === 3) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+    if (count === 4) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+    if (count === 5) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'
+    if (count === 6) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'
+    return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7'
+  }, [displayedDays.length])
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -816,11 +845,12 @@ export default function TimetablePage() {
     
     // Ensure horizontal swipe is more dominant than vertical scroll
     if (Math.abs(distanceX) > Math.abs(distanceY)) {
-      if (isLeftSwipe) {
-        setMobileDay(prev => Math.min(days.length - 1, prev + 1))
+      const currentIndex = displayedDays.indexOf(activeMobileDay)
+      if (isLeftSwipe && currentIndex < displayedDays.length - 1) {
+        setSelectedDay(displayedDays[currentIndex + 1])
       }
-      if (isRightSwipe) {
-        setMobileDay(prev => Math.max(0, prev - 1))
+      if (isRightSwipe && currentIndex > 0) {
+        setSelectedDay(displayedDays[currentIndex - 1])
       }
     }
   }
@@ -1304,10 +1334,22 @@ export default function TimetablePage() {
           <button disabled={isSubmitting} className="btn-primary w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? t('common.saving') : t('timetable.saveClass')}</button>
         </form>
       </Modal>
-      {!loading && classes.length > 0 && (
+      {!loading && classes.length > 0 && displayedDays.length > 0 && (
         <div className="mb-4 flex w-full items-center justify-center md:hidden">
           <div className="flex w-full gap-1.5 px-2">
-            {days.map((day, index) => <button key={day} onClick={() => setMobileDay(index)} className={`min-h-[44px] flex-1 rounded-full font-bold text-sm border transition-colors ${mobileDay === index ? 'border-theme-500 bg-theme-500 text-white' : 'border-white/10 text-slate-400 hover:bg-white/5'}`}>{t(`timetable.days.${day}`).slice(0, 3)}</button>)}
+            {displayedDays.map(day => (
+              <button
+                key={day}
+                onClick={() => setSelectedDay(day)}
+                className={`min-h-[44px] flex-1 rounded-full font-bold text-sm border transition-colors ${
+                  activeMobileDay === day
+                    ? 'border-theme-500 bg-theme-500 text-white'
+                    : 'border-white/10 text-slate-400 hover:bg-white/5'
+                }`}
+              >
+                {t(`timetable.days.${day}`).slice(0, 3)}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -1318,9 +1360,11 @@ export default function TimetablePage() {
           {/* Mobile View */}
           {classes.length > 0 && (
           <section className="flex flex-col md:hidden">
-            {days.map((day, index) => {
-              if (mobileDay !== index) return null;
-              const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
+            {displayedDays.map(day => {
+              if (activeMobileDay !== day) return null;
+              const dayClasses = classes
+                .filter(c => c.day?.toLowerCase() === day.toLowerCase())
+                .sort((a, b) => a.start_time.localeCompare(b.start_time))
               return (
                 <div key={day} className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="flex items-center justify-between px-1">
@@ -1340,9 +1384,12 @@ export default function TimetablePage() {
           )}
 
           {/* Desktop View */}
-          <section className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {days.map((day, index) => {
-              const dayClasses = classes.filter(c => c.day === day).sort((a, b) => a.start_time.localeCompare(b.start_time))
+          {classes.length > 0 && (
+          <section className={`hidden md:grid gap-4 ${gridColsClass}`}>
+            {displayedDays.map(day => {
+              const dayClasses = classes
+                .filter(c => c.day?.toLowerCase() === day.toLowerCase())
+                .sort((a, b) => a.start_time.localeCompare(b.start_time))
               return (
                 <div key={day} className="card">
                   <h2 className="mb-4 font-bold">
@@ -1357,12 +1404,13 @@ export default function TimetablePage() {
               )
             })}
           </section>
+          )}
         </div>
         )}
       </div>
 
       {!loading && classes.length === 0 && (
-        <div className="mt-8 flex flex-col md:hidden items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
+        <div className="mt-8 flex flex-col items-center justify-center text-center px-4 py-16 border border-white/5 bg-white/[0.02] rounded-[32px]">
           <div className="w-16 h-16 bg-theme-500/20 text-theme-400 rounded-full flex items-center justify-center mb-6">
             {isLiveProfile ? <Sparkles className="h-8 w-8" /> : <Plus className="h-8 w-8" />}
           </div>

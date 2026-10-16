@@ -347,6 +347,21 @@ function TimetableTab({ classes = [], linkedTimetables = [], replacementClasses 
 
   const totalClasses = currentClasses.length
 
+  const studentDisplayedDays = useMemo(() => {
+    return days.filter(day => currentClasses.some(c => c.day?.toLowerCase() === day.toLowerCase()))
+  }, [currentClasses])
+
+  const managerGridColsClass = useMemo(() => {
+    const count = studentDisplayedDays.length
+    if (count <= 1) return 'grid-cols-1 max-w-lg'
+    if (count === 2) return 'grid-cols-1 md:grid-cols-2 max-w-3xl'
+    if (count === 3) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+    if (count === 4) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+    if (count === 5) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'
+    if (count === 6) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'
+    return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7'
+  }, [studentDisplayedDays.length])
+
   return (
     <div className="space-y-4">
       {/* Timetable Selector Bar */}
@@ -413,56 +428,62 @@ function TimetableTab({ classes = [], linkedTimetables = [], replacementClasses 
         {!isMain && <span className="text-amber-400/90 font-medium">★ Secondary / Linked Timetable</span>}
       </div>
 
-      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {days.map(day => {
-          const items = currentClasses
-            .filter(c => c.day === day)
-            .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
+      {studentDisplayedDays.length === 0 ? (
+        <div className="card py-12 text-center text-slate-400">
+          <p className="text-sm">No scheduled classes found for this timetable.</p>
+        </div>
+      ) : (
+        <section className={`grid gap-4 ${managerGridColsClass}`}>
+          {studentDisplayedDays.map(day => {
+            const items = currentClasses
+              .filter(c => c.day?.toLowerCase() === day.toLowerCase())
+              .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
 
-          return (
-            <div key={day} className="card min-h-[320px] flex flex-col">
-              <div className="mb-3 flex items-center justify-between border-b border-white/5 pb-2">
-                <h2 className="font-bold text-white text-sm">{day}</h2>
-                <span className="text-[11px] font-semibold text-slate-400">{items.length} {items.length === 1 ? 'class' : 'classes'}</span>
+            return (
+              <div key={day} className="card min-h-[320px] flex flex-col">
+                <div className="mb-3 flex items-center justify-between border-b border-white/5 pb-2">
+                  <h2 className="font-bold text-white text-sm">{day}</h2>
+                  <span className="text-[11px] font-semibold text-slate-400">{items.length} {items.length === 1 ? 'class' : 'classes'}</span>
+                </div>
+                {items.length === 0 ? (
+                  <div className="my-auto text-center py-8">
+                    <p className="text-xs text-slate-500">Free day</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {items.map((item, idx) => (
+                      <article
+                        key={item.id || idx}
+                        className={`rounded-xl border p-3 transition-colors ${
+                          item.is_replacement
+                            ? 'border-orange-500/30 bg-orange-500/5'
+                            : 'border-white/10 bg-white/[0.02]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1 mb-1.5">
+                          <ClassTypeBadge type={item.class_type} />
+                          {item.is_replacement && (
+                            <span className="rounded-md bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-orange-300">
+                              Replacement {item.date ? `· ${item.date}` : ''}
+                            </span>
+                          )}
+                        </div>
+                        <p className="font-semibold text-white text-sm leading-snug">{item.subject}</p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {formatTime(item.start_time)} - {formatTime(item.end_time)}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5 truncate">
+                          {item.classroom || 'TBA'} · {item.lecturer || 'TBA'}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
+                )}
               </div>
-              {items.length === 0 ? (
-                <div className="my-auto text-center py-8">
-                  <p className="text-xs text-slate-500">Free day</p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {items.map((item, idx) => (
-                    <article
-                      key={item.id || idx}
-                      className={`rounded-xl border p-3 transition-colors ${
-                        item.is_replacement
-                          ? 'border-orange-500/30 bg-orange-500/5'
-                          : 'border-white/10 bg-white/[0.02]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-1 mb-1.5">
-                        <ClassTypeBadge type={item.class_type} />
-                        {item.is_replacement && (
-                          <span className="rounded-md bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-orange-300">
-                            Replacement {item.date ? `· ${item.date}` : ''}
-                          </span>
-                        )}
-                      </div>
-                      <p className="font-semibold text-white text-sm leading-snug">{item.subject}</p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        {formatTime(item.start_time)} - {formatTime(item.end_time)}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-0.5 truncate">
-                        {item.classroom || 'TBA'} · {item.lecturer || 'TBA'}
-                      </p>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </section>
+            )
+          })}
+        </section>
+      )}
     </div>
   )
 }

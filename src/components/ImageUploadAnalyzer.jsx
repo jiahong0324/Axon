@@ -1287,12 +1287,8 @@ function LiveTimetablePreview({
   conflictMap
 }) {
   const displayedDays = useMemo(() => {
-    const base = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-    const hasSat = items.some(it => it.day?.toLowerCase() === 'saturday')
-    const hasSun = items.some(it => it.day?.toLowerCase() === 'sunday')
-    if (hasSat) base.push('Saturday')
-    if (hasSun) base.push('Sunday')
-    return base
+    const active = CLASS_DAYS.filter(d => items.some(it => it.day?.toLowerCase() === d.toLowerCase()))
+    return active.length > 0 ? active : CLASS_DAYS.slice(0, 5)
   }, [items])
 
   const { startHour, endHour, totalHours } = useMemo(() => {
