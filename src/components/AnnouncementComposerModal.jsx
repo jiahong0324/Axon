@@ -502,22 +502,37 @@ export default function AnnouncementComposerModal({
                   <div className="mt-2 space-y-2.5 rounded-xl border border-white/10 bg-slate-900/70 p-3 animate-in fade-in duration-150">
                     {/* Selected chips row */}
                     {selectedStudentsList.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 p-2 bg-slate-950/50 rounded-lg border border-white/5 max-h-24 overflow-y-auto scrollbar-thin">
-                        {selectedStudentsList.map(s => (
-                          <span
-                            key={s.id}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-blue-500/15 border border-blue-500/30 text-blue-300 text-[11px] px-2 py-0.5 font-medium"
-                          >
-                            <span className="truncate max-w-[120px]">{s.full_name || s.email}</span>
-                            <button
-                              type="button"
-                              onClick={() => toggleStudent(s.id)}
-                              className="text-blue-400 hover:text-white rounded p-0.5"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
+                      <div className="space-y-1.5 pb-1">
+                        <div className="flex items-center justify-between text-[11px] text-slate-400">
+                          <span className="font-medium text-slate-300">
+                            Selected ({selectedStudentsList.length})
                           </span>
-                        ))}
+                          <button
+                            type="button"
+                            onClick={clearSelection}
+                            className="text-slate-400 hover:text-red-400 hover:underline transition-colors text-[11px]"
+                          >
+                            Clear all
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto scrollbar-thin py-0.5">
+                          {selectedStudentsList.map(s => (
+                            <span
+                              key={s.id}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-200 text-xs pl-2.5 pr-1 py-0.5 font-medium shadow-sm transition-all hover:bg-blue-500/20 hover:border-blue-400/50"
+                            >
+                              <span className="truncate max-w-[140px] leading-tight">{s.full_name || s.email}</span>
+                              <button
+                                type="button"
+                                onClick={() => toggleStudent(s.id)}
+                                className="h-4 w-4 rounded-full inline-flex items-center justify-center text-blue-300 hover:text-white hover:bg-blue-500/40 transition-colors"
+                                title={`Remove ${s.full_name || s.email}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
 
