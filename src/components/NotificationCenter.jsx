@@ -96,6 +96,73 @@ export default function NotificationCenter({ user, profile }) {
     }
   }, [selectedAnnouncement?.id])
 
+  async function openAnnouncementById(targetId) {
+    if (!targetId) return
+    setIsOpen(true)
+
+    // 1. Check if already loaded in state
+    const found = announcements.find(a => String(a.id) === String(targetId))
+    if (found) {
+      setSelectedAnnouncement(found)
+      markAsRead(found.id)
+      return
+    }
+
+    // 2. Fetch directly from database if not yet loaded in list
+    try {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('id', targetId)
+        .maybeSingle()
+
+      if (data && !error) {
+        setAnnouncements(prev => {
+          if (prev.some(a => String(a.id) === String(data.id))) return prev
+          return [data, ...prev]
+        })
+        setSelectedAnnouncement(data)
+        markAsRead(data.id)
+      }
+    } catch (e) {
+      console.warn('Failed to fetch target announcement:', e)
+    }
+  }
+
+  // Detect URL parameter ?open_announcement=<id> when student taps push notification
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const annId = params.get('open_announcement')
+    if (annId) {
+      openAnnouncementById(annId)
+      // Clean query parameter from URL so browser refresh does not re-open it indefinitely
+      const cleanUrl = window.location.pathname + window.location.hash
+      window.history.replaceState({}, '', cleanUrl)
+    }
+  }, [announcements.length])
+
+  // Listen to Service Worker message or custom window event when app is already open
+  useEffect(() => {
+    const handleSwMessage = (event) => {
+      if (event.data?.type === 'OPEN_ANNOUNCEMENT' && event.data.announcementId) {
+        openAnnouncementById(event.data.announcementId)
+      }
+    }
+    navigator.serviceWorker?.addEventListener('message', handleSwMessage)
+
+    const handleCustom = (event) => {
+      if (event.detail?.id) {
+        openAnnouncementById(event.detail.id)
+      }
+    }
+    window.addEventListener('axon_open_announcement', handleCustom)
+
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', handleSwMessage)
+      window.removeEventListener('axon_open_announcement', handleCustom)
+    }
+  }, [announcements])
+
   async function loadData() {
     if (!user) return
     try {
@@ -110,10 +177,8 @@ export default function NotificationCenter({ user, profile }) {
         console.warn('Error fetching announcements:', annError.message)
       }
 
-      // Filter announcements relevant to this student
+      // Filter announcements relevant to this student (shows all manager announcements, push or in-app)
       const userAnnouncements = (rawAnnouncements || []).filter(item => {
-        if (item.channels && item.channels.in_app === false) return false
-
         const targetType = item.target_type || 'all'
         if (targetType === 'all') return true
         if (targetType === 'individual') {

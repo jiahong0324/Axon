@@ -62,59 +62,47 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Announcement message is required' })
     }
 
-    // 1. Insert announcement record into Supabase ONLY if in_app channel is enabled
+    // 1. Always insert announcement record into Supabase so it is stored in student Notification Center
+    const announcementPayload = {
+      manager_id: caller.id,
+      title: title.trim(),
+      message: message.trim(),
+      type,
+      expires_at: expires_at ? new Date(expires_at).toISOString() : null,
+      target_type,
+      target_ids: target_type === 'individual' ? target_ids : null,
+      channels
+    }
+
     let insertedAnnouncement = null
-    if (channels.in_app !== false) {
-      const announcementPayload = {
+    const { data: inserted, error: insertError } = await adminSupabase
+      .from('announcements')
+      .insert(announcementPayload)
+      .select()
+      .maybeSingle()
+
+    if (insertError) {
+      // If table lacks new columns yet, fallback to inserting core columns
+      console.warn('Inserting announcement with full schema failed, trying core columns fallback:', insertError.message)
+      const fallbackPayload = {
         manager_id: caller.id,
         title: title.trim(),
         message: message.trim(),
         type,
-        expires_at: expires_at ? new Date(expires_at).toISOString() : null,
-        target_type,
-        target_ids: target_type === 'individual' ? target_ids : null,
-        channels
+        expires_at: expires_at ? new Date(expires_at).toISOString() : null
       }
-
-      const { data: inserted, error: insertError } = await adminSupabase
+      const { data: fallbackInserted, error: fallbackError } = await adminSupabase
         .from('announcements')
-        .insert(announcementPayload)
+        .insert(fallbackPayload)
         .select()
         .maybeSingle()
 
-      if (insertError) {
-        // If table lacks new columns yet, fallback to inserting core columns
-        console.warn('Inserting announcement with full schema failed, trying core columns fallback:', insertError.message)
-        const fallbackPayload = {
-          manager_id: caller.id,
-          title: title.trim(),
-          message: message.trim(),
-          type,
-          expires_at: expires_at ? new Date(expires_at).toISOString() : null
-        }
-        const { data: fallbackInserted, error: fallbackError } = await adminSupabase
-          .from('announcements')
-          .insert(fallbackPayload)
-          .select()
-          .maybeSingle()
-
-        if (fallbackError) {
-          return res.status(500).json({ error: fallbackError.message })
-        }
-        insertedAnnouncement = fallbackInserted
-      } else {
-        insertedAnnouncement = inserted
+      if (fallbackError) {
+        return res.status(500).json({ error: fallbackError.message })
       }
+      insertedAnnouncement = fallbackInserted
     } else {
-      // Push or email only: log to activity_log for manager records without cluttering student in-app feed
-      try {
-        await adminSupabase.from('activity_log').insert({
-          user_id: caller.id,
-          action: 'Sent push notification',
-          entity_type: 'push_notification',
-          entity_name: title.trim()
-        })
-      } catch (_) {}
+      insertedAnnouncement = inserted
     }
 
     let pushStats = { sent: 0, failed: 0, totalSubscriptions: 0 }
@@ -144,11 +132,13 @@ export default async function handler(req, res) {
           const uniqueSubs = Array.from(deduped.values())
           pushStats.totalSubscriptions = uniqueSubs.length
 
+          const annId = insertedAnnouncement?.id || ''
           const pushPayload = JSON.stringify({
-            id: `announcement_${insertedAnnouncement?.id || Date.now()}`,
+            id: `announcement_${annId || Date.now()}`,
+            announcement_id: annId,
             title: `📢 ${title.trim()}`,
             body: message.trim(),
-            url: '/home'
+            url: annId ? `/?open_announcement=${annId}` : '/'
           })
 
           const sendPromises = uniqueSubs.map(async sub => {

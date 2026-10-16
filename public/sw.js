@@ -44,15 +44,29 @@ self.addEventListener('fetch', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close()
-  const targetUrl = event.notification.data || '/reminders'
+  const rawData = event.notification.data || {}
+  const targetUrl = typeof rawData === 'string' ? rawData : rawData.url || '/'
+  const announcementId = typeof rawData === 'object' ? rawData.announcement_id : null
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
-        if (client.url && 'focus' in client && (client.url.includes(targetUrl) || targetUrl === '/')) {
+        if ('focus' in client) {
+          if (announcementId && 'postMessage' in client) {
+            client.postMessage({
+              type: 'OPEN_ANNOUNCEMENT',
+              announcementId
+            })
+          }
+          if (client.url && !client.url.includes('open_announcement') && 'navigate' in client && targetUrl) {
+            return client.navigate(targetUrl).then(c => c ? c.focus() : client.focus())
+          }
           return client.focus()
         }
       }
-      return clients.openWindow ? clients.openWindow(targetUrl) : undefined
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl)
+      }
     })
   )
 })
@@ -66,6 +80,9 @@ self.addEventListener('push', event => {
     data = { ...data, body: event.data ? event.data.text() : data.body }
   }
 
+  const announcementId = data.announcement_id || null
+  const targetUrl = data.url || (announcementId ? `/?open_announcement=${announcementId}` : '/')
+
   // The server persists an event id, and this tag makes a retry safe at the
   // OS tray level. Avoid doing cache/network work before showNotification:
   // a failed cache operation must never prevent a push from being displayed.
@@ -74,9 +91,12 @@ self.addEventListener('push', event => {
     icon: '/icons/logo-colored.png',
     badge: '/icons/badge.png',
     vibrate: data.vibrate || [200, 100, 200],
-    data: data.url || '/reminders',
+    data: {
+      url: targetUrl,
+      announcement_id: announcementId
+    },
     color: '#000000',
     tag: data.id || `${data.title}|${data.body}`,
-    renotify: false
+    renotify: true
   }))
 })

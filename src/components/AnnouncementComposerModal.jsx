@@ -16,7 +16,6 @@ import {
   ShieldAlert,
   Loader2,
   Calendar,
-  Eye,
   AlertCircle
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -352,7 +351,7 @@ export default function AnnouncementComposerModal({
       }}
     >
       <div
-        className="w-full max-w-[920px] max-h-[92vh] sm:max-h-[88vh] flex flex-col rounded-2xl border border-white/10 bg-[#0F172A] shadow-2xl overflow-hidden text-slate-200"
+        className="w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] flex flex-col rounded-2xl border border-white/10 bg-[#0F172A] shadow-2xl overflow-hidden text-slate-200"
         onClick={e => e.stopPropagation()}
       >
         {/* =========================================================================
@@ -405,12 +404,10 @@ export default function AnnouncementComposerModal({
         )}
 
         {/* =========================================================================
-            SCROLLABLE BODY (2 Columns on Desktop: Form + Phone Preview)
+            SCROLLABLE BODY
         ========================================================================= */}
         <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-          <form id="announcement-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[1.25fr_0.85fr] gap-6 items-start">
-            {/* LEFT COLUMN: FORM SECTIONS */}
-            <div className="space-y-5">
+          <form id="announcement-form" onSubmit={handleSubmit} className="space-y-5">
               {/* 1. TARGET AUDIENCE */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -573,7 +570,7 @@ export default function AnnouncementComposerModal({
                   {/* Channel 1: In-App */}
                   <div
                     onClick={() => setChannels({ ...channels, in_app: !channels.in_app })}
-                    className={`flex flex-col justify-between p-3 rounded-xl border cursor-pointer select-none transition-all duration-150 ${
+                    className={`flex flex-col justify-between p-3.5 rounded-xl border cursor-pointer select-none transition-all duration-150 ${
                       channels.in_app
                         ? 'border-blue-500 bg-blue-500/10 shadow-sm ring-1 ring-blue-500/30'
                         : 'border-white/10 bg-slate-900/40 hover:border-white/20 text-slate-400'
@@ -583,10 +580,11 @@ export default function AnnouncementComposerModal({
                       <div className={`p-1.5 rounded-lg ${channels.in_app ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-500'}`}>
                         <Smartphone className="h-4 w-4" />
                       </div>
-                      {/* Modern Switch UI */}
-                      <div className={`w-8 h-4.5 rounded-full transition-colors relative ${channels.in_app ? 'bg-blue-600' : 'bg-slate-700'}`}>
-                        <div className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-white transition-transform ${channels.in_app ? 'translate-x-3.5' : 'translate-x-0'}`} />
-                      </div>
+                      {channels.in_app && (
+                        <span className="text-[10px] font-bold text-blue-400 bg-blue-500/20 px-1.5 py-0.5 rounded border border-blue-500/30">
+                          ACTIVE
+                        </span>
+                      )}
                     </div>
                     <div>
                       <p className={`font-semibold text-xs ${channels.in_app ? 'text-white' : 'text-slate-300'}`}>
@@ -601,7 +599,7 @@ export default function AnnouncementComposerModal({
                   {/* Channel 2: Push */}
                   <div
                     onClick={() => setChannels({ ...channels, push: !channels.push })}
-                    className={`flex flex-col justify-between p-3 rounded-xl border cursor-pointer select-none transition-all duration-150 ${
+                    className={`flex flex-col justify-between p-3.5 rounded-xl border cursor-pointer select-none transition-all duration-150 ${
                       channels.push
                         ? 'border-blue-500 bg-blue-500/10 shadow-sm ring-1 ring-blue-500/30'
                         : 'border-white/10 bg-slate-900/40 hover:border-white/20 text-slate-400'
@@ -611,9 +609,11 @@ export default function AnnouncementComposerModal({
                       <div className={`p-1.5 rounded-lg ${channels.push ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-500'}`}>
                         <Bell className="h-4 w-4" />
                       </div>
-                      <div className={`w-8 h-4.5 rounded-full transition-colors relative ${channels.push ? 'bg-blue-600' : 'bg-slate-700'}`}>
-                        <div className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-white transition-transform ${channels.push ? 'translate-x-3.5' : 'translate-x-0'}`} />
-                      </div>
+                      {channels.push && (
+                        <span className="text-[10px] font-bold text-blue-400 bg-blue-500/20 px-1.5 py-0.5 rounded border border-blue-500/30">
+                          ACTIVE
+                        </span>
+                      )}
                     </div>
                     <div>
                       <p className={`font-semibold text-xs ${channels.push ? 'text-white' : 'text-slate-300'}`}>
@@ -628,7 +628,7 @@ export default function AnnouncementComposerModal({
                   {/* Channel 3: Email */}
                   <div
                     onClick={() => setChannels({ ...channels, email: !channels.email })}
-                    className={`flex flex-col justify-between p-3 rounded-xl border cursor-pointer select-none transition-all duration-150 ${
+                    className={`flex flex-col justify-between p-3.5 rounded-xl border cursor-pointer select-none transition-all duration-150 ${
                       channels.email
                         ? 'border-blue-500 bg-blue-500/10 shadow-sm ring-1 ring-blue-500/30'
                         : 'border-white/10 bg-slate-900/40 hover:border-white/20 text-slate-400'
@@ -638,9 +638,11 @@ export default function AnnouncementComposerModal({
                       <div className={`p-1.5 rounded-lg ${channels.email ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-500'}`}>
                         <Mail className="h-4 w-4" />
                       </div>
-                      <div className={`w-8 h-4.5 rounded-full transition-colors relative ${channels.email ? 'bg-blue-600' : 'bg-slate-700'}`}>
-                        <div className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-white transition-transform ${channels.email ? 'translate-x-3.5' : 'translate-x-0'}`} />
-                      </div>
+                      {channels.email && (
+                        <span className="text-[10px] font-bold text-blue-400 bg-blue-500/20 px-1.5 py-0.5 rounded border border-blue-500/30">
+                          ACTIVE
+                        </span>
+                      )}
                     </div>
                     <div>
                       <p className={`font-semibold text-xs ${channels.email ? 'text-white' : 'text-slate-300'}`}>
@@ -767,105 +769,6 @@ export default function AnnouncementComposerModal({
                   onChange={e => setMessage(e.target.value)}
                 />
               </div>
-            </div>
-
-            {/* RIGHT COLUMN: LIVE PHONE PREVIEW */}
-            <div className="lg:sticky lg:top-0 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Eye className="h-3.5 w-3.5 text-blue-400" /> Live Student Preview
-                </span>
-                <span className="text-[11px] text-slate-500">iOS / Android</span>
-              </div>
-
-              {/* Phone Mockup Frame */}
-              <div className="rounded-[28px] border-4 border-slate-700/80 bg-[#0B0F19] p-3 shadow-2xl shadow-black/80 w-full max-w-[320px] mx-auto text-left select-none">
-                {/* Phone Top Notch / Status Bar */}
-                <div className="flex items-center justify-between px-2 pt-1 pb-3 text-[10px] text-slate-400 font-medium">
-                  <span>9:41</span>
-                  <div className="w-16 h-3 bg-slate-800 rounded-full mx-auto" />
-                  <div className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-                    <span className="h-2 w-3 border border-slate-400 rounded-sm" />
-                  </div>
-                </div>
-
-                {/* Lock Screen Notification Banner Card */}
-                <div className="rounded-2xl border border-white/10 bg-slate-800/90 backdrop-blur-md p-3 shadow-lg transition-all duration-200">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <img src="/icons/logo.png" alt="Axon" className="h-4 w-4 rounded-md object-contain" />
-                      <span className="text-[10px] font-bold tracking-wider text-slate-300 uppercase">AXON</span>
-                      <span className="text-[10px] text-slate-500">• now</span>
-                    </div>
-
-                    {type ? (
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                        type === 'urgent'
-                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                          : type === 'warning'
-                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                          : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      }`}>
-                        {type === 'warning' ? 'NOTICE' : type.toUpperCase()}
-                      </span>
-                    ) : (
-                      <span className="text-[9px] text-slate-500">No priority</span>
-                    )}
-                  </div>
-
-                  {/* Notification Content */}
-                  <div className="space-y-1">
-                    <p className={`text-xs font-bold leading-snug ${title.trim() ? 'text-white' : 'text-slate-500 italic'}`}>
-                      {title.trim() ? title : 'Announcement title preview...'}
-                    </p>
-                    <p className={`text-[11px] leading-relaxed line-clamp-3 ${message.trim() ? 'text-slate-300' : 'text-slate-500 italic'}`}>
-                      {message.trim() ? message : 'Message preview will appear here in real time as you type...'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Dispatch Summary Inside Phone */}
-                <div className="mt-4 p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-1.5 text-[11px]">
-                  <p className="font-semibold text-slate-400 flex items-center justify-between">
-                    <span>Summary</span>
-                    <span className="text-slate-500 font-mono text-[10px]">
-                      {activeChannelsCount} channel{activeChannelsCount === 1 ? '' : 's'}
-                    </span>
-                  </p>
-                  <div className="flex items-center justify-between text-slate-400 text-[10px]">
-                    <span>Audience:</span>
-                    <span className="font-medium text-slate-200">
-                      {targetType === 'all'
-                        ? `All (${students.length})`
-                        : targetType === 'individual'
-                        ? `${selectedStudentIds.size} student${selectedStudentIds.size === 1 ? '' : 's'}`
-                        : 'None chosen'}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {channels.in_app && (
-                      <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[9px] font-medium border border-blue-500/20">
-                        In-App
-                      </span>
-                    )}
-                    {channels.push && (
-                      <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[9px] font-medium border border-blue-500/20">
-                        Push
-                      </span>
-                    )}
-                    {channels.email && (
-                      <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[9px] font-medium border border-blue-500/20">
-                        Email
-                      </span>
-                    )}
-                    {!activeChannelsCount && (
-                      <span className="text-[10px] text-slate-500 italic">No channels active</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
           </form>
         </div>
 
