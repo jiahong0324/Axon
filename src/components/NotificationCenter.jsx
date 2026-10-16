@@ -22,7 +22,6 @@ export default function NotificationCenter({ user, profile }) {
   const [announcements, setAnnouncements] = useState([])
   const [readIds, setReadIds] = useState(new Set())
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null)
-  const [activeTab, setActiveTab] = useState('all') // 'all' | 'unread'
   const [loading, setLoading] = useState(true)
 
   // Touch handling for mobile swipe-down dismiss
@@ -334,12 +333,7 @@ export default function NotificationCenter({ user, profile }) {
     window.dispatchEvent(new CustomEvent('axon_announcements_updated'))
   }
 
-  const displayedAnnouncements = useMemo(() => {
-    if (activeTab === 'unread') {
-      return announcements.filter(a => !readIds.has(a.id))
-    }
-    return announcements
-  }, [announcements, activeTab, readIds])
+  const displayedAnnouncements = announcements
 
   // Consistent semantic priority colors across list and detail view: Info = blue, Notice = amber, Urgent = red
   function getTypeBadge(type) {
@@ -425,55 +419,30 @@ export default function NotificationCenter({ user, profile }) {
                   </span>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  closeDetail(true)
-                  setIsOpen(false)
-                }}
-                aria-label="Close notifications"
-                className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white active:bg-white/15 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Filter Segmented Control & Actions */}
-            <div className="flex items-center justify-between border-b border-white/5 px-4 py-2.5 bg-slate-950/40 shrink-0">
-              <div className="inline-flex items-center p-0.5 rounded-xl bg-white/[0.04] border border-white/5">
+              <div className="flex items-center gap-1.5">
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={markAllAsRead}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-blue-400 hover:bg-white/5 transition-colors"
+                    title="Mark all as read"
+                  >
+                    <CheckCheck className="h-3.5 w-3.5" />
+                    <span>Mark all read</span>
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => setActiveTab('all')}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                    activeTab === 'all'
-                      ? 'bg-blue-500/20 text-blue-200 font-semibold shadow-sm border border-blue-500/30'
-                      : 'text-slate-400 hover:text-slate-200 border border-transparent'
-                  }`}
+                  onClick={() => {
+                    closeDetail(true)
+                    setIsOpen(false)
+                  }}
+                  aria-label="Close notifications"
+                  className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white active:bg-white/15 transition-colors"
                 >
-                  All <span className="opacity-70 text-[11px] ml-0.5">({announcements.length})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('unread')}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                    activeTab === 'unread'
-                      ? 'bg-blue-500/20 text-blue-200 font-semibold shadow-sm border border-blue-500/30'
-                      : 'text-slate-400 hover:text-slate-200 border border-transparent'
-                  }`}
-                >
-                  Unread <span className="opacity-70 text-[11px] ml-0.5">({unreadCount})</span>
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-
-              {unreadCount > 0 && (
-                <button
-                  type="button"
-                  onClick={markAllAsRead}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-blue-400 transition-colors"
-                >
-                  <CheckCheck className="h-3.5 w-3.5" /> Mark all read
-                </button>
-              )}
             </div>
 
             {/* Notification List */}
@@ -487,9 +456,7 @@ export default function NotificationCenter({ user, profile }) {
                     You're all caught up!
                   </h3>
                   <p className="text-xs text-slate-400 mt-1 max-w-[240px] leading-relaxed">
-                    {activeTab === 'unread'
-                      ? 'No unread announcements. Check back later for updates.'
-                      : 'You have no announcements right now.'}
+                    You have no announcements right now.
                   </p>
                 </div>
               ) : (
