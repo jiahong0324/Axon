@@ -407,7 +407,7 @@ export default function AnnouncementComposerModal({
           <button
             type="button"
             onClick={handleAttemptClose}
-            className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+            className="min-w-0 min-h-0 h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
             title="Close"
           >
             <X className="h-5 w-5" />
@@ -510,7 +510,7 @@ export default function AnnouncementComposerModal({
                           <button
                             type="button"
                             onClick={clearSelection}
-                            className="text-slate-400 hover:text-red-400 hover:underline transition-colors text-[11px]"
+                            className="min-w-0 min-h-0 text-slate-400 hover:text-red-400 hover:underline transition-colors text-[11px]"
                           >
                             Clear all
                           </button>
@@ -519,16 +519,16 @@ export default function AnnouncementComposerModal({
                           {selectedStudentsList.map(s => (
                             <span
                               key={s.id}
-                              className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-200 text-xs pl-2.5 pr-1 py-0.5 font-medium shadow-sm transition-all hover:bg-blue-500/20 hover:border-blue-400/50"
+                              className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-200 text-xs pl-2.5 pr-1 py-0.5 font-medium shadow-sm transition-all hover:bg-blue-500/20 hover:border-blue-400/50"
                             >
-                              <span className="truncate max-w-[140px] leading-tight">{s.full_name || s.email}</span>
+                              <span className="truncate max-w-[140px] leading-tight">{(s.full_name || s.email || '').trim()}</span>
                               <button
                                 type="button"
                                 onClick={() => toggleStudent(s.id)}
-                                className="h-4 w-4 rounded-full inline-flex items-center justify-center text-blue-300 hover:text-white hover:bg-blue-500/40 transition-colors"
-                                title={`Remove ${s.full_name || s.email}`}
+                                className="min-w-0 min-h-0 h-4 w-4 shrink-0 p-0 rounded-full inline-flex items-center justify-center text-blue-300 hover:text-white hover:bg-blue-500/40 active:scale-90 transition-all"
+                                title={`Remove ${(s.full_name || s.email || '').trim()}`}
                               >
-                                <X className="h-3 w-3" />
+                                <X className="h-3 w-3 shrink-0" />
                               </button>
                             </span>
                           ))}
@@ -552,7 +552,7 @@ export default function AnnouncementComposerModal({
                         <button
                           type="button"
                           onClick={selectAllFiltered}
-                          className="text-blue-400 hover:underline font-medium text-[11px]"
+                          className="min-w-0 min-h-0 text-blue-400 hover:underline font-medium text-[11px]"
                         >
                           Select All
                         </button>
@@ -560,7 +560,7 @@ export default function AnnouncementComposerModal({
                         <button
                           type="button"
                           onClick={clearSelection}
-                          className="text-slate-400 hover:underline text-[11px]"
+                          className="min-w-0 min-h-0 text-slate-400 hover:underline text-[11px]"
                         >
                           Clear
                         </button>
