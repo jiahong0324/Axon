@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import AddStudentModal from '../../components/AddStudentModal'
 import Modal from '../../components/Modal'
+import AnnouncementComposerModal from '../../components/AnnouncementComposerModal'
 import { useToast } from '../../components/Toast'
 import { supabase } from '../../lib/supabase'
 import { initials } from '../../lib/utils'
@@ -156,7 +157,7 @@ export default function ManagerDashboard() {
         </div>
       </section>
 
-      <AnnouncementModal isOpen={announcementOpen} onClose={() => setAnnouncementOpen(false)} form={announcement} setForm={setAnnouncement} onSubmit={sendAnnouncement} />
+      <AnnouncementComposerModal isOpen={announcementOpen} onClose={() => setAnnouncementOpen(false)} onSuccess={loadDashboard} />
       <AddStudentModal isOpen={studentOpen} onClose={() => setStudentOpen(false)} onCreated={loadDashboard} />
       <SendEmailModal isOpen={emailOpen} onClose={() => setEmailOpen(false)} form={emailForm} setForm={setEmailForm} onSubmit={sendEmailBroadcast} loading={emailLoading} students={profiles} />
     </main>

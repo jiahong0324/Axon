@@ -45,6 +45,11 @@ export default function HomePage() {
   useEffect(() => { fetchDashboard() }, [])
   useEffect(() => { if (localStorage.getItem('dailyTipEnabled') !== 'false') refreshTip() }, [])
   useEffect(() => {
+    const handleUpdate = () => fetchDashboard()
+    window.addEventListener('axon_announcements_updated', handleUpdate)
+    return () => window.removeEventListener('axon_announcements_updated', handleUpdate)
+  }, [])
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date())
     }, 1000)
@@ -96,7 +101,20 @@ export default function HomePage() {
         activeClasses = [...activeClasses, ...validReplacements]
       }
 
-      const validAnnouncements = (announcementRowsRes.data || []).filter(a => !sessionStorage.getItem(`axon_ann_dismissed_${a.id}`))
+      const { data: userProfile } = await supabase.from('profiles').select('course, university').eq('id', activeUser.id).maybeSingle()
+      const validAnnouncements = (announcementRowsRes.data || []).filter(a => {
+        if (sessionStorage.getItem(`axon_ann_dismissed_${a.id}`)) return false
+        if (localStorage.getItem(`axon_ann_read_${a.id}`)) return false
+
+        const targetType = a.target_type || 'all'
+        if (targetType === 'all') return true
+        if (targetType === 'individual') return (a.target_ids || []).includes(activeUser.id)
+        if (targetType === 'group' && a.target_group) {
+          const grp = a.target_group.trim().toLowerCase()
+          return grp === (userProfile?.course || '').trim().toLowerCase() || grp === (userProfile?.university || '').trim().toLowerCase()
+        }
+        return true
+      })
 
       setClasses(activeClasses)
       setAssignments(assignmentsRes.data || [])
@@ -199,10 +217,21 @@ export default function HomePage() {
               <p className="mt-0.5 text-sm" style={{ color: 'var(--text-muted)' }}>{a.message}</p>
             </div>
           </div>
-          <button onClick={() => {
+          <button onClick={async () => {
             sessionStorage.setItem(`axon_ann_dismissed_${a.id}`, '1')
+            localStorage.setItem(`axon_ann_read_${a.id}`, '1')
             setAnnouncements(prev => prev.filter(x => x.id !== a.id))
-          }} className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-white/5 hover:text-slate-300"><X className="h-4 w-4" /></button>
+            try {
+              if (user?.id) {
+                await supabase.from('announcement_reads').upsert({
+                  announcement_id: a.id,
+                  user_id: user.id,
+                  read_at: new Date().toISOString()
+                }, { onConflict: 'announcement_id,user_id' })
+              }
+            } catch (_) {}
+            window.dispatchEvent(new CustomEvent('axon_announcements_updated'))
+          }} className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-white/5 hover:text-slate-300" title="Dismiss announcement"><X className="h-4 w-4" /></button>
         </div>
       ))}
 

@@ -939,7 +939,7 @@ export default function TimetablePage() {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEndHandler}
       >
-      <div className="mb-6 flex flex-col gap-1">
+      <div className="mb-2 sm:mb-3 md:mb-6 flex flex-col gap-1">
         <div className="flex items-center justify-between gap-3">
           {!loading ? (
             <div className="flex flex-col min-w-0 flex-1">

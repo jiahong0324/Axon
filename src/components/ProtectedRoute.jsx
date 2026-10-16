@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import LoadingSpinner from './LoadingSpinner'
 import NotificationManager from './NotificationManager'
+import NotificationCenter from './NotificationCenter'
 import Sidebar from './Sidebar'
 import ManagerSidebar from './ManagerSidebar'
 import { syncPreferences } from '../lib/preferences'
@@ -103,6 +104,7 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
     <div className="page-shell">
       {role === 'manager' ? <ManagerSidebar user={session.user} profile={profile} /> : <Sidebar user={session.user} />}
       <NotificationManager />
+      {role === 'student' && <NotificationCenter user={session.user} profile={profile} />}
       {children}
     </div>
   )
