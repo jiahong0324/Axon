@@ -13,7 +13,6 @@ import SubjectSelect from '../components/SubjectSelect'
 import { SkeletonList } from '../components/SkeletonLoader'
 import SEO from '../components/SEO'
 import DateInput from '../components/DateInput'
-import { NotificationBellButton } from '../components/NotificationCenter'
 
 
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
@@ -146,7 +145,6 @@ export default function ExamPage() {
         <div className="flex items-center justify-between w-full">
           <h1 className="page-title mb-0">{t('exams.title')}</h1>
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
-            <NotificationBellButton className="h-8 w-8 md:hidden shrink-0" size="sm" />
             <>
               <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('exams.extract')}>
                 <Sparkles className="h-5 w-5" />

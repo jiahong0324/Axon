@@ -15,7 +15,6 @@ import { clearCache, readCache, writeCache } from '../lib/cache'
 import { updatePreference, saveSemesterPreferences } from '../lib/preferences'
 import SEO from '../components/SEO'
 import DateInput from '../components/DateInput'
-import { NotificationBellButton } from '../components/NotificationCenter'
 
 const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue', is_replacement: false, date: '' }
 const LIVE_PROFILE_ID = 'account'
@@ -1031,7 +1030,6 @@ export default function TimetablePage() {
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-heading text-white">{t('timetable.title')}</h1>
           )}
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
-            <NotificationBellButton className="h-8 w-8 md:hidden shrink-0" size="sm" />
             {!loading && (
               <>
                 <button className="md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 p-1.5 sm:p-2 rounded-lg transition-colors flex items-center justify-center shrink-0" onClick={() => setAnalyzerOpen(true)} title={t('timetable.extract')}>

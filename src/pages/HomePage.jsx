@@ -243,11 +243,11 @@ export default function HomePage() {
       <header className="mb-6 flex flex-col justify-between gap-2 md:flex-row md:items-center">
         <div className="flex items-center justify-between w-full md:w-auto">
           <h1 className="font-heading text-xl md:text-2xl font-bold">{greeting}, {user?.user_metadata?.full_name || 'student'} 👋</h1>
-          <NotificationBellButton className="md:hidden h-8 w-8 shrink-0" size="sm" />
+          <NotificationBellButton className="md:hidden shrink-0" size="lg" />
         </div>
         <div className="flex items-center gap-3">
           <p className="muted tabular-nums text-xs md:text-sm">{format(currentTime, 'EEEE, dd MMMM yyyy · hh:mm:ss a')}</p>
-          <NotificationBellButton className="hidden md:inline-flex h-8 w-8 shrink-0" size="sm" />
+          <NotificationBellButton className="hidden md:inline-flex shrink-0" size="lg" />
         </div>
       </header>
 

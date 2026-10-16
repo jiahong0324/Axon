@@ -730,27 +730,39 @@ export function NotificationBellButton({ className = '', size = 'default', showL
     }
   }, [])
 
-  const isSmall = size === 'sm'
+  const iconClass =
+    size === 'sm'
+      ? 'h-5 w-5'
+      : size === 'md'
+      ? 'h-6 w-6'
+      : size === 'xl'
+      ? 'h-8 w-8'
+      : 'h-7 w-7'
+
+  const dotClass =
+    size === 'sm'
+      ? 'top-0 right-0 h-2 w-2'
+      : size === 'md'
+      ? 'top-0.5 right-0.5 h-2.5 w-2.5'
+      : 'top-0.5 right-0.5 h-2.5 w-2.5'
 
   return (
     <button
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent('axon_open_notifications'))}
-      className={`inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all ${className}`}
+      className={`min-w-0 min-h-0 inline-flex items-center justify-center p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 active:scale-95 transition-all ${className}`}
       title="Notifications"
       aria-label="Notifications"
     >
       <span className="relative inline-flex items-center justify-center">
-        <Bell className={isSmall ? 'h-4 w-4' : 'h-5 w-5'} />
+        <Bell className={iconClass} />
         {unreadCount > 0 && (
           <span
-            className={`absolute top-0 right-0 rounded-full bg-red-500 ring-2 ring-[#0A0F1E] shadow-sm pointer-events-none ${
-              isSmall ? 'h-2 w-2' : 'h-2.5 w-2.5'
-            }`}
+            className={`absolute rounded-full bg-red-500 ring-2 ring-white dark:ring-[#0B1120] shadow-sm pointer-events-none ${dotClass}`}
           />
         )}
       </span>
-      {showLabel && <span className="text-xs font-medium ml-2">Notifications</span>}
+      {showLabel && <span className="text-sm font-medium ml-2">Notifications</span>}
     </button>
   )
 }
