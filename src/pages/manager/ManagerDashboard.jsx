@@ -278,7 +278,7 @@ export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loadi
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Send Email Broadcast" maxWidth="max-w-md">
+    <Modal isOpen={isOpen} onClose={onClose} title="Send Email Broadcast" maxWidth="max-w-xl">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Subject">
           <input
@@ -286,7 +286,7 @@ export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loadi
             required
             value={form.subject}
             onChange={e => setForm({ ...form, subject: e.target.value })}
-            placeholder="e.g. New Feature: Archive & Start a New Semester in Axon"
+            placeholder="Subject"
           />
         </Field>
 
@@ -416,11 +416,11 @@ export function SendEmailModal({ isOpen, onClose, form, setForm, onSubmit, loadi
 
         <Field label="Message Content">
           <textarea
-            className="input min-h-32"
+            className="input min-h-56 sm:min-h-64 leading-relaxed resize-y"
             required
             value={form.message}
             onChange={e => setForm({ ...form, message: e.target.value })}
-            placeholder="Type your announcement or update here..."
+            placeholder="Type your message here..."
           />
         </Field>
 
