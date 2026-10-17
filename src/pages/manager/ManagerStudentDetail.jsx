@@ -1,5 +1,5 @@
 import {
-  ArrowLeft, Award, Bell, Bot, Calendar, Check, CheckCircle2, Clock, Copy,
+  ArrowLeft, ArrowUpDown, Award, Bell, Bot, Calendar, Check, CheckCircle2, Clock, Copy,
   Download, Dumbbell, Flame, Globe, Image, Info, Layers, MessageSquareText,
   Moon, Palette, Pencil, Search, Settings, Shield, Sliders, Smartphone,
   Sparkles, Sun, Trophy, User, XCircle
@@ -183,7 +183,8 @@ export default function ManagerStudentDetail() {
 
       // Chats
       if (fullDetail?.chats && fullDetail.chats.length > 0) {
-        setInitialChats(fullDetail.chats)
+        const sorted = [...fullDetail.chats].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+        setInitialChats(sorted)
       }
     } catch (err) {
       console.error('loadDetail error:', err)
@@ -798,10 +799,13 @@ function Field({ label, children }) {
 }
 
 function StudentAIChatsTab({ studentId, student, initialChats = [] }) {
-  const [messages, setMessages] = useState(initialChats)
+  const [messages, setMessages] = useState(() => {
+    return [...initialChats].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+  })
   const [loading, setLoading] = useState(initialChats.length === 0)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all') // 'all', 'user', 'assistant'
+  const [sortOrder, setSortOrder] = useState('latest') // 'latest' | 'oldest'
   const [zoomedImage, setZoomedImage] = useState(null)
   const { showToast } = useToast()
 
@@ -813,7 +817,7 @@ function StudentAIChatsTab({ studentId, student, initialChats = [] }) {
         .select('*')
         .eq('user_id', studentId)
         .eq('is_manager', false)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
 
       if (error) throw error
 
@@ -830,12 +834,12 @@ function StudentAIChatsTab({ studentId, student, initialChats = [] }) {
           merged.push(ic)
         }
       }
-      merged.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      merged.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
       setMessages(merged)
     } catch (err) {
       console.error('Failed to load student AI chats:', err)
       if (initialChats.length > 0) {
-        setMessages(initialChats)
+        setMessages([...initialChats].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)))
       }
     } finally {
       setLoading(false)
@@ -845,7 +849,9 @@ function StudentAIChatsTab({ studentId, student, initialChats = [] }) {
   useEffect(() => {
     if (initialChats.length > 0) {
       setMessages(prev => {
-        if (prev.length === 0) return initialChats
+        if (prev.length === 0) {
+          return [...initialChats].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+        }
         const combined = [...prev]
         for (const ic of initialChats) {
           const exists = combined.some(m =>
@@ -854,7 +860,7 @@ function StudentAIChatsTab({ studentId, student, initialChats = [] }) {
           )
           if (!exists) combined.push(ic)
         }
-        combined.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+        combined.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
         return combined
       })
       setLoading(false)
@@ -882,7 +888,7 @@ function StudentAIChatsTab({ studentId, student, initialChats = [] }) {
   }, [studentId, loadChats])
 
   const filtered = useMemo(() => {
-    return messages.filter(m => {
+    const list = messages.filter(m => {
       if (roleFilter !== 'all' && m.role !== roleFilter) return false
       if (search.trim()) {
         const q = search.toLowerCase()
@@ -891,16 +897,31 @@ function StudentAIChatsTab({ studentId, student, initialChats = [] }) {
       }
       return true
     })
-  }, [messages, roleFilter, search])
+
+    return list.sort((a, b) => {
+      const timeA = new Date(a.created_at || 0).getTime()
+      const timeB = new Date(b.created_at || 0).getTime()
+      return sortOrder === 'latest' ? timeB - timeA : timeA - timeB
+    })
+  }, [messages, roleFilter, search, sortOrder])
 
   const userCount = messages.filter(m => m.role === 'user').length
   const aiCount = messages.filter(m => m.role === 'assistant').length
   const imageCount = messages.filter(m => m.image).length
-  const lastActive = messages.length > 0 ? formatDistanceToNow(new Date(messages[messages.length - 1].created_at), { addSuffix: true }) : 'Never'
+  const latestMessageDate = useMemo(() => {
+    if (messages.length === 0) return null
+    return messages.reduce((latest, m) => {
+      if (!m.created_at) return latest
+      const d = new Date(m.created_at)
+      return !latest || d > latest ? d : latest
+    }, null)
+  }, [messages])
+  const lastActive = latestMessageDate ? formatDistanceToNow(latestMessageDate, { addSuffix: true }) : 'Never'
 
   function copyTranscript() {
     if (messages.length === 0) return
-    const text = messages.map(m => {
+    const sortedChronological = [...messages].sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0))
+    const text = sortedChronological.map(m => {
       const sender = m.role === 'user' ? (student?.full_name || 'Student') : 'AI Academic Tutor'
       const time = format(new Date(m.created_at), 'yyyy-MM-dd HH:mm:ss')
       return `[${time}] ${sender}:\n${m.content}\n`
@@ -979,15 +1000,29 @@ function StudentAIChatsTab({ studentId, student, initialChats = [] }) {
           </div>
         </div>
 
-        {messages.length > 0 && (
-          <button
-            type="button"
-            onClick={copyTranscript}
-            className="btn-ghost shrink-0 text-xs border border-white/10"
-          >
-            <Copy className="h-3.5 w-3.5" /> Copy Transcript
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSortOrder(prev => prev === 'latest' ? 'oldest' : 'latest')}
+              className="btn-ghost shrink-0 text-xs border border-white/10"
+              title={`Currently sorted ${sortOrder === 'latest' ? 'latest first' : 'oldest first'}. Click to switch.`}
+            >
+              <ArrowUpDown className="h-3.5 w-3.5 text-amber-400" />
+              <span>{sortOrder === 'latest' ? 'Latest First' : 'Oldest First'}</span>
+            </button>
+          )}
+
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={copyTranscript}
+              className="btn-ghost shrink-0 text-xs border border-white/10"
+            >
+              <Copy className="h-3.5 w-3.5" /> Copy Transcript
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages Feed */}

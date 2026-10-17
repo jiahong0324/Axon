@@ -105,7 +105,7 @@ export default async function handler(req, res) {
       .select('*')
       .eq('user_id', studentId)
       .eq('is_manager', false)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
 
     // Merge DB chats with metadata backup chats so no student queries are lost
     const finalChats = [...(dbChats || [])]
@@ -129,7 +129,7 @@ export default async function handler(req, res) {
         })
       }
     }
-    finalChats.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    finalChats.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
 
     // Fetch live timetable classes
     const { data: classes } = await adminSupabase

@@ -82,7 +82,7 @@ export default function ManagerAIChatsPage() {
       }
 
       setStudents(studentsRes.data || [])
-      setChats(loadedChats)
+      setChats([...loadedChats].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)))
     } catch (err) {
       console.error('Failed to load AI chats:', err)
       showToast('Could not load student AI chats.', 'error')

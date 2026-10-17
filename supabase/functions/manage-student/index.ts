@@ -78,7 +78,7 @@ Deno.serve(async req => {
           .select('*')
           .eq('user_id', studentId)
           .eq('is_manager', false)
-          .order('created_at', { ascending: true })
+          .order('created_at', { ascending: false })
 
         const { data: classes } = await adminClient
           .from('classes')
@@ -134,7 +134,7 @@ Deno.serve(async req => {
             })
           }
         }
-        finalChats.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        finalChats.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
 
         result = {
           data: {
