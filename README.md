@@ -1,273 +1,411 @@
 # Axon
 
-Axon is a React + Vite student productivity platform with Supabase authentication and cloud sync, Groq-powered AI study help, timetable management, assignment & exam tracking, exercise habit tracking, semester results & CGPA calculator, push notifications, multi-language support, theming, and a public landing site with blog — all deployed on Vercel/Netlify with a serverless API layer.
+<div align="center">
+
+![Axon Banner](public/favicon.svg)
+
+**Next-Generation AI-Powered Student Productivity & Academic Management Platform**
+
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-Database%20%7C%20Auth%20%7C%20Edge%20Functions-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Groq](https://img.shields.io/badge/AI-Groq%20%7C%20Gemini%20%7C%20OpenRouter-F05A28?style=flat-square)](https://groq.com/)
+[![Web Push](https://img.shields.io/badge/Push-VAPID%20Web%20Push-blue?style=flat-square)](https://developer.mozilla.org/en-US/docs/Web/API/Push_API)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+
+</div>
+
+---
+
+## Overview
+
+**Axon** is an all-in-one Progressive Web Application (PWA) engineered to streamline university life, academic planning, habit tracking, and administrative oversight. Built originally for students of **Tunku Abdul Rahman University of Management and Technology (TAR UMT)** and scalable to any higher education institution, Axon fuses real-time database synchronization with an **Autonomous AI Study Companion**, multi-provider multimodal vision OCR, gamified fitness tracking, and a comprehensive **Manager Portal**.
+
+Deployed natively on **Vercel** with a serverless API backend, **Supabase** (PostgreSQL, Auth, RLS, Realtime, Edge Functions), and **Groq / Google Gemini** AI infrastructure, Axon delivers sub-second response times across desktop, tablet, and mobile.
+
+---
+
+## System Architecture
+
+```mermaid
+flowchart TD
+    Client["Axon Client (React 18 + Vite PWA)\n• TailwindCSS & Framer Motion\n• Theme & i18n (EN / ZH / BM)"]
+    
+    subgraph ServerlessAPI ["Vercel Serverless API (/api)"]
+        AIProxy["/api/groq.js\n• Chat & Multi-tier Fallback\n• Vision OCR & Whisper Voice"]
+        AnnounceAPI["/api/publish-announcement.js\n• 3-in-1 Multi-Channel Dispatch"]
+        PushAPI["/api/send-push.js & subscribe.js\n• Deduplication & Timezone Cron"]
+        AdminAPI["/api/admin-student.js\n• Secure Manager Operations"]
+    end
+    
+    subgraph CloudServices ["Backend & External Services"]
+        SupabaseDB[("Supabase (PostgreSQL + RLS)\n• Profiles, Timetable, Exams\n• Exercises, Badges, Chat Logs")]
+        EdgeFn["Supabase Edge Functions\n• manage-student (Brevo Email & Admin)"]
+        GroqCloud["Groq / Gemini / OpenRouter / Cloudflare\n• Llama 3.3 70B & Gemini 2.0 Flash\n• Whisper Large v3 Voice"]
+        BrevoEmail["Brevo (Sendinblue) API\n• Targeted Student Email Broadcasts"]
+        WebPushGateway["Web Push Services (Apple / Google / Mozilla)\n• VAPID Notifications"]
+    end
+
+    Client -->|Direct REST / Realtime| SupabaseDB
+    Client -->|AI Queries & OCR| AIProxy
+    Client -->|Push Subscriptions| PushAPI
+    Client -->|Manager Broadcasts| AnnounceAPI
+    Client -->|Student Actions| EdgeFn
+    
+    AIProxy --> GroqCloud
+    PushAPI --> WebPushGateway
+    AnnounceAPI --> SupabaseDB
+    AnnounceAPI --> WebPushGateway
+    EdgeFn --> SupabaseDB
+    EdgeFn --> BrevoEmail
+```
+
+---
+
+## Core Features
+
+### 1. Student Workspace
+
+- **Intelligent Timetable Engine**:
+  - Weekly interactive schedule grid supporting Lecture (`L`), Tutorial (`T`), Practical (`P`), and Class (`C`) course types.
+  - Dynamic day filtering (automatically displays only days with scheduled classes; includes full Sunday class support).
+  - Multi-timetable profile management with an **Automatic Semester Rollover Wizard** preserving historical archives while initializing new semesters.
+  - **AI Screenshot OCR Import**: Two-pane workspace with live weekly preview, automated course code detection, and smart review cards before saving.
+  - Semester end auto-pause for notifications and compact semester progress capsule.
+
+- **Assignments & Deadlines**:
+  - Filterable by subject, priority level (Urgent, High, Medium, Low), and status (Pending, In Progress, Completed).
+  - Integrated course code chips and deadline countdown indicators.
+
+- **Exam Tracking & Hall Venue Manager**:
+  - Upcoming exam countdown badges, venue locations, and seat details.
+  - Automatic historical archiving once exam dates pass.
+
+- **Semester Results & CGPA Engine**:
+  - Per-semester course grade records with cumulative GPA & CGPA calculation tailored to the TAR UMT academic grading scale.
+  - **GPA Simulator / Course Mark Calculator**: Interactive assessment breakdown simulator with persistent marks across browser reloads.
+  - **Screenshot OCR Import**: Extract transcript slips directly from academic portals via vision AI.
+
+- **Gamified Exercise & Habit Tracker**:
+  - Daily check-ins awarding **+20 XP** with leveling milestones and achievement badges.
+  - **Duolingo-Style 3-State Streak Flame**: Inactive, active/checked-in, and freeze protected.
+  - **Streak Freeze Protection Shield Inventory**: 5-slot shield inventory (starter protections + earnable shields every 5 check-ins).
+  - 30-day consistency heatmap and personalized AI workout routine generator.
+
+- **Autonomous AI Study Companion (`/ai-helper`)**:
+  - **Context-Aware Reasoning**: Dynamic injection of the student's personal schedule, upcoming deadlines, exam dates, and recent performance into LLM memory.
+  - **Autonomous Account Actions Engine**: Interprets natural-language commands (e.g., *"Add Software Engineering tutorial every Tuesday at 2 PM in Block B"* or *"Schedule exam for BACS2023 on Dec 12"*) and safely creates or updates records directly in the student's account.
+  - **Multimodal Vision OCR**: Multi-provider fallback chain (Google Gemini 2.5/2.0 Flash -> OpenRouter -> Cloudflare Workers AI -> Groq Vision) for timetable and document extraction.
+  - **Whisper Voice Input**: Built-in voice message recording transcribed with `whisper-large-v3-turbo` and automatically translated to English if spoken in Chinese or mixed dialects.
+  - **Mathematical Formula Rendering**: Native KaTeX rendering for complex formulas and clean Markdown table formatting.
+
+- **Slide-Over Notification Center**:
+  - Dedicated notification bell drawer with red unread counter badge.
+  - Real-time categorization (Announcements, Reminders, Academic Alerts), mark-all-as-read button bar, and deep linking into relevant app sections.
+
+- **Customization & Accessibility**:
+  - Dark, Light, and System theme modes with customizable accent colors and typography scaling.
+  - Full internationalization support (**English**, **简体中文**, **Bahasa Melayu**).
+  - Academic PDF report exporter and automated email digest.
+
+---
+
+### 2. Manager & Administrator Portal (`/manager`)
+
+- **Executive Dashboard**:
+  - High-level KPIs: Active student count, upcoming exam distribution, and system-wide student activity feeds.
+
+- **Student Administration**:
+  - Searchable student directory with role management, student account creation, invite links, and secure password resets.
+  - Destructive student operations (deactivation, deletion) securely processed through Supabase Edge Functions with Service Role protection.
+
+- **Deep Student Inspection**:
+  - Tabbed inspector allowing administrators to review any student's live Timetable, Assignments, Exams, Exercise Streaks, Semester Results, Audit Logs, Custom Reminders, Preferences, and **AI Chat History** (with sort toggle).
+
+- **3-in-1 Announcement Broadcaster**:
+  - Create broadcasts targeted to all students or specific individuals.
+  - Multi-channel delivery selection: **In-App Notification Drawer**, **VAPID Web Push Notification**, and **Direct Email Broadcast** (powered by Brevo API).
+
+- **Academic PDF Report Generator**:
+  - Generate comprehensive student transcripts and academic summaries formatted using `jsPDF` and `jspdf-autotable`.
+
+- **Helpdesk & Public Blog CMS**:
+  - Manage public articles for the landing site.
+  - Triage student feedback tickets with uploaded screenshot preview, resolution status, and zoom modal.
+
+- **Manager AI Control Center**:
+  - Natural language administration assistant equipped with full database querying capabilities to generate summary reports, draft institutional notices, and extract cohort trends.
+
+---
+
+### 3. Public Landing Site & Legal Compliance
+
+- **Public Marketing Website**:
+  - Clean SaaS presentation (`/`, `/helo`, `/faq`, `/contact`, `/blog`, `/blog/:slug`).
+  - Interactive feature showcase, live testimonials, and FAQ knowledgebase.
+
+- **Regulatory & Legal Compliance**:
+  - Comprehensive Terms of Service and Privacy Policy strictly aligned with **Malaysian Law**, the **Contracts Act 1950**, and the **Personal Data Protection Act 2010 (PDPA 2010)** with bilingual notice.
 
 ---
 
 ## Tech Stack
 
-| Layer | Tech |
+| Layer | Technologies |
 |---|---|
-| Frontend | React 18, Vite, TailwindCSS, Framer Motion |
-| Auth & DB | Supabase (Auth, Postgres, Realtime, Edge Functions) |
-| AI | Groq API (llama-3.3-70b-versatile + llama-3.2-90b-vision-preview) |
-| PDF Export | jsPDF + jspdf-autotable |
-| Push Notifications | Web Push (VAPID) via serverless API |
-| Deployment | Vercel (primary) / Netlify |
-| i18n | Custom LanguageProvider (English, 中文, Bahasa Malaysia) |
+| **Frontend Framework** | React 18.3, Vite 6.0 |
+| **Styling & UI** | TailwindCSS 3.4, Framer Motion 12, Lucide React, KaTeX 0.17 |
+| **Routing** | React Router v6 (Role-based Protected Routes) |
+| **Database & Auth** | Supabase (PostgreSQL, Row Level Security, Supabase Auth, Realtime) |
+| **Edge Functions** | Supabase Edge Functions (Deno / TypeScript) |
+| **Serverless API** | Vercel Serverless Functions (`api/*.js`) |
+| **AI LLM & Reasoning** | Groq API (`openai/gpt-oss-120b`, `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`) |
+| **AI Multimodal Vision** | Google Gemini 2.5/2.0 Flash, OpenRouter, Cloudflare Workers AI (`llama-3.2-11b/90b-vision`) |
+| **AI Voice Transcription**| Groq Whisper (`whisper-large-v3-turbo` / `whisper-large-v3`) |
+| **Push Notifications** | Web Push (VAPID) with timezone-aware cron (`Asia/Kuala_Lumpur`) |
+| **Email Delivery** | Brevo (Sendinblue) Transactional API |
+| **Document Export** | jsPDF 4.2 + jspdf-autotable 5.0 |
+| **Internationalization** | Custom `LanguageProvider` (English, 简体中文, Bahasa Melayu) |
+| **Hosting & Deployment** | Vercel (Production SPA + Serverless) / Netlify |
 
 ---
 
-## Setup
+## Project Directory Structure
 
-### 1. Install dependencies
+```
+Axon/
+├── api/                                # Vercel Serverless Functions
+│   ├── admin-student.js                # Manager student operations & AI chat audit
+│   ├── groq.js                         # AI Gateway (Chat, Vision OCR, Whisper Audio)
+│   ├── publish-announcement.js         # 3-in-1 Announcement broadcast dispatcher
+│   ├── send-push.js                    # Push notification delivery cron
+│   ├── send-test-push.js               # Diagnostic push testing endpoint
+│   └── subscribe.js                    # Web Push VAPID subscription manager
+├── public/                             # Public static assets, icons, manifest
+├── src/
+│   ├── components/                     # Reusable UI & Modal components
+│   │   ├── AnnouncementComposerModal.jsx # 3-in-1 Manager broadcast modal
+│   │   ├── ImageUploadAnalyzer.jsx     # AI OCR screenshot importer
+│   │   ├── LanguageProvider.jsx        # i18n context (EN / ZH / BM)
+│   │   ├── NotificationCenter.jsx      # Slide-over Notification Drawer
+│   │   ├── NotificationManager.jsx     # Scheduled in-app push triggers
+│   │   ├── ProtectedRoute.jsx          # Role-based route guard (student/manager)
+│   │   ├── ThemeProvider.jsx           # Dark/light theme & accent system
+│   │   └── ...
+│   ├── lib/                            # Business logic, APIs & Utilities
+│   │   ├── accountActions.js           # Autonomous AI account action engine
+│   │   ├── announcements.js            # Broadcast & read state utilities
+│   │   ├── buildUserContext.js         # Injects student DB data into AI context
+│   │   ├── exerciseUtils.js            # Streaks, 5-slot freeze shields, XP & badges
+│   │   ├── generateReport.js           # PDF transcript & report builder
+│   │   ├── groq.js                     # Frontend AI proxy client
+│   │   ├── manageStudent.js            # Supabase Edge Function bridge
+│   │   ├── pushNotifications.js        # Browser Web Push subscription client
+│   │   ├── supabase.js                 # Supabase client initialization
+│   │   ├── tarumtGrading.js            # TAR UMT academic grading scales
+│   │   └── translations.js             # Internationalization dictionaries
+│   ├── pages/                          # Application Routes
+│   │   ├── landing/                    # Public showcase (Home, Blog, FAQ, Helo)
+│   │   ├── manager/                    # Manager Portal (Dashboard, Students, AI Chats, etc.)
+│   │   ├── AIHelperPage.jsx            # Groq chat with vision OCR & Whisper voice
+│   │   ├── AssignmentPage.jsx          # Assignment tracker
+│   │   ├── ExamPage.jsx                # Exam schedule & countdown
+│   │   ├── ExamResultsPage.jsx         # Semester CGPA & Course Mark Simulator
+│   │   ├── ExercisePage.jsx            # Habit & workout tracker
+│   │   ├── HomePage.jsx                # Student dashboard & Notification bell
+│   │   ├── PrivacyPage.jsx             # PDPA 2010 Bilingual Privacy Policy
+│   │   ├── SettingsPage.jsx            # Preferences, themes, email digest, data export
+│   │   ├── TermsPage.jsx               # Malaysian Law & Contracts Act 1950 Terms
+│   │   └── TimetablePage.jsx           # Timetable, OCR import & Rollover wizard
+│   ├── App.jsx                         # React Router route registry
+│   ├── index.css                       # Tailwind CSS global styles
+│   └── main.jsx                        # React root entry point
+├── supabase/
+│   └── functions/
+│       └── manage-student/             # Deno Edge Function for Brevo emails & admin
+├── supabase-ai-helper.sql              # SQL: Cloud AI chat history sync
+├── supabase-announcements-update.sql   # SQL: Targeted broadcasts & read tracking
+├── supabase-blog-and-feedback-update.sql # SQL: Blog CMS & feedback tables
+├── supabase-exam-results.sql           # SQL: Semester course records & CGPA
+├── supabase-exam-time-migration.sql    # SQL: Exam time column migration
+├── supabase-exercise-schema.sql        # SQL: Exercise logs, XP, streak freeze
+├── supabase-feedback-image-update.sql  # SQL: Feedback screenshot attachment bucket
+├── supabase-feedback-schema.sql        # SQL: Base feedback schema
+├── supabase-manager-schema.sql         # SQL: Manager role, profiles & subscriptions
+├── package.json                        # Dependencies and build scripts
+├── vercel.json                         # Vercel SPA rewrites & cron configuration
+└── vite.config.js                      # Vite bundler configuration
+```
+
+---
+
+## Getting Started
+
+### 1. Prerequisites
+
+- **Node.js**: v18.0.0 or higher
+- **npm** or **pnpm**
+- **Supabase Account**: A Supabase project with database & auth configured
+- **Groq API Key**: For fast LLM inference (and optional Gemini / OpenRouter keys for vision fallback)
+
+### 2. Clone and Install Dependencies
 
 ```bash
+git clone https://github.com/jiahong0324/Axon.git
+cd Axon
 npm install
 ```
 
-### 2. Create `.env.local`
+### 3. Configure Environment Variables
+
+Create a `.env.local` file in the project root:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_url
+# Supabase Configuration
+VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_GROQ_API_KEY=your_groq_api_key
-VITE_GROQ_MODEL=llama-3.3-70b-versatile
+
+# AI Gateway (Groq & Vision Models)
+VITE_GROQ_API_KEY=gsk_your_groq_api_key
+VITE_GROQ_MODEL=openai/gpt-oss-120b
 VITE_GROQ_VISION_MODEL=llama-3.2-90b-vision-preview
+
+# Web Push Notifications (Client Public Key)
 VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
 ```
 
-For the serverless push API (`api/` functions), also add these as environment variables on your hosting platform:
+For hosting environments (such as **Vercel**), configure the following Serverless Function secrets:
 
 ```env
+# Database & Authentication
+VITE_SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# AI Services
+GROQ_API_KEY=gsk_your_groq_api_key
+GEMINI_API_KEY=your_google_gemini_api_key          # Primary multimodal vision & fallback
+OPENROUTER_API_KEY=your_openrouter_api_key          # Secondary vision fallback
+CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id    # Tertiary vision fallback
+CLOUDFLARE_API_TOKEN=your_cloudflare_api_token
+
+# Push Notification Engine
+VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
 VAPID_PRIVATE_KEY=your_vapid_private_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 CRON_SECRET=your_long_random_cron_secret
-# Optional. Defaults to 10 minutes for delayed cron catch-up.
 PUSH_MAX_LATE_MINUTES=10
 ```
 
-### 3. Run Supabase SQL schemas
+For **Supabase Edge Functions** (`manage-student`), add these secrets in the Supabase Dashboard:
 
-Run these SQL files in the **Supabase SQL Editor** in order:
-
-| File | Purpose |
-|---|---|
-| `supabase-manager-schema.sql` | Manager role, profiles, push subscriptions |
-| `supabase-exercise-schema.sql` | Exercise logs, XP, badges |
-| `supabase-exam-results.sql` | Student semesters & courses (CGPA tracking) |
-| `supabase-feedback-schema.sql` | Feedback tickets |
-| `supabase-blog-and-feedback-update.sql` | Blog posts & feedback tables |
-| `supabase-ai-helper.sql` | AI chat history cloud sync |
-| `supabase-exam-time-migration.sql` | Exam time column migration |
-
-The core student tables (`classes`, `assignments`, `exams`, `reminders`) are created automatically by Supabase RLS policies when you first use the app.
+```env
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+BREVO_API_KEY=your_brevo_api_key
+BREVO_SENDER_EMAIL=noreply@axon-app.com
+```
 
 ---
 
-## Run / Build
+### 4. Database Setup (Supabase SQL Migrations)
+
+Execute the SQL scripts in the **Supabase SQL Editor** in the following sequence:
+
+| Step | Script File | Description |
+|:---:|---|---|
+| **1** | `supabase-manager-schema.sql` | Manager role, student profiles, and push subscriptions |
+| **2** | `supabase-exercise-schema.sql` | Exercise logs, XP leveling, streak freeze shields, and badges |
+| **3** | `supabase-exam-results.sql` | Semester records, course grades, and CGPA calculations |
+| **4** | `supabase-feedback-schema.sql` | Base feedback ticket schema |
+| **5** | `supabase-feedback-image-update.sql` | Feedback screenshot attachment support & storage policies |
+| **6** | `supabase-blog-and-feedback-update.sql` | Landing site blog posts & article management |
+| **7** | `supabase-ai-helper.sql` | Cloud sync for student AI chat conversations |
+| **8** | `supabase-announcements-update.sql` | 3-in-1 targeted broadcast channels & read status tracking |
+| **9** | `supabase-exam-time-migration.sql` | Exam time format migration |
+
+> [!NOTE]
+> Core student tables (`classes`, `assignments`, `exams`, `reminders`) utilize automated Row Level Security (RLS) policies scoped to the authenticated user's ID (`auth.uid() = user_id`).
+
+---
+
+### 5. Run and Build
 
 ```bash
-# Development
+# Start Vite local development server
 npm run dev
 
-# Production build
+# Build production bundle with minification
 npm run build
 
-# Preview build locally
+# Preview production build locally
 npm run preview
 ```
 
 ---
 
-## App Structure
+## Manager Portal Setup & Edge Function Deployment
 
-```
-src/
-├── pages/
-│   ├── landing/          # Public landing site (Home, Blog, FAQ, Contact, Helo)
-│   ├── manager/          # Manager dashboard and tools
-│   ├── HomePage.jsx      # Student dashboard (today's classes, announcements, AI tip)
-│   ├── TimetablePage.jsx # Weekly timetable with screenshot import
-│   ├── AssignmentPage.jsx
-│   ├── ExamPage.jsx
-│   ├── ExamResultsPage.jsx  # Semester CGPA records + Quick GPA calculator
-│   ├── ExercisePage.jsx     # Habit tracker with streaks, XP, badges, AI workout plan
-│   ├── AIHelperPage.jsx     # Groq chat with vision + context injection
-│   ├── RemindersPage.jsx
-│   ├── SettingsPage.jsx     # Profile, appearance, notifications, email digest, data export
-│   ├── OnboardingPage.jsx
-│   ├── AuthPage.jsx / LoginPage.jsx / RegisterPage.jsx
-│   ├── UpdatePasswordPage.jsx
-│   └── TermsPage.jsx
-├── components/
-│   ├── ImageUploadAnalyzer.jsx   # AI screenshot parser (timetable/exam result OCR)
-│   ├── NotificationManager.jsx   # Push + in-app reminder scheduling
-│   ├── ThemeProvider.jsx         # Dark/light/system + accent color + font settings
-│   ├── LanguageProvider.jsx      # i18n context (EN / ZH / BM)
-│   ├── ProtectedRoute.jsx        # Role-based auth guard (student / manager)
-│   ├── Sidebar.jsx / ManagerSidebar.jsx
-│   ├── Toast.jsx, Modal.jsx, ConfirmModal.jsx
-│   └── ...
-├── lib/
-│   ├── groq.js              # Groq chat + vision API calls
-│   ├── buildUserContext.js  # Injects student DB data as AI context
-│   ├── exerciseUtils.js     # Streak calc, XP, badges, level system
-│   ├── tarumtGrading.js     # TAR UMT grading scale + GPA/CGPA calc
-│   ├── pushNotifications.js # VAPID Web Push subscription registration
-│   ├── preferences.js       # Cloud-synced user preferences
-│   ├── manageStudent.js     # Edge Function calls (student CRUD, invites, digest)
-│   ├── generateReport.js    # PDF academic report generation
-│   ├── i18n/                # Translation files
-│   └── utils.js
-└── App.jsx                  # React Router routes
-```
+### 1. Elevating an Account to Manager
 
----
+1. Sign up for an account via the registration page (`/register`).
+2. In the Supabase Dashboard, open **Table Editor → `profiles`**.
+3. Locate the created user and change their `role` column from `student` to `manager`.
+4. Refresh or sign back in — you will automatically be routed to the **Manager Portal** (`/manager`).
 
-## Student Features
+### 2. Deploying the Supabase Edge Function
 
-| Feature | Details |
-|---|---|
-| **Timetable** | Weekly schedule (Lecture / Tutorial / Practical), screenshot OCR import via AI vision, time format (12hr/24hr) |
-| **Assignments** | Subject, deadline, priority, status tracking |
-| **Exams** | Date, venue, type, countdown badge |
-| **Exam Results & CGPA** | Per-semester course grades, CGPA calculator, screenshot import, cloud sync across devices |
-| **Exercise Tracker** | Daily check-in (+20 XP), streak protection (freeze), XP levelling, milestone badges, 30-day heatmap, AI workout plan |
-| **AI Study Helper** | Groq chat with full DB context injection, image upload, quick-action chips (explain, summarize, quiz, plan, code, etc.), cloud chat history |
-| **Reminders** | Custom reminders, push notification support, class/exam start alerts, attendance reminder |
-| **Settings** | Profile, avatar color, theme (dark/light/system), accent color, font size & family, compact mode, language, AI style/language, email digest, PDF data export, delete account |
-| **Onboarding** | First-login profile setup flow |
-
----
-
-## Manager Features
-
-Managers are redirected to `/manager` after login. Their role is set by changing `role` to `manager` in the `profiles` table.
-
-| Feature | Details |
-|---|---|
-| **Dashboard** | Overview cards: student count, recent activity, announcements |
-| **Students** | List, search, create, edit, deactivate/reactivate, delete students |
-| **Student Detail** | View student's timetable, assignments, exams, activity, exercise, results |
-| **Exam Results Entry** | Manager can enter/approve student semester results |
-| **Announcements** | Broadcast messages shown on each student's home page |
-| **Reports** | PDF academic report generation per student |
-| **Activity Logs** | System-wide student activity feed |
-| **Blog** | Create/edit/delete blog articles shown on the public landing site |
-| **Feedback** | View and manage student feedback tickets |
-| **AI Control Center** | Groq chat with full student DB access (summarize feedback, draft announcements, check-in stats, etc.) |
-| **Manager Settings** | Separate settings page for manager preferences |
-
-All destructive student operations (password reset, delete, deactivate) are routed through a Supabase Edge Function so the service role key never reaches the browser.
-
----
-
-## Manager Account Setup
-
-### First-time setup
-
-1. Run `supabase-manager-schema.sql` in the Supabase SQL Editor.
-2. Create an account through the app signup page (`/register`).
-3. In the Supabase Dashboard, open **Table Editor → `profiles`**.
-4. Change that user's `role` from `student` to `manager`.
-5. Log out and log back in — managers are redirected to `/manager`.
-
-### Edge Function deploy
+The `manage-student` Edge Function securely handles student creation, password resets, deactivation, and targeted Brevo email broadcasts:
 
 ```bash
+# Install Supabase CLI if not already installed
 npm install -g supabase
+
+# Link your remote Supabase project
 supabase login
-supabase link --project-ref YOUR_PROJECT_REF
+supabase link --project-ref YOUR_SUPABASE_PROJECT_REF
+
+# Deploy the Edge Function without JWT verification requirement
 supabase functions deploy manage-student --no-verify-jwt
 ```
 
-Add this secret in **Supabase Dashboard → Edge Functions → Secrets**:
-
-```env
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
-
 ---
 
-## Push Notifications
+## Web Push Notifications & Scheduled Cron
 
-Push notifications use Web Push (VAPID). The test endpoint lives at `api/send-test-push.js`; scheduled notifications use `api/send-push.js`.
+Push notifications utilize the standard Web Push protocol (VAPID):
 
-1. Generate VAPID keys:
+1. **Generate VAPID Keys**:
    ```bash
-   node -e "const wp=require('web-push'); const keys=wp.generateVAPIDKeys(); console.log(keys)"
+   npx web-push generate-vapid-keys
    ```
-2. Add `VITE_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` to your environment.
-3. On iOS, users must **Add to Home Screen** first (Safari PWA requirement).
-4. Students can enable push from **Settings → Notifications**.
-
-### Notification cron job
-
-The scheduled endpoint is `GET https://YOUR_DOMAIN/api/send-push`. Configure your cron provider to call it every minute with this header:
-
-```text
-Authorization: Bearer YOUR_CRON_SECRET
-```
-
-The endpoint uses Malaysia time (`Asia/Kuala_Lumpur`) and accepts delayed runs for up to `PUSH_MAX_LATE_MINUTES` (10 minutes by default). Each browser/PWA must enable push once from **Settings → Notifications**; on iPhone/iPad, Axon must first be added to the Home Screen.
-
----
-
-## Landing Site
-
-The public landing site is served at `/` and includes:
-
-| Route | Page |
-|---|---|
-| `/` | Hero, features, how-it-works, CTA |
-| `/blog` | Article listing (content managed by manager) |
-| `/blog/:slug` | Full article view |
-| `/faq` | Frequently asked questions |
-| `/contact` | Contact form |
-| `/helo` | Help center / detailed guide |
-
----
-
-## Email Digest
-
-Students can send a formatted HTML academic report directly to their registered email from **Settings → Email Digest**. Sections are configurable (timetable, assignments, exams, results). This is handled via the `manage-student` Edge Function or a dedicated serverless route.
-
----
-
-## Deployment
-
-### Vercel (recommended)
-
-Set these environment variables in the Vercel project settings:
-
-```env
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-VITE_GROQ_API_KEY=
-VITE_GROQ_MODEL=llama-3.3-70b-versatile
-VITE_GROQ_VISION_MODEL=llama-3.2-90b-vision-preview
-VITE_VAPID_PUBLIC_KEY=
-VAPID_PRIVATE_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-CRON_SECRET=
-PUSH_MAX_LATE_MINUTES=10
-```
-
-The `api/` directory contains Vercel serverless functions (e.g. push sender). The `vercel.json` configures SPA rewrites.
-
-### Netlify
-
-Use `netlify.toml` for build settings and set the same environment variables in the Netlify dashboard.
+2. Set `VITE_VAPID_PUBLIC_KEY` in `.env.local` and `VAPID_PRIVATE_KEY` on your hosting provider.
+3. **Scheduled Trigger (`/api/send-push`)**:
+   - The cron endpoint runs on Malaysia Time (`Asia/Kuala_Lumpur`).
+   - Configure a cron service (or Vercel Cron) to execute `GET https://YOUR_DOMAIN/api/send-push` every minute with the header:
+     ```
+     Authorization: Bearer YOUR_CRON_SECRET
+     ```
+4. Subscriptions are automatically deduplicated by device ID in `api/subscribe.js` to prevent duplicate alerts.
+5. On iOS devices, users must install Axon to their Home Screen (*Add to Home Screen*) to enable Web Push via Safari PWA capabilities.
 
 ---
 
 ## Utility Scripts
 
-| Script | Purpose |
-|---|---|
-| `check_subs.js` | Check active push subscriptions in Supabase |
-| `send-announcement.js` | Programmatically send announcements |
-| `script.cjs` | Misc utility |
-| `START-HERE-deploy-manager.cmd` | Quick-start script for deploy manager |
-| `deploy-manager-function.bat` | Deploy Edge Function via CLI |
+| Script | Command / File | Purpose |
+|---|---|---|
+| `check_subs.js` | `node check_subs.js` | Inspect active push subscriptions and device registrations |
+| `send-announcement.js` | `node send-announcement.js` | Programmatically publish institutional announcements |
+| `deploy-manager-function.bat` | `deploy-manager-function.bat` | One-click Windows batch script to deploy the Supabase Edge Function |
+| `START-HERE-deploy-manager.cmd`| `START-HERE-deploy-manager.cmd`| Interactive CLI helper for manager deployment |
+
+---
+
+## License
+
+This project is open-source under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+  <b>Developed with ❤️ by <a href="https://github.com/jiahong0324">Jiahong</a></b>
+</div>
