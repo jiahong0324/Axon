@@ -21,9 +21,9 @@
 
 ## Overview
 
-**Axon** is an all-in-one Progressive Web Application (PWA) engineered to streamline university life, academic planning, habit tracking, and administrative oversight. Built originally for students of **Tunku Abdul Rahman University of Management and Technology (TAR UMT)** and scalable to any higher education institution, Axon fuses real-time database synchronization with an **Autonomous AI Study Companion**, multi-provider multimodal vision OCR, gamified fitness tracking, full-stack **Datadog Observability**, and a comprehensive **Manager Portal**.
+**Axon** is an all-in-one Progressive Web Application (PWA) engineered to streamline university life, academic planning, habit tracking, and administrative oversight. Designed for higher education students and institutions, Axon fuses an **Autonomous AI Study Companion**, multi-provider multimodal vision OCR, gamified habit & fitness tracking, full-stack **Datadog Observability**, and a comprehensive **Manager Portal**.
 
-Deployed natively on **Vercel** with a serverless API backend, **Supabase** (PostgreSQL, Auth, RLS, Realtime, Edge Functions), and **Groq / Google Gemini** AI infrastructure, Axon delivers sub-second response times across desktop, tablet, and mobile devices.
+Deployed natively on **Vercel** with a serverless API backend and high-performance **Groq / Google Gemini** AI infrastructure, Axon delivers sub-second response times across desktop, tablet, and mobile devices.
 
 ---
 
@@ -87,7 +87,7 @@ flowchart TD
   - Automatic historical archiving once exam dates pass.
 
 - **Semester Results & CGPA Engine**:
-  - Per-semester course grade records with cumulative GPA & CGPA calculation tailored to the TAR UMT academic grading scale.
+  - Per-semester course grade records with cumulative GPA & CGPA calculation tailored to standard 4.0 academic grading scales.
   - **GPA Simulator / Course Mark Calculator**: Interactive assessment breakdown simulator with persistent marks across browser reloads.
   - **Screenshot OCR Import**: Extract transcript slips directly from academic portals via vision AI.
 
@@ -228,7 +228,7 @@ Axon/
 │   │   ├── manageStudent.js            # Supabase Edge Function bridge
 │   │   ├── pushNotifications.js        # Browser Web Push subscription client
 │   │   ├── supabase.js                 # Supabase client initialization
-│   │   ├── tarumtGrading.js            # TAR UMT academic grading scales
+│   │   ├── tarumtGrading.js            # Academic grading scales and GPA calculations
 │   │   └── translations.js             # Internationalization dictionaries
 │   ├── pages/                          # Application Routes
 │   │   ├── landing/                    # Public showcase (Home, Blog, FAQ, Helo)
