@@ -1,6 +1,32 @@
 const CHAT_MODEL = 'openai/gpt-oss-120b'
 
+async function sendDatadogLog(metrics) {
+  const ddKey = process.env.DATADOG_API_KEY
+  if (!ddKey) return
+  const ddSite = process.env.DATADOG_SITE || 'us5.datadoghq.com'
+  try {
+    await fetch(`https://http-intake.logs.${ddSite}/api/v2/logs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'DD-API-KEY': ddKey
+      },
+      body: JSON.stringify({
+        ddsource: 'nodejs',
+        ddtags: `env:${process.env.VERCEL_ENV || 'production'},service:axon-ai-companion,project:axon`,
+        service: 'axon-ai-companion',
+        hostname: 'vercel',
+        timestamp: new Date().toISOString(),
+        ...metrics
+      })
+    })
+  } catch (e) {
+    // Non-blocking telemetry
+  }
+}
+
 export default async function handler(req, res) {
+  const startTime = Date.now()
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -62,6 +88,7 @@ export default async function handler(req, res) {
       }
 
       if (!result.ok) {
+        await sendDatadogLog({ message: 'Audio Transcription Failed', mode: 'audio', duration_ms: Date.now() - startTime, status: 'error', error: result.data?.error?.message || 'Groq Audio API error' })
         return res.status(result.status || 500).json({ error: result.data?.error?.message || 'Groq Audio API error' })
       }
 
@@ -93,6 +120,7 @@ export default async function handler(req, res) {
         } catch (e) {}
       }
 
+      await sendDatadogLog({ message: 'Audio Transcription Success', mode: 'audio', duration_ms: Date.now() - startTime, status: 'success', completion_length: content.length })
       return res.status(200).json({ content })
     } else if (mode === 'vision') {
       const apiKey = process.env.GROQ_API_KEY
@@ -143,6 +171,15 @@ export default async function handler(req, res) {
               const content = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''
               if (content) {
                 let cleanContent = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+                await sendDatadogLog({
+                  message: 'Vision OCR Success (Gemini)',
+                  mode: 'vision',
+                  provider: 'gemini',
+                  model: modelName,
+                  duration_ms: Date.now() - startTime,
+                  status: 'success',
+                  completion_length: cleanContent.length
+                })
                 return res.status(200).json({ content: cleanContent })
               }
             } else {
@@ -195,6 +232,15 @@ export default async function handler(req, res) {
               let content = data.choices?.[0]?.message?.content || ''
               content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
               if (content) {
+                await sendDatadogLog({
+                  message: 'Vision OCR Success (OpenRouter)',
+                  mode: 'vision',
+                  provider: 'openrouter',
+                  model: modelName,
+                  duration_ms: Date.now() - startTime,
+                  status: 'success',
+                  completion_length: content.length
+                })
                 return res.status(200).json({ content })
               }
             } else {
@@ -239,6 +285,14 @@ export default async function handler(req, res) {
 
         if (result.ok) {
           let content = result.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+          await sendDatadogLog({
+            message: 'Vision OCR Success (Cloudflare)',
+            mode: 'vision',
+            provider: 'cloudflare',
+            duration_ms: Date.now() - startTime,
+            status: 'success',
+            completion_length: content.length
+          })
           return res.status(200).json({ content })
         } else {
           lastErrorDetails.push(`Cloudflare: ${result.error}`)
@@ -246,6 +300,13 @@ export default async function handler(req, res) {
       }
 
       const summaryError = lastErrorDetails.length > 0 ? lastErrorDetails.join(' | ') : 'No valid vision provider API keys (GEMINI_API_KEY, OPENROUTER_API_KEY, or CLOUDFLARE_ACCOUNT_ID) configured in Vercel settings.'
+      await sendDatadogLog({
+        message: 'Vision OCR Failed',
+        mode: 'vision',
+        duration_ms: Date.now() - startTime,
+        status: 'error',
+        error: summaryError
+      })
       return res.status(500).json({ error: `Vision API error: ${summaryError}` })
     } else {
       const modelsToTry = [
@@ -283,6 +344,16 @@ export default async function handler(req, res) {
         if (groqRes.ok) {
           let content = data.choices?.[0]?.message?.content || ''
           content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+          await sendDatadogLog({
+            message: 'AI Chat Success (Groq)',
+            mode: 'chat',
+            provider: 'groq',
+            model,
+            duration_ms: Date.now() - startTime,
+            status: 'success',
+            prompt_length: prompt?.length || 0,
+            completion_length: content.length
+          })
           return res.status(200).json({ content })
         } else {
           lastStatus = groqRes.status || 500
@@ -312,15 +383,39 @@ export default async function handler(req, res) {
             const gContent = gData.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''
             if (gContent) {
               const cleanContent = gContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+              await sendDatadogLog({
+                message: 'AI Chat Success (Gemini Fallback)',
+                mode: 'chat',
+                provider: 'gemini',
+                model: 'gemini-2.0-flash',
+                fallback_triggered: true,
+                duration_ms: Date.now() - startTime,
+                status: 'success',
+                prompt_length: prompt?.length || 0,
+                completion_length: cleanContent.length
+              })
               return res.status(200).json({ content: cleanContent })
             }
           }
         } catch (e) {}
       }
 
+      await sendDatadogLog({
+        message: 'AI Chat Failed',
+        mode: 'chat',
+        duration_ms: Date.now() - startTime,
+        status: 'error',
+        error: lastError
+      })
       return res.status(lastStatus).json({ error: lastError })
     }
   } catch (error) {
+    await sendDatadogLog({
+      message: 'AI Proxy Exception',
+      duration_ms: Date.now() - startTime,
+      status: 'error',
+      error: error?.message || 'Groq proxy failed'
+    })
     return res.status(500).json({ error: 'Groq proxy failed' })
   }
 }
