@@ -1,8 +1,8 @@
-# Axon
-
 <div align="center">
 
-![Axon Banner](public/favicon.svg)
+<img src="public/icons/logo.png" alt="Axon Logo" width="128" />
+
+# Axon
 
 **Next-Generation AI-Powered Student Productivity & Academic Management Platform**
 
