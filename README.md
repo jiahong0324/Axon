@@ -11,6 +11,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database%20%7C%20Auth%20%7C%20Edge%20Functions-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Groq](https://img.shields.io/badge/AI-Groq%20%7C%20Gemini%20%7C%20OpenRouter-F05A28?style=flat-square)](https://groq.com/)
+[![Datadog](https://img.shields.io/badge/Observability-Datadog%20RUM%20%7C%20Logs-632CA6?style=flat-square&logo=datadog&logoColor=white)](https://www.datadoghq.com/)
 [![Web Push](https://img.shields.io/badge/Push-VAPID%20Web%20Push-blue?style=flat-square)](https://developer.mozilla.org/en-US/docs/Web/API/Push_API)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
@@ -20,9 +21,9 @@
 
 ## Overview
 
-**Axon** is an all-in-one Progressive Web Application (PWA) engineered to streamline university life, academic planning, habit tracking, and administrative oversight. Built originally for students of **Tunku Abdul Rahman University of Management and Technology (TAR UMT)** and scalable to any higher education institution, Axon fuses real-time database synchronization with an **Autonomous AI Study Companion**, multi-provider multimodal vision OCR, gamified fitness tracking, and a comprehensive **Manager Portal**.
+**Axon** is an all-in-one Progressive Web Application (PWA) engineered to streamline university life, academic planning, habit tracking, and administrative oversight. Built originally for students of **Tunku Abdul Rahman University of Management and Technology (TAR UMT)** and scalable to any higher education institution, Axon fuses real-time database synchronization with an **Autonomous AI Study Companion**, multi-provider multimodal vision OCR, gamified fitness tracking, full-stack **Datadog Observability**, and a comprehensive **Manager Portal**.
 
-Deployed natively on **Vercel** with a serverless API backend, **Supabase** (PostgreSQL, Auth, RLS, Realtime, Edge Functions), and **Groq / Google Gemini** AI infrastructure, Axon delivers sub-second response times across desktop, tablet, and mobile.
+Deployed natively on **Vercel** with a serverless API backend, **Supabase** (PostgreSQL, Auth, RLS, Realtime, Edge Functions), and **Groq / Google Gemini** AI infrastructure, Axon delivers sub-second response times across desktop, tablet, and mobile devices.
 
 ---
 
@@ -30,13 +31,13 @@ Deployed natively on **Vercel** with a serverless API backend, **Supabase** (Pos
 
 ```mermaid
 flowchart TD
-    Client["Axon Client (React 18 + Vite PWA)\n• TailwindCSS & Framer Motion\n• Theme & i18n (EN / ZH / BM)"]
+    Client["Axon Client (React 18 + Vite PWA)\n• TailwindCSS & Framer Motion\n• Theme & i18n (EN / ZH / BM)\n• Datadog RUM & Session Replay"]
     
     subgraph ServerlessAPI ["Vercel Serverless API (/api)"]
-        AIProxy["/api/groq.js\n• Chat & Multi-tier Fallback\n• Vision OCR & Whisper Voice"]
+        AIProxy["/api/groq.js\n• Chat & Multi-tier Fallback\n• Vision OCR & Whisper Voice\n• Datadog AI Telemetry Logger"]
         AnnounceAPI["/api/publish-announcement.js\n• 3-in-1 Multi-Channel Dispatch"]
         PushAPI["/api/send-push.js & subscribe.js\n• Deduplication & Timezone Cron"]
-        AdminAPI["/api/admin-student.js\n• Secure Manager Operations"]
+        AdminAPI["/api/admin-student.js\n• Secure Manager Operations & Audit"]
     end
     
     subgraph CloudServices ["Backend & External Services"]
@@ -45,6 +46,7 @@ flowchart TD
         GroqCloud["Groq / Gemini / OpenRouter / Cloudflare\n• Llama 3.3 70B & Gemini 2.0 Flash\n• Whisper Large v3 Voice"]
         BrevoEmail["Brevo (Sendinblue) API\n• Targeted Student Email Broadcasts"]
         WebPushGateway["Web Push Services (Apple / Google / Mozilla)\n• VAPID Notifications"]
+        DatadogCloud["Datadog Observability Cloud\n• Browser RUM & Session Replay\n• AI / LLM Observability & Logs"]
     end
 
     Client -->|Direct REST / Realtime| SupabaseDB
@@ -52,8 +54,10 @@ flowchart TD
     Client -->|Push Subscriptions| PushAPI
     Client -->|Manager Broadcasts| AnnounceAPI
     Client -->|Student Actions| EdgeFn
+    Client -.->|RUM & Session Replay| DatadogCloud
     
     AIProxy --> GroqCloud
+    AIProxy -.->|Async Telemetry Logs| DatadogCloud
     PushAPI --> WebPushGateway
     AnnounceAPI --> SupabaseDB
     AnnounceAPI --> WebPushGateway
@@ -69,7 +73,7 @@ flowchart TD
 
 - **Intelligent Timetable Engine**:
   - Weekly interactive schedule grid supporting Lecture (`L`), Tutorial (`T`), Practical (`P`), and Class (`C`) course types.
-  - Dynamic day filtering (automatically displays only days with scheduled classes; includes full Sunday class support).
+  - **Dynamic Day Filtering**: Automatically displays only days with scheduled classes, including full Sunday class support.
   - Multi-timetable profile management with an **Automatic Semester Rollover Wizard** preserving historical archives while initializing new semesters.
   - **AI Screenshot OCR Import**: Two-pane workspace with live weekly preview, automated course code detection, and smart review cards before saving.
   - Semester end auto-pause for notifications and compact semester progress capsule.
@@ -101,8 +105,10 @@ flowchart TD
   - **Mathematical Formula Rendering**: Native KaTeX rendering for complex formulas and clean Markdown table formatting.
 
 - **Slide-Over Notification Center**:
-  - Dedicated notification bell drawer with red unread counter badge.
-  - Real-time categorization (Announcements, Reminders, Academic Alerts), mark-all-as-read button bar, and deep linking into relevant app sections.
+  - Dedicated notification bell with solid red unread indicator dot on the homepage.
+  - Slide-over drawer featuring smooth touch swipe-down dismiss on mobile, segmented category tabs, clean date & time display, and header-integrated **Mark all as read** bar.
+  - Real-time PostgreSQL sync for instant delivery of manager announcements.
+  - Deep linking into target application views directly from notification items.
 
 - **Customization & Accessibility**:
   - Dark, Light, and System theme modes with customizable accent colors and typography scaling.
@@ -111,7 +117,23 @@ flowchart TD
 
 ---
 
-### 2. Manager & Administrator Portal (`/manager`)
+### 2. Full-Stack Observability & AI Telemetry
+
+- **Datadog Browser RUM & Session Replay**:
+  - Client-side Real User Monitoring powered by `@datadog/browser-rum`.
+  - 100% session and replay sampling for comprehensive UX diagnostic replays.
+  - Automatic user interaction tracking, resource waterfall performance, and long task monitoring.
+  - Privacy-preserving defaults with client-side input masking (`mask-user-input`).
+
+- **Serverless AI Gateway Observability**:
+  - Non-blocking, asynchronous telemetry dispatched from `/api/groq.js` directly to Datadog Logs intake (`/api/v2/logs`).
+  - Structured tracking of AI execution modes (`chat`, `vision`, `audio`), inference latency (`duration_ms`), and prompt / completion payload sizes.
+  - Real-time provider attribution across Groq, Google Gemini, OpenRouter, and Cloudflare Workers AI.
+  - Automated logging of fallback execution events and error diagnostics.
+
+---
+
+### 3. Manager & Administrator Portal (`/manager`)
 
 - **Executive Dashboard**:
   - High-level KPIs: Active student count, upcoming exam distribution, and system-wide student activity feeds.
@@ -120,12 +142,14 @@ flowchart TD
   - Searchable student directory with role management, student account creation, invite links, and secure password resets.
   - Destructive student operations (deactivation, deletion) securely processed through Supabase Edge Functions with Service Role protection.
 
-- **Deep Student Inspection**:
-  - Tabbed inspector allowing administrators to review any student's live Timetable, Assignments, Exams, Exercise Streaks, Semester Results, Audit Logs, Custom Reminders, Preferences, and **AI Chat History** (with sort toggle).
+- **Deep Student Inspection & AI Chat Audit**:
+  - Tabbed inspector allowing administrators to review any student's live Timetable, Assignments, Exams, Exercise Streaks, Semester Results, Audit Logs, Custom Reminders, and Preferences.
+  - **AI Chat Audit View**: Reverse chronological student AI chat conversation inspector, featuring newest-first ordering, bidirectional sort switch (`Latest First` / `Oldest First`), role filtering, search, and one-click JSON export.
 
 - **3-in-1 Announcement Broadcaster**:
-  - Create broadcasts targeted to all students or specific individuals.
+  - Targeted audience selection: broadcast system-wide to **All Students** or target **Specific Individuals** with interactive dismissible student pills.
   - Multi-channel delivery selection: **In-App Notification Drawer**, **VAPID Web Push Notification**, and **Direct Email Broadcast** (powered by Brevo API).
+  - Modern composer modal with live mobile device preview.
 
 - **Academic PDF Report Generator**:
   - Generate comprehensive student transcripts and academic summaries formatted using `jsPDF` and `jspdf-autotable`.
@@ -135,11 +159,11 @@ flowchart TD
   - Triage student feedback tickets with uploaded screenshot preview, resolution status, and zoom modal.
 
 - **Manager AI Control Center**:
-  - Natural language administration assistant equipped with full database querying capabilities to generate summary reports, draft institutional notices, and extract cohort trends.
+  - Natural language administration assistant equipped with database querying capabilities to generate summary reports, draft institutional notices, and extract cohort trends.
 
 ---
 
-### 3. Public Landing Site & Legal Compliance
+### 4. Public Landing Site & Legal Compliance
 
 - **Public Marketing Website**:
   - Clean SaaS presentation (`/`, `/helo`, `/faq`, `/contact`, `/blog`, `/blog/:slug`).
@@ -157,6 +181,7 @@ flowchart TD
 | **Frontend Framework** | React 18.3, Vite 6.0 |
 | **Styling & UI** | TailwindCSS 3.4, Framer Motion 12, Lucide React, KaTeX 0.17 |
 | **Routing** | React Router v6 (Role-based Protected Routes) |
+| **Observability & Analytics** | Datadog Browser RUM (`@datadog/browser-rum`), Datadog Session Replay, Datadog Logs API (AI/LLM Telemetry) |
 | **Database & Auth** | Supabase (PostgreSQL, Row Level Security, Supabase Auth, Realtime) |
 | **Edge Functions** | Supabase Edge Functions (Deno / TypeScript) |
 | **Serverless API** | Vercel Serverless Functions (`api/*.js`) |
@@ -177,7 +202,7 @@ flowchart TD
 Axon/
 ├── api/                                # Vercel Serverless Functions
 │   ├── admin-student.js                # Manager student operations & AI chat audit
-│   ├── groq.js                         # AI Gateway (Chat, Vision OCR, Whisper Audio)
+│   ├── groq.js                         # AI Gateway (Chat, Vision, Audio) + Datadog AI Telemetry
 │   ├── publish-announcement.js         # 3-in-1 Announcement broadcast dispatcher
 │   ├── send-push.js                    # Push notification delivery cron
 │   ├── send-test-push.js               # Diagnostic push testing endpoint
@@ -185,7 +210,7 @@ Axon/
 ├── public/                             # Public static assets, icons, manifest
 ├── src/
 │   ├── components/                     # Reusable UI & Modal components
-│   │   ├── AnnouncementComposerModal.jsx # 3-in-1 Manager broadcast modal
+│   │   ├── AnnouncementComposerModal.jsx # 3-in-1 Manager broadcast modal with phone preview
 │   │   ├── ImageUploadAnalyzer.jsx     # AI OCR screenshot importer
 │   │   ├── LanguageProvider.jsx        # i18n context (EN / ZH / BM)
 │   │   ├── NotificationCenter.jsx      # Slide-over Notification Drawer
@@ -220,7 +245,7 @@ Axon/
 │   │   └── TimetablePage.jsx           # Timetable, OCR import & Rollover wizard
 │   ├── App.jsx                         # React Router route registry
 │   ├── index.css                       # Tailwind CSS global styles
-│   └── main.jsx                        # React root entry point
+│   └── main.jsx                        # React root entry point + Datadog RUM setup
 ├── supabase/
 │   └── functions/
 │       └── manage-student/             # Deno Edge Function for Brevo emails & admin
@@ -248,6 +273,9 @@ Axon/
 - **npm** or **pnpm**
 - **Supabase Account**: A Supabase project with database & auth configured
 - **Groq API Key**: For fast LLM inference (and optional Gemini / OpenRouter keys for vision fallback)
+- **Datadog Account** *(Optional but recommended)*: For client-side RUM, Session Replay, and serverless AI telemetry
+
+---
 
 ### 2. Clone and Install Dependencies
 
@@ -256,6 +284,8 @@ git clone https://github.com/jiahong0324/Axon.git
 cd Axon
 npm install
 ```
+
+---
 
 ### 3. Configure Environment Variables
 
@@ -273,6 +303,11 @@ VITE_GROQ_VISION_MODEL=llama-3.2-90b-vision-preview
 
 # Web Push Notifications (Client Public Key)
 VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
+
+# Datadog RUM & Session Replay (Client)
+VITE_DATADOG_APPLICATION_ID=your_datadog_application_id
+VITE_DATADOG_CLIENT_TOKEN=pub_your_datadog_client_token
+VITE_DATADOG_SITE=us5.datadoghq.com
 ```
 
 For hosting environments (such as **Vercel**), configure the following Serverless Function secrets:
@@ -288,6 +323,10 @@ GEMINI_API_KEY=your_google_gemini_api_key          # Primary multimodal vision &
 OPENROUTER_API_KEY=your_openrouter_api_key          # Secondary vision fallback
 CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id    # Tertiary vision fallback
 CLOUDFLARE_API_TOKEN=your_cloudflare_api_token
+
+# Datadog AI & LLM Observability Telemetry (Serverless API)
+DATADOG_API_KEY=your_datadog_api_key
+DATADOG_SITE=us5.datadoghq.com
 
 # Push Notification Engine
 VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
