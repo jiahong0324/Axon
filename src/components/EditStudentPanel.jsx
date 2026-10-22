@@ -148,7 +148,7 @@ export default function EditStudentPanel({ student, onClose, onSaved }) {
                 <h3 className="mb-3 flex items-center gap-2 font-semibold"><Lock className="h-4 w-4 text-amber-400" /> Set New Password</h3>
                 <div className="relative">
                   <input className="input pr-12" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} />
-                  <button className="absolute right-1 top-0 rounded-lg text-slate-400" onClick={() => setShowPassword(v => !v)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                  <button type="button" className="password-toggle absolute inset-y-0 right-0 flex items-center justify-center px-3 text-slate-400 hover:text-white transition-colors focus:outline-none" onClick={() => setShowPassword(v => !v)} onMouseDown={e => e.preventDefault()} aria-label={showPassword ? 'Hide password' : 'Show password'} tabIndex={-1}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
                 </div>
                 <div className="mt-3 grid grid-cols-5 gap-1">
                   {[0, 1, 2, 3, 4].map(i => <span key={i} className={`h-2 rounded-full ${i < strength.score ? strength.color : 'bg-white/10'}`} />)}

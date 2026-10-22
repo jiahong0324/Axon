@@ -269,8 +269,9 @@ export default function AuthPage({ mode = 'login' }) {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                      onClick={() => setShowPassword(prev => !prev)}
+                      onMouseDown={e => e.preventDefault()}
+                      className="password-toggle absolute inset-y-0 right-0 flex items-center justify-center px-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors focus:outline-none"
                       aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                       tabIndex={-1}
                     >
