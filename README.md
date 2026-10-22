@@ -163,14 +163,11 @@ flowchart TD
 
 ---
 
-### 4. Public Landing Site & Legal Compliance
+### 4. Public Landing Site
 
 - **Public Marketing Website**:
   - Clean SaaS presentation (`/`, `/helo`, `/faq`, `/contact`, `/blog`, `/blog/:slug`).
   - Interactive feature showcase, live testimonials, and FAQ knowledgebase.
-
-- **Regulatory & Legal Compliance**:
-  - Comprehensive Terms of Service and Privacy Policy strictly aligned with **Malaysian Law**, the **Contracts Act 1950**, and the **Personal Data Protection Act 2010 (PDPA 2010)** with bilingual notice.
 
 ---
 
@@ -239,9 +236,9 @@ Axon/
 │   │   ├── ExamResultsPage.jsx         # Semester CGPA & Course Mark Simulator
 │   │   ├── ExercisePage.jsx            # Habit & workout tracker
 │   │   ├── HomePage.jsx                # Student dashboard & Notification bell
-│   │   ├── PrivacyPage.jsx             # PDPA 2010 Bilingual Privacy Policy
+│   │   ├── PrivacyPage.jsx             # Privacy Policy page
 │   │   ├── SettingsPage.jsx            # Preferences, themes, email digest, data export
-│   │   ├── TermsPage.jsx               # Malaysian Law & Contracts Act 1950 Terms
+│   │   ├── TermsPage.jsx               # Terms of Service page
 │   │   └── TimetablePage.jsx           # Timetable, OCR import & Rollover wizard
 │   ├── App.jsx                         # React Router route registry
 │   ├── index.css                       # Tailwind CSS global styles
