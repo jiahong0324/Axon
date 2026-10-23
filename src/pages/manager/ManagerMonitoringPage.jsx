@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import React, { Component, useState, useEffect, useMemo } from 'react'
 import {
   Activity,
   ArrowUpRight,
@@ -18,6 +18,7 @@ import {
   Shield,
   Smartphone,
   Tablet,
+  TrendingUp,
   Users,
   Zap
 } from 'lucide-react'
@@ -38,7 +39,43 @@ function safeFormatDistance(dateStr) {
 const DD_SITE = import.meta.env.VITE_DATADOG_SITE || 'us5.datadoghq.com'
 const DD_BASE_URL = `https://${DD_SITE}`
 
-export default function ManagerMonitoringPage() {
+class MonitoringErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('Monitoring Error Boundary caught:', error, errorInfo)
+    window.hidePrerenderSplash?.()
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <main className="main-content p-6">
+          <div className="card p-6 border-red-500/30 bg-red-500/10 text-center space-y-3">
+            <h2 className="text-base font-bold text-red-500">Monitoring Dashboard Error</h2>
+            <p className="text-xs text-slate-400 font-mono">{this.state.error?.message || 'Unknown runtime error'}</p>
+            <button
+              onClick={() => {
+                this.setState({ hasError: false, error: null })
+                window.location.reload()
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+            >
+              Reload Monitoring
+            </button>
+          </div>
+        </main>
+      )
+    }
+    return this.props.children
+  }
+}
+
+function MonitoringDashboard() {
   const [timeRange, setTimeRange] = useState('24h') // '24h' | '7d' | '30d'
   const [isLive, setIsLive] = useState(true)
   const [loading, setLoading] = useState(true)
@@ -102,10 +139,11 @@ export default function ManagerMonitoringPage() {
   // Real chart points calculation
   const chartPoints = useMemo(() => {
     if (!data?.trend || data.trend.length === 0) return []
-    const maxVal = Math.max(...data.trend.map(p => Math.max(p.activityCount, p.views)), 3)
+    const maxVal = Math.max(...data.trend.map(p => Math.max(p.activityCount || 0, p.views || 0)), 3)
+    const divisor = Math.max(data.trend.length - 1, 1)
     return data.trend.map((pt, idx) => {
-      const count = Math.max(pt.activityCount, pt.views)
-      const x = (idx / (data.trend.length - 1)) * 100
+      const count = Math.max(pt.activityCount || 0, pt.views || 0)
+      const x = (idx / divisor) * 100
       // Keep margin so peaks don't stick to 0
       const y = 88 - (count / maxVal) * 70
       return { ...pt, count, x, y, maxVal }
@@ -412,7 +450,7 @@ export default function ManagerMonitoringPage() {
 
         {/* X-Axis Labels */}
         <div className="mt-3 flex justify-between text-[11px] text-slate-400 px-1 font-mono">
-          {chartPoints.filter((_, i) => i % Math.ceil(chartPoints.length / 6) === 0).map((pt, i) => (
+          {chartPoints.filter((_, i) => i % Math.max(1, Math.ceil(chartPoints.length / 6)) === 0).map((pt, i) => (
             <span key={i}>{pt.label}</span>
           ))}
           {chartPoints.length > 0 && <span>{chartPoints[chartPoints.length - 1].label}</span>}
@@ -793,5 +831,13 @@ export default function ManagerMonitoringPage() {
         </div>
       </section>
     </main>
+  )
+}
+
+export default function ManagerMonitoringPage() {
+  return (
+    <MonitoringErrorBoundary>
+      <MonitoringDashboard />
+    </MonitoringErrorBoundary>
   )
 }
