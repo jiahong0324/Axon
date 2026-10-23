@@ -1,22 +1,28 @@
 import { useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import LoadingSpinner from './LoadingSpinner'
 import NotificationManager from './NotificationManager'
 import NotificationCenter from './NotificationCenter'
 import Sidebar from './Sidebar'
 import ManagerSidebar from './ManagerSidebar'
 import { syncPreferences } from '../lib/preferences'
-
 import SplashLoading from './SplashLoading'
 
+// In-memory cache across route changes so navigation between pages never re-flashes SplashLoading
+let cachedSession = null
+let cachedProfile = null
+let initialAuthChecked = false
 
-import { useLocation } from 'react-router-dom'
+export function clearAuthCache() {
+  cachedSession = null
+  cachedProfile = null
+  initialAuthChecked = false
+}
 
 export default function ProtectedRoute({ children, requireRole = 'student' }) {
-  const [session, setSession] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [session, setSession] = useState(() => cachedSession)
+  const [profile, setProfile] = useState(() => cachedProfile)
+  const [loading, setLoading] = useState(() => !initialAuthChecked)
   const location = useLocation()
 
   useEffect(() => {
@@ -44,7 +50,6 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
           let { data } = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
           
           if (!data) {
-            // Profile doesn't exist (e.g. first time OAuth login), create it
             await supabase.from('profiles').upsert({
               id: currentSession.user.id,
               email: currentSession.user.email,
@@ -53,31 +58,50 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
               is_active: true
             }, { onConflict: 'id' })
             
-            // Re-fetch to get the newly created profile
             const { data: newData } = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
             data = newData
           }
 
-          if (active) setProfile(data || { role: 'student', email: currentSession.user.email, full_name: currentSession.user.user_metadata?.full_name || '' })
-        }
-        if (active) {
-          setSession(currentSession)
+          const resolvedProfile = data || { role: 'student', email: currentSession.user.email, full_name: currentSession.user.user_metadata?.full_name || '' }
+          cachedSession = currentSession
+          cachedProfile = resolvedProfile
+          initialAuthChecked = true
+
+          if (active) {
+            setProfile(resolvedProfile)
+            setSession(currentSession)
+          }
+        } else {
+          cachedSession = null
+          cachedProfile = null
+          initialAuthChecked = true
+          if (active) {
+            setSession(null)
+            setProfile(null)
+          }
         }
       } catch (error) {
         console.error('Auth check failed:', error)
       } finally {
+        initialAuthChecked = true
         if (active) setLoading(false)
       }
     }
 
-    checkAuth()
+    if (!initialAuthChecked || !cachedSession) {
+      checkAuth()
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       if (active) {
-        setSession(currentSession)
-        if (!currentSession) setProfile(null)
         if (event === 'SIGNED_OUT') {
+          clearAuthCache()
+          setSession(null)
+          setProfile(null)
           setLoading(false)
+        } else if (currentSession) {
+          cachedSession = currentSession
+          setSession(currentSession)
         }
       }
     })
