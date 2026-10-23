@@ -1,4 +1,4 @@
-import { Activity, BookOpen, CheckSquare, FileText, Megaphone, Plus, Users, Mail, MessageSquareText, Search, Square } from 'lucide-react'
+import { Activity, BookOpen, CheckSquare, FileText, Megaphone, Plus, Users, Mail, MessageSquareText, Search, Square, LineChart } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
@@ -148,6 +148,7 @@ export default function ManagerDashboard() {
           <h2 className="section-header">Quick Actions</h2>
           <div className="grid gap-3">
             <QuickLink to="/manager/students" icon={Users} label="Manage Students" />
+            <QuickLink to="/manager/monitoring" icon={LineChart} label="System Monitoring" />
             <QuickLink to="/manager/ai-chats" icon={MessageSquareText} label="Student AI Chats" />
             <button className="btn-ghost justify-start border-amber-500/20 text-left hover:bg-amber-500/10" onClick={() => setAnnouncementOpen(true)}><Megaphone className="h-4 w-4 text-amber-400" /> Send Announcement</button>
             <button className="btn-ghost justify-start border-amber-500/20 text-left hover:bg-amber-500/10" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 text-amber-400" /> Send Email Broadcast</button>

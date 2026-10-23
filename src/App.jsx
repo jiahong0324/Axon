@@ -33,6 +33,8 @@ import ManagerSettingsPage from './pages/manager/ManagerSettingsPage'
 import ManagerFeedbackPage from './pages/manager/ManagerFeedbackPage'
 import ManagerBlogPage from './pages/manager/ManagerBlogPage'
 import ManagerAIChatsPage from './pages/manager/ManagerAIChatsPage'
+import ManagerMonitoringPage from './pages/manager/ManagerMonitoringPage'
+import { trackPageView } from './lib/telemetry'
 
 import LandingLayout from './pages/landing/LandingLayout'
 import LandingHome from './pages/landing/LandingHome'
@@ -54,6 +56,14 @@ function SplashController() {
   return null
 }
 
+function TelemetryWatcher() {
+  const location = useLocation()
+  useEffect(() => {
+    trackPageView(location.pathname)
+  }, [location.pathname])
+  return null
+}
+
 export default function App() {
   return (
     <LanguageProvider>
@@ -61,6 +71,7 @@ export default function App() {
         <ToastProvider>
           <BrowserRouter>
             <SplashController />
+            <TelemetryWatcher />
             <AuthEmailHandler />
             <Routes>
               <Route path="/login" element={<LoginPage />} />
@@ -99,6 +110,7 @@ export default function App() {
               <Route path="/manager/blog" element={<ProtectedRoute requireRole="manager"><ManagerBlogPage /></ProtectedRoute>} />
               <Route path="/manager/ai-helper" element={<ProtectedRoute requireRole="manager"><AIHelperPage role="manager" /></ProtectedRoute>} />
               <Route path="/manager/ai-chats" element={<ProtectedRoute requireRole="manager"><ManagerAIChatsPage /></ProtectedRoute>} />
+              <Route path="/manager/monitoring" element={<ProtectedRoute requireRole="manager"><ManagerMonitoringPage /></ProtectedRoute>} />
               <Route path="/manager/settings" element={<ProtectedRoute requireRole="manager"><ManagerSettingsPage /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/home" />} />
             </Routes>
