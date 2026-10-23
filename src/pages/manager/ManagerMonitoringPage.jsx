@@ -1,3 +1,4 @@
+import { useState, useEffect, useMemo } from 'react'
 import {
   Activity,
   ArrowUpRight,
@@ -23,6 +24,17 @@ import {
 import { fetchAllRealSupabaseData, trackPageView } from '../../lib/telemetry'
 import { formatDistanceToNow } from 'date-fns'
 
+function safeFormatDistance(dateStr) {
+  if (!dateStr) return 'just now'
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return 'just now'
+    return formatDistanceToNow(d, { addSuffix: true })
+  } catch {
+    return 'just now'
+  }
+}
+
 const DD_SITE = import.meta.env.VITE_DATADOG_SITE || 'us5.datadoghq.com'
 const DD_BASE_URL = `https://${DD_SITE}`
 
@@ -36,9 +48,10 @@ export default function ManagerMonitoringPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLog, setSelectedLog] = useState(null)
 
-  // Track page view for this manager route
+  // Track page view for this manager route and dismiss splash screen immediately
   useEffect(() => {
     trackPageView('/manager/monitoring', { title: 'Manager System Monitoring' })
+    window.hidePrerenderSplash?.()
   }, [])
 
   // Load 100% REAL Supabase data
@@ -50,6 +63,7 @@ export default function ManagerMonitoringPage() {
       console.error('Failed to load real Supabase data', err)
     } finally {
       setLoading(false)
+      window.hidePrerenderSplash?.()
     }
   }
 
@@ -678,7 +692,7 @@ export default function ManagerMonitoringPage() {
                     onClick={() => setSelectedLog(selectedLog?.id === log.id ? null : log)}
                   >
                     <td className="py-2.5 px-3 text-slate-400 whitespace-nowrap font-mono text-[11px]">
-                      {log.created_at ? formatDistanceToNow(new Date(log.created_at), { addSuffix: true }) : 'just now'}
+                      {safeFormatDistance(log.created_at)}
                     </td>
                     <td className="py-2.5 px-3 whitespace-nowrap">
                       <span className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase border ${
