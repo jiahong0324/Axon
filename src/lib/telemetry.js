@@ -566,7 +566,7 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
   return {
     dbPingMs,
     stats: {
-      totalViews,
+      totalViews: routeTotalViews,
       uniqueVisitors,
       avgLoadTime,
       p95Latency,
