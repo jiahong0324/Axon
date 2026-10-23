@@ -1,10 +1,9 @@
-import { Eye, EyeOff, Loader2, UserCircle } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { createProfile, supabase } from '../lib/supabase'
 import { useToast } from '../components/Toast'
 import { useLanguage } from '../components/LanguageProvider'
-import { studentManager } from '../lib/manageStudent'
 import SEO from '../components/SEO'
 
 export default function AuthPage({ mode = 'login' }) {

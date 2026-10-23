@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Calendar, CheckCircle, Target, Sparkles, LayoutDashboard, Play, Pause, RotateCcw, Volume2, ShieldCheck, Check, Clock, Laptop, Smartphone } from 'lucide-react'
+import { Calendar, CheckCircle, Target, Sparkles, LayoutDashboard, Play, Pause, ShieldCheck, Check, Clock } from 'lucide-react'
 
 const TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, url: 'axon-app.com/home' },

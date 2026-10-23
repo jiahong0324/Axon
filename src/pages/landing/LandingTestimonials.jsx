@@ -1,4 +1,4 @@
-import { Star, Quote, CheckCircle2, Award, GraduationCap } from 'lucide-react'
+import { Star, Award } from 'lucide-react'
 
 const TESTIMONIALS = [
   {

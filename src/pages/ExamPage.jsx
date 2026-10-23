@@ -1,4 +1,4 @@
-import { ChevronDown, Clock, MapPin, Plus, Sparkles, Trash2, Pencil } from 'lucide-react'
+import { ChevronDown, MapPin, Plus, Sparkles, Trash2, Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import EmptyState from '../components/EmptyState'
 import { useConfirmDialog } from '../components/ConfirmModal'

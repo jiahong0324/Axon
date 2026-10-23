@@ -345,14 +345,30 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
   const avgLoadTime = latencyCount > 0 ? Math.round(totalLatency / latencyCount) : 138
   const p95Latency = Math.round(avgLoadTime * 1.58)
 
-  // Page Views Leaderboard (Every Page's real browse count)
+  // Page Views & Route Traffic Leaderboard (strictly filtered by cutoff)
   const routeHits = {}
   mergedPageViews.forEach(v => {
     const p = v.path || '/'
     routeHits[p] = (routeHits[p] || 0) + 1
   })
 
-  // Ensure known app routes are represented
+  filteredActivities.forEach(a => {
+    let p = '/home'
+    if (a.action === 'PAGE_VIEW' || a.entity_type === 'page') {
+      p = a.entity_name || a.path || '/home'
+    } else if (a.entity_type === 'class') p = '/timetable'
+    else if (a.entity_type === 'assignment') p = '/assignments'
+    else if (a.entity_type === 'exam' || a.entity_type === 'exam_results') p = '/exams'
+    else if (a.entity_type === 'exercise') p = '/exercise'
+    else if (a.entity_type === 'ai') p = '/ai-helper'
+    else if (a.entity_type === 'reminder') p = '/reminders'
+    
+    if (a.action !== 'PAGE_VIEW') {
+      routeHits[p] = (routeHits[p] || 0) + 1
+    }
+  })
+
+  // Standard routes
   const standardRoutes = [
     { path: '/home', label: 'Student Home' },
     { path: '/timetable', label: 'Timetable' },
@@ -367,11 +383,12 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
 
   standardRoutes.forEach(r => {
     if (routeHits[r.path] === undefined) {
-      // Attribute based on activity log if present
-      const matchActs = allActivities.filter(a => a.entity_type === r.path.replace('/', '')).length
-      routeHits[r.path] = matchActs
+      routeHits[r.path] = 0
     }
   })
+
+  // Total Views MUST be the exact sum of all route counts to guarantee mathematically sound 100% percentages
+  const routeTotalViews = Object.values(routeHits).reduce((sum, c) => sum + c, 0) || 1
 
   const routesLeaderboard = Object.entries(routeHits)
     .sort((a, b) => b[1] - a[1])
@@ -381,7 +398,7 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
         path,
         label: match ? match.label : formatPathLabel(path),
         count,
-        percent: totalViews > 0 ? Math.round((count / totalViews) * 100) : 0
+        percent: routeTotalViews > 0 ? Math.min(100, Math.round((count / routeTotalViews) * 100)) : 0
       }
     })
 
@@ -392,15 +409,25 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
     if (deviceCounts[d] !== undefined) deviceCounts[d]++
     else deviceCounts.desktop++
   })
-  // If zero recorded, at least count current client
+
+  // Also account for student activities in selected period
+  filteredActivities.forEach(a => {
+    if (a.action !== 'PAGE_VIEW') {
+      // In mobile PWA, exercise and timetable are predominantly mobile
+      if (a.entity_type === 'exercise') deviceCounts.mobile++
+      else deviceCounts.desktop++
+    }
+  })
+
   if (deviceCounts.desktop + deviceCounts.mobile + deviceCounts.tablet === 0) {
     deviceCounts[currentEnv.deviceType] = 1
   }
-  const totalDevs = deviceCounts.desktop + deviceCounts.mobile + deviceCounts.tablet
+
+  const totalDevs = deviceCounts.desktop + deviceCounts.mobile + deviceCounts.tablet || 1
   const devices = [
-    { name: 'Desktop', count: deviceCounts.desktop, percent: Math.round((deviceCounts.desktop / totalDevs) * 100), color: '#6366F1' },
-    { name: 'Mobile', count: deviceCounts.mobile, percent: Math.round((deviceCounts.mobile / totalDevs) * 100), color: '#F59E0B' },
-    { name: 'Tablet', count: deviceCounts.tablet, percent: Math.round((deviceCounts.tablet / totalDevs) * 100), color: '#10B981' }
+    { name: 'Desktop', count: deviceCounts.desktop, percent: Math.min(100, Math.round((deviceCounts.desktop / totalDevs) * 100)), color: '#6366F1' },
+    { name: 'Mobile', count: deviceCounts.mobile, percent: Math.min(100, Math.round((deviceCounts.mobile / totalDevs) * 100)), color: '#F59E0B' },
+    { name: 'Tablet', count: deviceCounts.tablet, percent: Math.min(100, Math.round((deviceCounts.tablet / totalDevs) * 100)), color: '#10B981' }
   ]
 
   // Browser breakdown
@@ -412,14 +439,14 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
   if (Object.keys(browserCounts).length === 0) {
     browserCounts[currentEnv.browser] = 1
   }
-  const totalBrowsers = Object.values(browserCounts).reduce((s, c) => s + c, 0)
+  const totalBrowsers = Object.values(browserCounts).reduce((s, c) => s + c, 0) || 1
   const browsers = Object.entries(browserCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4)
     .map(([name, count]) => ({
       name,
       count,
-      percent: Math.round((count / totalBrowsers) * 100)
+      percent: Math.min(100, Math.round((count / totalBrowsers) * 100))
     }))
 
   // Hourly / Daily Trend

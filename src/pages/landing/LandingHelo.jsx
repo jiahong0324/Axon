@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
-import { Calendar, CheckSquare, Clock, LayoutDashboard, ChevronRight, User, Bell, Activity, Sparkles, Brain, GraduationCap, BarChart, Settings, BookOpen, AlertTriangle, ShieldCheck, Zap } from 'lucide-react'
+import { Calendar, CheckSquare, Clock, LayoutDashboard, ChevronRight, Sparkles, Brain, GraduationCap, BarChart, Settings, BookOpen, AlertTriangle, ShieldCheck, Zap } from 'lucide-react'
 import SEO from '../../components/SEO'
 
 // --- Reusable Glass Panel ---

@@ -1,4 +1,4 @@
-import { Bot, Copy, Download, ExternalLink, Filter, Image, MessageSquareText, RefreshCw, Search, Users } from 'lucide-react'
+import { Bot, Download, ExternalLink, Filter, Image, MessageSquareText, RefreshCw, Search, Users } from 'lucide-react'
 import { format, formatDistanceToNow, isSameMonth, isSameWeek, isToday } from 'date-fns'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'

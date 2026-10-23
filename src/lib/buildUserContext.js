@@ -5,7 +5,7 @@ import { calculateOverallCGPA, calculateSemesterGPA } from './tarumtGrading'
 import { fetchExerciseData, calculateStreakAndStats, getLevelInfo } from './exerciseUtils'
 import { translations } from './i18n/translations'
 import { DEFAULT_PREFERENCES } from './preferences'
-import { faqs } from '../pages/landing/LandingFAQ'
+import { faqs } from '../data/faqs'
 
 export async function buildUserContext() {
   const { data: { user } } = await supabase.auth.getUser()

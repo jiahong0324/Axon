@@ -10,7 +10,6 @@ import { syncPreferences } from '../lib/preferences'
 
 import SplashLoading from './SplashLoading'
 
-import { studentManager } from '../lib/manageStudent'
 
 import { useLocation } from 'react-router-dom'
 

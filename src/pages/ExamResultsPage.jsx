@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, Edit2, Check, RotateCcw, Percent, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, Sparkles, Calculator, BookOpen, Award, Edit2, Check, RotateCcw, Percent } from 'lucide-react'
 import SEO from '../components/SEO'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../components/Toast'
@@ -7,7 +7,7 @@ import { useConfirmDialog } from '../components/ConfirmModal'
 import { useLanguage } from '../components/LanguageProvider'
 import Modal from '../components/Modal'
 import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
-import { TARUMT_GRADES, getGradePoint, getGradeFromMark, calculateSemesterGPA, calculateOverallCGPA, getAcademicStanding, getGradeBadgeStyle } from '../lib/tarumtGrading'
+import { TARUMT_GRADES, getGradeFromMark, calculateSemesterGPA, calculateOverallCGPA, getAcademicStanding, getGradeBadgeStyle } from '../lib/tarumtGrading'
 
 function createDefaultThreeCourses(semId) {
   return [

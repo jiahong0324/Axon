@@ -1,4 +1,4 @@
-import { Award, Bot, Calendar, Check, Dumbbell, Flame, Info, Pencil, RefreshCw, Shield, Trash2, Trophy, Zap, Lock } from 'lucide-react'
+import { Award, Bot, Calendar, Check, Flame, Info, Pencil, RefreshCw, Shield, Trash2, Trophy, Zap, Lock } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useConfirmDialog } from '../components/ConfirmModal'
 import EmptyState from '../components/EmptyState'

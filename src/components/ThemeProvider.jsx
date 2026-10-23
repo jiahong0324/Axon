@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, useRef } from 'react'
+import { updatePreference } from '../lib/preferences'
 
 const ThemeContext = createContext(null)
 export const useTheme = () => useContext(ThemeContext)
@@ -30,7 +31,7 @@ export function ThemeProvider({ children }) {
     document.documentElement.classList.toggle('dark', resolved === 'dark')
     localStorage.setItem('theme', theme)
     if (isMounted.current.theme) {
-      import('../lib/preferences').then(m => m.updatePreference(null, 'theme', theme))
+      updatePreference(null, 'theme', theme)
     }
     isMounted.current.theme = true
   }, [theme])
@@ -40,7 +41,7 @@ export function ThemeProvider({ children }) {
     document.documentElement.setAttribute('data-accent', accentColor)
     localStorage.setItem('accentColor', accentColor)
     if (isMounted.current.accentColor) {
-      import('../lib/preferences').then(m => m.updatePreference(null, 'accentColor', accentColor))
+      updatePreference(null, 'accentColor', accentColor)
     }
     isMounted.current.accentColor = true
   }, [accentColor])
@@ -49,7 +50,7 @@ export function ThemeProvider({ children }) {
     document.documentElement.style.fontSize = fontSize === 'small' ? '15px' : fontSize === 'large' ? '18px' : '16px'
     localStorage.setItem('fontSize', fontSize)
     if (isMounted.current.fontSize) {
-      import('../lib/preferences').then(m => m.updatePreference(null, 'fontSize', fontSize))
+      updatePreference(null, 'fontSize', fontSize)
     }
     isMounted.current.fontSize = true
   }, [fontSize])
@@ -58,7 +59,7 @@ export function ThemeProvider({ children }) {
     document.documentElement.setAttribute('data-font', fontFamily)
     localStorage.setItem('fontFamily', fontFamily)
     if (isMounted.current.fontFamily) {
-      import('../lib/preferences').then(m => m.updatePreference(null, 'fontFamily', fontFamily))
+      updatePreference(null, 'fontFamily', fontFamily)
     }
     isMounted.current.fontFamily = true
   }, [fontFamily])
@@ -66,7 +67,7 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('compactMode', compactMode)
     if (isMounted.current.compactMode) {
-      import('../lib/preferences').then(m => m.updatePreference(null, 'compactMode', compactMode))
+      updatePreference(null, 'compactMode', compactMode)
     }
     isMounted.current.compactMode = true
   }, [compactMode])

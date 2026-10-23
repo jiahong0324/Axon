@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import SEO from '../components/SEO'
-import { Shield, Lock, Eye, Database, Sparkles, CheckCircle2, AlertTriangle, FileText } from 'lucide-react'
+import { Shield, Lock, Database, Sparkles, AlertTriangle } from 'lucide-react'
 
 export default function PrivacyPage() {
   return (

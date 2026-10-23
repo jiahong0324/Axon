@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
-import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen, Loader2 } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
 import { supabase, createProfile } from '../../lib/supabase'
 import { useToast } from '../../components/Toast'

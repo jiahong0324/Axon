@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   Bell,
   Check,
@@ -8,14 +8,12 @@ import {
   Search,
   Send,
   Smartphone,
-  User,
   Users,
   X,
   Info,
   AlertTriangle,
   ShieldAlert,
   Loader2,
-  Calendar,
   AlertCircle
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'

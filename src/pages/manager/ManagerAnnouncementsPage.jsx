@@ -1,4 +1,4 @@
-import { Bell, Globe, GraduationCap, Mail, Megaphone, Pencil, Plus, Smartphone, Trash2, User, Users } from 'lucide-react'
+import { Bell, Globe, GraduationCap, Mail, Megaphone, Pencil, Plus, Smartphone, Trash2, User } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useEffect, useState } from 'react'
 import { useConfirmDialog } from '../../components/ConfirmModal'

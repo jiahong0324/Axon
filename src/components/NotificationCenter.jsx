@@ -4,8 +4,6 @@ import {
   CheckCheck,
   CheckCircle2,
   Clock,
-  ExternalLink,
-  Megaphone,
   X,
   ArrowLeft,
   Calendar,

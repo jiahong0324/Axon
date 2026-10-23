@@ -1,37 +1,23 @@
-import { useState, useEffect, useMemo } from 'react'
 import {
   Activity,
   ArrowUpRight,
-  BookOpen,
-  Calendar,
-  CheckCircle2,
   Clock,
   Compass,
   Cpu,
   Database,
-  ExternalLink,
   Eye,
-  FileCheck,
-  FileText,
-  Filter,
   GraduationCap,
   Laptop,
   Layers,
   LineChart,
-  MessageSquare,
-  MessageSquareText,
   Pause,
   Play,
   RefreshCw,
   Search,
-  Server,
   Shield,
   Smartphone,
   Tablet,
-  TrendingUp,
-  UserCheck,
   Users,
-  Video,
   Zap
 } from 'lucide-react'
 import { fetchAllRealSupabaseData, trackPageView } from '../../lib/telemetry'
@@ -453,7 +439,7 @@ export default function ManagerMonitoringPage() {
                 <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-amber-500 to-purple-500 transition-all duration-500"
-                    style={{ width: `${Math.max(route.percent, route.count > 0 ? 5 : 0)}%` }}
+                    style={{ width: `${Math.min(100, Math.max(route.count > 0 ? 4 : 0, route.percent))}%` }}
                   />
                 </div>
               </div>

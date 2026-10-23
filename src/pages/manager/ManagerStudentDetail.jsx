@@ -1,8 +1,8 @@
 import {
   ArrowLeft, ArrowUpDown, Award, Bell, Bot, Calendar, Check, CheckCircle2, Clock, Copy,
-  Download, Dumbbell, Flame, Globe, Image, Info, Layers, MessageSquareText,
-  Moon, Palette, Pencil, Search, Settings, Shield, Sliders, Smartphone,
-  Sparkles, Sun, Trophy, User, XCircle
+  Download, Image, Info,
+  Moon, Palette, Pencil, Search, Settings, Shield,
+  Sparkles, Sun, User
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { Link, useParams } from 'react-router-dom'
