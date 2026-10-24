@@ -50,15 +50,20 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
 
   function handleInputChange(field, val) {
     setSelectedPreset(null)
-    const num = Math.max(0, Number(val) || 0)
-    setGoals(prev => ({ ...prev, [field]: num }))
+    setGoals(prev => ({ ...prev, [field]: val }))
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
     try {
-      await onSave(goals)
+      const sanitized = {
+        calories: Math.max(0, Math.round(Number(goals.calories) || DEFAULT_NUTRITION_GOALS.calories)),
+        protein: Math.max(0, Math.round((Number(goals.protein) || 0) * 10) / 10),
+        carbs: Math.max(0, Math.round((Number(goals.carbs) || 0) * 10) / 10),
+        fats: Math.max(0, Math.round((Number(goals.fats) || 0) * 10) / 10)
+      }
+      await onSave(sanitized)
       onClose()
     } catch (err) {
       console.error(err)
@@ -120,9 +125,8 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
             <input
               type="number"
               min="0"
-              max="20000"
               step="any"
-              value={goals.calories || ''}
+              value={goals.calories ?? ''}
               onChange={e => handleInputChange('calories', e.target.value)}
               className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3.5 py-2 text-white font-bold text-lg focus:outline-none focus:border-orange-500"
               placeholder="e.g. 2000"
@@ -140,9 +144,8 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
               <input
                 type="number"
                 min="0"
-                max="1000"
                 step="any"
-                value={goals.protein || ''}
+                value={goals.protein ?? ''}
                 onChange={e => handleInputChange('protein', e.target.value)}
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-emerald-500"
                 placeholder="120"
@@ -159,9 +162,8 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
               <input
                 type="number"
                 min="0"
-                max="1500"
                 step="any"
-                value={goals.carbs || ''}
+                value={goals.carbs ?? ''}
                 onChange={e => handleInputChange('carbs', e.target.value)}
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-amber-500"
                 placeholder="250"
@@ -178,9 +180,8 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
               <input
                 type="number"
                 min="0"
-                max="500"
                 step="any"
-                value={goals.fats || ''}
+                value={goals.fats ?? ''}
                 onChange={e => handleInputChange('fats', e.target.value)}
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-rose-500"
                 placeholder="65"

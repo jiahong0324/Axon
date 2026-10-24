@@ -354,7 +354,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                 <input
                   type="number"
                   min="0"
-                  max="10000"
+                  step="any"
                   value={calories}
                   onChange={e => setCalories(e.target.value)}
                   className="w-full bg-slate-950/70 border border-slate-800 rounded-lg px-2.5 py-1 text-white font-bold text-base focus:outline-none focus:border-orange-500"

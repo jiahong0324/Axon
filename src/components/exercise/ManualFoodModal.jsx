@@ -124,7 +124,6 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
           <input
             type="number"
             min="0"
-            max="10000"
             step="any"
             value={calories}
             onChange={e => setCalories(e.target.value)}
