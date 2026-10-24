@@ -61,6 +61,26 @@ function resizeImageFile(file, maxDimension = 1280) {
   })
 }
 
+function createMicroThumbnail(base64Image, size = 96) {
+  return new Promise(resolve => {
+    if (!base64Image) return resolve('')
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')
+      const minDim = Math.min(img.width, img.height)
+      const sx = (img.width - minDim) / 2
+      const sy = (img.height - minDim) / 2
+      ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size)
+      resolve(canvas.toDataURL('image/jpeg', 0.6))
+    }
+    img.onerror = () => resolve('')
+    img.src = base64Image
+  })
+}
+
 export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSave }) {
   const [step, setStep] = useState('upload') // 'upload' | 'analyzing' | 'review'
   const [imagePreview, setImagePreview] = useState(null)
@@ -145,6 +165,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
     if (!foodName.trim() || calories === '') return
     setSaving(true)
     try {
+      const microThumb = imagePreview ? await createMicroThumbnail(imagePreview, 96) : ''
       await onSave({
         date: defaultDate || getTodayDateStr(),
         meal_type: mealType,
@@ -154,7 +175,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
         carbs: Number(carbs) || 0,
         fats: Number(fats) || 0,
         notes: portionNotes.trim(),
-        image_url: imagePreview || ''
+        image_url: microThumb
       })
       onClose()
     } catch (err) {
