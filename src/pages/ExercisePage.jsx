@@ -1,4 +1,4 @@
-import { Award, Bot, Calendar, Check, Flame, Info, Pencil, RefreshCw, Shield, Trash2, Trophy, Zap, Lock } from 'lucide-react'
+import { Award, Bot, Calendar, Check, Flame, Info, Pencil, RefreshCw, Shield, Trash2, Trophy, Zap, Lock, Dumbbell, Utensils } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useConfirmDialog } from '../components/ConfirmModal'
 import EmptyState from '../components/EmptyState'
@@ -22,6 +22,14 @@ import { askGroq } from '../lib/groq'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml } from '../lib/utils'
 import SEO from '../components/SEO'
+import DietNutritionTab from '../components/exercise/DietNutritionTab'
+import {
+  DEFAULT_NUTRITION_GOALS,
+  fetchNutritionData,
+  saveNutritionGoals,
+  saveFoodLogItem,
+  deleteFoodLogItem
+} from '../lib/nutritionUtils'
 
 const DEFAULT_TABLE_PLAN = `| Phase | Exercise / Activity | Duration / Sets | Intensity | Coach Tips |
 | :--- | :--- | :--- | :--- | :--- |
@@ -61,6 +69,19 @@ export default function ExercisePage() {
   const [xpTotal, setXpTotal] = useState(0)
   const [freezesAvailable, setFreezesAvailable] = useState(MAX_FREEZES)
   const [frozenDates, setFrozenDates] = useState([])
+
+  // Segmented Pill Tab state (workout vs diet)
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      return localStorage.getItem('axon_exercise_active_tab') || 'workout'
+    } catch (e) {}
+    return 'workout'
+  })
+
+  // Nutrition state
+  const [nutritionGoals, setNutritionGoals] = useState(DEFAULT_NUTRITION_GOALS)
+  const [nutritionLogs, setNutritionLogs] = useState([])
+  const [hasSetNutritionGoals, setHasSetNutritionGoals] = useState(false)
 
   // Check-in state
   const [selectedTag, setSelectedTag] = useState('Gym')
@@ -139,16 +160,45 @@ export default function ExercisePage() {
     currentUserIdRef.current = currentUserId
     setUserId(currentUserId)
 
-    const data = await fetchExerciseData(currentUserId)
+    const [data, nutritionData] = await Promise.all([
+      fetchExerciseData(currentUserId),
+      fetchNutritionData(currentUserId)
+    ])
     setLogs(data.logs || [])
     setWeeklyGoal(data.weeklyGoal || 4)
     setXpTotal(data.xpTotal || 0)
     setFreezesAvailable(typeof data.freezesAvailable === 'number' ? data.freezesAvailable : MAX_FREEZES)
     setFrozenDates(data.frozenDates || [])
+    setNutritionGoals(nutritionData.goals)
+    setNutritionLogs(nutritionData.logs)
+    setHasSetNutritionGoals(nutritionData.hasSetGoals)
     if (showLoading) {
       setLoading(false)
       window.hidePrerenderSplash?.()
     }
+  }
+
+  function handleTabChange(tab) {
+    setActiveTab(tab)
+    try {
+      localStorage.setItem('axon_exercise_active_tab', tab)
+    } catch (e) {}
+  }
+
+  async function handleSaveNutritionGoals(newGoals) {
+    const saved = await saveNutritionGoals(userId, newGoals)
+    setNutritionGoals(saved)
+    setHasSetNutritionGoals(true)
+  }
+
+  async function handleSaveFood(foodItem) {
+    const result = await saveFoodLogItem(userId, foodItem, nutritionLogs)
+    setNutritionLogs(result.logs)
+  }
+
+  async function handleDeleteFood(foodId) {
+    const updated = await deleteFoodLogItem(userId, foodId, nutritionLogs)
+    setNutritionLogs(updated)
   }
 
   const stats = useMemo(
@@ -418,7 +468,39 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
         </div>
       </div>
 
-      {/* TOP 2 HERO CARDS - CLEAN DUOLINGO-STYLE DESIGN */}
+      {/* Navigation Tabs - Matching ExamResultsPage Pill style */}
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div className="w-full sm:w-auto rounded-xl bg-[#111827] p-1 sm:p-1.5 shadow-md border border-white/5">
+          <div className="grid grid-cols-2 gap-1 sm:flex sm:items-center sm:gap-2">
+            <button
+              onClick={() => handleTabChange('workout')}
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all text-center whitespace-nowrap overflow-hidden ${
+                activeTab === 'workout'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Dumbbell className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span>{t('exercise.tabWorkout')}</span>
+            </button>
+            <button
+              onClick={() => handleTabChange('diet')}
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all text-center whitespace-nowrap overflow-hidden ${
+                activeTab === 'diet'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Utensils className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span>{t('exercise.tabDiet')}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {activeTab === 'workout' ? (
+        <>
+        {/* TOP 2 HERO CARDS - CLEAN DUOLINGO-STYLE DESIGN */}
       <div className="grid gap-6 md:grid-cols-2 mb-8">
         {/* HERO CARD 1: Streak & Consistency */}
         <section
@@ -874,6 +956,19 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
             </button>
           </div>
         </div>
+      )}
+
+        </>
+      ) : (
+        <DietNutritionTab
+          userId={userId}
+          goals={nutritionGoals}
+          logs={nutritionLogs}
+          hasSetGoals={hasSetNutritionGoals}
+          onSaveGoals={handleSaveNutritionGoals}
+          onSaveFood={handleSaveFood}
+          onDeleteFood={handleDeleteFood}
+        />
       )}
 
       {/* CELEBRATION MODAL */}

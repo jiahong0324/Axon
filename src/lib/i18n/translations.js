@@ -465,6 +465,8 @@ export const translations = {
 
     'exercise.title': 'Exercise',
     'exercise.subtitle': 'Build daily habits, earn XP, and protect your streak.',
+    'exercise.tabWorkout': 'Workout & Habit',
+    'exercise.tabDiet': 'Diet & Nutrition',
     'exercise.markTodayDone': 'Mark Today Done',
     'exercise.checkedInToday': 'Checked In Today!',
     'exercise.activityTag': 'Activity Tag (Optional)',
@@ -1021,6 +1023,8 @@ export const translations = {
 
     'exercise.title': '运动',
     'exercise.subtitle': '养成运动好习惯，累积 XP 经验值，保持连续打卡！',
+    'exercise.tabWorkout': '健身打卡',
+    'exercise.tabDiet': '饮食追踪',
     'exercise.markTodayDone': '完成今日打卡',
     'exercise.checkedInToday': '今日已打卡完成！',
     'exercise.activityTag': '活动类型 (可选)',
