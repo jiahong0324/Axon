@@ -81,8 +81,8 @@ export async function fetchNutritionData(userId) {
 
   // 2. Fetch from Supabase cloud (both table and auth user_metadata fallback)
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    const metadata = user?.user_metadata || {}
+    const authRes = await supabase.auth.getUser()
+    const metadata = authRes?.data?.user?.user_metadata || {}
 
     // Check user_metadata first for offline-first sync
     if (metadata.axon_nutrition_goals && typeof metadata.axon_nutrition_goals.calories === 'number') {

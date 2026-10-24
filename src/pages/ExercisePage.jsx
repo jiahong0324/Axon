@@ -155,26 +155,43 @@ export default function ExercisePage() {
   async function loadInitialData(showLoading = true) {
     lastLoadedRef.current = Date.now()
     if (showLoading) setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    const currentUserId = user?.id || null
-    currentUserIdRef.current = currentUserId
-    setUserId(currentUserId)
+    try {
+      const authRes = await supabase.auth.getUser()
+      const currentUserId = authRes?.data?.user?.id || null
+      currentUserIdRef.current = currentUserId
+      setUserId(currentUserId)
 
-    const [data, nutritionData] = await Promise.all([
-      fetchExerciseData(currentUserId),
-      fetchNutritionData(currentUserId)
-    ])
-    setLogs(data.logs || [])
-    setWeeklyGoal(data.weeklyGoal || 4)
-    setXpTotal(data.xpTotal || 0)
-    setFreezesAvailable(typeof data.freezesAvailable === 'number' ? data.freezesAvailable : MAX_FREEZES)
-    setFrozenDates(data.frozenDates || [])
-    setNutritionGoals(nutritionData.goals)
-    setNutritionLogs(nutritionData.logs)
-    setHasSetNutritionGoals(nutritionData.hasSetGoals)
-    if (showLoading) {
-      setLoading(false)
-      window.hidePrerenderSplash?.()
+      const [exerciseData, nutritionData] = await Promise.all([
+        fetchExerciseData(currentUserId).catch(err => {
+          console.warn('fetchExerciseData error:', err)
+          return {}
+        }),
+        fetchNutritionData(currentUserId).catch(err => {
+          console.warn('fetchNutritionData error:', err)
+          return { goals: DEFAULT_NUTRITION_GOALS, logs: [], hasSetGoals: false }
+        })
+      ])
+
+      if (exerciseData) {
+        setLogs(exerciseData.logs || [])
+        setWeeklyGoal(exerciseData.weeklyGoal || 4)
+        setXpTotal(exerciseData.xpTotal || 0)
+        setFreezesAvailable(typeof exerciseData.freezesAvailable === 'number' ? exerciseData.freezesAvailable : MAX_FREEZES)
+        setFrozenDates(exerciseData.frozenDates || [])
+      }
+
+      if (nutritionData) {
+        setNutritionGoals(nutritionData.goals || DEFAULT_NUTRITION_GOALS)
+        setNutritionLogs(nutritionData.logs || [])
+        setHasSetNutritionGoals(Boolean(nutritionData.hasSetGoals))
+      }
+    } catch (err) {
+      console.error('loadInitialData failed:', err)
+    } finally {
+      if (showLoading) {
+        setLoading(false)
+        window.hidePrerenderSplash?.()
+      }
     }
   }
 

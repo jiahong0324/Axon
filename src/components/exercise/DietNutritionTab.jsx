@@ -95,7 +95,7 @@ export default function DietNutritionTab({
 
   return (
     <div className="space-y-6 w-full">
-      <ConfirmDialog />
+      {ConfirmDialog}
 
       {/* Top Welcome / Initial Setup Banner if goals haven't been set */}
       {!hasSetGoals && (
