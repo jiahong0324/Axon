@@ -125,7 +125,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
             type="number"
             min="0"
             max="10000"
-            step="1"
+            step="any"
             value={calories}
             onChange={e => setCalories(e.target.value)}
             placeholder="e.g. 450"
@@ -149,7 +149,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
               <input
                 type="number"
                 min="0"
-                step="0.1"
+                step="any"
                 value={protein}
                 onChange={e => setProtein(e.target.value)}
                 placeholder="0"
@@ -166,7 +166,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
               <input
                 type="number"
                 min="0"
-                step="0.1"
+                step="any"
                 value={carbs}
                 onChange={e => setCarbs(e.target.value)}
                 placeholder="0"
@@ -183,7 +183,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
               <input
                 type="number"
                 min="0"
-                step="0.1"
+                step="any"
                 value={fats}
                 onChange={e => setFats(e.target.value)}
                 placeholder="0"

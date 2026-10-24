@@ -372,7 +372,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                   <input
                     type="number"
                     min="0"
-                    step="0.1"
+                    step="any"
                     value={protein}
                     onChange={e => setProtein(e.target.value)}
                     className="w-full bg-slate-950/60 border border-slate-800 rounded px-2 py-1 text-white font-bold text-xs focus:outline-none focus:border-emerald-500"
@@ -387,7 +387,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                   <input
                     type="number"
                     min="0"
-                    step="0.1"
+                    step="any"
                     value={carbs}
                     onChange={e => setCarbs(e.target.value)}
                     className="w-full bg-slate-950/60 border border-slate-800 rounded px-2 py-1 text-white font-bold text-xs focus:outline-none focus:border-amber-500"
@@ -402,7 +402,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                   <input
                     type="number"
                     min="0"
-                    step="0.1"
+                    step="any"
                     value={fats}
                     onChange={e => setFats(e.target.value)}
                     className="w-full bg-slate-950/60 border border-slate-800 rounded px-2 py-1 text-white font-bold text-xs focus:outline-none focus:border-rose-500"

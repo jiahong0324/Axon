@@ -119,9 +119,9 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
             </div>
             <input
               type="number"
-              min="500"
-              max="10000"
-              step="50"
+              min="0"
+              max="20000"
+              step="any"
               value={goals.calories || ''}
               onChange={e => handleInputChange('calories', e.target.value)}
               className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3.5 py-2 text-white font-bold text-lg focus:outline-none focus:border-orange-500"
@@ -141,7 +141,7 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
                 type="number"
                 min="0"
                 max="1000"
-                step="5"
+                step="any"
                 value={goals.protein || ''}
                 onChange={e => handleInputChange('protein', e.target.value)}
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-emerald-500"
@@ -160,7 +160,7 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
                 type="number"
                 min="0"
                 max="1500"
-                step="5"
+                step="any"
                 value={goals.carbs || ''}
                 onChange={e => handleInputChange('carbs', e.target.value)}
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-amber-500"
@@ -179,7 +179,7 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
                 type="number"
                 min="0"
                 max="500"
-                step="5"
+                step="any"
                 value={goals.fats || ''}
                 onChange={e => handleInputChange('fats', e.target.value)}
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-rose-500"
