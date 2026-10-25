@@ -484,28 +484,28 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
 
       {/* Navigation Tabs - Matching ExamResultsPage Pill style */}
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div className="w-full sm:w-auto rounded-xl bg-[#111827] p-1 sm:p-1.5 shadow-md border border-white/5">
-          <div className="grid grid-cols-2 gap-1 sm:flex sm:items-center sm:gap-2">
+        <div className="w-auto rounded-xl bg-[#111827] p-1.5 shadow-md border border-white/5 inline-flex">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={() => handleTabChange('workout')}
-              className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all text-center whitespace-nowrap overflow-hidden ${
+              className={`flex items-center justify-center gap-2 rounded-lg px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all text-center whitespace-nowrap overflow-hidden ${
                 activeTab === 'workout'
                   ? 'bg-blue-500 text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Dumbbell className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <Dumbbell className="h-4 w-4 shrink-0" />
               <span>{t('exercise.tabWorkout')}</span>
             </button>
             <button
               onClick={() => handleTabChange('diet')}
-              className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all text-center whitespace-nowrap overflow-hidden ${
+              className={`flex items-center justify-center gap-2 rounded-lg px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all text-center whitespace-nowrap overflow-hidden ${
                 activeTab === 'diet'
                   ? 'bg-blue-500 text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Utensils className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <Utensils className="h-4 w-4 shrink-0" />
               <span>{t('exercise.tabDiet')}</span>
             </button>
           </div>
