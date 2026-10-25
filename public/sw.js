@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v15-apple-time-wheel'
+const CACHE_NAME = 'axon-v16-timepicker-precision'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {

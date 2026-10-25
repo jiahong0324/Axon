@@ -40,12 +40,13 @@ export function formatTimeDisplay(timeStr) {
 }
 
 /**
- * Apple iOS-style Drum Wheel Column
+ * Apple iOS-style Drum Wheel Column with single-step control & horizontal pan lock
  */
-function WheelColumn({ items, value, onChange, formatItem, itemHeight = 44, containerHeight = 176 }) {
+function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, containerHeight = 192 }) {
   const scrollerRef = useRef(null)
   const isInteractingRef = useRef(false)
   const timeoutRef = useRef(null)
+  const lastWheelTimeRef = useRef(0)
 
   const padY = (containerHeight - itemHeight) / 2
 
@@ -69,6 +70,25 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 44, cont
       }
     }
   }, [value, items, itemHeight])
+
+  // Precision wheel step on desktop: prevents jumping multiple items on mouse wheel or trackpad
+  const handleWheel = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const now = Date.now()
+    if (now - lastWheelTimeRef.current < 90) return
+    lastWheelTimeRef.current = now
+
+    const direction = e.deltaY > 0 ? 1 : -1
+    const currentIdx = items.indexOf(value)
+    const nextIdx = Math.max(0, Math.min(items.length - 1, currentIdx + direction))
+    if (nextIdx !== currentIdx) {
+      onChange(items[nextIdx])
+      if (scrollerRef.current) {
+        scrollerRef.current.scrollTo({ top: nextIdx * itemHeight, behavior: 'smooth' })
+      }
+    }
+  }
 
   const handleScroll = (e) => {
     isInteractingRef.current = true
@@ -95,11 +115,12 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 44, cont
 
   return (
     <div
-      className="relative flex-1 select-none overflow-hidden"
-      style={{ height: `${containerHeight}px` }}
+      className="relative flex-1 select-none overflow-x-hidden overflow-y-hidden"
+      style={{ height: `${containerHeight}px`, touchAction: 'pan-y' }}
     >
       <div
         ref={scrollerRef}
+        onWheel={handleWheel}
         onScroll={handleScroll}
         onTouchStart={() => { isInteractingRef.current = true }}
         onMouseDown={() => { isInteractingRef.current = true }}
@@ -107,9 +128,10 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 44, cont
           paddingTop: `${padY}px`,
           paddingBottom: `${padY}px`,
           scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+          msOverflowStyle: 'none',
+          touchAction: 'pan-y'
         }}
-        className="h-full overflow-y-scroll snap-y snap-mandatory [&::-webkit-scrollbar]:hidden overscroll-contain"
+        className="h-full overflow-y-scroll overflow-x-hidden snap-y snap-mandatory [&::-webkit-scrollbar]:hidden overscroll-y-contain overscroll-x-none"
       >
         {items.map((item, idx) => {
           const isSelected = item === value
@@ -117,8 +139,8 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 44, cont
             <div
               key={item}
               onClick={() => handleItemClick(item, idx)}
-              style={{ height: `${itemHeight}px` }}
-              className={`snap-center flex items-center justify-center font-mono font-bold cursor-pointer transition-all duration-100 ${
+              style={{ height: `${itemHeight}px`, touchAction: 'pan-y' }}
+              className={`snap-center [scroll-snap-stop:always] flex items-center justify-center font-mono font-bold cursor-pointer transition-all duration-100 ${
                 isSelected
                   ? 'text-white text-3xl font-extrabold scale-110 drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]'
                   : 'text-slate-500 text-lg hover:text-slate-300 opacity-30 hover:opacity-75'
@@ -241,7 +263,10 @@ export default function TimePicker({
   const minutesList = Array.from({ length: 60 }, (_, i) => i)
 
   const popoverContent = (
-    <div className="w-[300px] max-w-[92vw] text-slate-100 select-none space-y-3">
+    <div
+      style={{ touchAction: 'pan-y' }}
+      className="w-[300px] max-w-[92vw] text-slate-100 select-none space-y-3 overflow-x-hidden"
+    >
       {/* Header: Select Meal Time + Now */}
       <div className="flex items-center justify-between pb-2 border-b border-white/10">
         <div className="flex items-center gap-2">
@@ -260,55 +285,58 @@ export default function TimePicker({
         </button>
       </div>
 
-      {/* Main Apple-Style Cylindrical Scrolling Wheel Box */}
-      <div className="relative flex items-center justify-center gap-1 bg-slate-950/80 rounded-2xl border border-white/5 px-2 overflow-hidden my-2 shadow-inner">
-        {/* Center Highlight Lens Bar */}
-        <div
-          className="absolute left-2 right-2 pointer-events-none rounded-xl bg-white/[0.08] border border-white/10 shadow-sm z-10"
-          style={{
-            top: '50%',
-            height: '44px',
-            transform: 'translateY(-50%)'
-          }}
-        />
+      {/* Main Wheel Area: Hours & Minutes Box (Left) + Completely Separate AM/PM Card (Right) */}
+      <div className="flex items-center gap-2.5 my-2 overflow-x-hidden" style={{ touchAction: 'pan-y' }}>
+        {/* 1. Time Wheels Box (Hours & Minutes ONLY) */}
+        <div className="relative flex-1 flex items-center justify-center bg-slate-950/80 rounded-2xl border border-white/5 overflow-hidden shadow-inner h-[192px]">
+          {/* Center Highlight Lens Bar - Strictly inside Time Wheels Box only */}
+          <div
+            className="absolute left-2 right-2 pointer-events-none rounded-xl bg-white/[0.08] border border-white/10 shadow-sm z-10"
+            style={{
+              top: '50%',
+              height: '48px',
+              transform: 'translateY(-50%)'
+            }}
+          />
 
-        {/* Top & Bottom cylindrical drum vignette gradients */}
-        <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
-        <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
+          {/* Top & Bottom cylindrical drum vignette gradients */}
+          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
 
-        {/* Hours Wheel Column */}
-        <WheelColumn
-          items={hoursList}
-          value={selectedH12}
-          onChange={setSelectedH12}
-          formatItem={(h) => String(h).padStart(2, '0')}
-          itemHeight={44}
-          containerHeight={176}
-        />
+          {/* Hours Wheel Column */}
+          <WheelColumn
+            items={hoursList}
+            value={selectedH12}
+            onChange={setSelectedH12}
+            formatItem={(h) => String(h).padStart(2, '0')}
+            itemHeight={48}
+            containerHeight={192}
+          />
 
-        {/* Colon Separator */}
-        <span className="text-2xl font-extrabold text-slate-500 pb-1 z-20 select-none animate-pulse">
-          :
-        </span>
+          {/* Colon Separator */}
+          <span className="text-2xl font-extrabold text-slate-500 pb-1 z-20 select-none">
+            :
+          </span>
 
-        {/* Minutes Wheel Column */}
-        <WheelColumn
-          items={minutesList}
-          value={selectedM}
-          onChange={setSelectedM}
-          formatItem={(m) => String(m).padStart(2, '0')}
-          itemHeight={44}
-          containerHeight={176}
-        />
+          {/* Minutes Wheel Column */}
+          <WheelColumn
+            items={minutesList}
+            value={selectedM}
+            onChange={setSelectedM}
+            formatItem={(m) => String(m).padStart(2, '0')}
+            itemHeight={48}
+            containerHeight={192}
+          />
+        </div>
 
-        {/* AM / PM Segmented Toggle */}
-        <div className="flex flex-col gap-1.5 p-1 bg-slate-900 rounded-xl border border-white/10 ml-2 z-20 shrink-0">
+        {/* 2. AM / PM Box - COMPLETELY SEPARATE, NOT CONNECTED TO THE WHEEL OR LENS! */}
+        <div className="h-[192px] w-[62px] bg-slate-950/80 rounded-2xl border border-white/5 p-1.5 flex flex-col justify-center gap-2 shrink-0 shadow-inner">
           <button
             type="button"
             onClick={() => setSelectedIsPM(false)}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center ${
               !selectedIsPM
-                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
+                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -317,9 +345,9 @@ export default function TimePicker({
           <button
             type="button"
             onClick={() => setSelectedIsPM(true)}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center ${
               selectedIsPM
-                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
+                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -373,13 +401,13 @@ export default function TimePicker({
       {isOpen && typeof document !== 'undefined' && createPortal(
         isMobile ? (
           <div
-            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 overflow-hidden touch-none"
             onClick={() => setIsOpen(false)}
           >
             <div
               ref={popoverRef}
               onClick={e => e.stopPropagation()}
-              className="bg-slate-900 border border-slate-700 rounded-2xl p-4 shadow-2xl shadow-black/90 animate-in zoom-in-95 duration-150"
+              className="bg-slate-900 border border-slate-700 rounded-2xl p-4 shadow-2xl shadow-black/90 animate-in zoom-in-95 duration-150 overflow-x-hidden touch-pan-y"
             >
               {popoverContent}
             </div>
@@ -392,10 +420,11 @@ export default function TimePicker({
                 position: 'fixed',
                 top: `${coords.top}px`,
                 left: `${coords.left}px`,
-                zIndex: 99999
+                zIndex: 99999,
+                touchAction: 'pan-y'
               }}
               onMouseDown={e => e.stopPropagation()}
-              className="bg-slate-900 border border-slate-700 rounded-2xl p-4 shadow-2xl shadow-black/90 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
+              className="bg-slate-900 border border-slate-700 rounded-2xl p-4 shadow-2xl shadow-black/90 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 overflow-x-hidden"
             >
               {popoverContent}
             </div>
