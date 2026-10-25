@@ -37,8 +37,15 @@ export function formatNutritionDate(dateStr) {
   tomorrow.setDate(tomorrow.getDate() + 1)
   const tStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
 
+  const currentYear = new Date().getFullYear()
+  const isDiffYear = d.getFullYear() !== currentYear
+
   const dayOfWeek = d.toLocaleDateString(undefined, { weekday: 'short' })
-  const monthDay = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  const monthDay = d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    ...(isDiffYear ? { year: 'numeric' } : {})
+  })
 
   if (dateStr === today) return `Today, ${monthDay}`
   if (dateStr === yStr) return `Yesterday, ${monthDay}`

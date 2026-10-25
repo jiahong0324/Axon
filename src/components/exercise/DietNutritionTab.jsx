@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import {
   Sparkles,
   Plus,
   Settings2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Flame,
   Trash2,
   Pencil,
@@ -39,6 +40,7 @@ export default function DietNutritionTab({
 
   const [activeDate, setActiveDate] = useState(() => getTodayDateStr())
   const todayStr = useMemo(() => getTodayDateStr(), [])
+  const datePickerRef = useRef(null)
 
   // Modals state
   const [goalModalOpen, setGoalModalOpen] = useState(false)
@@ -129,9 +131,32 @@ export default function DietNutritionTab({
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <div className="px-3 text-xs sm:text-sm font-bold text-white flex items-center gap-2 select-none min-w-[140px] justify-center">
-            <Calendar className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-            <span>{formatNutritionDate(activeDate)}</span>
+          {/* Interactive Calendar Date Picker */}
+          <div className="relative flex items-center group cursor-pointer">
+            <div className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-white group-hover:bg-slate-800/80 group-hover:text-blue-300 transition-all flex items-center gap-1.5 select-none min-w-[130px] sm:min-w-[150px] justify-center pointer-events-none">
+              <Calendar className="h-3.5 w-3.5 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
+              <span>{formatNutritionDate(activeDate)}</span>
+              <ChevronDown className="h-3 w-3 text-slate-500 group-hover:text-blue-300 transition-colors shrink-0" />
+            </div>
+            <input
+              ref={datePickerRef}
+              type="date"
+              value={activeDate}
+              onClick={(e) => {
+                try {
+                  if (typeof e.target.showPicker === 'function') {
+                    e.target.showPicker()
+                  }
+                } catch (err) {}
+              }}
+              onChange={(e) => {
+                if (e.target.value) {
+                  setActiveDate(e.target.value)
+                }
+              }}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              title="Click to choose any date from calendar"
+            />
           </div>
           <button
             onClick={handleNextDay}
