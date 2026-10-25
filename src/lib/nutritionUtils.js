@@ -53,6 +53,30 @@ export function formatNutritionDate(dateStr) {
   return `${dayOfWeek}, ${monthDay}`
 }
 
+
+export function formatMealTime(timeStr, isoDate) {
+  if (timeStr && /^\d{1,2}:\d{2}/.test(timeStr)) {
+    const [hStr, mStr] = timeStr.split(':');
+    const h = Number(hStr);
+    const m = Number(mStr);
+    const isPM = h >= 12;
+    const displayHour = h % 12 === 0 ? 12 : h % 12;
+    return displayHour + ':' + String(m).padStart(2, '0') + ' ' + (isPM ? 'pm' : 'am');
+  }
+  if (isoDate) {
+    try {
+      const d = new Date(isoDate);
+      if (!isNaN(d.getTime())) {
+        const h = d.getHours();
+        const m = d.getMinutes();
+        const isPM = h >= 12;
+        const displayHour = h % 12 === 0 ? 12 : h % 12;
+        return displayHour + ':' + String(m).padStart(2, '0') + ' ' + (isPM ? 'pm' : 'am');
+      }
+    } catch (e) {}
+  }
+  return '';
+}
 export async function fetchNutritionData(userId) {
   const goalsKey = userId ? `axon_nutrition_goals_${userId}` : 'axon_nutrition_goals_global'
   const logsKey = userId ? `axon_nutrition_logs_${userId}` : 'axon_nutrition_logs_global'
@@ -350,6 +374,15 @@ export function calculateDayNutrition(logs, dateStr, goals = DEFAULT_NUTRITION_G
     } else {
       groupedMeals.Lunch.push(item)
     }
+  }
+
+  // Sort items within each meal chronologically
+  for (const mt of Object.keys(groupedMeals)) {
+    groupedMeals[mt].sort((a, b) => {
+      const timeA = a.meal_time || (a.created_at ? new Date(a.created_at).getTime() : 0)
+      const timeB = b.meal_time || (b.created_at ? new Date(b.created_at).getTime() : 0)
+      return timeA > timeB ? 1 : -1
+    })
   }
 
   return {
