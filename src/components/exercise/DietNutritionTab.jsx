@@ -432,6 +432,7 @@ export default function DietNutritionTab({
               if (items.length === 0) return null
 
               const catCalories = items.reduce((acc, cur) => acc + (Number(cur.calories) || 0), 0)
+              const categoryTime = items.length > 0 ? formatMealTime(items[0].meal_time, items[0].created_at) : null
 
               return (
                 <div
@@ -445,7 +446,12 @@ export default function DietNutritionTab({
                       <h4 className="text-sm font-bold text-white uppercase tracking-wider">
                         {category}
                       </h4>
-                      <span className="text-xs text-slate-400">({items.length})</span>
+                      {categoryTime && (
+                        <span className="inline-flex items-center gap-1 text-blue-300 font-medium bg-blue-500/10 px-2 py-0.5 rounded-md text-xs">
+                          <Clock className="h-3 w-3 text-blue-400" />
+                          <span>{categoryTime}</span>
+                        </span>
+                      )}
                     </div>
                     <span className="text-xs font-bold text-orange-400">
                       {catCalories.toLocaleString()} kcal
@@ -478,7 +484,7 @@ export default function DietNutritionTab({
                                 {item.name}
                               </h5>
                               <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-400 mt-0.5">
-                                {timeFormatted && (
+                                {items.length > 1 && timeFormatted && timeFormatted !== categoryTime && (
                                   <span className="inline-flex items-center gap-1 text-blue-300 font-medium bg-blue-500/10 px-1.5 py-0.5 rounded text-[10px]">
                                     <Clock className="h-2.5 w-2.5 text-blue-400" />
                                     <span>{timeFormatted}</span>
