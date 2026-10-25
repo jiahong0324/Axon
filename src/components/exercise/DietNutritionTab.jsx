@@ -455,7 +455,7 @@ export default function DietNutritionTab({
                         key={item.id}
                         className="py-3 first:pt-1 last:pb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
                       >
-                        <div className="flex items-start sm:items-center gap-3 min-w-0">
+                        <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                           {item.image_url ? (
                             <img
                               src={item.image_url}
@@ -467,7 +467,7 @@ export default function DietNutritionTab({
                               {MEAL_TYPE_ICONS[category]}
                             </div>
                           )}
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <h5 className="text-sm font-bold text-white truncate group-hover:text-blue-300 transition-colors">
                               {item.name}
                             </h5>
@@ -481,11 +481,11 @@ export default function DietNutritionTab({
                         </div>
 
                         {/* Right side: Calories & actions */}
-                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t border-white/5 sm:border-none">
-                          <span className="text-sm font-bold text-white">
+                        <div className="flex items-center justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t border-white/5 sm:border-none w-full sm:w-auto ml-auto">
+                          <span className="text-sm font-bold text-white whitespace-nowrap text-right">
                             {item.calories} <span className="text-xs text-slate-400 font-normal">kcal</span>
                           </span>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 shrink-0 -mr-1">
                             <button
                               onClick={() => handleEdit(item)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center"
