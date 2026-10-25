@@ -10,7 +10,6 @@ import {
   Trash2,
   Pencil,
   Calendar,
-  Clock,
   UtensilsCrossed,
   Info
 } from 'lucide-react'
@@ -447,9 +446,8 @@ export default function DietNutritionTab({
                         {category}
                       </h4>
                       {categoryTime && (
-                        <span className="inline-flex items-center gap-1 text-blue-300 font-medium bg-blue-500/10 px-2 py-0.5 rounded-md text-xs">
-                          <Clock className="h-3 w-3 text-blue-400" />
-                          <span>{categoryTime}</span>
+                        <span className="text-xs text-slate-400 font-normal">
+                          {categoryTime}
                         </span>
                       )}
                     </div>
@@ -485,9 +483,8 @@ export default function DietNutritionTab({
                               </h5>
                               <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-400 mt-0.5">
                                 {items.length > 1 && timeFormatted && timeFormatted !== categoryTime && (
-                                  <span className="inline-flex items-center gap-1 text-blue-300 font-medium bg-blue-500/10 px-1.5 py-0.5 rounded text-[10px]">
-                                    <Clock className="h-2.5 w-2.5 text-blue-400" />
-                                    <span>{timeFormatted}</span>
+                                  <span className="text-slate-400 font-normal">
+                                    {timeFormatted} ·
                                   </span>
                                 )}
                                 {item.notes && <span className="text-slate-300">{item.notes} ·</span>}
