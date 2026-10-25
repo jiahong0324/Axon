@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v16-timepicker-precision'
+const CACHE_NAME = 'axon-v17-smooth-timepicker'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {

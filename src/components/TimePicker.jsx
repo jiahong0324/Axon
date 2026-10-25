@@ -40,7 +40,7 @@ export function formatTimeDisplay(timeStr) {
 }
 
 /**
- * Apple iOS-style Drum Wheel Column with single-step control & horizontal pan lock
+ * Apple iOS-style Drum Wheel Column with non-passive step lock & high-performance touch scrolling
  */
 function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, containerHeight = 192 }) {
   const scrollerRef = useRef(null)
@@ -71,46 +71,68 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
     }
   }, [value, items, itemHeight])
 
-  // Precision wheel step on desktop: prevents jumping multiple items on mouse wheel or trackpad
-  const handleWheel = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const now = Date.now()
-    if (now - lastWheelTimeRef.current < 90) return
-    lastWheelTimeRef.current = now
+  // Precision wheel step on desktop: MUST attach with { passive: false } to cancel browser native 100px wheel jump!
+  useEffect(() => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
 
-    const direction = e.deltaY > 0 ? 1 : -1
-    const currentIdx = items.indexOf(value)
-    const nextIdx = Math.max(0, Math.min(items.length - 1, currentIdx + direction))
-    if (nextIdx !== currentIdx) {
-      onChange(items[nextIdx])
-      if (scrollerRef.current) {
-        scrollerRef.current.scrollTo({ top: nextIdx * itemHeight, behavior: 'smooth' })
+    const handleWheel = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      const now = performance.now()
+      if (now - lastWheelTimeRef.current < 90) return
+      lastWheelTimeRef.current = now
+
+      const direction = e.deltaY > 0 ? 1 : -1
+      const currentIdx = Math.round(scroller.scrollTop / itemHeight)
+      const nextIdx = Math.max(0, Math.min(items.length - 1, currentIdx + direction))
+
+      if (nextIdx !== currentIdx) {
+        isInteractingRef.current = true
+        scroller.scrollTo({ top: nextIdx * itemHeight, behavior: 'smooth' })
+        onChange(items[nextIdx])
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = setTimeout(() => {
+          isInteractingRef.current = false
+        }, 150)
       }
     }
-  }
 
-  const handleScroll = (e) => {
+    scroller.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      scroller.removeEventListener('wheel', handleWheel)
+    }
+  }, [items, itemHeight, onChange])
+
+  // Smooth mobile touch & scroll handling: debounced settle to prevent layout thrashing on every frame
+  const handleScroll = () => {
     isInteractingRef.current = true
     clearTimeout(timeoutRef.current)
-    timeoutRef.current = setTimeout(() => {
-      isInteractingRef.current = false
-    }, 150)
 
-    const st = e.currentTarget.scrollTop
-    const index = Math.round(st / itemHeight)
-    const clamped = Math.max(0, Math.min(items.length - 1, index))
-    const item = items[clamped]
-    if (item !== undefined && item !== value) {
-      onChange(item)
-    }
+    timeoutRef.current = setTimeout(() => {
+      if (!scrollerRef.current) return
+      const st = scrollerRef.current.scrollTop
+      const index = Math.round(st / itemHeight)
+      const clamped = Math.max(0, Math.min(items.length - 1, index))
+      const item = items[clamped]
+      if (item !== undefined && item !== value) {
+        onChange(item)
+      }
+      isInteractingRef.current = false
+    }, 60)
   }
 
   const handleItemClick = (item, idx) => {
+    isInteractingRef.current = true
     onChange(item)
     if (scrollerRef.current) {
       scrollerRef.current.scrollTo({ top: idx * itemHeight, behavior: 'smooth' })
     }
+    clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => {
+      isInteractingRef.current = false
+    }, 150)
   }
 
   return (
@@ -120,7 +142,6 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
     >
       <div
         ref={scrollerRef}
-        onWheel={handleWheel}
         onScroll={handleScroll}
         onTouchStart={() => { isInteractingRef.current = true }}
         onMouseDown={() => { isInteractingRef.current = true }}
@@ -129,7 +150,8 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
           paddingBottom: `${padY}px`,
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
-          touchAction: 'pan-y'
+          touchAction: 'pan-y',
+          WebkitOverflowScrolling: 'touch'
         }}
         className="h-full overflow-y-scroll overflow-x-hidden snap-y snap-mandatory [&::-webkit-scrollbar]:hidden overscroll-y-contain overscroll-x-none"
       >
@@ -140,10 +162,10 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
               key={item}
               onClick={() => handleItemClick(item, idx)}
               style={{ height: `${itemHeight}px`, touchAction: 'pan-y' }}
-              className={`snap-center [scroll-snap-stop:always] flex items-center justify-center font-mono font-bold cursor-pointer transition-all duration-100 ${
+              className={`snap-center flex items-center justify-center font-mono font-bold text-2xl cursor-pointer select-none transition-opacity duration-150 ${
                 isSelected
-                  ? 'text-white text-3xl font-extrabold scale-110 drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]'
-                  : 'text-slate-500 text-lg hover:text-slate-300 opacity-30 hover:opacity-75'
+                  ? 'text-white font-extrabold opacity-100'
+                  : 'text-slate-500 font-medium opacity-30 hover:opacity-60'
               }`}
             >
               {formatItem ? formatItem(item) : item}
@@ -158,61 +180,77 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
 export default function TimePicker({
   value = '',
   onChange,
-  className = '',
-  disabled = false
+  disabled = false,
+  className = ''
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const triggerRef = useRef(null)
   const popoverRef = useRef(null)
-
-  const parsed = parseTimeTo12(value)
-  const [selectedH12, setSelectedH12] = useState(parsed.h12)
-  const [selectedM, setSelectedM] = useState(parsed.m)
-  const [selectedIsPM, setSelectedIsPM] = useState(parsed.isPM)
   const [coords, setCoords] = useState(null)
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
+  const [isMobile, setIsMobile] = useState(false)
 
+  // Parse initial or default to current device time
+  const initial = parseTimeTo12(value)
+  const [selectedH12, setSelectedH12] = useState(initial.h12)
+  const [selectedM, setSelectedM] = useState(initial.m)
+  const [selectedIsPM, setSelectedIsPM] = useState(initial.isPM)
+
+  // Keep internal state aligned whenever value prop changes externally
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640)
+    const parsed = parseTimeTo12(value)
+    setSelectedH12(parsed.h12)
+    setSelectedM(parsed.m)
+    setSelectedIsPM(parsed.isPM)
+  }, [value])
+
+  // Detect mobile screen
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Sync internal state when opened or when value changes
-  useEffect(() => {
-    if (isOpen) {
-      const p = parseTimeTo12(value)
-      setSelectedH12(p.h12)
-      setSelectedM(p.m)
-      setSelectedIsPM(p.isPM)
-      updateCoords()
-    }
-  }, [isOpen, value])
-
+  // Position popover relative to trigger on desktop
   const updateCoords = () => {
-    if (!triggerRef.current) return
+    if (!triggerRef.current || isMobile) return
     const rect = triggerRef.current.getBoundingClientRect()
     const popoverWidth = 320
-    const popoverHeight = 310
-    const spaceBelow = window.innerHeight - rect.bottom
-    const showAbove = spaceBelow < popoverHeight && rect.top > popoverHeight
+    const popoverHeight = 360
+    const padding = 12
 
-    let top = showAbove ? rect.top - popoverHeight - 6 : rect.bottom + 6
     let left = rect.left
-    if (left + popoverWidth > window.innerWidth - 12) {
-      left = Math.max(12, rect.right - popoverWidth)
+    if (left + popoverWidth > window.innerWidth - padding) {
+      left = window.innerWidth - popoverWidth - padding
     }
-    if (left < 12) left = 12
+    left = Math.max(padding, left)
 
-    setCoords({ top, left, width: popoverWidth })
+    let top = rect.bottom + 8
+    if (top + popoverHeight > window.innerHeight - padding) {
+      top = rect.top - popoverHeight - 8
+    }
+
+    setCoords({ top, left })
   }
 
   useEffect(() => {
+    if (isOpen) {
+      updateCoords()
+      window.addEventListener('scroll', updateCoords, true)
+      window.addEventListener('resize', updateCoords)
+    }
+    return () => {
+      window.removeEventListener('scroll', updateCoords, true)
+      window.removeEventListener('resize', updateCoords)
+    }
+  }, [isOpen, isMobile])
+
+  // Click outside to close & Escape key
+  useEffect(() => {
     if (!isOpen) return
 
-    updateCoords()
-
-    const handleScrollOrResize = () => updateCoords()
     const handleMouseDown = (e) => {
       if (
         popoverRef.current &&
@@ -223,19 +261,18 @@ export default function TimePicker({
         setIsOpen(false)
       }
     }
+
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') setIsOpen(false)
+      if (e.key === 'Escape') {
+        setIsOpen(false)
+      }
     }
 
-    window.addEventListener('scroll', handleScrollOrResize, true)
-    window.addEventListener('resize', handleScrollOrResize)
     document.addEventListener('mousedown', handleMouseDown)
     document.addEventListener('touchstart', handleMouseDown)
     document.addEventListener('keydown', handleKeyDown)
 
     return () => {
-      window.removeEventListener('scroll', handleScrollOrResize, true)
-      window.removeEventListener('resize', handleScrollOrResize)
       document.removeEventListener('mousedown', handleMouseDown)
       document.removeEventListener('touchstart', handleMouseDown)
       document.removeEventListener('keydown', handleKeyDown)
@@ -265,9 +302,9 @@ export default function TimePicker({
   const popoverContent = (
     <div
       style={{ touchAction: 'pan-y' }}
-      className="w-[300px] max-w-[92vw] text-slate-100 select-none space-y-3 overflow-x-hidden"
+      className="w-[300px] max-w-[92vw] text-slate-100 select-none space-y-3.5 overflow-x-hidden"
     >
-      {/* Header: Select Meal Time + Now */}
+      {/* 1. Header: Select Meal Time + Now */}
       <div className="flex items-center justify-between pb-2 border-b border-white/10">
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-blue-400" />
@@ -285,78 +322,77 @@ export default function TimePicker({
         </button>
       </div>
 
-      {/* Main Wheel Area: Hours & Minutes Box (Left) + Completely Separate AM/PM Card (Right) */}
-      <div className="flex items-center gap-2.5 my-2 overflow-x-hidden" style={{ touchAction: 'pan-y' }}>
-        {/* 1. Time Wheels Box (Hours & Minutes ONLY) */}
-        <div className="relative flex-1 flex items-center justify-center bg-slate-950/80 rounded-2xl border border-white/5 overflow-hidden shadow-inner h-[192px]">
-          {/* Center Highlight Lens Bar - Strictly inside Time Wheels Box only */}
-          <div
-            className="absolute left-2 right-2 pointer-events-none rounded-xl bg-white/[0.08] border border-white/10 shadow-sm z-10"
-            style={{
-              top: '50%',
-              height: '48px',
-              transform: 'translateY(-50%)'
-            }}
-          />
-
-          {/* Top & Bottom cylindrical drum vignette gradients */}
-          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
-
-          {/* Hours Wheel Column */}
-          <WheelColumn
-            items={hoursList}
-            value={selectedH12}
-            onChange={setSelectedH12}
-            formatItem={(h) => String(h).padStart(2, '0')}
-            itemHeight={48}
-            containerHeight={192}
-          />
-
-          {/* Colon Separator */}
-          <span className="text-2xl font-extrabold text-slate-500 pb-1 z-20 select-none">
-            :
-          </span>
-
-          {/* Minutes Wheel Column */}
-          <WheelColumn
-            items={minutesList}
-            value={selectedM}
-            onChange={setSelectedM}
-            formatItem={(m) => String(m).padStart(2, '0')}
-            itemHeight={48}
-            containerHeight={192}
-          />
-        </div>
-
-        {/* 2. AM / PM Box - COMPLETELY SEPARATE, NOT CONNECTED TO THE WHEEL OR LENS! */}
-        <div className="h-[192px] w-[62px] bg-slate-950/80 rounded-2xl border border-white/5 p-1.5 flex flex-col justify-center gap-2 shrink-0 shadow-inner">
+      {/* 2. AM / PM Segmented Control (Centered above the drum wheels) */}
+      <div className="flex justify-center">
+        <div className="relative inline-flex p-1 bg-slate-950/90 rounded-xl border border-white/10 w-full max-w-[220px] shadow-inner">
           <button
             type="button"
             onClick={() => setSelectedIsPM(false)}
-            className={`flex-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center ${
+            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
               !selectedIsPM
-                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30 scale-[1.02]'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            AM
+            <span>☀️</span> AM
           </button>
           <button
             type="button"
             onClick={() => setSelectedIsPM(true)}
-            className={`flex-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center ${
+            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
               selectedIsPM
-                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30 scale-[1.02]'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            PM
+            <span>🌙</span> PM
           </button>
         </div>
       </div>
 
-      {/* Action Footer: Cancel & Confirm */}
+      {/* 3. Time Drum Wheels Box (Hours & Minutes Centered & Wide) */}
+      <div className="relative flex items-center justify-center bg-slate-950/80 rounded-2xl border border-white/5 overflow-hidden shadow-inner h-[192px] px-6">
+        {/* Center Highlight Lens Bar */}
+        <div
+          className="absolute left-4 right-4 pointer-events-none rounded-xl bg-white/[0.08] border border-white/10 shadow-sm z-10"
+          style={{
+            top: '50%',
+            height: '48px',
+            transform: 'translateY(-50%)'
+          }}
+        />
+
+        {/* Top & Bottom cylindrical drum vignette gradients */}
+        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
+
+        {/* Hours Wheel Column */}
+        <WheelColumn
+          items={hoursList}
+          value={selectedH12}
+          onChange={setSelectedH12}
+          formatItem={(h) => String(h).padStart(2, '0')}
+          itemHeight={48}
+          containerHeight={192}
+        />
+
+        {/* Colon Separator */}
+        <span className="text-2xl font-extrabold text-slate-500 pb-1 z-20 select-none px-3">
+          :
+        </span>
+
+        {/* Minutes Wheel Column */}
+        <WheelColumn
+          items={minutesList}
+          value={selectedM}
+          onChange={setSelectedM}
+          formatItem={(m) => String(m).padStart(2, '0')}
+          itemHeight={48}
+          containerHeight={192}
+        />
+      </div>
+
+      {/* 4. Action Footer: Cancel & Confirm */}
       <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-white/10">
         <button
           type="button"
