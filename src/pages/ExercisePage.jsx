@@ -461,7 +461,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
     return (
       <main className="main-content">
         <header className="mb-6">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-heading text-white tracking-tight mb-1">{t('exercise.title')}</h1>
+          <h1 className="page-title mb-1">{t('exercise.title')}</h1>
         </header>
         <div className="skeleton h-48 rounded-2xl mb-6" />
         <div className="skeleton h-36 rounded-2xl" />
@@ -476,7 +476,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
       {/* Page Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-heading text-white tracking-tight">
+          <h1 className="page-title">
             {t('exercise.title')}
           </h1>
         </div>
