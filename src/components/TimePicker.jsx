@@ -41,11 +41,11 @@ export function formatTimeDisplay(timeStr) {
 
 /**
  * Apple iOS-style Drum Wheel Column
- * - Fixed typography (no violent scale-110 popping mid-scroll)
- * - Precision step on mouse wheel (1 notch = 1 step)
- * - Settle-based state commit to prevent abrupt mid-drag pops
+ * - Generous 52px item height for natural thumb sliding
+ * - Natural momentum scrolling with settle-based selection (no phantom jerk)
+ * - Precision step on desktop mouse wheel (1 notch = 1 step)
  */
-function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, containerHeight = 192 }) {
+function WheelColumn({ items, value, onChange, formatItem, itemHeight = 52, containerHeight = 208 }) {
   const scrollerRef = useRef(null)
   const isInteractingRef = useRef(false)
   const timeoutRef = useRef(null)
@@ -61,13 +61,14 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
     }
   }, [])
 
-  // Sync scroll position when value changes from external actions (e.g. "Now" button)
+  // Sync scroll position ONLY for external updates (e.g. "Now" button)
+  // Threshold > 10 prevents jittering when user momentum settles near target
   useEffect(() => {
     if (!isInteractingRef.current && scrollerRef.current) {
       const idx = items.indexOf(value)
       if (idx !== -1) {
         const target = idx * itemHeight
-        if (Math.abs(scrollerRef.current.scrollTop - target) > 2) {
+        if (Math.abs(scrollerRef.current.scrollTop - target) > 10) {
           scrollerRef.current.scrollTo({ top: target, behavior: 'smooth' })
         }
       }
@@ -108,7 +109,7 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
     }
   }, [items, itemHeight, onChange])
 
-  // Settle-based scroll handling: commits when the user settles on a number, avoiding mid-drag pop jumps
+  // Smooth settle-based scroll handling for mobile
   const handleScroll = () => {
     isInteractingRef.current = true
     clearTimeout(timeoutRef.current)
@@ -122,9 +123,10 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
 
       if (item !== undefined && item !== value) {
         onChange(item)
+        try { navigator.vibrate?.(10) } catch {}
       }
       isInteractingRef.current = false
-    }, 70)
+    }, 60)
   }
 
   const handleItemClick = (item, idx) => {
@@ -133,6 +135,7 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
     if (scrollerRef.current) {
       scrollerRef.current.scrollTo({ top: idx * itemHeight, behavior: 'smooth' })
     }
+    try { navigator.vibrate?.(12) } catch {}
     clearTimeout(timeoutRef.current)
     timeoutRef.current = setTimeout(() => {
       isInteractingRef.current = false
@@ -166,10 +169,10 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
               key={item}
               onClick={() => handleItemClick(item, idx)}
               style={{ height: `${itemHeight}px`, touchAction: 'pan-y' }}
-              className={`snap-center flex items-center justify-center font-mono cursor-pointer select-none text-2xl font-bold ${
+              className={`snap-center flex items-center justify-center font-mono cursor-pointer select-none transition-all duration-100 ${
                 isSelected
-                  ? 'text-white font-black drop-shadow-[0_0_12px_rgba(59,130,246,0.7)] opacity-100'
-                  : 'text-slate-500 opacity-35'
+                  ? 'text-white text-3xl sm:text-4xl font-extrabold drop-shadow-[0_0_14px_rgba(59,130,246,0.65)]'
+                  : 'text-slate-500 text-xl font-bold opacity-30 hover:opacity-60'
               }`}
             >
               {formatItem ? formatItem(item) : item}
@@ -209,7 +212,7 @@ export default function TimePicker({
     setSelectedIsPM(parsed.isPM)
   }, [value])
 
-  // Detect mobile device (< 768px)
+  // Detect mobile screen (< 768px)
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -223,8 +226,8 @@ export default function TimePicker({
   const updateCoords = () => {
     if (!triggerRef.current || isMobile) return
     const rect = triggerRef.current.getBoundingClientRect()
-    const popoverWidth = 310
-    const popoverHeight = 330
+    const popoverWidth = 330
+    const popoverHeight = 350
     const padding = 12
 
     let left = rect.left
@@ -309,20 +312,20 @@ export default function TimePicker({
   const popoverContent = (
     <div
       style={{ touchAction: 'pan-y' }}
-      className="w-full text-slate-100 select-none space-y-3 overflow-x-hidden"
+      className="w-full text-slate-100 select-none space-y-3.5 overflow-x-hidden"
     >
       {/* 1. Header: Customizable Title + Now Button */}
-      <div className="flex items-center justify-between pb-2 border-b border-white/10">
+      <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-blue-400" />
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+          <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-200">
             {title}
           </span>
         </div>
         <button
           type="button"
           onClick={handleSetNow}
-          className="px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 border border-blue-500/30 text-xs font-bold flex items-center gap-1 transition-all active:scale-95"
+          className="px-3 py-1.5 rounded-xl bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 border border-blue-500/30 text-xs font-bold flex items-center gap-1 transition-all active:scale-95"
           title="Set to current device time"
         >
           <Sparkles className="h-3 w-3" /> Now
@@ -330,15 +333,15 @@ export default function TimePicker({
       </div>
 
       {/* 2. Main Wheel Area: Hours & Minutes Drum (Left) + AM/PM Card (Right, Centered with Lens) */}
-      <div className="flex items-center gap-2.5 my-2 overflow-x-hidden" style={{ touchAction: 'pan-y' }}>
+      <div className="flex items-center gap-3 my-2 overflow-x-hidden" style={{ touchAction: 'pan-y' }}>
         {/* Hours & Minutes Drum Wheels */}
-        <div className="relative flex-1 flex items-center justify-center bg-slate-950/80 rounded-2xl border border-white/5 overflow-hidden shadow-inner h-[192px]">
+        <div className="relative flex-1 flex items-center justify-center bg-slate-950/80 rounded-2xl border border-white/5 overflow-hidden shadow-inner h-[208px]">
           {/* Center Highlight Lens Bar */}
           <div
-            className="absolute left-2.5 right-2.5 pointer-events-none rounded-xl bg-white/[0.08] border border-white/10 shadow-[0_0_15px_rgba(59,130,246,0.15)] z-10"
+            className="absolute left-3 right-3 pointer-events-none rounded-xl bg-white/[0.08] border border-white/10 shadow-[0_0_15px_rgba(59,130,246,0.15)] z-10"
             style={{
               top: '50%',
-              height: '48px',
+              height: '52px',
               transform: 'translateY(-50%)'
             }}
           />
@@ -353,12 +356,12 @@ export default function TimePicker({
             value={selectedH12}
             onChange={setSelectedH12}
             formatItem={(h) => String(h).padStart(2, '0')}
-            itemHeight={48}
-            containerHeight={192}
+            itemHeight={52}
+            containerHeight={208}
           />
 
           {/* Colon Separator */}
-          <span className="text-2xl font-extrabold text-slate-400 pb-1 z-20 select-none">
+          <span className="text-3xl font-extrabold text-slate-400 pb-1 z-20 select-none px-2 sm:px-3">
             :
           </span>
 
@@ -368,17 +371,17 @@ export default function TimePicker({
             value={selectedM}
             onChange={setSelectedM}
             formatItem={(m) => String(m).padStart(2, '0')}
-            itemHeight={48}
-            containerHeight={192}
+            itemHeight={52}
+            containerHeight={208}
           />
         </div>
 
-        {/* Right: AM / PM Selector Card (Compact & Vertically Centered with the Center Lens) */}
-        <div className="self-center h-[116px] w-[64px] bg-slate-950/80 rounded-2xl border border-white/5 p-1.5 flex flex-col justify-center gap-2 shrink-0 shadow-inner">
+        {/* Right: AM / PM Selector Card (Generous & Vertically Centered with the Center Lens) */}
+        <div className="self-center h-[128px] w-[72px] bg-slate-950/80 rounded-2xl border border-white/5 p-1.5 flex flex-col justify-center gap-2 shrink-0 shadow-inner">
           <button
             type="button"
             onClick={() => setSelectedIsPM(false)}
-            className={`flex-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center ${
+            className={`flex-1 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center ${
               !selectedIsPM
                 ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/40 ring-1 ring-blue-400 font-extrabold'
                 : 'text-slate-400 hover:text-white hover:bg-white/5 font-semibold'
@@ -389,7 +392,7 @@ export default function TimePicker({
           <button
             type="button"
             onClick={() => setSelectedIsPM(true)}
-            className={`flex-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center ${
+            className={`flex-1 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center ${
               selectedIsPM
                 ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/40 ring-1 ring-blue-400 font-extrabold'
                 : 'text-slate-400 hover:text-white hover:bg-white/5 font-semibold'
@@ -401,18 +404,18 @@ export default function TimePicker({
       </div>
 
       {/* 3. Action Footer: Cancel & Confirm */}
-      <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-white/10">
+      <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/10">
         <button
           type="button"
           onClick={() => setIsOpen(false)}
-          className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+          className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
         >
           Cancel
         </button>
         <button
           type="button"
           onClick={handleConfirm}
-          className="px-4 py-1.5 rounded-xl text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white shadow-md shadow-blue-500/20 transition-all flex items-center gap-1 active:scale-95"
+          className="px-5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-blue-500 hover:bg-blue-600 text-white shadow-md shadow-blue-500/20 transition-all flex items-center gap-1 active:scale-95"
         >
           <Check className="h-3.5 w-3.5" /> Confirm Time
         </button>
@@ -445,7 +448,7 @@ export default function TimePicker({
       {/* Popover / Modal Portal */}
       {isOpen && typeof document !== 'undefined' && createPortal(
         isMobile ? (
-          /* Mobile: EXACT Image 2 - Centered modal with dark backdrop */
+          /* Mobile: EXACT Image 2 Size & Presentation - Centered modal with dark backdrop */
           <div
             className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 overflow-hidden touch-none"
             onClick={() => setIsOpen(false)}
@@ -453,7 +456,7 @@ export default function TimePicker({
             <div
               ref={popoverRef}
               onClick={e => e.stopPropagation()}
-              className="bg-slate-900 border border-slate-700 rounded-2xl p-4 shadow-2xl shadow-black/90 animate-in zoom-in-95 duration-150 overflow-x-hidden touch-pan-y"
+              className="bg-slate-900 border border-slate-700 rounded-3xl p-5 shadow-2xl shadow-black/90 animate-in zoom-in-95 duration-150 overflow-x-hidden touch-pan-y w-[92vw] max-w-[390px]"
             >
               {popoverContent}
             </div>
