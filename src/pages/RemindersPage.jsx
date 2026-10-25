@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase'
 import { markdownToHtml, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
 import SEO from '../components/SEO'
+import TimeInput from '../components/TimeInput'
 
 const initialForm = { title: '', reminder_time: '09:00', repeat_type: 'once', is_active: true }
 

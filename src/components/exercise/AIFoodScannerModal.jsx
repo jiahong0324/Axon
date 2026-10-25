@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Modal from '../Modal'
 import { Camera, Upload, Sparkles, AlertCircle, Check, RotateCcw, Flame, Clock } from 'lucide-react'
+import TimeInput from '../TimeInput'
 import { analyzeImageWithGroq } from '../../lib/groq'
 import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr, getDefaultMealTypeByTime, getCurrentTimeStr } from '../../lib/nutritionUtils'
 
@@ -308,15 +309,11 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Meal Category
                 </label>
-                <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 px-2.5 py-1 rounded-lg shadow-sm" title="Time Logged">
-                  <Clock className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-                  <input
-                    type="time"
-                    value={mealTime}
-                    onChange={e => setMealTime(e.target.value)}
-                    className="bg-transparent text-white font-semibold text-xs focus:outline-none cursor-pointer"
-                  />
-                </div>
+                <TimeInput
+                  value={mealTime}
+                  onChange={e => setMealTime(e.target.value)}
+                  variant="compact"
+                />
               </div>
               <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-900/80 rounded-xl border border-slate-800">
                 {MEAL_TYPES.map(mt => (
