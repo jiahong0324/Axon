@@ -24,6 +24,23 @@ export function getTodayDateStr() {
   return `${year}-${month}-${day}`
 }
 
+/**
+ * Automatically determine meal category by local time:
+ * - 04:00 - 10:59: Breakfast (e.g. 9am -> Breakfast)
+ * - 11:00 - 15:59: Lunch (e.g. 12pm - 3pm -> Lunch)
+ * - 16:00 - 17:59: Snack (afternoon snack)
+ * - 18:00 - 21:59: Dinner (evening dinner)
+ * - 22:00 - 03:59: Snack (late-night supper / midnight snack)
+ */
+export function getDefaultMealTypeByTime(date = new Date()) {
+  const hour = date.getHours()
+  if (hour >= 4 && hour < 11) return 'Breakfast'
+  if (hour >= 11 && hour < 16) return 'Lunch'
+  if (hour >= 16 && hour < 18) return 'Snack'
+  if (hour >= 18 && hour < 22) return 'Dinner'
+  return 'Snack'
+}
+
 export function formatNutritionDate(dateStr) {
   if (!dateStr) return ''
   const today = getTodayDateStr()
