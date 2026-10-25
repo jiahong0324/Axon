@@ -1,4 +1,4 @@
-import { Award, Bell, BookOpen, Bot, CalendarDays, CheckSquare, Dumbbell, HeartPulse, LayoutDashboard, LogOut, MoreHorizontal, Settings, X, MessageSquare, Globe } from 'lucide-react'
+import { Award, Bell, BookOpen, Bot, CalendarDays, CheckSquare, Apple, LayoutDashboard, LogOut, MoreHorizontal, Settings, X, MessageSquare, Globe } from 'lucide-react'
 import { useState } from 'react'
 import FeedbackModal from './FeedbackModal'
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -10,7 +10,7 @@ import { markExplicitLogout } from '../lib/authEvents'
 const navItems = [
   { label: 'Home', tKey: 'sidebar.home', path: '/home', icon: LayoutDashboard },
   { label: 'Timetable', tKey: 'sidebar.timetable', path: '/timetable', icon: CalendarDays },
-  { label: 'Health', tKey: 'sidebar.exercise', path: '/health', icon: HeartPulse },
+  { label: 'Health', tKey: 'sidebar.exercise', path: '/health', icon: Apple },
   { label: 'Assignments', tKey: 'sidebar.assignments', path: '/assignments', icon: CheckSquare },
   { label: 'Exams', tKey: 'sidebar.exams', path: '/exams', icon: BookOpen },
   { label: 'Results', tKey: 'sidebar.results', path: '/results', icon: Award },
