@@ -138,7 +138,23 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
           </div>
         </div>
 
-        {/* Meal Time Picker */}
+        {/* Food / Dish Name (FIRST) */}
+        <div>
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">
+            Food / Dish Name *
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder=""
+            className="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
+            required
+            autoFocus
+          />
+        </div>
+
+        {/* Meal Time Picker (THEN) */}
         <div>
           <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 text-blue-400" /> Meal Time
@@ -149,22 +165,6 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
             onChange={e => setMealTime(e.target.value)}
             className="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-blue-500 transition-colors [color-scheme:dark]"
             required
-          />
-        </div>
-
-        {/* Food Name */}
-        <div>
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">
-            Food / Dish Name *
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="e.g. Chicken Rice, Oatmeal & Milk"
-            className="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
-            required
-            autoFocus
           />
         </div>
 
@@ -182,8 +182,8 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
             step="any"
             value={calories}
             onChange={e => setCalories(e.target.value)}
-            placeholder="e.g. 450"
-            className="w-full bg-slate-950/70 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-lg focus:outline-none focus:border-orange-500"
+            placeholder="0"
+            className="w-full bg-slate-950/70 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-lg focus:outline-none focus:border-orange-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             required
           />
         </div>
@@ -207,7 +207,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
                 value={protein}
                 onChange={e => setProtein(e.target.value)}
                 placeholder="0"
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1 text-white font-bold text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1 text-white font-bold text-sm focus:outline-none focus:border-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
 
@@ -224,7 +224,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
                 value={carbs}
                 onChange={e => setCarbs(e.target.value)}
                 placeholder="0"
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1 text-white font-bold text-sm focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1 text-white font-bold text-sm focus:outline-none focus:border-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
 
@@ -241,7 +241,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
                 value={fats}
                 onChange={e => setFats(e.target.value)}
                 placeholder="0"
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1 text-white font-bold text-sm focus:outline-none focus:border-rose-500"
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1 text-white font-bold text-sm focus:outline-none focus:border-rose-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>
@@ -256,7 +256,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
             type="text"
             value={notes}
             onChange={e => setNotes(e.target.value)}
-            placeholder="e.g. 1 bowl, roughly 300g, less oil"
+            placeholder=""
             className="w-full bg-slate-900/70 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-slate-700"
           />
         </div>

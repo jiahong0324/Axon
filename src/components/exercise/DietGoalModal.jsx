@@ -63,7 +63,7 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
               step="any"
               value={goals.calories ?? ''}
               onChange={e => handleInputChange('calories', e.target.value)}
-              className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3.5 py-2 text-white font-bold text-lg focus:outline-none focus:border-orange-500"
+              className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3.5 py-2 text-white font-bold text-lg focus:outline-none focus:border-orange-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="e.g. 2000"
               required
             />
@@ -82,7 +82,7 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
                 step="any"
                 value={goals.protein ?? ''}
                 onChange={e => handleInputChange('protein', e.target.value)}
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="120"
                 required
               />
@@ -100,7 +100,7 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
                 step="any"
                 value={goals.carbs ?? ''}
                 onChange={e => handleInputChange('carbs', e.target.value)}
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="250"
                 required
               />
@@ -118,7 +118,7 @@ export default function DietGoalModal({ isOpen, onClose, currentGoals, onSave })
                 step="any"
                 value={goals.fats ?? ''}
                 onChange={e => handleInputChange('fats', e.target.value)}
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-rose-500"
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-1.5 text-white font-bold text-base focus:outline-none focus:border-rose-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="65"
                 required
               />

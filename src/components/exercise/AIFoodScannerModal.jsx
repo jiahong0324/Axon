@@ -347,7 +347,22 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
               </div>
             </div>
 
-            {/* Confirm Meal Time */}
+            {/* Food Name Editable (FIRST) */}
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 block">
+                Food Name (Editable)
+              </label>
+              <input
+                type="text"
+                value={foodName}
+                onChange={e => setFoodName(e.target.value)}
+                placeholder=""
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium text-sm focus:outline-none focus:border-blue-500"
+                required
+              />
+            </div>
+
+            {/* Confirm Meal Time (THEN) */}
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-blue-400" /> Confirm Meal Time
@@ -357,20 +372,6 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                 value={mealTime}
                 onChange={handleTimeChange}
                 className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium text-sm focus:outline-none focus:border-blue-500 transition-colors [color-scheme:dark]"
-                required
-              />
-            </div>
-
-            {/* Food Name Editable */}
-            <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 block">
-                Food Name (Editable)
-              </label>
-              <input
-                type="text"
-                value={foodName}
-                onChange={e => setFoodName(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium text-sm focus:outline-none focus:border-blue-500"
                 required
               />
             </div>
@@ -395,7 +396,8 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                   step="any"
                   value={calories}
                   onChange={e => setCalories(e.target.value)}
-                  className="w-full bg-slate-950/70 border border-slate-800 rounded-lg px-2.5 py-1 text-white font-bold text-base focus:outline-none focus:border-orange-500"
+                  placeholder="0"
+                  className="w-full bg-slate-950/70 border border-slate-800 rounded-lg px-2.5 py-1 text-white font-bold text-base focus:outline-none focus:border-orange-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   required
                 />
               </div>
@@ -413,7 +415,8 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                     step="any"
                     value={protein}
                     onChange={e => setProtein(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 rounded px-2 py-1 text-white font-bold text-xs focus:outline-none focus:border-emerald-500"
+                    placeholder="0"
+                    className="w-full bg-slate-950/60 border border-slate-800 rounded px-2 py-1 text-white font-bold text-xs focus:outline-none focus:border-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
@@ -428,7 +431,8 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                     step="any"
                     value={carbs}
                     onChange={e => setCarbs(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 rounded px-2 py-1 text-white font-bold text-xs focus:outline-none focus:border-amber-500"
+                    placeholder="0"
+                    className="w-full bg-slate-950/60 border border-slate-800 rounded px-2 py-1 text-white font-bold text-xs focus:outline-none focus:border-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
@@ -443,7 +447,8 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                     step="any"
                     value={fats}
                     onChange={e => setFats(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 rounded px-2 py-1 text-white font-bold text-xs focus:outline-none focus:border-rose-500"
+                    placeholder="0"
+                    className="w-full bg-slate-950/60 border border-slate-800 rounded px-2 py-1 text-white font-bold text-xs focus:outline-none focus:border-rose-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
               </div>

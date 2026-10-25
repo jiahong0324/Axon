@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v12-timetable-calendar'
+const CACHE_NAME = 'axon-v13-ui-tweaks'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {
