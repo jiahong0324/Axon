@@ -1,4 +1,4 @@
-const CHAT_MODEL = 'openai/gpt-oss-120b'
+const CHAT_MODEL = 'llama-3.3-70b-versatile'
 
 async function sendDatadogLog(metrics) {
   const ddKey = process.env.DATADOG_API_KEY
@@ -32,8 +32,13 @@ export default async function handler(req, res) {
   }
 
   const apiKey = process.env.GROQ_API_KEY
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Missing GROQ_API_KEY environment variable' })
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+  const openrouterKey = process.env.OPENROUTER_API_KEY
+  const cfAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '').trim().replace(/^["']|["']$/g, '')
+  const cfApiToken = (process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || '').trim().replace(/^["']|["']$/g, '')
+
+  if (!apiKey && !geminiKey && !openrouterKey && (!cfAccountId || !cfApiToken)) {
+    return res.status(500).json({ error: 'No AI API keys configured (GROQ_API_KEY, GEMINI_API_KEY, or OPENROUTER_API_KEY)' })
   }
 
   try {
@@ -52,6 +57,9 @@ export default async function handler(req, res) {
       }))
 
     if (mode === 'audio') {
+      if (!apiKey) {
+        return res.status(500).json({ error: 'Missing GROQ_API_KEY environment variable for audio' })
+      }
       const { base64Audio, mimeType = 'audio/webm' } = req.body || {}
       if (!base64Audio) {
         return res.status(400).json({ error: 'Missing audio data' })
@@ -313,85 +321,238 @@ export default async function handler(req, res) {
       })
       return res.status(500).json({ error: `Vision API error: ${summaryError}` })
     } else {
-      const modelsToTry = [
-        { model: CHAT_MODEL, maxTokens: 2048 },
-        { model: 'llama-3.3-70b-versatile', maxTokens: 2048 },
-        { model: 'llama-3.1-8b-instant', maxTokens: 2048 },
-        { model: 'openai/gpt-oss-20b', maxTokens: 2048 }
-      ]
-
-      let lastError = 'Groq API error'
+      let lastError = 'All AI providers exhausted'
       let lastStatus = 500
+      let lastErrorDetails = []
 
-      for (const { model, maxTokens } of modelsToTry) {
-        const body = {
-          model,
-          messages: [
-            { role: 'system', content: systemContext || '' },
-            ...cleanHistory,
-            { role: 'user', content: prompt }
-          ],
-          max_tokens: maxTokens,
-          temperature: 0.7
-        }
+      // 1. Try Groq (if GROQ_API_KEY is configured)
+      if (apiKey) {
+        const groqModelsToTry = [
+          { model: 'llama-3.3-70b-versatile', maxTokens: 2048 },
+          { model: 'llama-3.1-8b-instant', maxTokens: 2048 }
+        ]
 
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`
-          },
-          body: JSON.stringify(body)
-        })
+        for (const { model, maxTokens } of groqModelsToTry) {
+          try {
+            const body = {
+              model,
+              messages: [
+                { role: 'system', content: systemContext || '' },
+                ...cleanHistory,
+                { role: 'user', content: prompt }
+              ],
+              max_tokens: maxTokens,
+              temperature: 0.7
+            }
 
-        const data = await groqRes.json().catch(() => ({}))
-        if (groqRes.ok) {
-          let content = data.choices?.[0]?.message?.content || ''
-          content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
-          await sendDatadogLog({
-            message: 'AI Chat Success (Groq)',
-            mode: 'chat',
-            provider: 'groq',
-            model,
-            duration_ms: Date.now() - startTime,
-            status: 'success',
-            prompt_length: prompt?.length || 0,
-            completion_length: content.length
-          })
-          return res.status(200).json({ content })
-        } else {
-          lastStatus = groqRes.status || 500
-          lastError = data.error?.message || `Groq API error (${lastStatus})`
+            const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`
+              },
+              body: JSON.stringify(body)
+            })
+
+            const data = await groqRes.json().catch(() => ({}))
+            if (groqRes.ok) {
+              let content = data.choices?.[0]?.message?.content || ''
+              content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+              if (content) {
+                await sendDatadogLog({
+                  message: 'AI Chat Success (Groq)',
+                  mode: 'chat',
+                  provider: 'groq',
+                  model,
+                  duration_ms: Date.now() - startTime,
+                  status: 'success',
+                  prompt_length: prompt?.length || 0,
+                  completion_length: content.length
+                })
+                return res.status(200).json({ content })
+              }
+            } else {
+              lastStatus = groqRes.status || 500
+              lastError = data.error?.message || `Groq API error (${lastStatus})`
+              lastErrorDetails.push(`Groq (${model}): ${lastError}`)
+            }
+          } catch (err) {
+            lastError = `Groq (${model}): ${err.message}`
+            lastErrorDetails.push(lastError)
+          }
         }
       }
 
-      // Fallback to Gemini if configured
+      // 2. Try Google Gemini API (if GEMINI_API_KEY is configured)
       const geminiFallbackKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
       if (geminiFallbackKey) {
-        try {
-          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiFallbackKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: 'user',
-                  parts: [{ text: `${systemContext || ''}\n\nUser request: ${prompt}` }]
-                }
-              ],
-              generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+        const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
+
+        let geminiContents = []
+        for (const msg of cleanHistory) {
+          const role = msg.role === 'assistant' ? 'model' : 'user'
+          if (geminiContents.length === 0 && role === 'model') continue
+          if (geminiContents.length > 0 && geminiContents[geminiContents.length - 1].role === role) {
+            geminiContents[geminiContents.length - 1].parts[0].text += `\n\n${msg.content}`
+          } else {
+            geminiContents.push({ role, parts: [{ text: msg.content }] })
+          }
+        }
+        if (geminiContents.length > 0 && geminiContents[geminiContents.length - 1].role === 'user') {
+          geminiContents[geminiContents.length - 1].parts[0].text += `\n\n${prompt}`
+        } else {
+          geminiContents.push({ role: 'user', parts: [{ text: prompt }] })
+        }
+
+        for (const modelName of geminiModels) {
+          try {
+            const geminiBody = {
+              contents: geminiContents,
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 2048
+              }
+            }
+            if (systemContext) {
+              geminiBody.systemInstruction = {
+                parts: [{ text: systemContext }]
+              }
+            }
+
+            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiFallbackKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(geminiBody)
             })
-          })
-          if (geminiRes.ok) {
+
             const gData = await geminiRes.json().catch(() => ({}))
-            const gContent = gData.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''
-            if (gContent) {
-              const cleanContent = gContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+            if (geminiRes.ok) {
+              const gContent = gData.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''
+              if (gContent) {
+                const cleanContent = gContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+                await sendDatadogLog({
+                  message: 'AI Chat Success (Gemini Fallback)',
+                  mode: 'chat',
+                  provider: 'gemini',
+                  model: modelName,
+                  fallback_triggered: true,
+                  duration_ms: Date.now() - startTime,
+                  status: 'success',
+                  prompt_length: prompt?.length || 0,
+                  completion_length: cleanContent.length
+                })
+                return res.status(200).json({ content: cleanContent })
+              }
+            } else {
+              const gErr = gData.error?.message || `HTTP ${geminiRes.status}`
+              lastErrorDetails.push(`Gemini (${modelName}): ${gErr}`)
+            }
+          } catch (e) {
+            lastErrorDetails.push(`Gemini (${modelName}): ${e.message}`)
+          }
+        }
+      }
+
+      // 3. Try OpenRouter API (if OPENROUTER_API_KEY is configured)
+      const openrouterFallbackKey = process.env.OPENROUTER_API_KEY
+      if (openrouterFallbackKey) {
+        const openrouterModels = [
+          'google/gemini-2.0-flash-001',
+          'google/gemini-flash-1.5',
+          'meta-llama/llama-3.3-70b-instruct',
+          'openai/gpt-4o-mini',
+          'openrouter/auto'
+        ]
+
+        for (const modelName of openrouterModels) {
+          try {
+            const body = {
+              model: modelName,
+              messages: [
+                ...(systemContext ? [{ role: 'system', content: systemContext }] : []),
+                ...cleanHistory,
+                { role: 'user', content: prompt }
+              ],
+              max_tokens: 2048,
+              temperature: 0.7
+            }
+
+            const openrouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${openrouterFallbackKey}`,
+                'HTTP-Referer': 'https://axon.vercel.app',
+                'X-Title': 'Axon'
+              },
+              body: JSON.stringify(body)
+            })
+
+            const data = await openrouterRes.json().catch(() => ({}))
+            if (openrouterRes.ok) {
+              let content = data.choices?.[0]?.message?.content || ''
+              content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+              if (content) {
+                await sendDatadogLog({
+                  message: 'AI Chat Success (OpenRouter Fallback)',
+                  mode: 'chat',
+                  provider: 'openrouter',
+                  model: modelName,
+                  fallback_triggered: true,
+                  duration_ms: Date.now() - startTime,
+                  status: 'success',
+                  prompt_length: prompt?.length || 0,
+                  completion_length: content.length
+                })
+                return res.status(200).json({ content })
+              }
+            } else {
+              const oErr = data.error?.message || `HTTP ${openrouterRes.status}`
+              lastErrorDetails.push(`OpenRouter (${modelName}): ${oErr}`)
+            }
+          } catch (err) {
+            lastErrorDetails.push(`OpenRouter (${modelName}): ${err.message}`)
+          }
+        }
+      }
+
+      // 4. Try Cloudflare Workers AI Fallback (if configured)
+      const cfFallbackAccountId = (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || '').trim().replace(/^["']|["']$/g, '')
+      const cfFallbackApiToken = (process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || '').trim().replace(/^["']|["']$/g, '')
+      if (cfFallbackAccountId && cfFallbackApiToken) {
+        const cfModels = [
+          '@cf/meta/llama-3.3-70b-instruct',
+          '@cf/meta/llama-3.1-8b-instruct'
+        ]
+
+        for (const modelName of cfModels) {
+          try {
+            const body = {
+              messages: [
+                ...(systemContext ? [{ role: 'system', content: systemContext }] : []),
+                ...cleanHistory,
+                { role: 'user', content: prompt }
+              ]
+            }
+
+            const resCf = await fetch(`https://api.cloudflare.com/client/v4/accounts/${cfFallbackAccountId}/ai/run/${modelName}`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${cfFallbackApiToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(body)
+            })
+
+            const data = await resCf.json().catch(() => ({}))
+            const content = data.result?.response || ''
+            if (resCf.ok && content) {
+              const cleanContent = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
               await sendDatadogLog({
-                message: 'AI Chat Success (Gemini Fallback)',
+                message: 'AI Chat Success (Cloudflare Fallback)',
                 mode: 'chat',
-                provider: 'gemini',
-                model: 'gemini-2.0-flash',
+                provider: 'cloudflare',
+                model: modelName,
                 fallback_triggered: true,
                 duration_ms: Date.now() - startTime,
                 status: 'success',
@@ -399,19 +560,25 @@ export default async function handler(req, res) {
                 completion_length: cleanContent.length
               })
               return res.status(200).json({ content: cleanContent })
+            } else {
+              const cfErr = data.errors?.[0]?.message || `HTTP ${resCf.status}`
+              lastErrorDetails.push(`Cloudflare (${modelName}): ${cfErr}`)
             }
+          } catch (err) {
+            lastErrorDetails.push(`Cloudflare (${modelName}): ${err.message}`)
           }
-        } catch (e) {}
+        }
       }
 
+      const summaryError = lastErrorDetails.length > 0 ? lastErrorDetails.join(' | ') : lastError
       await sendDatadogLog({
         message: 'AI Chat Failed',
         mode: 'chat',
         duration_ms: Date.now() - startTime,
         status: 'error',
-        error: lastError
+        error: summaryError
       })
-      return res.status(lastStatus).json({ error: lastError })
+      return res.status(lastStatus || 500).json({ error: `AI is temporarily unavailable: ${summaryError}` })
     }
   } catch (error) {
     await sendDatadogLog({
