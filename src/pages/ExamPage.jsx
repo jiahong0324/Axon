@@ -347,14 +347,14 @@ function ExamCard({ exam, result, deleteExam, onEdit }) {
 
       <div className="pt-2 border-t border-white/5 flex justify-end items-center gap-1 opacity-100 xl:opacity-0 xl:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         <button 
-          className="flex items-center justify-center w-[28px] h-[28px] text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all" 
+          className="inline-flex items-center justify-center w-7 h-7 p-0 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all shrink-0" 
           onClick={onEdit}
           title="Edit Exam"
         >
           <Pencil className="h-3.5 w-3.5" />
         </button>
         <button 
-          className="flex items-center justify-center w-[28px] h-[28px] text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all" 
+          className="inline-flex items-center justify-center w-7 h-7 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all shrink-0" 
           onClick={() => deleteExam(exam.id)}
           title="Delete Exam"
         >

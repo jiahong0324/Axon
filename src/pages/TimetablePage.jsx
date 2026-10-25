@@ -1461,7 +1461,7 @@ function DesktopClassTile({ item, onDelete }) {
   const border = item.class_type === 'T' ? 'border-l-emerald-500' : item.class_type === 'P' ? 'border-l-purple-500' : item.class_type === 'C' ? 'border-l-pink-500' : 'border-l-blue-500'
   return (
     <article className={`group relative rounded-xl border border-white/10 bg-[#192436] border-l-4 ${border} p-4 transition-colors hover:bg-[#202e45] shadow-sm`}>
-      <button className="btn-danger absolute right-1 top-1 opacity-100 xl:opacity-0 xl:group-hover:opacity-100" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
+      <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8 p-0 rounded-lg transition-colors inline-flex items-center justify-center absolute right-2 top-2 opacity-100 xl:opacity-0 xl:group-hover:opacity-100 shrink-0" onClick={onDelete} title="Delete class"><Trash2 className="h-4 w-4" /></button>
       <div className="mb-2 pr-10 flex flex-wrap items-center gap-2">
         <ClassTypeBadge type={item.class_type} />
         {item.is_replacement && <span className="text-[10px] uppercase font-bold bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded-md border border-orange-500/20">Rep: {item.date}</span>}
@@ -1494,7 +1494,7 @@ function MobileClassTile({ item, onDelete }) {
       </div>
 
       <div className={`flex-1 rounded-[20px] border border-white/10 bg-[#192436] p-5 border-l-4 ${colors.border} relative overflow-hidden shadow-sm transition-colors hover:bg-[#202e45]`}>
-        <button className="btn-danger absolute right-2 top-2 opacity-0 group-hover:opacity-100 z-10" onClick={onDelete}>
+        <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8 p-0 rounded-lg transition-colors inline-flex items-center justify-center absolute right-2 top-2 opacity-0 group-hover:opacity-100 z-10 shrink-0" onClick={onDelete} title="Delete class">
           <Trash2 className="h-4 w-4" />
         </button>
         

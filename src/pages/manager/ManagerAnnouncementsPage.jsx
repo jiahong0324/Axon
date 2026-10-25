@@ -162,7 +162,7 @@ function AnnouncementCard({ item, onEdit, onDelete }) {
           <button className="btn-ghost px-3 py-1.5 text-xs min-h-0" onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5" /> Edit
           </button>
-          <button className="btn-danger ml-auto p-2 min-h-0 min-w-0 h-8 w-8" onClick={onDelete} title="Delete announcement">
+          <button className="inline-flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-500/10 ml-auto h-8 w-8 p-0 rounded-lg transition-colors shrink-0" onClick={onDelete} title="Delete announcement">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>

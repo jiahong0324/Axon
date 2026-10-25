@@ -115,6 +115,7 @@ export default function DateInput({
   disabled = false,
   min,
   max,
+  customTrigger,
   ...props
 }) {
   const [displayText, setDisplayText] = useState(() => formatIsoToDisplay(value))
@@ -185,8 +186,11 @@ export default function DateInput({
 
     let top = showAbove ? rect.top - popoverHeight - 6 : rect.bottom + 6
     let left = rect.left
+    if (rect.width < popoverWidth) {
+      left = rect.left + (rect.width - popoverWidth) / 2
+    }
     if (left + popoverWidth > window.innerWidth - 12) {
-      left = Math.max(12, rect.right - popoverWidth)
+      left = Math.max(12, window.innerWidth - popoverWidth - 12)
     }
     if (left < 12) left = 12
 
@@ -194,8 +198,8 @@ export default function DateInput({
   }
 
   const togglePicker = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
+    if (e && typeof e.preventDefault === 'function') e.preventDefault()
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation()
     if (disabled) return
 
     if (!isOpen) {
@@ -441,8 +445,30 @@ export default function DateInput({
   )
 
   return (
-    <div ref={containerRef} className="relative flex items-center w-full min-w-0">
-      <input
+    <>
+      {customTrigger ? (
+        <div
+          ref={containerRef}
+          onClick={togglePicker}
+          className="relative inline-flex items-center group cursor-pointer"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              togglePicker(e)
+            }
+          }}
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+        >
+          {typeof customTrigger === 'function'
+            ? customTrigger({ isOpen, toggle: togglePicker, value })
+            : customTrigger}
+        </div>
+      ) : (
+        <div ref={containerRef} className="relative flex items-center w-full min-w-0">
+          <input
         type="text"
         id={id}
         name={name}
@@ -470,6 +496,8 @@ export default function DateInput({
           <CalendarIcon className="h-4 w-4 shrink-0" />
         </button>
       </div>
+        </div>
+      )}
 
       {/* Interactive Calendar Popover Portal */}
       {isOpen && typeof document !== 'undefined' && createPortal(
@@ -513,6 +541,6 @@ export default function DateInput({
         ),
         document.body
       )}
-    </div>
+    </>
   )
 }

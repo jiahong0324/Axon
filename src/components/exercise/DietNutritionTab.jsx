@@ -24,6 +24,7 @@ import {
 } from '../../lib/nutritionUtils'
 import { useToast } from '../Toast'
 import { useConfirmDialog } from '../ConfirmModal'
+import DateInput from '../DateInput'
 import DietGoalModal from './DietGoalModal'
 import ManualFoodModal from './ManualFoodModal'
 import AIFoodScannerModal from './AIFoodScannerModal'
@@ -97,7 +98,7 @@ export default function DietNutritionTab({
   }
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6 w-full pb-8 sm:pb-0">
       {ConfirmDialog}
 
       {/* Top Welcome / Initial Setup Banner if goals haven't been set */}

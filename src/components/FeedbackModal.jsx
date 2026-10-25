@@ -280,7 +280,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
+                    className="inline-flex items-center justify-center h-8 w-8 p-0 rounded-lg text-slate-400 hover:bg-white/5 hover:text-white transition-colors shrink-0"
                     title="Change image"
                   >
                     <FileImage className="h-4 w-4" />
@@ -288,7 +288,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
                   <button
                     type="button"
                     onClick={removeImage}
-                    className="rounded-lg p-1.5 text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                    className="inline-flex items-center justify-center h-8 w-8 p-0 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors shrink-0"
                     title="Remove image"
                   >
                     <X className="h-4 w-4" />

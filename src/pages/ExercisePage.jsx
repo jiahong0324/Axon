@@ -472,7 +472,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
   return (
     <>
       <SEO title="Health | Axon" description="Track workouts, nutrition, daily calories, streak freezes, and fitness routines." />
-      <main className="main-content pb-16 md:pb-12">
+      <main className="main-content pb-[calc(env(safe-area-inset-bottom,0px)+7.5rem)] md:pb-12">
       {/* Page Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -842,7 +842,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
               <div className="flex flex-wrap items-center justify-end gap-3 mt-4 pt-4 border-t border-white/5">
                 <div className="flex gap-2">
                   <button
-                    className="p-2 text-slate-400 hover:text-red-400 transition-colors rounded-lg hover:bg-white/5"
+                    className="inline-flex items-center justify-center h-8 w-8 p-0 text-slate-400 hover:text-red-400 transition-colors rounded-lg hover:bg-white/5 shrink-0"
                     onClick={deleteAiSuggestion}
                     title={t('exercise.deletePlan')}
                   >

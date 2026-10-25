@@ -501,7 +501,7 @@ export default function AIHelperPage({ role = 'student' }) {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <button className="ai-clear-button min-h-0 min-w-0 rounded-xl p-2 text-sm transition-colors hover:bg-white/5" style={{ color: 'var(--text-muted)' }} onClick={clearChatHistory} aria-label="Clear chat" title="Clear chat history">
+            <button className="ai-clear-button min-h-0 min-w-0 rounded-xl inline-flex items-center justify-center h-8 w-8 p-0 text-sm transition-colors hover:bg-white/5" style={{ color: 'var(--text-muted)' }} onClick={clearChatHistory} aria-label="Clear chat" title="Clear chat history">
               <Trash2 className="h-4 w-4" />
             </button>
           </div>

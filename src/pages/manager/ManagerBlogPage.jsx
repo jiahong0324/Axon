@@ -98,10 +98,10 @@ export default function ManagerBlogPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => setEditingPost(post)} className="btn-ghost p-2 text-slate-300 hover:text-theme-400">
+                <button onClick={() => setEditingPost(post)} className="inline-flex items-center justify-center h-9 w-9 p-0 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5 hover:text-theme-400 transition-colors shrink-0">
                   <Edit2 className="h-4 w-4" />
                 </button>
-                <button onClick={() => handleDelete(post.id)} className="btn-ghost p-2 text-slate-300 hover:text-red-400">
+                <button onClick={() => handleDelete(post.id)} className="inline-flex items-center justify-center h-9 w-9 p-0 rounded-xl border border-white/10 text-slate-300 hover:bg-red-500/10 hover:text-red-400 transition-colors shrink-0">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -115,7 +115,7 @@ export default function ManagerBlogPage() {
           <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-700 bg-navy-900 p-6 shadow-2xl">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-white">{editingPost.id ? 'Edit Post' : 'New Post'}</h2>
-              <button onClick={() => setEditingPost(null)} className="btn-ghost p-2"><X className="h-5 w-5" /></button>
+              <button onClick={() => setEditingPost(null)} className="inline-flex items-center justify-center h-9 w-9 p-0 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5 transition-colors shrink-0"><X className="h-5 w-5" /></button>
             </div>
             <form onSubmit={handleSave} className="grid gap-4">
               <div className="grid gap-4 md:grid-cols-2">

@@ -183,7 +183,7 @@ export default function LandingContact() {
               <button
                 type="button"
                 onClick={removeImage}
-                className="p-1 text-slate-400 hover:text-red-400 transition-colors"
+                className="inline-flex items-center justify-center h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-red-400 transition-colors shrink-0"
                 title="Remove image"
               >
                 <X className="h-4 w-4" />

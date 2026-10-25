@@ -184,7 +184,7 @@ export default function RemindersPage() {
                 <Bell className={`h-5 w-5 ${item.is_active ? 'text-theme-400' : 'text-slate-500'}`} />
                 <div className="flex-1"><p className="font-semibold">{item.title}</p><p className="muted">{formatTime(item.reminder_time) || 'No time'} · {item.repeat_type}</p></div>
                 <ToggleSwitch isOn={item.is_active} onToggle={() => updateItem(item.id, { is_active: !item.is_active })} />
-                <button className="btn-danger" onClick={() => deleteItem(item.id)}><Trash2 className="h-4 w-4" /></button>
+                <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-9 w-9 p-0 rounded-lg transition-colors inline-flex items-center justify-center shrink-0" onClick={() => deleteItem(item.id)} title="Delete Reminder"><Trash2 className="h-4 w-4" /></button>
               </article>
             ))}
           </div>
