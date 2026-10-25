@@ -103,7 +103,7 @@ export const translations = {
 
     'sidebar.home': 'Home',
     'sidebar.timetable': 'Timetable',
-    'sidebar.exercise': 'Exercise',
+    'sidebar.exercise': 'Health',
     'sidebar.assignments': 'Assignments',
     'sidebar.exams': 'Exams',
     'sidebar.results': 'Results',
@@ -463,8 +463,8 @@ export const translations = {
     'analyzer.scan5': 'Detecting class types (L/T/P)...',
     'analyzer.errorRead': "AI couldn't read this image clearly",
 
-    'exercise.title': 'Exercise',
-    'exercise.subtitle': 'Build daily habits, earn XP, and protect your streak.',
+    'exercise.title': 'Health',
+    'exercise.subtitle': '',
     'exercise.tabWorkout': 'Workout & Habit',
     'exercise.tabDiet': 'Diet & Nutrition',
     'exercise.markTodayDone': 'Mark Today Done',
@@ -660,7 +660,7 @@ export const translations = {
 
     'sidebar.home': '首页',
     'sidebar.timetable': '课表',
-    'sidebar.exercise': '运动打卡',
+    'sidebar.exercise': '健康',
     'sidebar.assignments': '作业',
     'sidebar.exams': '考试',
     'sidebar.results': '成绩',
@@ -1021,8 +1021,8 @@ export const translations = {
     'analyzer.scan5': '正在识别课程类型（L/T/P）...',
     'analyzer.errorRead': 'AI 无法清楚读取这张图片',
 
-    'exercise.title': '运动',
-    'exercise.subtitle': '养成运动好习惯，累积 XP 经验值，保持连续打卡！',
+    'exercise.title': '健康',
+    'exercise.subtitle': '',
     'exercise.tabWorkout': '健身打卡',
     'exercise.tabDiet': '饮食追踪',
     'exercise.markTodayDone': '完成今日打卡',

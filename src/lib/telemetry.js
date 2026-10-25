@@ -359,7 +359,7 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
     } else if (a.entity_type === 'class') p = '/timetable'
     else if (a.entity_type === 'assignment') p = '/assignments'
     else if (a.entity_type === 'exam' || a.entity_type === 'exam_results') p = '/exams'
-    else if (a.entity_type === 'exercise') p = '/exercise'
+    else if (a.entity_type === 'exercise' || a.entity_type === 'health') p = '/health'
     else if (a.entity_type === 'ai') p = '/ai-helper'
     else if (a.entity_type === 'reminder') p = '/reminders'
     
@@ -374,7 +374,7 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
     { path: '/timetable', label: 'Timetable' },
     { path: '/assignments', label: 'Assignments' },
     { path: '/ai-helper', label: 'AI Study Companion' },
-    { path: '/exercise', label: 'Fitness & Habits' },
+    { path: '/health', label: 'Health' },
     { path: '/exams', label: 'Exams' },
     { path: '/manager', label: 'Manager Dashboard' },
     { path: '/manager/monitoring', label: 'System Monitoring' },
@@ -600,7 +600,7 @@ function formatPathLabel(path) {
   if (path === '/') return 'Landing Home'
   if (path === '/home') return 'Student Dashboard'
   if (path === '/timetable') return 'Timetable'
-  if (path === '/exercise') return 'Fitness & Habits'
+  if (path === '/exercise' || path === '/health') return 'Health'
   if (path === '/assignments') return 'Assignments'
   if (path === '/exams') return 'Exams'
   if (path === '/results' || path === '/exam-results') return 'Exam Results'

@@ -320,7 +320,7 @@ export default function SettingsPage() {
         `+${l.xp_earned || 20} XP`
       ])
       addSectionTable(
-        `Exercise & Habit Logs (Total XP: ${exerciseInfo.xpTotal || 0})`,
+        `Health, Exercise & Habit Logs (Total XP: ${exerciseInfo.xpTotal || 0})`,
         ['Date', 'Activity Type', 'XP Earned'],
         exerciseLogsData,
         'No exercise logs found.'
@@ -603,7 +603,7 @@ export default function SettingsPage() {
             <ToggleRow label="Include Pending Assignments" checked={digestOptions.assignments} onChange={next => setDigestOptions(prev => ({ ...prev, assignments: next }))} />
             <ToggleRow label="Include Exam Schedules" checked={digestOptions.exams} onChange={next => setDigestOptions(prev => ({ ...prev, exams: next }))} />
             <ToggleRow label="Include Results" checked={digestOptions.results} onChange={next => setDigestOptions(prev => ({ ...prev, results: next }))} />
-            <ToggleRow label="Include Exercise & Habit Logs" checked={digestOptions.exercise} onChange={next => setDigestOptions(prev => ({ ...prev, exercise: next }))} />
+            <ToggleRow label="Include Health & Habit Logs" checked={digestOptions.exercise} onChange={next => setDigestOptions(prev => ({ ...prev, exercise: next }))} />
           </div>
           <button className="btn-primary w-full mt-4" onClick={sendAcademicEmail} disabled={sendingDigest}>
             <Mail className="h-4 w-4" /> {sendingDigest ? 'Sending Email...' : 'Email Academic Report'}

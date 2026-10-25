@@ -471,17 +471,14 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
 
   return (
     <>
-      <SEO title="Exercise | Axon" description="Track daily study habits, workout consistency, streak freezes, and fitness routines." />
+      <SEO title="Health | Axon" description="Track workouts, nutrition, daily calories, streak freezes, and fitness routines." />
       <main className="main-content pb-16 md:pb-12">
       {/* Page Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="page-title mb-1">
+          <h1 className="page-title">
             {t('exercise.title')}
           </h1>
-          <p className="text-sm text-slate-400">
-            {t('exercise.subtitle')}
-          </p>
         </div>
       </div>
 

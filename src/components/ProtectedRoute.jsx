@@ -27,7 +27,7 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
 
   useEffect(() => {
     if (!loading) {
-      const deferredPaths = ['/home', '/timetable', '/exercise', '/manager']
+      const deferredPaths = ['/home', '/timetable', '/exercise', '/health', '/manager']
       if (!deferredPaths.includes(location.pathname)) {
         window.hidePrerenderSplash?.()
       }
