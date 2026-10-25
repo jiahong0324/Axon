@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v22-picker-image2-centered'
+const CACHE_NAME = 'axon-v23-complete-blue-border'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {

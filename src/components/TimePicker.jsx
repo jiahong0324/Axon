@@ -428,7 +428,11 @@ export default function TimePicker({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(prev => !prev)}
-        className="w-full bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-medium text-sm flex items-center transition-colors group cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className={`w-full bg-slate-900/90 hover:bg-slate-800/90 border rounded-xl px-3.5 py-2.5 text-white font-medium text-sm flex items-center transition-colors group cursor-pointer focus:outline-none ${
+          isOpen
+            ? 'border-blue-500 ring-1 ring-inset ring-blue-500/50 shadow-sm shadow-blue-500/20'
+            : 'border-slate-800 hover:border-slate-700 focus:border-blue-500'
+        }`}
       >
         <div className="flex items-center gap-2.5">
           <Clock className="h-4 w-4 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
