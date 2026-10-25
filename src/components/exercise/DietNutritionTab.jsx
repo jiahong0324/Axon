@@ -97,7 +97,8 @@ export default function DietNutritionTab({
   }
 
   return (
-    <div className="space-y-6 w-full">
+    <>
+      <div className="space-y-6 w-full">
       {ConfirmDialog}
 
       {/* Top Welcome / Initial Setup Banner if goals haven't been set */}
@@ -517,6 +518,7 @@ export default function DietNutritionTab({
           </div>
         )}
       </section>
+      </div>
 
       {/* MODALS */}
       <DietGoalModal
@@ -549,6 +551,6 @@ export default function DietNutritionTab({
           showToast(`Added "${item.name}" to today's log!`, 'success')
         }}
       />
-    </div>
+    </>
   )
 }

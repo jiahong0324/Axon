@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md', mobileMaxHeight = 'max-h-[calc(100%-0.5rem)]', bodyClassName = 'overflow-y-auto overflow-x-hidden scrollbar-hide', panelClassName = '', fullScreenMobile = false }) {
   useEffect(() => {
@@ -32,8 +33,8 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
       : mobileMaxHeight
 
   const containerClasses = fullScreenMobile
-    ? 'fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center bg-black/80 backdrop-blur-md sm:p-4 overscroll-none overflow-x-hidden touch-pan-y'
-    : 'fixed inset-x-0 top-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] sm:inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 sm:p-4 backdrop-blur-md overscroll-none overflow-x-hidden touch-pan-y'
+    ? 'fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center bg-black/80 backdrop-blur-md sm:p-4 overscroll-none overflow-x-hidden touch-pan-y !m-0'
+    : 'fixed inset-x-0 top-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] sm:inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 sm:p-4 backdrop-blur-md overscroll-none overflow-x-hidden touch-pan-y !m-0'
 
   const panelRounded = fullScreenMobile
     ? 'rounded-t-[28px] sm:rounded-2xl'
@@ -43,7 +44,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
     ? 'h-[88dvh] max-h-[88dvh] sm:h-[85vh] sm:max-h-[85vh]'
     : `h-auto ${resolvedMaxHeight} sm:max-h-[85dvh] sm:max-h-[85vh]`
 
-  return (
+  const modalElement = (
     <div
       className={containerClasses}
       onClick={(e) => {
@@ -69,4 +70,10 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
       </div>
     </div>
   )
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalElement, document.body)
+  }
+
+  return modalElement
 }
