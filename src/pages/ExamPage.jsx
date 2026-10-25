@@ -13,7 +13,6 @@ import SubjectSelect from '../components/SubjectSelect'
 import { SkeletonList } from '../components/SkeletonLoader'
 import SEO from '../components/SEO'
 import DateInput from '../components/DateInput'
-import TimeInput from '../components/TimeInput'
 
 
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }

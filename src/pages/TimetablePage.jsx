@@ -15,7 +15,6 @@ import { clearCache, readCache, writeCache } from '../lib/cache'
 import { saveSemesterPreferences } from '../lib/preferences'
 import SEO from '../components/SEO'
 import DateInput from '../components/DateInput'
-import TimeInput from '../components/TimeInput'
 
 const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue', is_replacement: false, date: '' }
 const LIVE_PROFILE_ID = 'account'
