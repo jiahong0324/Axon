@@ -40,7 +40,10 @@ export function formatTimeDisplay(timeStr) {
 }
 
 /**
- * Apple iOS-style Drum Wheel Column with non-passive step lock & instant real-time highlight (no fade-in delay)
+ * Apple iOS-style Drum Wheel Column
+ * - Fixed typography (no violent scale-110 popping mid-scroll)
+ * - Precision step on mouse wheel (1 notch = 1 step)
+ * - Settle-based state commit to prevent abrupt mid-drag pops
  */
 function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, containerHeight = 192 }) {
   const scrollerRef = useRef(null)
@@ -71,7 +74,7 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
     }
   }, [value, items, itemHeight])
 
-  // Precision wheel step on desktop: attach with { passive: false } to cancel browser native 100px wheel jump
+  // Precision wheel step on desktop: 1 notch = 1 step
   useEffect(() => {
     const scroller = scrollerRef.current
     if (!scroller) return
@@ -105,22 +108,23 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
     }
   }, [items, itemHeight, onChange])
 
-  // Synchronous real-time scroll handling: updates immediately when index changes so numbers are NEVER faint/delayed
-  const handleScroll = (e) => {
+  // Settle-based scroll handling: commits when the user settles on a number, avoiding mid-drag pop jumps
+  const handleScroll = () => {
     isInteractingRef.current = true
-    const st = e.currentTarget.scrollTop
-    const index = Math.round(st / itemHeight)
-    const clamped = Math.max(0, Math.min(items.length - 1, index))
-    const item = items[clamped]
-
-    if (item !== undefined && item !== value) {
-      onChange(item)
-    }
-
     clearTimeout(timeoutRef.current)
+
     timeoutRef.current = setTimeout(() => {
+      if (!scrollerRef.current) return
+      const st = scrollerRef.current.scrollTop
+      const index = Math.round(st / itemHeight)
+      const clamped = Math.max(0, Math.min(items.length - 1, index))
+      const item = items[clamped]
+
+      if (item !== undefined && item !== value) {
+        onChange(item)
+      }
       isInteractingRef.current = false
-    }, 150)
+    }, 70)
   }
 
   const handleItemClick = (item, idx) => {
@@ -162,10 +166,10 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
               key={item}
               onClick={() => handleItemClick(item, idx)}
               style={{ height: `${itemHeight}px`, touchAction: 'pan-y' }}
-              className={`snap-center flex items-center justify-center font-mono cursor-pointer select-none ${
+              className={`snap-center flex items-center justify-center font-mono cursor-pointer select-none text-2xl font-bold ${
                 isSelected
-                  ? 'text-white text-3xl font-black scale-110 drop-shadow-[0_0_14px_rgba(59,130,246,0.7)] tracking-wider'
-                  : 'text-slate-500 text-lg font-bold opacity-30 hover:opacity-70'
+                  ? 'text-white font-black drop-shadow-[0_0_12px_rgba(59,130,246,0.7)] opacity-100'
+                  : 'text-slate-500 opacity-35'
               }`}
             >
               {formatItem ? formatItem(item) : item}
@@ -189,6 +193,7 @@ export default function TimePicker({
   const triggerRef = useRef(null)
   const popoverRef = useRef(null)
   const [coords, setCoords] = useState(null)
+  const [isMobile, setIsMobile] = useState(false)
 
   // Parse initial or default to current device time
   const initial = parseTimeTo12(value)
@@ -204,11 +209,21 @@ export default function TimePicker({
     setSelectedIsPM(parsed.isPM)
   }, [value])
 
-  // Position popover anchored relative to trigger button (universal for both phone and desktop)
+  // Detect mobile device (< 768px)
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Position popover anchored relative to trigger button for desktop
   const updateCoords = () => {
-    if (!triggerRef.current) return
+    if (!triggerRef.current || isMobile) return
     const rect = triggerRef.current.getBoundingClientRect()
-    const popoverWidth = Math.min(310, window.innerWidth - 24)
+    const popoverWidth = 310
     const popoverHeight = 330
     const padding = 12
 
@@ -237,7 +252,7 @@ export default function TimePicker({
       window.removeEventListener('scroll', updateCoords, true)
       window.removeEventListener('resize', updateCoords)
     }
-  }, [isOpen])
+  }, [isOpen, isMobile])
 
   // Click / Touch outside to close & Escape key
   useEffect(() => {
@@ -423,24 +438,42 @@ export default function TimePicker({
         </div>
       </button>
 
-      {/* Popover Portal - Universal anchored floating card for both mobile and desktop */}
-      {isOpen && coords && typeof document !== 'undefined' && createPortal(
-        <div
-          ref={popoverRef}
-          style={{
-            position: 'fixed',
-            top: `${coords.top}px`,
-            left: `${coords.left}px`,
-            width: `${coords.width}px`,
-            zIndex: 99999,
-            touchAction: 'pan-y'
-          }}
-          onMouseDown={e => e.stopPropagation()}
-          onTouchStart={e => e.stopPropagation()}
-          className="bg-slate-900 border border-slate-700 rounded-2xl p-4 shadow-2xl shadow-black/90 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 overflow-x-hidden"
-        >
-          {popoverContent}
-        </div>,
+      {/* Popover / Modal Portal */}
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        isMobile ? (
+          /* Mobile: EXACT Image 2 - Centered modal with dark backdrop */
+          <div
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 overflow-hidden touch-none"
+            onClick={() => setIsOpen(false)}
+          >
+            <div
+              ref={popoverRef}
+              onClick={e => e.stopPropagation()}
+              className="bg-slate-900 border border-slate-700 rounded-2xl p-4 shadow-2xl shadow-black/90 animate-in zoom-in-95 duration-150 overflow-x-hidden touch-pan-y"
+            >
+              {popoverContent}
+            </div>
+          </div>
+        ) : (
+          /* Desktop: Anchored dropdown popover */
+          coords && (
+            <div
+              ref={popoverRef}
+              style={{
+                position: 'fixed',
+                top: `${coords.top}px`,
+                left: `${coords.left}px`,
+                width: `${coords.width}px`,
+                zIndex: 99999,
+                touchAction: 'pan-y'
+              }}
+              onMouseDown={e => e.stopPropagation()}
+              className="bg-slate-900 border border-slate-700 rounded-2xl p-4 shadow-2xl shadow-black/90 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 overflow-x-hidden"
+            >
+              {popoverContent}
+            </div>
+          )
+        ),
         document.body
       )}
     </div>

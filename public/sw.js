@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v21-modal-viewport-safe'
+const CACHE_NAME = 'axon-v22-picker-image2-centered'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {
