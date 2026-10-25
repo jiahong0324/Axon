@@ -43,18 +43,18 @@ export function parseDisplayToIso(displayStr) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
-const MONTH_NAMES = [
+export const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ]
 
-const WEEK_DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+export const WEEK_DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 
-function formatIso(year, monthIndex, day) {
+export function formatIso(year, monthIndex, day) {
   return `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
-function generateCalendarDays(year, month) {
+export function generateCalendarDays(year, month) {
   const days = []
   const firstDay = new Date(year, month, 1)
   // Monday as 0, Sunday as 6
@@ -101,35 +101,24 @@ function generateCalendarDays(year, month) {
 }
 
 /**
- * DateInput component that strictly renders and formats dates as DD/MM/YYYY (date/month/year).
- * Clicking the calendar icon opens an interactive calendar dropdown where user can pick a date.
+ * Interactive Calendar Popover that renders via portal and anchors to any element
  */
-export default function DateInput({
+export function CalendarPopover({
   value = '',
   onChange,
-  placeholder = 'DD/MM/YYYY',
-  className = '',
-  name,
-  id,
-  required = false,
-  disabled = false,
+  isOpen = false,
+  onClose,
+  anchorRef,
   min,
   max,
-  ...props
+  required = false,
+  showClear = false
 }) {
-  const [displayText, setDisplayText] = useState(() => formatIsoToDisplay(value))
-  const [isOpen, setIsOpen] = useState(false)
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear())
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth())
   const [coords, setCoords] = useState(null)
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
-
-  const containerRef = useRef(null)
   const popoverRef = useRef(null)
-
-  useEffect(() => {
-    setDisplayText(formatIsoToDisplay(value))
-  }, [value])
 
   useEffect(() => {
     const checkMobile = () => {
@@ -139,45 +128,28 @@ export default function DateInput({
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  const notifyChange = (isoValue) => {
-    if (typeof onChange === 'function') {
-      onChange({ target: { value: isoValue, name } })
-    }
-  }
+  useEffect(() => {
+    if (isOpen) {
+      let initialYear = new Date().getFullYear()
+      let initialMonth = new Date().getMonth()
 
-  const handleTextChange = (e) => {
-    const raw = e.target.value
-    setDisplayText(raw)
+      if (value) {
+        const match = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+        if (match) {
+          initialYear = parseInt(match[1], 10)
+          initialMonth = parseInt(match[2], 10) - 1
+        }
+      }
 
-    if (!raw.trim()) {
-      notifyChange('')
-      return
+      setViewYear(initialYear)
+      setViewMonth(initialMonth)
+      updateCoords()
     }
-
-    const iso = parseDisplayToIso(raw)
-    if (iso) {
-      notifyChange(iso)
-    }
-  }
-
-  const handleBlur = () => {
-    if (!displayText.trim()) {
-      if (value) notifyChange('')
-      return
-    }
-    const iso = parseDisplayToIso(displayText)
-    if (iso) {
-      setDisplayText(formatIsoToDisplay(iso))
-      if (iso !== value) notifyChange(iso)
-    } else {
-      // Revert invalid input to last valid value
-      setDisplayText(formatIsoToDisplay(value))
-    }
-  }
+  }, [isOpen, value])
 
   const updateCoords = () => {
-    if (!containerRef.current) return
-    const rect = containerRef.current.getBoundingClientRect()
+    if (!anchorRef?.current) return
+    const rect = anchorRef.current.getBoundingClientRect()
     const popoverWidth = 280
     const popoverHeight = 310
     const spaceBelow = window.innerHeight - rect.bottom
@@ -193,46 +165,46 @@ export default function DateInput({
     setCoords({ top, left, width: popoverWidth })
   }
 
-  const togglePicker = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (disabled) return
+  useEffect(() => {
+    if (!isOpen) return
 
-    if (!isOpen) {
-      let initialYear = new Date().getFullYear()
-      let initialMonth = new Date().getMonth()
+    updateCoords()
 
-      if (value) {
-        const match = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
-        if (match) {
-          initialYear = parseInt(match[1], 10)
-          initialMonth = parseInt(match[2], 10) - 1
-        }
-      } else if (displayText) {
-        const parsed = parseDisplayToIso(displayText)
-        if (parsed) {
-          const match = parsed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
-          if (match) {
-            initialYear = parseInt(match[1], 10)
-            initialMonth = parseInt(match[2], 10) - 1
-          }
-        }
-      }
-
-      setViewYear(initialYear)
-      setViewMonth(initialMonth)
+    const handleScrollOrResize = () => {
       updateCoords()
-      setIsOpen(true)
-    } else {
-      setIsOpen(false)
     }
-  }
 
-  const handleSelectDate = (isoDate) => {
-    setDisplayText(formatIsoToDisplay(isoDate))
-    notifyChange(isoDate)
-    setIsOpen(false)
-  }
+    const handleMouseDown = (e) => {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target) &&
+        anchorRef?.current &&
+        !anchorRef.current.contains(e.target)
+      ) {
+        onClose?.()
+      }
+    }
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose?.()
+      }
+    }
+
+    window.addEventListener('scroll', handleScrollOrResize, true)
+    window.addEventListener('resize', handleScrollOrResize)
+    document.addEventListener('mousedown', handleMouseDown)
+    document.addEventListener('touchstart', handleMouseDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true)
+      window.removeEventListener('resize', handleScrollOrResize)
+      document.removeEventListener('mousedown', handleMouseDown)
+      document.removeEventListener('touchstart', handleMouseDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose, anchorRef])
 
   const handlePrevMonth = (e) => {
     e.preventDefault()
@@ -256,46 +228,12 @@ export default function DateInput({
     }
   }
 
-  useEffect(() => {
-    if (!isOpen) return
+  const handleSelectDate = (isoDate) => {
+    onChange?.(isoDate)
+    onClose?.()
+  }
 
-    updateCoords()
-
-    const handleScrollOrResize = () => {
-      updateCoords()
-    }
-
-    const handleMouseDown = (e) => {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(e.target) &&
-        containerRef.current &&
-        !containerRef.current.contains(e.target)
-      ) {
-        setIsOpen(false)
-      }
-    }
-
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setIsOpen(false)
-      }
-    }
-
-    window.addEventListener('scroll', handleScrollOrResize, true)
-    window.addEventListener('resize', handleScrollOrResize)
-    document.addEventListener('mousedown', handleMouseDown)
-    document.addEventListener('touchstart', handleMouseDown)
-    document.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('scroll', handleScrollOrResize, true)
-      window.removeEventListener('resize', handleScrollOrResize)
-      document.removeEventListener('mousedown', handleMouseDown)
-      document.removeEventListener('touchstart', handleMouseDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen])
+  if (!isOpen || typeof document === 'undefined') return null
 
   // Year options for quick select dropdown
   const currentYear = new Date().getFullYear()
@@ -306,7 +244,7 @@ export default function DateInput({
     yearOptions.push(y)
   }
 
-  const calendarDays = isOpen ? generateCalendarDays(viewYear, viewMonth) : []
+  const calendarDays = generateCalendarDays(viewYear, viewMonth)
   const today = new Date()
   const todayIso = formatIso(today.getFullYear(), today.getMonth(), today.getDate())
 
@@ -413,13 +351,16 @@ export default function DateInput({
           Today
         </button>
         <div className="flex items-center gap-1.5">
-          {!required && (
+          {(!required || showClear) && (
             <button
               type="button"
               onClick={() => {
-                setDisplayText('')
-                notifyChange('')
-                setIsOpen(false)
+                if (showClear && required) {
+                  handleSelectDate(todayIso)
+                } else {
+                  onChange?.('')
+                  onClose?.()
+                }
               }}
               className="!min-h-0 !min-w-0 px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
             >
@@ -429,7 +370,7 @@ export default function DateInput({
           {isMobile && (
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={onClose}
               className="!min-h-0 !min-w-0 px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
             >
               Close
@@ -439,6 +380,122 @@ export default function DateInput({
       </div>
     </div>
   )
+
+  return createPortal(
+    isMobile ? (
+      /* Mobile centered sheet with backdrop */
+      <div
+        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+        onClick={onClose}
+        onTouchStart={(e) => {
+          if (e.target === e.currentTarget) onClose?.()
+        }}
+      >
+        <div
+          ref={popoverRef}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+          className="bg-slate-900 border border-slate-700/90 rounded-2xl p-3.5 shadow-2xl shadow-black/90 animate-in zoom-in-95 duration-150"
+        >
+          {calendarContent}
+        </div>
+      </div>
+    ) : (
+      /* Desktop anchored popover */
+      coords && (
+        <div
+          ref={popoverRef}
+          style={{
+            position: 'fixed',
+            top: `${coords.top}px`,
+            left: `${coords.left}px`,
+            zIndex: 99999,
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="bg-slate-900 border border-slate-700/90 rounded-2xl p-3.5 shadow-2xl shadow-black/80 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
+        >
+          {calendarContent}
+        </div>
+      )
+    ),
+    document.body
+  )
+}
+
+/**
+ * DateInput component that strictly renders and formats dates as DD/MM/YYYY (date/month/year).
+ * Clicking the calendar icon opens an interactive calendar dropdown where user can pick a date.
+ */
+export default function DateInput({
+  value = '',
+  onChange,
+  placeholder = 'DD/MM/YYYY',
+  className = '',
+  name,
+  id,
+  required = false,
+  disabled = false,
+  min,
+  max,
+  ...props
+}) {
+  const [displayText, setDisplayText] = useState(() => formatIsoToDisplay(value))
+  const [isOpen, setIsOpen] = useState(false)
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    setDisplayText(formatIsoToDisplay(value))
+  }, [value])
+
+  const notifyChange = (isoValue) => {
+    if (typeof onChange === 'function') {
+      onChange({ target: { value: isoValue, name } })
+    }
+  }
+
+  const handleTextChange = (e) => {
+    const raw = e.target.value
+    setDisplayText(raw)
+
+    if (!raw.trim()) {
+      notifyChange('')
+      return
+    }
+
+    const iso = parseDisplayToIso(raw)
+    if (iso) {
+      notifyChange(iso)
+    }
+  }
+
+  const handleBlur = () => {
+    if (!displayText.trim()) {
+      if (value) notifyChange('')
+      return
+    }
+    const iso = parseDisplayToIso(displayText)
+    if (iso) {
+      setDisplayText(formatIsoToDisplay(iso))
+      if (iso !== value) notifyChange(iso)
+    } else {
+      setDisplayText(formatIsoToDisplay(value))
+    }
+  }
+
+  const togglePicker = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (disabled) return
+    setIsOpen(prev => !prev)
+  }
+
+  const handleSelectDate = (isoDate) => {
+    setDisplayText(formatIsoToDisplay(isoDate))
+    notifyChange(isoDate)
+    setIsOpen(false)
+  }
 
   return (
     <div ref={containerRef} className="relative flex items-center w-full min-w-0">
@@ -471,48 +528,17 @@ export default function DateInput({
         </button>
       </div>
 
-      {/* Interactive Calendar Popover Portal */}
-      {isOpen && typeof document !== 'undefined' && createPortal(
-        isMobile ? (
-          /* Mobile centered sheet with backdrop */
-          <div
-            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
-            onClick={() => setIsOpen(false)}
-            onTouchStart={(e) => {
-              if (e.target === e.currentTarget) setIsOpen(false)
-            }}
-          >
-            <div
-              ref={popoverRef}
-              onClick={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchMove={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
-              className="bg-slate-900 border border-slate-700/90 rounded-2xl p-3.5 shadow-2xl shadow-black/90 animate-in zoom-in-95 duration-150"
-            >
-              {calendarContent}
-            </div>
-          </div>
-        ) : (
-          /* Desktop anchored popover */
-          coords && (
-            <div
-              ref={popoverRef}
-              style={{
-                position: 'fixed',
-                top: `${coords.top}px`,
-                left: `${coords.left}px`,
-                zIndex: 99999,
-              }}
-              onMouseDown={(e) => e.stopPropagation()}
-              className="bg-slate-900 border border-slate-700/90 rounded-2xl p-3.5 shadow-2xl shadow-black/80 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
-            >
-              {calendarContent}
-            </div>
-          )
-        ),
-        document.body
-      )}
+      <CalendarPopover
+        value={value}
+        onChange={handleSelectDate}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        anchorRef={containerRef}
+        min={min}
+        max={max}
+        required={required}
+        showClear={!required}
+      />
     </div>
   )
 }

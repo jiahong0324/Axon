@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v11-meal-time-update'
+const CACHE_NAME = 'axon-v12-timetable-calendar'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {
