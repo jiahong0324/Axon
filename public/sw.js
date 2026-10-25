@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v10-flame-health'
+const CACHE_NAME = 'axon-v11-meal-time-update'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {
