@@ -57,7 +57,8 @@ html, body, #root {
   }
 }
 
-body.keyboard-open .bottom-nav {
+body.keyboard-open .bottom-nav,
+body.modal-open .bottom-nav {
   display: none !important;
 }
 

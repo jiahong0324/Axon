@@ -151,7 +151,6 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
             placeholder=""
             className="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
             required
-            autoFocus
           />
         </div>
 

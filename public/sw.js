@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v20-no-change-badge'
+const CACHE_NAME = 'axon-v21-modal-viewport-safe'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {
