@@ -20,6 +20,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { analyzeImageWithGroq } from '../lib/groq'
 import { formatTime } from '../lib/utils'
 import DateInput from './DateInput'
+import TimePicker from './TimePicker'
 
 const TIMETABLE_PROMPT = `
 Analyze this university timetable image. Extract ALL class sessions and return ONLY a valid JSON array, no markdown, no explanation.
@@ -1204,21 +1205,19 @@ function TimetableSessionRow({
 
               <div className="min-w-0">
                 <label className="text-[11px] font-medium text-slate-400 block mb-1">Start Time</label>
-                <input
-                  type="time"
+                <TimePicker
                   value={item.start_time || '09:00'}
-                  onChange={(e) => onUpdate({ start_time: e.target.value })}
-                  className="w-full max-w-full box-border bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white text-center focus:outline-none"
+                  onChange={(val) => onUpdate({ start_time: val })}
+                  title="Start Time"
                 />
               </div>
 
               <div className="min-w-0">
                 <label className="text-[11px] font-medium text-slate-400 block mb-1">End Time</label>
-                <input
-                  type="time"
+                <TimePicker
                   value={item.end_time || '10:00'}
-                  onChange={(e) => onUpdate({ end_time: e.target.value })}
-                  className="w-full max-w-full box-border bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white text-center focus:outline-none"
+                  onChange={(val) => onUpdate({ end_time: val })}
+                  title="End Time"
                 />
               </div>
             </div>

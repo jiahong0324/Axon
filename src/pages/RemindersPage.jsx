@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase'
 import { markdownToHtml, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
 import SEO from '../components/SEO'
+import TimePicker from '../components/TimePicker'
 
 const initialForm = { title: '', reminder_time: '09:00', repeat_type: 'once', is_active: true }
 
@@ -172,7 +173,7 @@ export default function RemindersPage() {
         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showForm ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <form onSubmit={addItem} className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <input className="input sm:col-span-2 lg:col-span-2" required placeholder="Reminder title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
-            <input className="input" type="time" value={form.reminder_time} onChange={e => setForm({ ...form, reminder_time: e.target.value })} />
+            <TimePicker value={form.reminder_time} onChange={val => setForm({ ...form, reminder_time: val })} title="Select Reminder Time" />
             <select className="input" value={form.repeat_type} onChange={e => setForm({ ...form, repeat_type: e.target.value })}>{['once', 'daily', 'weekly'].map(t => <option key={t}>{t}</option>)}</select>
             <button className="btn-primary sm:col-span-2 lg:col-span-4">Save Reminder</button>
           </form>

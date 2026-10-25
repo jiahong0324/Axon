@@ -13,6 +13,7 @@ import SubjectSelect from '../components/SubjectSelect'
 import { SkeletonList } from '../components/SkeletonLoader'
 import SEO from '../components/SEO'
 import DateInput from '../components/DateInput'
+import TimePicker from '../components/TimePicker'
 
 
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
@@ -200,8 +201,8 @@ export default function ExamPage() {
           </Field>
           <Field label="Exam Date"><DateInput required value={form.exam_date} onChange={e => setForm({ ...form, exam_date: e.target.value })} /></Field>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Start Time"><input className="input" type="time" placeholder="e.g. 09:00" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
-            <Field label="End Time"><input className="input" type="time" placeholder="e.g. 11:00" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
+            <Field label="Start Time"><TimePicker value={form.start_time} onChange={val => setForm({ ...form, start_time: val })} title="Select Start Time" /></Field>
+            <Field label="End Time"><TimePicker value={form.end_time} onChange={val => setForm({ ...form, end_time: val })} title="Select End Time" /></Field>
           </div>
           <Field label="Exam Type"><select className="input" value={form.exam_type} onChange={e => setForm({ ...form, exam_type: e.target.value })}>{['Test 1', 'Test 2', 'Midterm', 'Final', 'Practical'].map(t => <option key={t}>{t}</option>)}</select></Field>
           <Field label="Venue"><input className="input" value={form.venue} onChange={e => setForm({ ...form, venue: e.target.value })} /></Field>

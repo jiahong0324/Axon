@@ -71,7 +71,7 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
     }
   }, [value, items, itemHeight])
 
-  // Precision wheel step on desktop: MUST attach with { passive: false } to cancel browser native 100px wheel jump!
+  // Precision wheel step on desktop: attach with { passive: false } to cancel browser native 100px wheel jump
   useEffect(() => {
     const scroller = scrollerRef.current
     if (!scroller) return
@@ -162,10 +162,10 @@ function WheelColumn({ items, value, onChange, formatItem, itemHeight = 48, cont
               key={item}
               onClick={() => handleItemClick(item, idx)}
               style={{ height: `${itemHeight}px`, touchAction: 'pan-y' }}
-              className={`snap-center flex items-center justify-center font-mono font-bold text-2xl cursor-pointer select-none transition-opacity duration-150 ${
+              className={`snap-center flex items-center justify-center font-mono cursor-pointer select-none transition-all duration-150 ${
                 isSelected
-                  ? 'text-white font-extrabold opacity-100'
-                  : 'text-slate-500 font-medium opacity-30 hover:opacity-60'
+                  ? 'text-white text-3xl font-black scale-110 drop-shadow-[0_0_14px_rgba(59,130,246,0.7)] tracking-wider'
+                  : 'text-slate-500 text-lg font-bold opacity-30 hover:opacity-70'
               }`}
             >
               {formatItem ? formatItem(item) : item}
@@ -181,6 +181,7 @@ export default function TimePicker({
   value = '',
   onChange,
   disabled = false,
+  title = 'Select Time',
   className = ''
 }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -218,7 +219,7 @@ export default function TimePicker({
     if (!triggerRef.current || isMobile) return
     const rect = triggerRef.current.getBoundingClientRect()
     const popoverWidth = 320
-    const popoverHeight = 360
+    const popoverHeight = 330
     const padding = 12
 
     let left = rect.left
@@ -302,14 +303,14 @@ export default function TimePicker({
   const popoverContent = (
     <div
       style={{ touchAction: 'pan-y' }}
-      className="w-[300px] max-w-[92vw] text-slate-100 select-none space-y-3.5 overflow-x-hidden"
+      className="w-[300px] max-w-[92vw] text-slate-100 select-none space-y-3 overflow-x-hidden"
     >
-      {/* 1. Header: Select Meal Time + Now */}
+      {/* 1. Header: Customizable Title + Now Button */}
       <div className="flex items-center justify-between pb-2 border-b border-white/10">
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-blue-400" />
           <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
-            Select Meal Time
+            {title}
           </span>
         </div>
         <button
@@ -322,77 +323,78 @@ export default function TimePicker({
         </button>
       </div>
 
-      {/* 2. AM / PM Segmented Control (Centered above the drum wheels) */}
-      <div className="flex justify-center">
-        <div className="relative inline-flex p-1 bg-slate-950/90 rounded-xl border border-white/10 w-full max-w-[220px] shadow-inner">
+      {/* 2. Main Wheel Area: Hours & Minutes Drum (Left) + AM/PM Card (Right, Centered with Lens) */}
+      <div className="flex items-center gap-2.5 my-2 overflow-x-hidden" style={{ touchAction: 'pan-y' }}>
+        {/* Hours & Minutes Drum Wheels */}
+        <div className="relative flex-1 flex items-center justify-center bg-slate-950/80 rounded-2xl border border-white/5 overflow-hidden shadow-inner h-[192px]">
+          {/* Center Highlight Lens Bar */}
+          <div
+            className="absolute left-2.5 right-2.5 pointer-events-none rounded-xl bg-white/[0.08] border border-white/10 shadow-[0_0_15px_rgba(59,130,246,0.15)] z-10"
+            style={{
+              top: '50%',
+              height: '48px',
+              transform: 'translateY(-50%)'
+            }}
+          />
+
+          {/* Top & Bottom cylindrical drum vignette gradients */}
+          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
+
+          {/* Hours Wheel Column */}
+          <WheelColumn
+            items={hoursList}
+            value={selectedH12}
+            onChange={setSelectedH12}
+            formatItem={(h) => String(h).padStart(2, '0')}
+            itemHeight={48}
+            containerHeight={192}
+          />
+
+          {/* Colon Separator */}
+          <span className="text-2xl font-extrabold text-slate-400 pb-1 z-20 select-none">
+            :
+          </span>
+
+          {/* Minutes Wheel Column */}
+          <WheelColumn
+            items={minutesList}
+            value={selectedM}
+            onChange={setSelectedM}
+            formatItem={(m) => String(m).padStart(2, '0')}
+            itemHeight={48}
+            containerHeight={192}
+          />
+        </div>
+
+        {/* Right: AM / PM Selector Card (Compact & Vertically Centered with the Center Lens) */}
+        <div className="self-center h-[116px] w-[64px] bg-slate-950/80 rounded-2xl border border-white/5 p-1.5 flex flex-col justify-center gap-2 shrink-0 shadow-inner">
           <button
             type="button"
             onClick={() => setSelectedIsPM(false)}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center ${
               !selectedIsPM
-                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30 scale-[1.02]'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/40 ring-1 ring-blue-400 font-extrabold'
+                : 'text-slate-400 hover:text-white hover:bg-white/5 font-semibold'
             }`}
           >
-            <span>☀️</span> AM
+            AM
           </button>
           <button
             type="button"
             onClick={() => setSelectedIsPM(true)}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center ${
               selectedIsPM
-                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30 scale-[1.02]'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/40 ring-1 ring-blue-400 font-extrabold'
+                : 'text-slate-400 hover:text-white hover:bg-white/5 font-semibold'
             }`}
           >
-            <span>🌙</span> PM
+            PM
           </button>
         </div>
       </div>
 
-      {/* 3. Time Drum Wheels Box (Hours & Minutes Centered & Wide) */}
-      <div className="relative flex items-center justify-center bg-slate-950/80 rounded-2xl border border-white/5 overflow-hidden shadow-inner h-[192px] px-6">
-        {/* Center Highlight Lens Bar */}
-        <div
-          className="absolute left-4 right-4 pointer-events-none rounded-xl bg-white/[0.08] border border-white/10 shadow-sm z-10"
-          style={{
-            top: '50%',
-            height: '48px',
-            transform: 'translateY(-50%)'
-          }}
-        />
-
-        {/* Top & Bottom cylindrical drum vignette gradients */}
-        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
-
-        {/* Hours Wheel Column */}
-        <WheelColumn
-          items={hoursList}
-          value={selectedH12}
-          onChange={setSelectedH12}
-          formatItem={(h) => String(h).padStart(2, '0')}
-          itemHeight={48}
-          containerHeight={192}
-        />
-
-        {/* Colon Separator */}
-        <span className="text-2xl font-extrabold text-slate-500 pb-1 z-20 select-none px-3">
-          :
-        </span>
-
-        {/* Minutes Wheel Column */}
-        <WheelColumn
-          items={minutesList}
-          value={selectedM}
-          onChange={setSelectedM}
-          formatItem={(m) => String(m).padStart(2, '0')}
-          itemHeight={48}
-          containerHeight={192}
-        />
-      </div>
-
-      {/* 4. Action Footer: Cancel & Confirm */}
+      {/* 3. Action Footer: Cancel & Confirm */}
       <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-white/10">
         <button
           type="button"

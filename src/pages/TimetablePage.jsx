@@ -15,6 +15,7 @@ import { clearCache, readCache, writeCache } from '../lib/cache'
 import { saveSemesterPreferences } from '../lib/preferences'
 import SEO from '../components/SEO'
 import DateInput from '../components/DateInput'
+import TimePicker from '../components/TimePicker'
 
 const initialForm = { subject: '', day: 'Monday', start_time: '09:00', end_time: '10:00', lecturer: '', classroom: '', class_type: 'L', color: 'blue', is_replacement: false, date: '' }
 const LIVE_PROFILE_ID = 'account'
@@ -1305,8 +1306,8 @@ export default function TimetablePage() {
             <Field label={t('timetable.day')}><select className="input" value={form.day} onChange={e => setForm({ ...form, day: e.target.value })}>{days.map(d => <option key={d} value={d}>{t(`timetable.days.${d}`)}</option>)}</select></Field>
           )}
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label={t('timetable.startTime')}><input className="input" type="time" required value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
-            <Field label={t('timetable.endTime')}><input className="input" type="time" required value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
+            <Field label={t('timetable.startTime')}><TimePicker value={form.start_time} onChange={val => setForm({ ...form, start_time: val })} title={t('timetable.startTime')} /></Field>
+            <Field label={t('timetable.endTime')}><TimePicker value={form.end_time} onChange={val => setForm({ ...form, end_time: val })} title={t('timetable.endTime')} /></Field>
           </div>
           <Field label={t('timetable.classType')}>
             <div className="grid grid-cols-4 gap-2">
