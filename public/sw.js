@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v24-image2-size-smooth-scroll'
+const CACHE_NAME = 'axon-v25-streamlined-quick-actions'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {
