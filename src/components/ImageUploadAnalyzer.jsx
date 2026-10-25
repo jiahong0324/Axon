@@ -20,6 +20,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { analyzeImageWithGroq } from '../lib/groq'
 import { formatTime } from '../lib/utils'
 import DateInput from './DateInput'
+import TimeInput from './TimeInput'
 
 const TIMETABLE_PROMPT = `
 Analyze this university timetable image. Extract ALL class sessions and return ONLY a valid JSON array, no markdown, no explanation.
@@ -1204,8 +1205,7 @@ function TimetableSessionRow({
 
               <div className="min-w-0">
                 <label className="text-[11px] font-medium text-slate-400 block mb-1">Start Time</label>
-                <input
-                  type="time"
+                <TimeInput
                   value={item.start_time || '09:00'}
                   onChange={(e) => onUpdate({ start_time: e.target.value })}
                   className="w-full max-w-full box-border bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white text-center focus:outline-none"
@@ -1214,8 +1214,7 @@ function TimetableSessionRow({
 
               <div className="min-w-0">
                 <label className="text-[11px] font-medium text-slate-400 block mb-1">End Time</label>
-                <input
-                  type="time"
+                <TimeInput
                   value={item.end_time || '10:00'}
                   onChange={(e) => onUpdate({ end_time: e.target.value })}
                   className="w-full max-w-full box-border bg-slate-900/90 border border-white/15 focus:border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs text-white text-center focus:outline-none"
@@ -1566,17 +1565,17 @@ function SimpleResult({ item, index, updateItem, onDelete, type }) {
               <span className="text-white/15 hidden sm:inline">·</span>
               <div className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                <input
-                  type="time"
-                  className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none w-[66px] text-center"
+                <TimeInput
+                  variant="inline"
+                  className="w-[74px]"
                   value={item.start_time || ''}
                   onChange={e => updateItem(index, { start_time: e.target.value })}
                   placeholder="Start"
                 />
                 <span className="text-slate-600">-</span>
-                <input
-                  type="time"
-                  className="bg-transparent hover:bg-white/5 focus:bg-slate-900/90 rounded px-1 py-0.5 text-xs text-slate-200 font-medium border border-transparent focus:border-white/10 focus:outline-none w-[66px] text-center"
+                <TimeInput
+                  variant="inline"
+                  className="w-[74px]"
                   value={item.end_time || ''}
                   onChange={e => updateItem(index, { end_time: e.target.value })}
                   placeholder="End"
