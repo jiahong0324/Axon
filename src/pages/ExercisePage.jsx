@@ -461,7 +461,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
     return (
       <main className="main-content">
         <header className="mb-6">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-heading text-slate-900 dark:text-white tracking-tight mb-1">{t('exercise.title')}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold font-heading text-slate-900 dark:text-white tracking-tight mb-1">{t('exercise.title')}</h1>
         </header>
         <div className="skeleton h-48 rounded-2xl mb-6" />
         <div className="skeleton h-36 rounded-2xl" />
@@ -472,18 +472,18 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
   return (
     <>
       <SEO title="Health | Axon" description="Track workouts, nutrition, daily calories, streak freezes, and fitness routines." />
-      <main className="main-content pb-16 md:pb-12">
+      <main className="main-content pb-28 md:pb-12">
       {/* Page Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-3 sm:mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-heading text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-bold font-heading text-slate-900 dark:text-white tracking-tight">
             {t('exercise.title')}
           </h1>
         </div>
       </div>
 
       {/* Navigation Tabs - Matching ExamResultsPage Pill style */}
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-4 sm:mb-8 flex flex-wrap items-center justify-between gap-4">
         <div className="w-full sm:w-auto rounded-xl bg-[#111827] p-1 sm:p-1.5 shadow-md border border-white/5">
           <div className="grid grid-cols-2 gap-1 sm:flex sm:items-center sm:gap-2">
             <button
