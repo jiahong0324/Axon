@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Clock, Sparkles, Check, ChevronUp, ChevronDown } from 'lucide-react'
+import { Clock, Sparkles, Check } from 'lucide-react'
 
 /**
  * Parses "HH:mm" (24-hour string) into { h12, m, isPM }
@@ -37,6 +37,100 @@ export function to24HourStr(h12, m, isPM) {
 export function formatTimeDisplay(timeStr) {
   const { h12, m, isPM } = parseTimeTo12(timeStr)
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${isPM ? 'PM' : 'AM'}`
+}
+
+/**
+ * Apple iOS-style Drum Wheel Column
+ */
+function WheelColumn({ items, value, onChange, formatItem, itemHeight = 44, containerHeight = 176 }) {
+  const scrollerRef = useRef(null)
+  const isInteractingRef = useRef(false)
+  const timeoutRef = useRef(null)
+
+  const padY = (containerHeight - itemHeight) / 2
+
+  // Initial scroll position on mount
+  useEffect(() => {
+    const idx = items.indexOf(value)
+    if (idx !== -1 && scrollerRef.current) {
+      scrollerRef.current.scrollTop = idx * itemHeight
+    }
+  }, [])
+
+  // Sync scroll position when value changes from external actions (e.g. "Now" button)
+  useEffect(() => {
+    if (!isInteractingRef.current && scrollerRef.current) {
+      const idx = items.indexOf(value)
+      if (idx !== -1) {
+        const target = idx * itemHeight
+        if (Math.abs(scrollerRef.current.scrollTop - target) > 2) {
+          scrollerRef.current.scrollTo({ top: target, behavior: 'smooth' })
+        }
+      }
+    }
+  }, [value, items, itemHeight])
+
+  const handleScroll = (e) => {
+    isInteractingRef.current = true
+    clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => {
+      isInteractingRef.current = false
+    }, 150)
+
+    const st = e.currentTarget.scrollTop
+    const index = Math.round(st / itemHeight)
+    const clamped = Math.max(0, Math.min(items.length - 1, index))
+    const item = items[clamped]
+    if (item !== undefined && item !== value) {
+      onChange(item)
+    }
+  }
+
+  const handleItemClick = (item, idx) => {
+    onChange(item)
+    if (scrollerRef.current) {
+      scrollerRef.current.scrollTo({ top: idx * itemHeight, behavior: 'smooth' })
+    }
+  }
+
+  return (
+    <div
+      className="relative flex-1 select-none overflow-hidden"
+      style={{ height: `${containerHeight}px` }}
+    >
+      <div
+        ref={scrollerRef}
+        onScroll={handleScroll}
+        onTouchStart={() => { isInteractingRef.current = true }}
+        onMouseDown={() => { isInteractingRef.current = true }}
+        style={{
+          paddingTop: `${padY}px`,
+          paddingBottom: `${padY}px`,
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
+        className="h-full overflow-y-scroll snap-y snap-mandatory [&::-webkit-scrollbar]:hidden overscroll-contain"
+      >
+        {items.map((item, idx) => {
+          const isSelected = item === value
+          return (
+            <div
+              key={item}
+              onClick={() => handleItemClick(item, idx)}
+              style={{ height: `${itemHeight}px` }}
+              className={`snap-center flex items-center justify-center font-mono font-bold cursor-pointer transition-all duration-100 ${
+                isSelected
+                  ? 'text-white text-3xl font-extrabold scale-110 drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]'
+                  : 'text-slate-500 text-lg hover:text-slate-300 opacity-30 hover:opacity-75'
+              }`}
+            >
+              {formatItem ? formatItem(item) : item}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 export default function TimePicker({
@@ -77,7 +171,7 @@ export default function TimePicker({
     if (!triggerRef.current) return
     const rect = triggerRef.current.getBoundingClientRect()
     const popoverWidth = 320
-    const popoverHeight = 440
+    const popoverHeight = 310
     const spaceBelow = window.innerHeight - rect.bottom
     const showAbove = spaceBelow < popoverHeight && rect.top > popoverHeight
 
@@ -144,12 +238,12 @@ export default function TimePicker({
   const displayTime = formatTimeDisplay(value)
 
   const hoursList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-  const minutesList = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+  const minutesList = Array.from({ length: 60 }, (_, i) => i)
 
   const popoverContent = (
-    <div className="w-[320px] max-w-[92vw] text-slate-100 select-none space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
+    <div className="w-[300px] max-w-[92vw] text-slate-100 select-none space-y-3">
+      {/* Header: Select Meal Time + Now */}
+      <div className="flex items-center justify-between pb-2 border-b border-white/10">
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-blue-400" />
           <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
@@ -166,65 +260,56 @@ export default function TimePicker({
         </button>
       </div>
 
-      {/* Main Clock Digital Display Card */}
-      <div className="flex items-center justify-center gap-3 py-3 bg-slate-950/70 rounded-xl border border-white/5">
-        {/* Hour Stepper & Readout */}
-        <div className="flex flex-col items-center">
-          <button
-            type="button"
-            onClick={() => setSelectedH12(h => (h % 12) + 1)}
-            className="p-1 text-slate-400 hover:text-white transition-colors"
-            title="Next hour"
-          >
-            <ChevronUp className="h-4 w-4" />
-          </button>
-          <span className="text-3xl font-extrabold text-white font-mono w-14 text-center">
-            {String(selectedH12).padStart(2, '0')}
-          </span>
-          <button
-            type="button"
-            onClick={() => setSelectedH12(h => (h === 1 ? 12 : h - 1))}
-            className="p-1 text-slate-400 hover:text-white transition-colors"
-            title="Previous hour"
-          >
-            <ChevronDown className="h-4 w-4" />
-          </button>
-        </div>
+      {/* Main Apple-Style Cylindrical Scrolling Wheel Box */}
+      <div className="relative flex items-center justify-center gap-1 bg-slate-950/80 rounded-2xl border border-white/5 px-2 overflow-hidden my-2 shadow-inner">
+        {/* Center Highlight Lens Bar */}
+        <div
+          className="absolute left-2 right-2 pointer-events-none rounded-xl bg-white/[0.08] border border-white/10 shadow-sm z-10"
+          style={{
+            top: '50%',
+            height: '44px',
+            transform: 'translateY(-50%)'
+          }}
+        />
 
-        <span className="text-3xl font-bold text-slate-500 pb-1.5 animate-pulse">:</span>
+        {/* Top & Bottom cylindrical drum vignette gradients */}
+        <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
 
-        {/* Minute Stepper & Readout */}
-        <div className="flex flex-col items-center">
-          <button
-            type="button"
-            onClick={() => setSelectedM(m => (m + 1) % 60)}
-            className="p-1 text-slate-400 hover:text-white transition-colors"
-            title="+1 minute"
-          >
-            <ChevronUp className="h-4 w-4" />
-          </button>
-          <span className="text-3xl font-extrabold text-white font-mono w-14 text-center">
-            {String(selectedM).padStart(2, '0')}
-          </span>
-          <button
-            type="button"
-            onClick={() => setSelectedM(m => (m - 1 + 60) % 60)}
-            className="p-1 text-slate-400 hover:text-white transition-colors"
-            title="-1 minute"
-          >
-            <ChevronDown className="h-4 w-4" />
-          </button>
-        </div>
+        {/* Hours Wheel Column */}
+        <WheelColumn
+          items={hoursList}
+          value={selectedH12}
+          onChange={setSelectedH12}
+          formatItem={(h) => String(h).padStart(2, '0')}
+          itemHeight={44}
+          containerHeight={176}
+        />
+
+        {/* Colon Separator */}
+        <span className="text-2xl font-extrabold text-slate-500 pb-1 z-20 select-none animate-pulse">
+          :
+        </span>
+
+        {/* Minutes Wheel Column */}
+        <WheelColumn
+          items={minutesList}
+          value={selectedM}
+          onChange={setSelectedM}
+          formatItem={(m) => String(m).padStart(2, '0')}
+          itemHeight={44}
+          containerHeight={176}
+        />
 
         {/* AM / PM Segmented Toggle */}
-        <div className="flex flex-col gap-1 ml-1 p-1 bg-slate-900 rounded-lg border border-white/10">
+        <div className="flex flex-col gap-1.5 p-1 bg-slate-900 rounded-xl border border-white/10 ml-2 z-20 shrink-0">
           <button
             type="button"
             onClick={() => setSelectedIsPM(false)}
-            className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${
+            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
               !selectedIsPM
-                ? 'bg-blue-500 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             AM
@@ -232,10 +317,10 @@ export default function TimePicker({
           <button
             type="button"
             onClick={() => setSelectedIsPM(true)}
-            className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${
+            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
               selectedIsPM
-                ? 'bg-blue-500 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             PM
@@ -243,118 +328,7 @@ export default function TimePicker({
         </div>
       </div>
 
-      {/* Quick Hours Grid (1 - 12) */}
-      <div>
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-          Hour
-        </span>
-        <div className="grid grid-cols-6 gap-1">
-          {hoursList.map(h => {
-            const active = selectedH12 === h
-            return (
-              <button
-                key={h}
-                type="button"
-                onClick={() => setSelectedH12(h)}
-                className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  active
-                    ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30 ring-1 ring-blue-400'
-                    : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 hover:text-white border border-white/5'
-                }`}
-              >
-                {h}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Quick Minutes Grid (00 - 55) */}
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Minute
-          </span>
-          <div className="flex items-center gap-1 font-mono text-[10px]">
-            <button
-              type="button"
-              onClick={() => setSelectedM(m => (m - 1 + 60) % 60)}
-              className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/5"
-            >
-              -1m
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedM(m => (m + 1) % 60)}
-              className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/5"
-            >
-              +1m
-            </button>
-          </div>
-        </div>
-        <div className="grid grid-cols-6 gap-1">
-          {minutesList.map(m => {
-            const active = selectedM === m
-            return (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setSelectedM(m)}
-                className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  active
-                    ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30 ring-1 ring-blue-400'
-                    : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 hover:text-white border border-white/5'
-                }`}
-              >
-                :{String(m).padStart(2, '0')}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Common Meal Presets */}
-      <div className="pt-2 border-t border-white/5">
-        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-          Quick Meal Times
-        </span>
-        <div className="grid grid-cols-4 gap-1 text-[11px]">
-          <button
-            type="button"
-            onClick={() => { setSelectedH12(8); setSelectedM(30); setSelectedIsPM(false) }}
-            className="p-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-white/5 flex flex-col items-center transition-all"
-          >
-            <span className="font-bold">🍳 8:30</span>
-            <span className="text-[9px] text-slate-500">Breakfast</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => { setSelectedH12(12); setSelectedM(30); setSelectedIsPM(true) }}
-            className="p-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-white/5 flex flex-col items-center transition-all"
-          >
-            <span className="font-bold">🍱 12:30</span>
-            <span className="text-[9px] text-slate-500">Lunch</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => { setSelectedH12(4); setSelectedM(0); setSelectedIsPM(true) }}
-            className="p-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-white/5 flex flex-col items-center transition-all"
-          >
-            <span className="font-bold">🍎 4:00</span>
-            <span className="text-[9px] text-slate-500">Snack</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => { setSelectedH12(7); setSelectedM(0); setSelectedIsPM(true) }}
-            className="p-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-white/5 flex flex-col items-center transition-all"
-          >
-            <span className="font-bold">🍲 7:00</span>
-            <span className="text-[9px] text-slate-500">Dinner</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Action Footer */}
+      {/* Action Footer: Cancel & Confirm */}
       <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-white/10">
         <button
           type="button"
