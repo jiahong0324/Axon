@@ -215,9 +215,6 @@ export default function DietNutritionTab({
               <h3 className="text-base sm:text-lg font-extrabold text-white">
                 Daily Nutrition Progress
               </h3>
-              <p className="text-xs text-slate-400">
-                Track your calorie intake and macronutrients for {formatNutritionDate(activeDate)}
-              </p>
             </div>
           </div>
           <button
