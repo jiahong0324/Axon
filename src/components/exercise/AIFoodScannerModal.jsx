@@ -292,7 +292,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
               <button
                 type="button"
                 onClick={() => setStep('upload')}
-                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center shrink-0"
                 title="Retake / Re-upload"
               >
                 <RotateCcw className="h-4 w-4" />

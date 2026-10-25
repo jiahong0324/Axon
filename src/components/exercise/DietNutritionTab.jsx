@@ -126,7 +126,7 @@ export default function DietNutritionTab({
         <div className="flex items-center justify-between sm:justify-start gap-2 bg-[#111827] p-1.5 rounded-xl border border-white/5 shadow-md">
           <button
             onClick={handlePrevDay}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center"
             title="Previous Day"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -160,7 +160,7 @@ export default function DietNutritionTab({
           </div>
           <button
             onClick={handleNextDay}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center"
             title="Next Day"
           >
             <ChevronRight className="h-4 w-4" />
@@ -193,10 +193,10 @@ export default function DietNutritionTab({
           </button>
           <button
             onClick={() => setGoalModalOpen(true)}
-            className="p-2.5 rounded-xl bg-[#131b2e] hover:bg-slate-800 border border-white/10 text-slate-300 hover:text-white transition-all shrink-0"
+            className="h-10 w-10 sm:h-[42px] sm:w-[42px] inline-flex items-center justify-center rounded-xl bg-[#131b2e] hover:bg-slate-800 border border-white/10 text-slate-300 hover:text-white transition-all active:scale-95 shrink-0"
             title="Edit Daily Nutrition Goals"
           >
-            <Settings2 className="h-4 w-4" />
+            <Settings2 className="h-4 w-4 shrink-0" />
           </button>
         </div>
       </div>
@@ -488,14 +488,14 @@ export default function DietNutritionTab({
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleEdit(item)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center"
                               title="Edit item"
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => handleDelete(item)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors inline-flex items-center justify-center"
                               title="Delete item"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
