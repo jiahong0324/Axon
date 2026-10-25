@@ -182,6 +182,7 @@ export default function TimePicker({
   onChange,
   disabled = false,
   title = 'Select Time',
+  placeholder = 'Select time',
   className = ''
 }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -412,17 +413,14 @@ export default function TimePicker({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(prev => !prev)}
-        className="w-full bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-medium text-sm flex items-center justify-between transition-colors group cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="w-full bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-medium text-sm flex items-center transition-colors group cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
       >
         <div className="flex items-center gap-2.5">
           <Clock className="h-4 w-4 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
-          <span className="font-bold text-sm tracking-wide text-white">
-            {displayTime}
+          <span className={`text-sm tracking-wide ${value ? 'font-bold text-white' : 'text-slate-400'}`}>
+            {value ? displayTime : (placeholder || 'Select time')}
           </span>
         </div>
-        <span className="text-[11px] font-semibold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-lg border border-blue-500/20 group-hover:bg-blue-500/20 transition-colors">
-          Change
-        </span>
       </button>
 
       {/* Popover Portal - Universal anchored floating card for both mobile and desktop */}

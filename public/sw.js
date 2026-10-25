@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v19-instant-timepicker'
+const CACHE_NAME = 'axon-v20-no-change-badge'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {
