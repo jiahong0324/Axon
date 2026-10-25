@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Modal from '../Modal'
+import TimePicker from '../TimePicker'
 import { Plus, Check, Utensils, Flame, Clock } from 'lucide-react'
 import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr, getCurrentTimeStr } from '../../lib/nutritionUtils'
 
@@ -159,12 +160,9 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
           <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 text-blue-400" /> Meal Time
           </label>
-          <input
-            type="time"
+          <TimePicker
             value={mealTime}
-            onChange={e => setMealTime(e.target.value)}
-            className="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-blue-500 transition-colors [color-scheme:dark]"
-            required
+            onChange={setMealTime}
           />
         </div>
 

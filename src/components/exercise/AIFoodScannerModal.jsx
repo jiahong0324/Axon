@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import Modal from '../Modal'
+import TimePicker from '../TimePicker'
 import { Camera, Upload, Sparkles, AlertCircle, Check, RotateCcw, Flame, Clock } from 'lucide-react'
 import { analyzeImageWithGroq } from '../../lib/groq'
 import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr, getCurrentTimeStr, getMealTypeFromTime } from '../../lib/nutritionUtils'
@@ -367,12 +368,14 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
               <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-blue-400" /> Confirm Meal Time
               </label>
-              <input
-                type="time"
+              <TimePicker
                 value={mealTime}
-                onChange={handleTimeChange}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium text-sm focus:outline-none focus:border-blue-500 transition-colors [color-scheme:dark]"
-                required
+                onChange={(newTime) => {
+                  setMealTime(newTime)
+                  if (newTime) {
+                    setMealType(getMealTypeFromTime(newTime))
+                  }
+                }}
               />
             </div>
 
