@@ -16,6 +16,7 @@ import {
 import {
   calculateDayNutrition,
   formatNutritionDate,
+  formatMealTime,
   getTodayDateStr,
   MEAL_TYPES,
   MEAL_TYPE_ICONS
@@ -428,6 +429,7 @@ export default function DietNutritionTab({
               if (items.length === 0) return null
 
               const catCalories = items.reduce((acc, cur) => acc + (Number(cur.calories) || 0), 0)
+              const categoryTime = items.length > 0 ? formatMealTime(items[0].meal_time, items[0].created_at) : null
 
               return (
                 <div
@@ -441,7 +443,11 @@ export default function DietNutritionTab({
                       <h4 className="text-sm font-bold text-white uppercase tracking-wider">
                         {category}
                       </h4>
-                      <span className="text-xs text-slate-400">({items.length})</span>
+                      {categoryTime && (
+                        <span className="text-xs text-slate-400 font-normal">
+                          {categoryTime}
+                        </span>
+                      )}
                     </div>
                     <span className="text-xs font-bold text-orange-400">
                       {catCalories.toLocaleString()} kcal
