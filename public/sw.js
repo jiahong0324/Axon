@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v25-streamlined-quick-actions'
+const CACHE_NAME = 'axon-v26-concise-quick-actions'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {

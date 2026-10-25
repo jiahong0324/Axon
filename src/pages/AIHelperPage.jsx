@@ -18,6 +18,8 @@ import {
   Mic,
   Square,
   Loader2,
+  Bell,
+  GraduationCap,
   CalendarPlus,
   ListTodo,
   Dumbbell
@@ -32,50 +34,71 @@ import { useToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
 import SEO from '../components/SEO'
 
-const studentActions = [
-  {
-    icon: CalendarPlus,
-    id: 'addTimetable',
-    labelKey: 'ai.addTimetable',
-    mobileLabelKey: 'ai.mobileAddTimetable',
-    promptKey: 'ai.promptAddTimetable'
-  },
-  {
-    icon: Table,
-    id: 'showTable',
-    labelKey: 'ai.table',
-    mobileLabelKey: 'ai.mobileTable',
-    promptKey: 'ai.promptTable'
-  },
-  {
-    icon: CalendarClock,
-    id: 'recordExam',
-    labelKey: 'ai.recordExam',
-    mobileLabelKey: 'ai.mobileRecordExam',
-    promptKey: 'ai.promptRecordExam'
-  },
-  {
-    icon: ListTodo,
-    id: 'addAssignment',
-    labelKey: 'ai.addAssignment',
-    mobileLabelKey: 'ai.mobileAddAssignment',
-    promptKey: 'ai.promptAddAssignment'
-  },
-  {
-    icon: Sparkles,
-    id: 'studyPlan',
-    labelKey: 'ai.plan',
-    mobileLabelKey: 'ai.mobilePlan',
-    promptKey: 'ai.promptPlan'
-  },
-  {
-    icon: Dumbbell,
-    id: 'logWorkout',
-    labelKey: 'ai.logWorkout',
-    mobileLabelKey: 'ai.mobileLogWorkout',
-    promptKey: 'ai.promptLogWorkout'
-  }
-]
+const studentActions = [
+  {
+    icon: CalendarPlus,
+    id: 'addTimetable',
+    labelKey: 'ai.addTimetable',
+    mobileLabelKey: 'ai.mobileAddTimetable',
+    promptKey: 'ai.promptAddTimetable'
+  },
+  {
+    icon: Table,
+    id: 'showTable',
+    labelKey: 'ai.table',
+    mobileLabelKey: 'ai.mobileTable',
+    promptKey: 'ai.promptTable'
+  },
+  {
+    icon: CalendarClock,
+    id: 'recordExam',
+    labelKey: 'ai.recordExam',
+    mobileLabelKey: 'ai.mobileRecordExam',
+    promptKey: 'ai.promptRecordExam'
+  },
+  {
+    icon: ListTodo,
+    id: 'addAssignment',
+    labelKey: 'ai.addAssignment',
+    mobileLabelKey: 'ai.mobileAddAssignment',
+    promptKey: 'ai.promptAddAssignment'
+  },
+  {
+    icon: Sparkles,
+    id: 'studyPlan',
+    labelKey: 'ai.plan',
+    mobileLabelKey: 'ai.mobilePlan',
+    promptKey: 'ai.promptPlan'
+  },
+  {
+    icon: Dumbbell,
+    id: 'logWorkout',
+    labelKey: 'ai.logWorkout',
+    mobileLabelKey: 'ai.mobileLogWorkout',
+    promptKey: 'ai.promptLogWorkout'
+  },
+  {
+    icon: Bell,
+    id: 'reminder',
+    labelKey: 'ai.reminder',
+    mobileLabelKey: 'ai.mobileReminder',
+    promptKey: 'ai.promptReminder'
+  },
+  {
+    icon: HelpCircle,
+    id: 'quiz',
+    labelKey: 'ai.quiz',
+    mobileLabelKey: 'ai.mobileQuiz',
+    promptKey: 'ai.promptQuiz'
+  },
+  {
+    icon: GraduationCap,
+    id: 'examGrade',
+    labelKey: 'ai.examGrade',
+    mobileLabelKey: 'ai.mobileExamGrade',
+    promptKey: 'ai.promptExamGrade'
+  }
+]
 
 const managerActions = [
   { icon: FileText, mobile: 'Summarize', desktop: 'Summarize feedback', prompt: 'Summarize the recent student feedback tickets' },
