@@ -110,13 +110,19 @@ const managerActions = [
 
 const studentWelcome = {
   role: 'assistant',
-  content: `Selamat datang! I am your dedicated AI Study Helper with direct authority to manage your account.\n\nYou can ask me to do anything to your account — like "I have a BMCS1013 practical test on 15 October 2026 help me record inside", add assignments and deadlines, schedule classes, set reminders, log your workouts (+XP), or update your profile!\n\nNote: I have secure access to your database. You can ask me about your timetable classes, pending assignments, upcoming exams, active reminders, academic exam results & CGPA, your exercise streak & workout history, or study articles & FAQ from our Public Landing Blog! I also know your Settings profile (University & Major) to tailor tips to your course!`,
+  content: `Selamat datang! I am Axon, your AI Study Helper.
+
+Ask me anything or let me manage your account — record exams, add assignments, schedule classes, log workouts (+XP), or explain concepts!
+
+Note: I have secure access to your database (timetable, exams, assignments & CGPA) to give you personalized help!`,
   timestamp: new Date()
 }
 
 const managerWelcome = {
   role: 'assistant',
-  content: `Welcome to the Manager AI Control Center!\n\nI have full secure access to your university database and all student data. You can ask me about student profiles, activity logs, daily check-ins & exercise stats, feedback tickets, announcements, blog posts, assignments, exams, and academic performance reports!`,
+  content: `Welcome to the Manager AI Control Center!
+
+I have secure access to your university database. Ask me about student profiles, check-in activity, feedback tickets, announcements, exams, or performance reports!`,
   timestamp: new Date()
 }
 
@@ -129,7 +135,10 @@ export default function AIHelperPage({ role = 'student' }) {
 
   const [messages, setMessages] = useState(() => {
     const saved = JSON.parse(localStorage.getItem(isManager ? 'aiManagerChat' : 'aiChat') || '[]')
-    return saved.length ? saved : [welcomeMessage]
+    if (saved.length > 0) {
+      return saved.map(m => isWelcomeMessage(m.content) ? { ...m, content: welcomeMessage.content } : m)
+    }
+    return [welcomeMessage]
   })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -201,7 +210,7 @@ export default function AIHelperPage({ role = 'student' }) {
       if (!error && cloudMessages && cloudMessages.length > 0) {
         const formatted = cloudMessages.map(m => ({
           role: m.role,
-          content: m.content,
+          content: isWelcomeMessage(m.content) ? welcomeMessage.content : m.content,
           image: m.image || undefined,
           timestamp: new Date(m.created_at)
         }))
@@ -766,5 +775,5 @@ function TypingIndicator() {
 }
 
 function isWelcomeMessage(content = '') {
-  return content.includes('secure access to your database') || content.includes('secure access to your university database') || content.includes('Welcome to the Manager AI Control Center')
+  return content.includes('Selamat datang!') || content.includes('secure access to your database') || content.includes('secure access to your university database') || content.includes('Welcome to the Manager AI Control Center')
 }
