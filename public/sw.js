@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v10-health-diet'
+const CACHE_NAME = 'axon-v8-red-dot'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {

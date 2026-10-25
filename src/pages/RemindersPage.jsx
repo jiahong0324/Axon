@@ -11,7 +11,6 @@ import { supabase } from '../lib/supabase'
 import { markdownToHtml, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
 import SEO from '../components/SEO'
-import TimeInput from '../components/TimeInput'
 
 const initialForm = { title: '', reminder_time: '09:00', repeat_type: 'once', is_active: true }
 
@@ -173,7 +172,7 @@ export default function RemindersPage() {
         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showForm ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <form onSubmit={addItem} className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <input className="input sm:col-span-2 lg:col-span-2" required placeholder="Reminder title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
-            <TimeInput placeholder="Reminder time" value={form.reminder_time} onChange={e => setForm({ ...form, reminder_time: e.target.value })} />
+            <input className="input" type="time" value={form.reminder_time} onChange={e => setForm({ ...form, reminder_time: e.target.value })} />
             <select className="input" value={form.repeat_type} onChange={e => setForm({ ...form, repeat_type: e.target.value })}>{['once', 'daily', 'weekly'].map(t => <option key={t}>{t}</option>)}</select>
             <button className="btn-primary sm:col-span-2 lg:col-span-4">Save Reminder</button>
           </form>
@@ -185,7 +184,7 @@ export default function RemindersPage() {
                 <Bell className={`h-5 w-5 ${item.is_active ? 'text-theme-400' : 'text-slate-500'}`} />
                 <div className="flex-1"><p className="font-semibold">{item.title}</p><p className="muted">{formatTime(item.reminder_time) || 'No time'} · {item.repeat_type}</p></div>
                 <ToggleSwitch isOn={item.is_active} onToggle={() => updateItem(item.id, { is_active: !item.is_active })} />
-                <button className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-9 w-9 p-0 rounded-lg transition-colors inline-flex items-center justify-center shrink-0" onClick={() => deleteItem(item.id)} title="Delete Reminder"><Trash2 className="h-4 w-4" /></button>
+                <button className="btn-danger" onClick={() => deleteItem(item.id)}><Trash2 className="h-4 w-4" /></button>
               </article>
             ))}
           </div>

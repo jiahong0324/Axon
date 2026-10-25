@@ -302,14 +302,14 @@ function AssignmentCard({ item, updateItem, deleteItem, onEdit }) {
         </div>
         <div className="flex items-center gap-1 opacity-100 xl:opacity-0 xl:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <button 
-            className="inline-flex items-center justify-center w-7 h-7 p-0 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 hover:shadow-[0_0_12px_rgba(59,130,246,0.2)] rounded-lg transition-all shrink-0" 
+            className="flex items-center justify-center w-[28px] h-[28px] text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 hover:shadow-[0_0_12px_rgba(59,130,246,0.2)] rounded-lg transition-all" 
             onClick={onEdit}
             title="Edit Assignment"
           >
             <Pencil className="h-4 w-4" />
           </button>
           <button 
-            className="inline-flex items-center justify-center w-7 h-7 p-0 text-slate-500 hover:text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] rounded-lg transition-all shrink-0" 
+            className="flex items-center justify-center w-[28px] h-[28px] text-slate-500 hover:text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] rounded-lg transition-all" 
             onClick={() => deleteItem(item.id)}
             title="Delete Assignment"
           >

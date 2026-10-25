@@ -24,50 +24,6 @@ export function getTodayDateStr() {
   return `${year}-${month}-${day}`
 }
 
-export function getCurrentTimeStr() {
-  const d = new Date()
-  const hours = String(d.getHours()).padStart(2, '0')
-  const minutes = String(d.getMinutes()).padStart(2, '0')
-  return `${hours}:${minutes}`
-}
-
-export function formatMealTime(timeStr, isoDate) {
-  if (timeStr && /^\d{1,2}:\d{2}/.test(timeStr)) {
-    const [hStr, mStr] = timeStr.split(':')
-    const h = Number(hStr)
-    const m = Number(mStr)
-    const period = h >= 12 ? 'PM' : 'AM'
-    const displayHour = h % 12 === 0 ? 12 : h % 12
-    return `${displayHour}:${String(m).padStart(2, '0')} ${period}`
-  }
-  if (isoDate) {
-    try {
-      const d = new Date(isoDate)
-      if (!isNaN(d.getTime())) {
-        return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
-      }
-    } catch (e) {}
-  }
-  return ''
-}
-
-/**
- * Automatically determine meal category by local time:
- * - 04:00 - 10:59: Breakfast (e.g. 9am -> Breakfast)
- * - 11:00 - 15:59: Lunch (e.g. 12pm - 3pm -> Lunch)
- * - 16:00 - 17:59: Snack (afternoon snack)
- * - 18:00 - 21:59: Dinner (evening dinner)
- * - 22:00 - 03:59: Snack (late-night supper / midnight snack)
- */
-export function getDefaultMealTypeByTime(date = new Date()) {
-  const hour = date.getHours()
-  if (hour >= 4 && hour < 11) return 'Breakfast'
-  if (hour >= 11 && hour < 16) return 'Lunch'
-  if (hour >= 16 && hour < 18) return 'Snack'
-  if (hour >= 18 && hour < 22) return 'Dinner'
-  return 'Snack'
-}
-
 export function formatNutritionDate(dateStr) {
   if (!dateStr) return ''
   const today = getTodayDateStr()
@@ -266,7 +222,6 @@ export async function syncNutritionLogsToCloud(userId, logs) {
       carbs: l.carbs,
       fats: l.fats,
       notes: l.notes || '',
-      meal_time: l.meal_time || '',
       created_at: l.created_at
     }))
     await supabase.auth.updateUser({
@@ -289,7 +244,6 @@ export async function saveFoodLogItem(userId, foodItem, currentLogs) {
     carbs: Math.max(0, Math.round((Number(foodItem.carbs) || 0) * 10) / 10),
     fats: Math.max(0, Math.round((Number(foodItem.fats) || 0) * 10) / 10),
     notes: foodItem.notes || '',
-    meal_time: foodItem.meal_time || getCurrentTimeStr(),
     image_url: foodItem.image_url || '',
     created_at: foodItem.created_at || new Date().toISOString()
   }
@@ -396,15 +350,6 @@ export function calculateDayNutrition(logs, dateStr, goals = DEFAULT_NUTRITION_G
     } else {
       groupedMeals.Lunch.push(item)
     }
-  }
-
-  // Sort meals in each category chronologically
-  for (const mt of Object.keys(groupedMeals)) {
-    groupedMeals[mt].sort((a, b) => {
-      const timeA = a.meal_time || (a.created_at ? new Date(a.created_at).toTimeString() : '')
-      const timeB = b.meal_time || (b.created_at ? new Date(b.created_at).toTimeString() : '')
-      return timeA.localeCompare(timeB)
-    })
   }
 
   return {

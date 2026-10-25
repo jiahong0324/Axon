@@ -1,29 +1,23 @@
 import { useState, useEffect } from 'react'
 import Modal from '../Modal'
-import { Plus, Check, Utensils, Flame, Clock } from 'lucide-react'
-import TimeInput from '../TimeInput'
-import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr, getCurrentTimeStr } from '../../lib/nutritionUtils'
+import { Plus, Check, Utensils, Flame } from 'lucide-react'
+import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr } from '../../lib/nutritionUtils'
 
 export default function ManualFoodModal({ isOpen, onClose, initialData, defaultDate, onSave }) {
   const [name, setName] = useState('')
-  const [mealType, setMealType] = useState('')
-  const [mealTime, setMealTime] = useState(() => getCurrentTimeStr())
+  const [mealType, setMealType] = useState('Lunch')
   const [calories, setCalories] = useState('')
   const [protein, setProtein] = useState('')
   const [carbs, setCarbs] = useState('')
   const [fats, setFats] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
-  const [categoryError, setCategoryError] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
-      setCategoryError(false)
       if (initialData) {
         setName(initialData.name || '')
-        setMealType(initialData.meal_type || '')
-        const rawTime = initialData.meal_time || (initialData.created_at ? new Date(initialData.created_at).toTimeString().slice(0, 5) : '')
-        setMealTime(rawTime || getCurrentTimeStr())
+        setMealType(initialData.meal_type || 'Lunch')
         setCalories(initialData.calories ?? '')
         setProtein(initialData.protein ?? '')
         setCarbs(initialData.carbs ?? '')
@@ -31,8 +25,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
         setNotes(initialData.notes || '')
       } else {
         setName('')
-        setMealType('') // Don't default anything, allow user to choose themselves!
-        setMealTime(getCurrentTimeStr())
+        setMealType('Lunch')
         setCalories('')
         setProtein('')
         setCarbs('')
@@ -45,10 +38,6 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
   async function handleSubmit(e) {
     e.preventDefault()
     if (!name.trim()) return
-    if (!mealType) {
-      setCategoryError(true)
-      return
-    }
 
     setSaving(true)
     try {
@@ -56,7 +45,6 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
         id: initialData?.id,
         date: initialData?.date || defaultDate || getTodayDateStr(),
         meal_type: mealType,
-        meal_time: mealTime || getCurrentTimeStr(),
         name: name.trim(),
         calories: Number(calories) || 0,
         protein: Number(protein) || 0,
@@ -84,38 +72,21 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
       <form onSubmit={handleSubmit} className="space-y-4 p-1">
         {/* Meal Type Selector */}
         <div>
-          <div className="flex items-center justify-between mb-2 gap-2">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Meal Category *
-              </label>
-              {!mealType && (
-                <span className={`text-[11px] font-semibold transition-colors ${categoryError ? 'text-rose-400 animate-pulse' : 'text-slate-400'}`}>
-                  {categoryError ? 'Please select a category' : 'Choose one'}
-                </span>
-              )}
-            </div>
-            <TimeInput
-              value={mealTime}
-              onChange={e => setMealTime(e.target.value)}
-              variant="compact"
-            />
-          </div>
-          <div className={`grid grid-cols-4 gap-1.5 p-1 bg-slate-900/80 rounded-xl border transition-colors ${categoryError ? 'border-rose-500/50 bg-rose-500/5' : 'border-slate-800'}`}>
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 block">
+            Meal Category
+          </label>
+          <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-900/80 rounded-xl border border-slate-800">
             {MEAL_TYPES.map(mt => {
               const active = mealType === mt
               return (
                 <button
                   key={mt}
                   type="button"
-                  onClick={() => {
-                    setMealType(mt)
-                    setCategoryError(false)
-                  }}
-                  className={`!min-h-0 !min-w-0 py-2 px-1 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
+                  onClick={() => setMealType(mt)}
+                  className={`py-2 px-1 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
                     active
                       ? 'bg-blue-500 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <span className="text-sm">{MEAL_TYPE_ICONS[mt]}</span>

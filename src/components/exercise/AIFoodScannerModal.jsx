@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import Modal from '../Modal'
-import { Camera, Upload, Sparkles, AlertCircle, Check, RotateCcw, Flame, Clock } from 'lucide-react'
-import TimeInput from '../TimeInput'
+import { Camera, Upload, Sparkles, AlertCircle, Check, RotateCcw, Flame } from 'lucide-react'
 import { analyzeImageWithGroq } from '../../lib/groq'
-import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr, getDefaultMealTypeByTime, getCurrentTimeStr } from '../../lib/nutritionUtils'
+import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr } from '../../lib/nutritionUtils'
 
 const FOOD_SCAN_PROMPT = `Analyze this food image. Identify the dish/food, estimate the portion shown, and calculate its nutritional content.
 CRITICAL INSTRUCTIONS:
@@ -70,8 +69,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
 
   // Review Form States
   const [foodName, setFoodName] = useState('')
-  const [mealType, setMealType] = useState(() => getDefaultMealTypeByTime())
-  const [mealTime, setMealTime] = useState(() => getCurrentTimeStr())
+  const [mealType, setMealType] = useState('Lunch')
   const [calories, setCalories] = useState('')
   const [protein, setProtein] = useState('')
   const [carbs, setCarbs] = useState('')
@@ -87,8 +85,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
       setImagePreview(null)
       setErrorMsg('')
       setFoodName('')
-      setMealType(getDefaultMealTypeByTime())
-      setMealTime(getCurrentTimeStr())
+      setMealType('Lunch')
       setCalories('')
       setProtein('')
       setCarbs('')
@@ -151,7 +148,6 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
       await onSave({
         date: defaultDate || getTodayDateStr(),
         meal_type: mealType,
-        meal_time: mealTime || getCurrentTimeStr(),
         name: foodName.trim(),
         calories: Number(calories) || 0,
         protein: Number(protein) || 0,
@@ -303,25 +299,18 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
               </button>
             </div>
 
-            {/* Meal Category & Time */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Meal Category
-                </label>
-                <TimeInput
-                  value={mealTime}
-                  onChange={e => setMealTime(e.target.value)}
-                  variant="compact"
-                />
-              </div>
+            {/* Meal Category */}
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">
+                Meal Category
+              </label>
               <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-900/80 rounded-xl border border-slate-800">
                 {MEAL_TYPES.map(mt => (
                   <button
                     key={mt}
                     type="button"
                     onClick={() => setMealType(mt)}
-                    className={`!min-h-0 !min-w-0 py-1.5 px-1 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${
+                    className={`py-1.5 px-1 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${
                       mealType === mt
                         ? 'bg-blue-500 text-white shadow-md'
                         : 'text-slate-400 hover:text-white'

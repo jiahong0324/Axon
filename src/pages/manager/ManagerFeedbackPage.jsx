@@ -507,7 +507,7 @@ export default function ManagerFeedbackPage() {
                       <button
                         type="button"
                         onClick={() => deleteFeedback(item)}
-                        className="inline-flex items-center justify-center h-9 w-9 p-0 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                        className="rounded-xl p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                         title="Delete Feedback"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -599,7 +599,7 @@ export default function ManagerFeedbackPage() {
               <button
                 type="button"
                 onClick={closeLightbox}
-                className="inline-flex items-center justify-center h-10 w-10 p-0 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-1 shrink-0"
+                className="rounded-xl p-2 text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-1"
                 title="Close (Esc)"
               >
                 <X className="h-5 w-5" />

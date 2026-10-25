@@ -1068,7 +1068,7 @@ export default function ExamResultsPage() {
                           />
                           <button
                             onClick={() => handleDeleteCalcRow(row.id)}
-                            className="inline-flex items-center justify-center h-7 w-7 p-0 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0 sm:hidden"
+                            className="p-1 text-slate-500 hover:text-red-400 transition-colors shrink-0 sm:hidden"
                             title="Remove row"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1096,7 +1096,7 @@ export default function ExamResultsPage() {
 
                           <button
                             onClick={() => handleDeleteCalcRow(row.id)}
-                            className="inline-flex items-center justify-center h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors ml-auto hidden sm:inline-flex shrink-0"
+                            className="p-2 text-slate-500 hover:text-red-400 transition-colors ml-auto hidden sm:block shrink-0"
                             title="Remove row"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1289,7 +1289,7 @@ export default function ExamResultsPage() {
                             />
                             <button
                               onClick={() => handleDeleteCourseCalcRow(row.id)}
-                              className="inline-flex items-center justify-center h-7 w-7 p-0 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0 sm:hidden"
+                              className="p-1 text-slate-500 hover:text-red-400 transition-colors shrink-0 sm:hidden"
                               title="Remove component"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1338,7 +1338,7 @@ export default function ExamResultsPage() {
                             {/* Desktop Delete Row */}
                             <button
                               onClick={() => handleDeleteCourseCalcRow(row.id)}
-                              className="inline-flex items-center justify-center h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0 hidden sm:inline-flex"
+                              className="p-2 text-slate-500 hover:text-red-400 transition-colors shrink-0 hidden sm:block"
                               title="Remove component"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1618,7 +1618,7 @@ function SemesterCard({
 
                   <button
                     onClick={() => onDeleteCourse(semester.id, course.id)}
-                    className="inline-flex items-center justify-center h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                    className="p-2 text-slate-500 hover:text-red-400 transition-colors shrink-0"
                     title="Remove course"
                   >
                     <Trash2 className="h-4 w-4" />

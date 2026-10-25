@@ -13,7 +13,6 @@ import SubjectSelect from '../components/SubjectSelect'
 import { SkeletonList } from '../components/SkeletonLoader'
 import SEO from '../components/SEO'
 import DateInput from '../components/DateInput'
-import TimeInput from '../components/TimeInput'
 
 
 const initialForm = { subject: '', exam_date: '', start_time: '', end_time: '', exam_type: 'Final', venue: '', notes: '' }
@@ -201,8 +200,8 @@ export default function ExamPage() {
           </Field>
           <Field label="Exam Date"><DateInput required value={form.exam_date} onChange={e => setForm({ ...form, exam_date: e.target.value })} /></Field>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Start Time"><TimeInput placeholder="e.g. 09:00" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
-            <Field label="End Time"><TimeInput placeholder="e.g. 11:00" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
+            <Field label="Start Time"><input className="input" type="time" placeholder="e.g. 09:00" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></Field>
+            <Field label="End Time"><input className="input" type="time" placeholder="e.g. 11:00" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></Field>
           </div>
           <Field label="Exam Type"><select className="input" value={form.exam_type} onChange={e => setForm({ ...form, exam_type: e.target.value })}>{['Test 1', 'Test 2', 'Midterm', 'Final', 'Practical'].map(t => <option key={t}>{t}</option>)}</select></Field>
           <Field label="Venue"><input className="input" value={form.venue} onChange={e => setForm({ ...form, venue: e.target.value })} /></Field>
@@ -348,14 +347,14 @@ function ExamCard({ exam, result, deleteExam, onEdit }) {
 
       <div className="pt-2 border-t border-white/5 flex justify-end items-center gap-1 opacity-100 xl:opacity-0 xl:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         <button 
-          className="inline-flex items-center justify-center w-7 h-7 p-0 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all shrink-0" 
+          className="flex items-center justify-center w-[28px] h-[28px] text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all" 
           onClick={onEdit}
           title="Edit Exam"
         >
           <Pencil className="h-3.5 w-3.5" />
         </button>
         <button 
-          className="inline-flex items-center justify-center w-7 h-7 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all shrink-0" 
+          className="flex items-center justify-center w-[28px] h-[28px] text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all" 
           onClick={() => deleteExam(exam.id)}
           title="Delete Exam"
         >

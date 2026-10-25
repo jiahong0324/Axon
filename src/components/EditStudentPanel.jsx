@@ -114,7 +114,7 @@ export default function EditStudentPanel({ student, onClose, onSaved }) {
                 <p className="truncate text-sm text-slate-400">{form.email}</p>
               </div>
             </div>
-            <button className="inline-flex items-center justify-center h-9 w-9 p-0 rounded-lg text-slate-400 hover:bg-white/5 shrink-0" onClick={onClose}><X className="h-5 w-5" /></button>
+            <button className="rounded-lg p-2 text-slate-400 hover:bg-white/5" onClick={onClose}><X className="h-5 w-5" /></button>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${form.is_active === false ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>

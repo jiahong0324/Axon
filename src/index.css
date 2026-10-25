@@ -81,26 +81,7 @@ body {
 }
 
 button, input, select, textarea { font: inherit; }
-button {
-  min-height: 48px;
-  min-width: 48px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Allow explicit sizing on compact / icon buttons without forcing 48px distortion */
-button[class*="h-"],
-button[class*="w-"],
-button[class*="min-h-0"],
-button[class*="min-w-0"],
-button[class*="p-1"],
-button[class*="p-1.5"],
-button[class*="p-2"],
-button[class*="p-2.5"] {
-  min-height: auto;
-  min-width: auto;
-}
+button { min-height: 48px; min-width: 48px; }
 button:active,
 [role="button"]:active {
   transform: scale(0.98) !important;
