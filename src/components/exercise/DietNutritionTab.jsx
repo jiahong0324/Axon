@@ -10,12 +10,14 @@ import {
   Trash2,
   Pencil,
   Calendar,
+  Clock,
   UtensilsCrossed,
   Info
 } from 'lucide-react'
 import {
   calculateDayNutrition,
   formatNutritionDate,
+  formatMealTime,
   getTodayDateStr,
   MEAL_TYPES,
   MEAL_TYPE_ICONS
@@ -40,7 +42,6 @@ export default function DietNutritionTab({
 
   const [activeDate, setActiveDate] = useState(() => getTodayDateStr())
   const todayStr = useMemo(() => getTodayDateStr(), [])
-  const datePickerRef = useRef(null)
 
   // Modals state
   const [goalModalOpen, setGoalModalOpen] = useState(false)
@@ -131,33 +132,35 @@ export default function DietNutritionTab({
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          {/* Interactive Calendar Date Picker */}
-          <div className="relative flex items-center group cursor-pointer">
-            <div className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-white group-hover:bg-slate-800/80 group-hover:text-blue-300 transition-all flex items-center gap-1.5 select-none min-w-[130px] sm:min-w-[150px] justify-center pointer-events-none">
-              <Calendar className="h-3.5 w-3.5 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
-              <span>{formatNutritionDate(activeDate)}</span>
-              <ChevronDown className="h-3 w-3 text-slate-500 group-hover:text-blue-300 transition-colors shrink-0" />
-            </div>
-            <input
-              ref={datePickerRef}
-              type="date"
-              value={activeDate}
-              onClick={(e) => {
-                try {
-                  if (typeof e.target.showPicker === 'function') {
-                    e.target.showPicker()
-                  }
-                } catch (err) {}
-              }}
-              onChange={(e) => {
-                if (e.target.value) {
-                  setActiveDate(e.target.value)
-                }
-              }}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              title="Click to choose any date from calendar"
-            />
-          </div>
+          {/* Interactive Calendar Date Picker (Same as Timetable) */}
+          <DateInput
+            value={activeDate}
+            onChange={(e) => {
+              if (e.target.value) {
+                setActiveDate(e.target.value)
+              } else {
+                setActiveDate(todayStr)
+              }
+            }}
+            customTrigger={({ isOpen }) => (
+              <div
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-white transition-all flex items-center gap-1.5 select-none min-w-[130px] sm:min-w-[150px] justify-center ${
+                  isOpen
+                    ? 'bg-slate-800 text-blue-300 ring-1 ring-blue-500/40'
+                    : 'group-hover:bg-slate-800/80 group-hover:text-blue-300'
+                }`}
+                title="Click to choose any date from calendar"
+              >
+                <Calendar className="h-3.5 w-3.5 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
+                <span>{formatNutritionDate(activeDate)}</span>
+                <ChevronDown
+                  className={`h-3 w-3 text-slate-500 group-hover:text-blue-300 transition-transform duration-200 shrink-0 ${
+                    isOpen ? 'rotate-180 text-blue-300' : ''
+                  }`}
+                />
+              </div>
+            )}
+          />
           <button
             onClick={handleNextDay}
             className="!min-h-0 !min-w-0 h-8 w-8 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center shrink-0"
@@ -450,60 +453,69 @@ export default function DietNutritionTab({
 
                   {/* Category Items */}
                   <div className="divide-y divide-white/5">
-                    {items.map(item => (
-                      <div
-                        key={item.id}
-                        className="py-3 first:pt-1 last:pb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
-                      >
-                        <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-                          {item.image_url ? (
-                            <img
-                              src={item.image_url}
-                              alt={item.name}
-                              className="h-12 w-12 rounded-xl object-cover border border-slate-700 shrink-0"
-                            />
-                          ) : (
-                            <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-xl bg-slate-800/80 text-lg shrink-0">
-                              {MEAL_TYPE_ICONS[category]}
-                            </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <h5 className="text-sm font-bold text-white truncate group-hover:text-blue-300 transition-colors">
-                              {item.name}
-                            </h5>
-                            <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-400 mt-0.5">
-                              {item.notes && <span className="text-slate-300">{item.notes} ·</span>}
-                              <span className="text-emerald-400 font-medium">P: {item.protein}g</span>
-                              <span className="text-amber-400 font-medium">C: {item.carbs}g</span>
-                              <span className="text-rose-400 font-medium">F: {item.fats}g</span>
+                    {items.map(item => {
+                      const timeFormatted = formatMealTime(item.meal_time, item.created_at)
+                      return (
+                        <div
+                          key={item.id}
+                          className="py-3 first:pt-1 last:pb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                        >
+                          <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.name}
+                                className="h-12 w-12 rounded-xl object-cover border border-slate-700 shrink-0"
+                              />
+                            ) : (
+                              <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-xl bg-slate-800/80 text-lg shrink-0">
+                                {MEAL_TYPE_ICONS[category]}
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <h5 className="text-sm font-bold text-white truncate group-hover:text-blue-300 transition-colors">
+                                {item.name}
+                              </h5>
+                              <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-400 mt-0.5">
+                                {timeFormatted && (
+                                  <span className="inline-flex items-center gap-1 text-blue-300 font-medium bg-blue-500/10 px-1.5 py-0.5 rounded text-[10px]">
+                                    <Clock className="h-2.5 w-2.5 text-blue-400" />
+                                    <span>{timeFormatted}</span>
+                                  </span>
+                                )}
+                                {item.notes && <span className="text-slate-300">{item.notes} ·</span>}
+                                <span className="text-emerald-400 font-medium">P: {item.protein}g</span>
+                                <span className="text-amber-400 font-medium">C: {item.carbs}g</span>
+                                <span className="text-rose-400 font-medium">F: {item.fats}g</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Right side: Calories & actions */}
-                        <div className="flex items-center justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t border-white/5 sm:border-none w-full sm:w-auto ml-auto">
-                          <span className="text-sm font-bold text-white whitespace-nowrap text-right">
-                            {item.calories} <span className="text-xs text-slate-400 font-normal">kcal</span>
-                          </span>
-                          <div className="flex items-center gap-1 shrink-0 -mr-1">
-                            <button
-                              onClick={() => handleEdit(item)}
-                              className="!min-h-0 !min-w-0 h-7 w-7 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center shrink-0"
-                              title="Edit item"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item)}
-                              className="!min-h-0 !min-w-0 h-7 w-7 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors inline-flex items-center justify-center shrink-0"
-                              title="Delete item"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                          {/* Right side: Calories & actions */}
+                          <div className="flex items-center justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t border-white/5 sm:border-none w-full sm:w-auto ml-auto">
+                            <span className="text-sm font-bold text-white whitespace-nowrap text-right">
+                              {item.calories} <span className="text-xs text-slate-400 font-normal">kcal</span>
+                            </span>
+                            <div className="flex items-center gap-1 shrink-0 -mr-1">
+                              <button
+                                onClick={() => handleEdit(item)}
+                                className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center shrink-0"
+                                title="Edit item"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(item)}
+                                className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors inline-flex items-center justify-center shrink-0"
+                                title="Delete item"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )

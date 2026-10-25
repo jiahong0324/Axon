@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import Modal from '../Modal'
-import { Plus, Check, Utensils, Flame } from 'lucide-react'
-import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr } from '../../lib/nutritionUtils'
+import { Plus, Check, Utensils, Flame, Clock } from 'lucide-react'
+import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr, getCurrentTimeStr } from '../../lib/nutritionUtils'
 
 export default function ManualFoodModal({ isOpen, onClose, initialData, defaultDate, onSave }) {
   const [name, setName] = useState('')
   const [mealType, setMealType] = useState('')
+  const [mealTime, setMealTime] = useState(() => getCurrentTimeStr())
   const [calories, setCalories] = useState('')
   const [protein, setProtein] = useState('')
   const [carbs, setCarbs] = useState('')
@@ -20,6 +21,8 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
       if (initialData) {
         setName(initialData.name || '')
         setMealType(initialData.meal_type || '')
+        const rawTime = initialData.meal_time || (initialData.created_at ? new Date(initialData.created_at).toTimeString().slice(0, 5) : '')
+        setMealTime(rawTime || getCurrentTimeStr())
         setCalories(initialData.calories ?? '')
         setProtein(initialData.protein ?? '')
         setCarbs(initialData.carbs ?? '')
@@ -28,6 +31,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
       } else {
         setName('')
         setMealType('') // Don't default anything, allow user to choose themselves!
+        setMealTime(getCurrentTimeStr())
         setCalories('')
         setProtein('')
         setCarbs('')
@@ -51,6 +55,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
         id: initialData?.id,
         date: initialData?.date || defaultDate || getTodayDateStr(),
         meal_type: mealType,
+        meal_time: mealTime || getCurrentTimeStr(),
         name: name.trim(),
         calories: Number(calories) || 0,
         protein: Number(protein) || 0,
@@ -78,15 +83,26 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
       <form onSubmit={handleSubmit} className="space-y-4 p-1">
         {/* Meal Type Selector */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Meal Category *
-            </label>
-            {!mealType && (
-              <span className={`text-[11px] font-semibold transition-colors ${categoryError ? 'text-rose-400 animate-pulse' : 'text-slate-400'}`}>
-                {categoryError ? 'Please select a category' : 'Choose one'}
-              </span>
-            )}
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Meal Category *
+              </label>
+              {!mealType && (
+                <span className={`text-[11px] font-semibold transition-colors ${categoryError ? 'text-rose-400 animate-pulse' : 'text-slate-400'}`}>
+                  {categoryError ? 'Please select a category' : 'Choose one'}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 px-2.5 py-1 rounded-lg shadow-sm" title="Time Logged">
+              <Clock className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+              <input
+                type="time"
+                value={mealTime}
+                onChange={e => setMealTime(e.target.value)}
+                className="bg-transparent text-white font-semibold text-xs focus:outline-none cursor-pointer"
+              />
+            </div>
           </div>
           <div className={`grid grid-cols-4 gap-1.5 p-1 bg-slate-900/80 rounded-xl border transition-colors ${categoryError ? 'border-rose-500/50 bg-rose-500/5' : 'border-slate-800'}`}>
             {MEAL_TYPES.map(mt => {

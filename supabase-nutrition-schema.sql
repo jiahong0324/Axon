@@ -42,11 +42,15 @@ create table if not exists public.nutrition_logs (
   carbs numeric default 0 not null,
   fats numeric default 0 not null,
   notes text default '',
+  meal_time text default '',
   image_url text default '',
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 create index if not exists idx_nutrition_logs_user_date on public.nutrition_logs(user_id, log_date);
+
+-- Ensure meal_time exists for existing tables
+alter table public.nutrition_logs add column if not exists meal_time text default '';
 
 alter table public.nutrition_logs enable row level security;
 
