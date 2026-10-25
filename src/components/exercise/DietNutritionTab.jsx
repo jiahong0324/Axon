@@ -5,6 +5,7 @@ import {
   Settings2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Flame,
   Trash2,
   Pencil,
@@ -121,9 +122,9 @@ export default function DietNutritionTab({
       )}
 
       {/* Date Switcher & Action Buttons Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Date Selector */}
-        <div className="flex items-center gap-2 bg-[#111827] p-1.5 rounded-xl border border-white/5 shadow-md">
+        <div className="flex items-center justify-between sm:justify-start gap-2 bg-[#111827] p-1.5 rounded-xl border border-white/5 shadow-md">
           <button
             onClick={handlePrevDay}
             className="!min-h-0 !min-w-0 h-8 w-8 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center shrink-0"
@@ -143,15 +144,20 @@ export default function DietNutritionTab({
             }}
             customTrigger={({ isOpen }) => (
               <div
-                className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-white transition-all flex items-center gap-2 select-none min-w-[130px] sm:min-w-[140px] justify-center ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-white transition-all flex items-center gap-1.5 select-none min-w-[130px] sm:min-w-[150px] justify-center ${
                   isOpen
                     ? 'bg-slate-800 text-blue-300 ring-1 ring-blue-500/40'
-                    : 'hover:bg-slate-800/80 hover:text-blue-300'
+                    : 'group-hover:bg-slate-800/80 group-hover:text-blue-300'
                 }`}
                 title="Click to choose any date from calendar"
               >
-                <Calendar className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                <Calendar className="h-3.5 w-3.5 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
                 <span>{formatNutritionDate(activeDate)}</span>
+                <ChevronDown
+                  className={`h-3 w-3 text-slate-500 group-hover:text-blue-300 transition-transform duration-200 shrink-0 ${
+                    isOpen ? 'rotate-180 text-blue-300' : ''
+                  }`}
+                />
               </div>
             )}
           />
@@ -176,14 +182,14 @@ export default function DietNutritionTab({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setScannerOpen(true)}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold bg-blue-500 hover:bg-blue-600 text-white shadow-md shadow-blue-500/20 transition-all active:scale-95 whitespace-nowrap"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold bg-blue-500 hover:bg-blue-600 text-white shadow-md shadow-blue-500/20 transition-all active:scale-95 whitespace-nowrap"
           >
             <Sparkles className="h-4 w-4 shrink-0 text-white" />
             <span>AI Food Scan</span>
           </button>
           <button
             onClick={() => { setEditingItem(null); setManualModalOpen(true) }}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold bg-[#131b2e] hover:bg-slate-800 border border-white/10 text-slate-200 transition-all active:scale-95 whitespace-nowrap"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold bg-[#131b2e] hover:bg-slate-800 border border-white/10 text-slate-200 transition-all active:scale-95 whitespace-nowrap"
           >
             <Plus className="h-4 w-4 shrink-0 text-blue-400" />
             <span>Log Manually</span>
