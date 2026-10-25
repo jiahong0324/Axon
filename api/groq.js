@@ -44,8 +44,12 @@ export default async function handler(req, res) {
     const cleanHistory = (Array.isArray(history) ? history : [])
       .filter(msg => (msg.role === 'user' || msg.role === 'assistant') && msg.content && typeof msg.content === 'string')
       .filter(msg => !msg.content.includes('Selamat datang!') && !msg.content.includes('Welcome to the Manager AI Control Center'))
+      .filter(msg => !msg.content.includes('Oops! Something went wrong') && !msg.content.includes('记忆已经装满') && !msg.content.includes('memory is full') && !msg.content.includes('Request too large'))
       .slice(-6)
-      .map(msg => ({ role: msg.role, content: msg.content }))
+      .map(msg => ({
+        role: msg.role,
+        content: msg.content.length > 1500 ? msg.content.slice(0, 1500) + '...' : msg.content
+      }))
 
     if (mode === 'audio') {
       const { base64Audio, mimeType = 'audio/webm' } = req.body || {}
