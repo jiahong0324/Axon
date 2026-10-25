@@ -224,15 +224,21 @@ input, select, textarea { font-size: 16px; }
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 .pt-safe { padding-top: env(safe-area-inset-top); }
 .page-content { padding-top: env(safe-area-inset-top); }
-.bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+.bottom-nav { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.375rem); }
 
 @layer components {
   .page-shell { @apply flex overflow-hidden overscroll-none; height: 100%; height: 100dvh; max-height: 100dvh; color: var(--text-primary); background: transparent; }
-  .main-content { 
-    @apply scrollbar-hide flex-1 overflow-y-auto px-4 pb-28 md:px-6 md:pb-6; 
+  .main-content {
+    @apply scrollbar-hide flex-1 overflow-y-auto px-4 md:px-6;
     padding-top: calc(env(safe-area-inset-top) + 1.25rem);
+    padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px));
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
+  }
+  @media (min-width: 768px) {
+    .main-content {
+      padding-bottom: 2.5rem;
+    }
   }
   .page-title { @apply text-xl md:text-2xl font-bold font-heading mb-6; }
   .card { @apply glass rounded-xl md:rounded-2xl p-4 md:p-5 transition-all duration-200; }

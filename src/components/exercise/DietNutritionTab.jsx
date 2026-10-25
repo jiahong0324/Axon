@@ -518,6 +518,9 @@ export default function DietNutritionTab({
           </div>
         )}
       </section>
+
+      {/* Bottom clearance spacer */}
+      <div className="h-6 sm:h-2 w-full shrink-0 pointer-events-none" />
       </div>
 
       {/* MODALS */}
