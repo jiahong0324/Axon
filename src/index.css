@@ -231,7 +231,7 @@ input, select, textarea { font-size: 16px; }
   .main-content {
     @apply scrollbar-hide flex-1 overflow-y-auto px-4 md:px-6;
     padding-top: calc(env(safe-area-inset-top) + 1.25rem);
-    padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
   }
