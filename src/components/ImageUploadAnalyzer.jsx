@@ -264,7 +264,13 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
           setItems(parsed.map((item, index) => normalizeItem(item, type, index)))
           setStep('results')
         } catch (err) {
-          setError(err.message || "AI couldn't read this image clearly")
+          console.warn('Image analyzer error:', err)
+          const raw = String(err?.message || '')
+          if (raw.includes('AI_RATE_LIMIT_OR_BUSY') || raw.includes('Vision API error') || raw.includes('Gemini') || raw.includes('OpenRouter') || raw.includes('429')) {
+            setError('AI rate limit reached or service temporarily busy. Please wait 3–5 minutes and try again.')
+          } else {
+            setError(err.message && !err.message.includes('API') && !err.message.includes('model') ? err.message : "AI couldn't read this image clearly")
+          }
           setStep('error')
         }
       }
