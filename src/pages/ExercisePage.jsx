@@ -20,6 +20,7 @@ import {
 } from '../lib/exerciseUtils'
 import { askGroq } from '../lib/groq'
 import { supabase } from '../lib/supabase'
+import { logActivity } from '../lib/logActivity'
 import { markdownToHtml } from '../lib/utils'
 import SEO from '../components/SEO'
 import DietNutritionTab from '../components/exercise/DietNutritionTab'
@@ -378,6 +379,12 @@ export default function ExercisePage() {
       } catch {
         // ignore offline
       }
+
+      try {
+        logActivity('Updated workout goal', 'exercise', `${tempGoal} days/week`, userId, {
+          weekly_goal: tempGoal
+        }).catch(() => {})
+      } catch (e) {}
     }
   }
 

@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { initials } from '../../lib/utils'
 import { studentManager } from '../../lib/manageStudent'
 
-const typeOptions = ['all', 'class', 'assignment', 'exam', 'reminder', 'exercise']
+const typeOptions = ['all', 'class', 'assignment', 'exam', 'reminder', 'exercise', 'diet']
 const dateOptions = ['Today', 'This Week', 'This Month', 'All Time']
 
 export function isInternalSync(item) {
@@ -139,17 +139,35 @@ export function formatHumanActivity(item) {
   }
 
   // 5. Exercise / Workouts
-  if (entityType === 'exercise' || action.toLowerCase().includes('exercise')) {
+  if (entityType === 'exercise' || action.toLowerCase().includes('exercise') || action.toLowerCase().includes('workout')) {
     if (action.includes('Streak freeze') || action.includes('Streak Freeze')) {
-      return { verb: 'used', target: 'Streak Freeze protection', details: null }
+      return {
+        verb: 'used',
+        target: 'Streak Freeze protection',
+        details: meta.log_date ? `Protected streak for ${meta.log_date}` : 'Protected streak for missed day'
+      }
     }
     if (action.includes('Earned +1 Streak Freeze')) {
-      return { verb: 'earned', target: 'Streak Freeze milestone reward', details: null }
+      const reason = action.includes('milestone') ? '5 workouts milestone reward' : 'Weekly Goal Chest reward'
+      return {
+        verb: 'earned',
+        target: 'Streak Freeze reward',
+        details: reason
+      }
     }
+    if (action.toLowerCase().includes('goal')) {
+      return {
+        verb: 'updated workout goal',
+        target: null,
+        details: meta.weekly_goal ? `Target: ${meta.weekly_goal} days/week` : (rawEntity ? `Target: ${rawEntity}` : null)
+      }
+    }
+
     const duration = meta.duration ? `${meta.duration} mins` : ''
     const calories = meta.calories ? `${meta.calories} kcal` : ''
     const distance = meta.distance ? `${meta.distance} km` : ''
-    const detailsList = [duration, distance, calories].filter(Boolean)
+    const xp = meta.xp_earned ? `+${meta.xp_earned} XP` : '+20 XP'
+    const detailsList = [duration, distance, calories, xp].filter(Boolean)
     const details = detailsList.length > 0 ? detailsList.join(' • ') : null
 
     return {
@@ -159,7 +177,47 @@ export function formatHumanActivity(item) {
     }
   }
 
-  // 6. Reminders
+  // 6. Diet / Nutrition / Meals
+  if (entityType === 'diet' || action.toLowerCase().includes('meal') || action.toLowerCase().includes('diet') || action.toLowerCase().includes('nutrition')) {
+    if (action.toLowerCase().includes('goal')) {
+      const cal = meta.calories ? `${meta.calories} kcal/day` : (rawEntity || '')
+      const macros = [
+        meta.protein ? `${meta.protein}g Protein` : '',
+        meta.carbs ? `${meta.carbs}g Carbs` : '',
+        meta.fats ? `${meta.fats}g Fats` : ''
+      ].filter(Boolean)
+      const detailsList = [cal ? `Target: ${cal}` : '', ...macros].filter(Boolean)
+      return {
+        verb: 'updated diet goals',
+        target: null,
+        details: detailsList.length > 0 ? detailsList.join(' • ') : null
+      }
+    }
+
+    const mealType = meta.meal_type || ''
+    const mealTime = meta.meal_time || ''
+    const calories = meta.calories !== undefined && meta.calories !== null && meta.calories !== '' ? `${meta.calories} kcal` : ''
+    const macros = [
+      meta.protein ? `${meta.protein}g P` : '',
+      meta.carbs ? `${meta.carbs}g C` : '',
+      meta.fats ? `${meta.fats}g F` : ''
+    ].filter(Boolean)
+    const macroStr = macros.length > 0 ? `(${macros.join(' • ')})` : ''
+    const detailsList = [mealType, mealTime, calories, macroStr].filter(Boolean)
+    const details = detailsList.length > 0 ? detailsList.join(' • ') : null
+
+    let verb = 'logged meal'
+    if (/^updated\s+/i.test(action)) verb = 'updated meal'
+    else if (/^deleted\s+/i.test(action)) verb = 'deleted meal'
+
+    return {
+      verb,
+      target: rawEntity ? `"${rawEntity}"` : null,
+      details
+    }
+  }
+
+  // 7. Reminders
   if (entityType === 'reminder' || action.toLowerCase().includes('reminder')) {
     const due = meta.reminder_time || meta.due_date || meta.date || ''
     const time = meta.time || ''
@@ -178,10 +236,23 @@ export function formatHumanActivity(item) {
     }
   }
 
-  // 7. Course grades / GPA results
-  if (entityType === 'exam_result' || action.toLowerCase().includes('grade')) {
+  // 8. Course grades / GPA results / Semesters
+  if (entityType === 'exam_result' || action.toLowerCase().includes('grade') || action.toLowerCase().includes('semester')) {
+    if (action.toLowerCase().includes('submitted') || action.toLowerCase().includes('locked')) {
+      const gpa = meta.gpa ? `GPA: ${meta.gpa}` : ''
+      const count = meta.courses_count ? `${meta.courses_count} courses` : ''
+      const details = [gpa, count].filter(Boolean).join(' • ') || null
+      return {
+        verb: 'submitted semester grades',
+        target: rawEntity ? `"${rawEntity}"` : null,
+        details
+      }
+    }
     let verb = 'recorded course grade'
     if (/^deleted\s+/i.test(action)) verb = 'removed course grade'
+    else if (/^created semester/i.test(action)) verb = 'created semester'
+    else if (/^deleted semester/i.test(action)) verb = 'deleted semester'
+
     return {
       verb,
       target: rawEntity ? `"${rawEntity}"` : null,
@@ -189,7 +260,7 @@ export function formatHumanActivity(item) {
     }
   }
 
-  // 8. Announcements
+  // 9. Announcements
   if (entityType === 'announcement' || action.toLowerCase().includes('announcement')) {
     let verb = 'published announcement'
     if (/^deleted\s+/i.test(action)) verb = 'deleted announcement'
@@ -200,7 +271,7 @@ export function formatHumanActivity(item) {
     }
   }
 
-  // 9. Timetable & Exam sync
+  // 10. Timetable & Exam sync
   if (action === 'SYNC_LINKED_TIMETABLES') {
     return { verb: 'synced', target: 'timetable schedule', details: null }
   }
@@ -301,7 +372,24 @@ export default function ManagerActivityPage() {
 
       <section className="card mb-5 grid gap-3 xl:grid-cols-[1fr_1.2fr_1fr]">
         <label><span className="label">Student</span><select className="input" value={studentId} onChange={e => setStudentId(e.target.value)}><option value="all">All Students</option>{students.map(student => <option key={student.id} value={student.id}>{student.full_name || student.email}</option>)}</select></label>
-        <div><p className="label">Type</p><div className="grid grid-cols-6 gap-2">{typeOptions.map(option => <button key={option} onClick={() => setType(option)} className={`min-h-[44px] rounded-xl border px-2 text-xs capitalize ${type === option ? 'border-amber-500 bg-amber-500/20 text-amber-300' : 'border-white/10 text-slate-400'}`}>{option === 'all' ? 'All' : option}</button>)}</div></div>
+        <div>
+          <p className="label">Type</p>
+          <div className="flex flex-wrap gap-1.5">
+            {typeOptions.map(option => (
+              <button
+                key={option}
+                onClick={() => setType(option)}
+                className={`min-h-[40px] rounded-xl border px-2.5 py-1 text-xs capitalize transition-all ${
+                  type === option
+                    ? 'border-amber-500 bg-amber-500/20 text-amber-300 font-semibold'
+                    : 'border-white/10 text-slate-400 hover:text-white'
+                }`}
+              >
+                {option === 'all' ? 'All' : option === 'diet' ? 'Diet & Nutrition' : option}
+              </button>
+            ))}
+          </div>
+        </div>
         <label><span className="label">Date</span><select className="input" value={dateFilter} onChange={e => setDateFilter(e.target.value)}>{dateOptions.map(option => <option key={option}>{option}</option>)}</select></label>
       </section>
 
@@ -324,7 +412,13 @@ export default function ManagerActivityPage() {
 }
 
 function ActivityRow({ item, profile }) {
-  const dot = item.entity_type === 'class' ? 'bg-theme-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : item.entity_type === 'exercise' ? 'bg-orange-400' : 'bg-emerald-400'
+  const dot = item.entity_type === 'class' ? 'bg-theme-400'
+    : item.entity_type === 'assignment' ? 'bg-yellow-400'
+    : item.entity_type === 'exam' ? 'bg-purple-400'
+    : item.entity_type === 'exercise' ? 'bg-orange-400'
+    : item.entity_type === 'diet' ? 'bg-emerald-400'
+    : item.entity_type === 'reminder' ? 'bg-blue-400'
+    : 'bg-emerald-400'
   const { verb, target, details } = formatHumanActivity(item)
   const displayName = profile?.full_name || profile?.email || (item.role === 'manager' || item.entity_name?.startsWith?.('/manager') ? 'Manager' : 'Student')
 

@@ -655,9 +655,17 @@ function ActivityTab({ activity }) {
         ) : (
           visible.map(item => {
             const { verb, target, details } = formatHumanActivity(item)
+            const dot = item.entity_type === 'class' ? 'bg-theme-400'
+              : item.entity_type === 'assignment' ? 'bg-yellow-400'
+              : item.entity_type === 'exam' ? 'bg-purple-400'
+              : item.entity_type === 'exercise' ? 'bg-orange-400'
+              : item.entity_type === 'diet' ? 'bg-emerald-400'
+              : item.entity_type === 'reminder' ? 'bg-blue-400'
+              : 'bg-amber-400'
+
             return (
               <article key={item.id} className="flex gap-3 rounded-xl border border-white/10 p-3 hover:border-white/20 transition-colors">
-                <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+                <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${dot}`} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm">
                     <span className="text-slate-200">{verb}</span>{' '}

@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { logActivity } from './logActivity'
 
 export const DEFAULT_NUTRITION_GOALS = {
   calories: 2000,
@@ -238,6 +239,16 @@ export async function saveNutritionGoals(userId, newGoals) {
     // Graceful if table not created
   }
 
+  // 4. Record into activity_log for manager visibility
+  try {
+    logActivity('Updated diet goals', 'diet', `${sanitizedGoals.calories} kcal/day`, userId, {
+      calories: sanitizedGoals.calories,
+      protein: sanitizedGoals.protein,
+      carbs: sanitizedGoals.carbs,
+      fats: sanitizedGoals.fats
+    }).catch(() => {})
+  } catch (e) {}
+
   return sanitizedGoals
 }
 
@@ -336,18 +347,44 @@ export async function saveFoodLogItem(userId, foodItem, currentLogs) {
     } catch (e) {
       // Handled by user_metadata fallback
     }
+
+    // 3. Record into activity_log for manager audit stream
+    try {
+      const actionLabel = index >= 0 ? 'Updated meal' : 'Logged meal'
+      logActivity(actionLabel, 'diet', itemToSave.name, userId, {
+        meal_type: itemToSave.meal_type,
+        meal_time: itemToSave.meal_time,
+        calories: itemToSave.calories,
+        protein: itemToSave.protein,
+        carbs: itemToSave.carbs,
+        fats: itemToSave.fats,
+        date: itemToSave.date
+      }).catch(() => {})
+    } catch (e) {}
   }
 
   return { item: itemToSave, logs: updatedLogs }
 }
 
 export async function deleteFoodLogItem(userId, itemId, currentLogs) {
+  const deletedItem = currentLogs.find(l => l.id === itemId)
   const updatedLogs = currentLogs.filter(l => l.id !== itemId)
   syncNutritionLogsToCloud(userId, updatedLogs).catch(() => {})
 
-  if (userId && !itemId.startsWith('food-')) {
+  if (userId) {
+    if (!itemId.startsWith('food-')) {
+      try {
+        await supabase.from('nutrition_logs').delete().eq('id', itemId).eq('user_id', userId)
+      } catch (e) {}
+    }
+
+    // Record deletion in activity_log
     try {
-      await supabase.from('nutrition_logs').delete().eq('id', itemId).eq('user_id', userId)
+      logActivity('Deleted meal', 'diet', deletedItem?.name || 'Meal', userId, {
+        meal_type: deletedItem?.meal_type,
+        calories: deletedItem?.calories,
+        date: deletedItem?.date
+      }).catch(() => {})
     } catch (e) {}
   }
 

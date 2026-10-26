@@ -8,6 +8,7 @@ import { useLanguage } from '../components/LanguageProvider'
 import Modal from '../components/Modal'
 import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
 import { TARUMT_GRADES, getGradeFromMark, calculateSemesterGPA, calculateOverallCGPA, getAcademicStanding, getGradeBadgeStyle } from '../lib/tarumtGrading'
+import { logActivity } from '../lib/logActivity'
 
 function createDefaultThreeCourses(semId) {
   return [
@@ -426,9 +427,10 @@ export default function ExamResultsPage() {
   function handleCreateSemester(e) {
     e.preventDefault()
     if (!newSemesterName.trim()) return
+    const semName = newSemesterName.trim()
     const newSem = {
       id: `sem-${Date.now()}`,
-      name: newSemesterName.trim(),
+      name: semName,
       is_submitted: false,
       courses: createDefaultThreeCourses(`sem-${Date.now()}`)
     }
@@ -437,6 +439,12 @@ export default function ExamResultsPage() {
     setNewSemesterName('')
     setShowAddSemModal(false)
     showToast('New semester created!', 'success')
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        logActivity('Created semester', 'exam_result', semName, user.id).catch(() => {})
+      }
+    }).catch(() => {})
   }
 
   async function handleDeleteSemester(id) {
@@ -459,6 +467,7 @@ export default function ExamResultsPage() {
       await supabase.from('student_semesters').delete().eq('id', id)
       if (targetSem && targetSem.name) {
         await supabase.from('student_semesters').delete().eq('name', targetSem.name).eq('user_id', user.id)
+        logActivity('Deleted semester', 'exam_result', targetSem.name, user.id).catch(() => {})
       }
     }
   }
@@ -521,6 +530,7 @@ export default function ExamResultsPage() {
   }
 
   function handleToggleSubmitSemester(semId, targetSubmittedState) {
+    const targetSem = semesters.find(s => s.id === semId)
     const nextList = semesters.map(s => {
       if (s.id !== semId) return s
       return { ...s, is_submitted: targetSubmittedState }
@@ -529,6 +539,15 @@ export default function ExamResultsPage() {
 
     if (targetSubmittedState) {
       showToast('Semester results locked & saved automatically!', 'success')
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user && targetSem) {
+          const semStat = calculateSemesterGPA(targetSem.courses || [])
+          logActivity('Submitted semester grades', 'exam_result', targetSem.name, user.id, {
+            gpa: semStat?.gpa,
+            courses_count: targetSem.courses?.length
+          }).catch(() => {})
+        }
+      }).catch(() => {})
     } else {
       showToast('Editing mode unlocked.', 'info')
     }

@@ -184,7 +184,13 @@ function QuickLink({ to, icon: Icon, label }) {
 
 function ActivityItem({ item }) {
   const profile = item.profile || {}
-  const color = item.entity_type === 'class' ? 'bg-theme-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : item.entity_type === 'exercise' ? 'bg-orange-400' : 'bg-emerald-400'
+  const color = item.entity_type === 'class' ? 'bg-theme-400'
+    : item.entity_type === 'assignment' ? 'bg-yellow-400'
+    : item.entity_type === 'exam' ? 'bg-purple-400'
+    : item.entity_type === 'exercise' ? 'bg-orange-400'
+    : item.entity_type === 'diet' ? 'bg-emerald-400'
+    : item.entity_type === 'reminder' ? 'bg-blue-400'
+    : 'bg-emerald-400'
   const { verb, target, details } = formatHumanActivity(item)
   const displayName = profile.full_name || profile.email || (item.role === 'manager' || item.entity_name?.startsWith?.('/manager') ? 'Manager' : 'Student')
 
