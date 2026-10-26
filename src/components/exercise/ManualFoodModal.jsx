@@ -1,8 +1,53 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Modal from '../Modal'
 import TimePicker from '../TimePicker'
-import { Plus, Check, Utensils, Flame, Clock } from 'lucide-react'
+import { Plus, Check, Utensils, Flame, Clock, Camera, Image as ImageIcon, Trash2 } from 'lucide-react'
 import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr, getCurrentTimeStr } from '../../lib/nutritionUtils'
+
+function createThumbnail(file) {
+  return new Promise((resolve) => {
+    if (!file) return resolve('')
+    let url = ''
+    try {
+      url = URL.createObjectURL(file)
+    } catch (e) {
+      return resolve('')
+    }
+    const img = new Image()
+    img.onload = () => {
+      try {
+        const maxDim = 320
+        let w = img.naturalWidth || img.width
+        let h = img.naturalHeight || img.height
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w)
+            w = maxDim
+          } else {
+            w = Math.round((w * maxDim) / h)
+            h = maxDim
+          }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, w, h)
+        const b64 = canvas.toDataURL('image/jpeg', 0.72)
+        URL.revokeObjectURL(url)
+        resolve(b64)
+      } catch (e) {
+        URL.revokeObjectURL(url)
+        resolve('')
+      }
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve('')
+    }
+    img.src = url
+  })
+}
 
 export default function ManualFoodModal({ isOpen, onClose, initialData, defaultDate, onSave }) {
   const [name, setName] = useState('')
@@ -13,8 +58,10 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
   const [carbs, setCarbs] = useState('')
   const [fats, setFats] = useState('')
   const [notes, setNotes] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [categoryError, setCategoryError] = useState(false)
+  const photoInputRef = useRef(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -34,6 +81,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
         setCarbs(initialData.carbs ?? '')
         setFats(initialData.fats ?? '')
         setNotes(initialData.notes || '')
+        setImageUrl(initialData.image_url || '')
       } else {
         setName('')
         setMealType('')
@@ -43,10 +91,22 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
         setCarbs('')
         setFats('')
         setNotes('')
+        setImageUrl('')
       }
       setCategoryError(false)
     }
   }, [isOpen, initialData])
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (file) {
+      const thumb = await createThumbnail(file)
+      if (thumb) setImageUrl(thumb)
+    }
+    setTimeout(() => {
+      if (photoInputRef.current) photoInputRef.current.value = ''
+    }, 100)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -77,7 +137,7 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
         carbs: Number(carbs) || 0,
         fats: Number(fats) || 0,
         notes: notes.trim(),
-        image_url: initialData?.image_url || '',
+        image_url: imageUrl || '',
         created_at: createdAt
       }
       await onSave(foodPayload)
@@ -256,6 +316,61 @@ export default function ManualFoodModal({ isOpen, onClose, initialData, defaultD
             placeholder=""
             className="w-full bg-slate-900/70 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-slate-700"
           />
+        </div>
+
+        {/* Food Photo (Optional Attachment / Preview) */}
+        <div>
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handlePhotoUpload}
+          />
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Food Photo (Optional)
+            </label>
+          </div>
+          {imageUrl ? (
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <img
+                src={imageUrl}
+                alt="Meal photo"
+                className="h-12 w-12 rounded-lg object-cover border border-slate-700 shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-white truncate">Photo Attached</p>
+                <p className="text-[11px] text-slate-400">Will be displayed on your meal log</p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-400 hover:bg-blue-500/10 transition-colors"
+                >
+                  Change
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageUrl('')}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  title="Remove photo"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-800 bg-slate-900/40 hover:bg-slate-900 text-slate-400 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+            >
+              <Camera className="h-4 w-4 text-blue-400" />
+              <span>Attach / Change Photo</span>
+            </button>
+          )}
         </div>
 
         {/* Action Buttons */}

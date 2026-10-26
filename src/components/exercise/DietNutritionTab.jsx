@@ -479,13 +479,21 @@ export default function DietNutritionTab({
                             <img
                               src={item.image_url}
                               alt={item.name}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                                const fallback = e.currentTarget.nextElementSibling
+                                if (fallback) fallback.style.display = 'grid'
+                              }}
                               className="h-12 w-12 rounded-xl object-cover border border-slate-700 shrink-0"
                             />
-                          ) : (
-                            <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-xl bg-slate-800/80 text-lg shrink-0">
-                              {MEAL_TYPE_ICONS[category]}
-                            </div>
-                          )}
+                          ) : null}
+                          <div
+                            className={`grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-xl bg-slate-800/80 text-lg shrink-0 ${
+                              item.image_url ? 'hidden' : ''
+                            }`}
+                          >
+                            {MEAL_TYPE_ICONS[category]}
+                          </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 min-w-0">
                               <h5 className="text-sm font-bold text-white truncate group-hover:text-blue-300 transition-colors">
