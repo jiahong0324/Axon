@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Calendar, CheckCircle, Target, Sparkles, LayoutDashboard, Play, Pause, ShieldCheck, Check, Clock } from 'lucide-react'
+import { Calendar, CheckCircle, Target, Sparkles, LayoutDashboard, Play, Pause, ShieldCheck, Check, Clock, BookOpen, AlertCircle, Dumbbell } from 'lucide-react'
 
 const TABS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, url: 'axon-app.com/home' },
@@ -101,21 +101,33 @@ export default function LandingShowcase() {
 
               {/* Quick Metrics */}
               <div className="grid gap-3 sm:grid-cols-4">
-                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-4">
-                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Today&apos;s Classes</p>
-                  <p className="mt-1 font-heading text-2xl font-extrabold text-theme-600 dark:text-theme-400">3 Sessions</p>
+                <div className="rounded-xl border border-slate-200 border-l-4 border-l-theme-500 dark:border-white/10 bg-white dark:bg-slate-900 p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Today&apos;s Classes</p>
+                    <BookOpen className="h-4 w-4 text-theme-500" />
+                  </div>
+                  <p className="mt-2 font-heading text-2xl font-extrabold text-theme-600 dark:text-theme-400">3</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-4">
-                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Due This Week</p>
-                  <p className="mt-1 font-heading text-2xl font-extrabold text-amber-600 dark:text-amber-400">2 Courseworks</p>
+                <div className="rounded-xl border border-slate-200 border-l-4 border-l-yellow-500 dark:border-white/10 bg-white dark:bg-slate-900 p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Due Soon</p>
+                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                  </div>
+                  <p className="mt-2 font-heading text-2xl font-extrabold text-amber-600 dark:text-yellow-400">4</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-4">
-                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Next Exam</p>
-                  <p className="mt-1 font-heading text-2xl font-extrabold text-rose-600 dark:text-rose-400">5 Days</p>
+                <div className="rounded-xl border border-slate-200 border-l-4 border-l-purple-500 dark:border-white/10 bg-white dark:bg-slate-900 p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Days to Next Exam</p>
+                    <Calendar className="h-4 w-4 text-purple-500" />
+                  </div>
+                  <p className="mt-2 font-heading text-2xl font-extrabold text-violet-600 dark:text-purple-400">7d</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-4">
-                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Current GPA Target</p>
-                  <p className="mt-1 font-heading text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">3.85 / 4.0</p>
+                <div className="rounded-xl border border-slate-200 border-l-4 border-l-orange-500 dark:border-white/10 bg-white dark:bg-slate-900 p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Current Streak</p>
+                    <Dumbbell className="h-4 w-4 text-orange-500" />
+                  </div>
+                  <p className="mt-2 font-heading text-2xl font-extrabold text-orange-600 dark:text-orange-400">12 🔥</p>
                 </div>
               </div>
 

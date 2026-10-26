@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
-import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen, Smartphone } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen, Smartphone, AlertCircle, Dumbbell } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
 import { supabase, createProfile } from '../../lib/supabase'
 import { useToast } from '../../components/Toast'
@@ -87,10 +87,34 @@ function DashboardPreview() {
       </div>
       <div className="mt-4 space-y-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MiniMetric label="Classes Today" value="3" tone="text-theme-600 dark:text-theme-400" />
-          <MiniMetric label="Due This Week" value="4" tone="text-amber-500" />
-          <MiniMetric label="Study Streak" value="12d" tone="text-emerald-500" />
-          <MiniMetric label="Attendance" value="94%" tone="text-violet-500" />
+          <MiniMetric
+            icon={BookOpen}
+            label="Today's Classes"
+            value="3"
+            tone="text-theme-600 dark:text-theme-400"
+            border="border-l-theme-500"
+          />
+          <MiniMetric
+            icon={AlertCircle}
+            label="Due Soon"
+            value="4"
+            tone="text-amber-500 dark:text-yellow-400"
+            border="border-l-yellow-500"
+          />
+          <MiniMetric
+            icon={Calendar}
+            label="Days to Next Exam"
+            value="7d"
+            tone="text-violet-500 dark:text-purple-400"
+            border="border-l-purple-500"
+          />
+          <MiniMetric
+            icon={Dumbbell}
+            label="Current Streak"
+            value="12 🔥"
+            tone="text-orange-500 dark:text-orange-400"
+            border="border-l-orange-500"
+          />
         </div>
         <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
@@ -125,11 +149,14 @@ function HeroStat({ value, label }) {
   )
 }
 
-function MiniMetric({ label, value, tone }) {
+function MiniMetric({ icon: Icon, label, value, tone, border }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
-      <p className="text-sm font-bold text-slate-500 dark:text-slate-400">{label}</p>
-      <p className={`mt-2 font-heading text-3xl font-extrabold ${tone}`}>{value}</p>
+    <div className={`rounded-2xl border border-slate-200 ${border ? `border-l-4 ${border}` : ''} bg-white p-3 sm:p-3.5 shadow-sm dark:border-white/10 dark:bg-slate-900 flex flex-col justify-between`}>
+      <div className="flex items-center justify-between gap-1">
+        <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 leading-tight">{label}</p>
+        {Icon && <Icon className={`h-4 w-4 shrink-0 ${tone}`} />}
+      </div>
+      <p className={`mt-2 font-heading text-2xl sm:text-3xl font-extrabold ${tone}`}>{value}</p>
     </div>
   )
 }
