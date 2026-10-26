@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v26-concise-quick-actions'
+const CACHE_NAME = 'axon-v27-heads-up-notifications'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {
@@ -97,6 +97,9 @@ self.addEventListener('push', event => {
     },
     color: '#000000',
     tag: data.id || `${data.title}|${data.body}`,
-    renotify: true
+    renotify: true,
+    requireInteraction: true,
+    silent: false,
+    timestamp: Date.now()
   }))
 })

@@ -555,6 +555,9 @@ export default function SettingsPage() {
                         Test Foreground Alert
                       </button>
                     </div>
+                    <p className="text-[11px] leading-relaxed text-[var(--text-muted)] bg-white/5 p-2.5 rounded-lg border border-white/10">
+                      💡 <strong>Android Tip:</strong> If notifications only appear in your pull-down shade without popping up, long-press the incoming notification (or open Android <em>Settings &gt; Apps &gt; Chrome/Axon &gt; Notifications</em>) and enable <strong>&quot;Pop on screen / Floating notification / Banners&quot;</strong>.
+                    </p>
                   </div>
                 )}
               </div>
