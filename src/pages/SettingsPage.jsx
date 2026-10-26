@@ -568,14 +568,9 @@ export default function SettingsPage() {
                         {t('settings.androidHeadsUpHelp')}
                       </p>
                     )}
-                    <div className="flex gap-2">
-                      <button className="btn-ghost flex-1 py-2 text-xs" onClick={sendTestPushNotification} disabled={sendingTest}>
-                        {sendingTest ? 'Sending...' : '🚀 Send Test Background Push'}
-                      </button>
-                      <button className="btn-ghost flex-1 py-2 text-xs" onClick={testNotification}>
-                        Test Foreground Alert
-                      </button>
-                    </div>
+                    <button className="btn-ghost w-full py-2 text-xs" onClick={sendTestPushNotification} disabled={sendingTest}>
+                      {sendingTest ? 'Sending...' : `🚀 ${t('settings.sendTestPush')}`}
+                    </button>
                   </div>
                 )}
               </div>
