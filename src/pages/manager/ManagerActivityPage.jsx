@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { initials } from '../../lib/utils'
 import { studentManager } from '../../lib/manageStudent'
 
-const typeOptions = ['all', 'class', 'assignment', 'exam', 'reminder', 'exercise', 'diet']
+const typeOptions = ['all', 'class', 'assignment', 'exam', 'reminder', 'exercise', 'diet', 'settings']
 const dateOptions = ['Today', 'This Week', 'This Month', 'All Time']
 
 export function isInternalSync(item) {
@@ -260,7 +260,64 @@ export function formatHumanActivity(item) {
     }
   }
 
-  // 9. Announcements
+  // 9. Settings, Preferences & Profile
+  if (entityType === 'settings' || entityType === 'profile' || action.toLowerCase().includes('setting') || action.toLowerCase().includes('profile') || action.toLowerCase().includes('preference')) {
+    if (action.toLowerCase().includes('password')) {
+      return {
+        verb: 'updated password',
+        target: 'account security',
+        details: 'Changed account login password'
+      }
+    }
+    if (action.toLowerCase().includes('email')) {
+      return {
+        verb: 'changed email',
+        target: rawEntity ? `"${rawEntity}"` : 'account email',
+        details: meta.new_email ? `New email address: ${meta.new_email}` : null
+      }
+    }
+    if (action.toLowerCase().includes('profile')) {
+      const detailsList = [
+        meta.full_name ? `Name: ${meta.full_name}` : '',
+        meta.university ? `Uni: ${meta.university}` : '',
+        meta.course ? `Course: ${meta.course}` : '',
+        meta.student_id ? `ID: ${meta.student_id}` : '',
+        meta.avatar_color ? `Avatar: ${meta.avatar_color}` : ''
+      ].filter(Boolean)
+      const details = detailsList.length > 0 ? detailsList.join(' • ') : 'Updated personal profile details'
+      return {
+        verb: 'updated profile',
+        target: rawEntity ? `"${rawEntity}"` : null,
+        details
+      }
+    }
+    if (action.toLowerCase().includes('academic report') || action.toLowerCase().includes('email digest')) {
+      return {
+        verb: 'emailed academic report',
+        target: 'email digest',
+        details: meta.sections ? `Sections: ${meta.sections}` : null
+      }
+    }
+    if (action.toLowerCase().includes('pdf')) {
+      return {
+        verb: 'exported academic report',
+        target: 'PDF document',
+        details: 'Downloaded full planner PDF report'
+      }
+    }
+
+    const settingName = meta.label || rawEntity || meta.key || 'settings'
+    const settingVal = meta.friendly_value || meta.value || ''
+    const details = settingVal ? `Changed to: ${settingVal}` : null
+
+    return {
+      verb: 'updated setting',
+      target: settingName ? `"${settingName}"` : 'preferences',
+      details
+    }
+  }
+
+  // 10. Announcements
   if (entityType === 'announcement' || action.toLowerCase().includes('announcement')) {
     let verb = 'published announcement'
     if (/^deleted\s+/i.test(action)) verb = 'deleted announcement'
@@ -271,7 +328,7 @@ export function formatHumanActivity(item) {
     }
   }
 
-  // 10. Timetable & Exam sync
+  // 11. Timetable & Exam sync
   if (action === 'SYNC_LINKED_TIMETABLES') {
     return { verb: 'synced', target: 'timetable schedule', details: null }
   }
@@ -385,7 +442,7 @@ export default function ManagerActivityPage() {
                     : 'border-white/10 text-slate-400 hover:text-white'
                 }`}
               >
-                {option === 'all' ? 'All' : option === 'diet' ? 'Diet & Nutrition' : option}
+                {option === 'all' ? 'All' : option === 'diet' ? 'Diet & Nutrition' : option === 'settings' ? 'Settings & Profile' : option}
               </button>
             ))}
           </div>

@@ -720,19 +720,34 @@ function ActivityTab({ activity }) {
   )
 }
 
-function ExerciseManagerTab({ studentId }) {
+function HealthManagerTab({ studentId, metadata, initialNutrition }) {
   const { t } = useLanguage()
-  const [loading, setLoading] = useState(true)
+  const [healthSubTab, setHealthSubTab] = useState(() => {
+    try {
+      return localStorage.getItem('axon_manager_health_tab') || 'workout'
+    } catch (e) {
+      return 'workout'
+    }
+  })
+
+  // Workout state
+  const [workoutLoading, setWorkoutLoading] = useState(true)
   const [logs, setLogs] = useState([])
   const [weeklyGoal, setWeeklyGoal] = useState(4)
   const [xpTotal, setXpTotal] = useState(0)
   const [freezesAvailable, setFreezesAvailable] = useState(5)
   const [frozenDates, setFrozenDates] = useState([])
 
+  // Diet state
+  const [dietLoading, setDietLoading] = useState(true)
+  const [nutritionGoals, setNutritionGoals] = useState(initialNutrition?.goals || DEFAULT_NUTRITION_GOALS)
+  const [nutritionLogs, setNutritionLogs] = useState(initialNutrition?.logs || [])
+  const [hasSetNutritionGoals, setHasSetNutritionGoals] = useState(Boolean(initialNutrition?.goals))
+
   useEffect(() => {
     let active = true
-    async function loadExercise() {
-      setLoading(true)
+    async function loadWorkout() {
+      setWorkoutLoading(true)
       const data = await fetchExerciseData(studentId)
       if (!active) return
       setLogs(data.logs || [])
@@ -740,11 +755,33 @@ function ExerciseManagerTab({ studentId }) {
       setXpTotal(data.xpTotal || 0)
       setFreezesAvailable(data.freezesAvailable || 0)
       setFrozenDates(data.frozenDates || [])
-      setLoading(false)
+      setWorkoutLoading(false)
     }
-    loadExercise()
+    loadWorkout()
     return () => { active = false }
   }, [studentId])
+
+  useEffect(() => {
+    let active = true
+    async function loadNutrition() {
+      setDietLoading(true)
+      try {
+        const data = await fetchNutritionData(studentId, metadata)
+        if (!active) return
+        if (data) {
+          setNutritionGoals(data.goals || DEFAULT_NUTRITION_GOALS)
+          setNutritionLogs(data.logs || [])
+          setHasSetNutritionGoals(Boolean(data.hasSetGoals))
+        }
+      } catch (err) {
+        console.warn('Failed to load student nutrition in manager:', err)
+      } finally {
+        if (active) setDietLoading(false)
+      }
+    }
+    loadNutrition()
+    return () => { active = false }
+  }, [studentId, metadata])
 
   const stats = useMemo(
     () => calculateStreakAndStats(logs, weeklyGoal, freezesAvailable, getTodayStr(), xpTotal, frozenDates),
@@ -752,92 +789,153 @@ function ExerciseManagerTab({ studentId }) {
   )
   const levelInfo = useMemo(() => getLevelInfo(xpTotal, t), [xpTotal, t])
 
-  if (loading) {
-    return <div className="card space-y-3"><div className="skeleton h-20 rounded-xl" /><div className="skeleton h-40 rounded-xl" /></div>
+  function handleSubTabChange(tab) {
+    setHealthSubTab(tab)
+    try {
+      localStorage.setItem('axon_manager_health_tab', tab)
+    } catch (e) {}
   }
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="card border-l-4 border-l-orange-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase text-orange-400">Current Streak</p>
-              <p className="text-3xl font-bold text-white mt-1">{stats.currentStreak} <span className="text-sm font-normal text-slate-400">days</span></p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-semibold text-slate-400">Longest Streak</p>
-              <p className="text-xl font-bold text-white mt-1">{stats.longestStreak} days</p>
-            </div>
-          </div>
-          <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-            <span className="text-slate-300">Weekly Goal Progress</span>
-            <span className="font-bold text-orange-400">{stats.weeklyCount} / {weeklyGoal} days</span>
-          </div>
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-cyan-400 font-medium">
-            <Shield className="h-4 w-4" />
-            <span>Streak Freezes Available: {freezesAvailable}</span>
-          </div>
-        </div>
-
-        <div className="card border-l-4 border-l-purple-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase text-purple-400">Level {levelInfo.level}</p>
-              <p className="text-xl font-bold text-white mt-1">{levelInfo.title}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-semibold text-slate-400">Total XP</p>
-              <p className="text-3xl font-black text-purple-400 mt-1">{xpTotal}</p>
-            </div>
-          </div>
-          <p className="text-xs text-slate-400 mt-4 pt-3 border-t border-white/10">Read-only student exercise summary</p>
+      {/* SEGMENTED PILL TAB BAR (Workout vs Diet) */}
+      <div className="flex justify-center">
+        <div className="inline-flex p-1 rounded-xl bg-[#131b2e] border border-white/10 shadow-lg">
+          <button
+            type="button"
+            onClick={() => handleSubTabChange('workout')}
+            className={`flex items-center justify-center gap-2 rounded-lg px-5 py-2 text-xs sm:text-sm font-bold transition-all text-center whitespace-nowrap ${
+              healthSubTab === 'workout'
+                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Dumbbell className="h-4 w-4 shrink-0" />
+            <span>{t ? t('exercise.tabWorkout') || 'Workout & Habit' : 'Workout & Habit'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSubTabChange('diet')}
+            className={`flex items-center justify-center gap-2 rounded-lg px-5 py-2 text-xs sm:text-sm font-bold transition-all text-center whitespace-nowrap ${
+              healthSubTab === 'diet'
+                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Utensils className="h-4 w-4 shrink-0" />
+            <span>{t ? t('exercise.tabDiet') || 'Diet & Nutrition' : 'Diet & Nutrition'}</span>
+          </button>
         </div>
       </div>
 
-      <section className="card">
-        <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-          <Award className="h-5 w-5 text-amber-400" /> Milestone Badges
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {stats.badgeStatuses.map(b => (
-            <div
-              key={b.id}
-              className={`rounded-xl border p-3 flex items-center gap-2.5 ${
-                b.unlocked ? 'border-amber-500/40 bg-amber-500/10 text-white' : 'border-white/10 bg-white/5 text-slate-500 opacity-60'
-              }`}
-            >
-              <span className="text-xl">{b.icon}</span>
-              <div>
-                <p className="text-xs font-semibold">{t ? t(b.titleKey) : b.titleKey}</p>
-                <p className="text-[10px]">{b.unlocked ? 'Unlocked' : 'Locked'}</p>
+      {healthSubTab === 'workout' ? (
+        workoutLoading ? (
+          <div className="card space-y-3">
+            <div className="skeleton h-20 rounded-xl" />
+            <div className="skeleton h-40 rounded-xl" />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="card border-l-4 border-l-orange-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-orange-400">Current Streak</p>
+                    <p className="text-3xl font-bold text-white mt-1">{stats.currentStreak} <span className="text-sm font-normal text-slate-400">days</span></p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-semibold text-slate-400">Longest Streak</p>
+                    <p className="text-xl font-bold text-white mt-1">{stats.longestStreak} days</p>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                  <span className="text-slate-300">Weekly Goal Progress</span>
+                  <span className="font-bold text-orange-400">{stats.weeklyCount} / {weeklyGoal} days</span>
+                </div>
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-cyan-400 font-medium">
+                  <Shield className="h-4 w-4" />
+                  <span>Streak Freezes Available: {freezesAvailable}</span>
+                </div>
+              </div>
+
+              <div className="card border-l-4 border-l-purple-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-purple-400">Level {levelInfo.level}</p>
+                    <p className="text-xl font-bold text-white mt-1">{levelInfo.title}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-semibold text-slate-400">Total XP</p>
+                    <p className="text-3xl font-black text-purple-400 mt-1">{xpTotal}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 mt-4 pt-3 border-t border-white/10">Read-only student workout summary</p>
               </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      <section className="card">
-        <h3 className="text-base font-bold text-white mb-4">Check-in History ({logs.length})</h3>
-        {logs.length === 0 ? (
-          <p className="muted">No exercise logs recorded by this student.</p>
-        ) : (
-          <div className="space-y-2">
-            {logs.map(l => (
-              <div key={l.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">{ACTIVITY_ICONS[l.activity_type] || '⚡'}</span>
-                  <span className="font-semibold text-white">{l.activity_type || 'Workout'}</span>
-                </div>
-                <span className="text-xs text-slate-400">{l.log_date}</span>
+            <section className="card">
+              <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <Award className="h-5 w-5 text-amber-400" /> Milestone Badges
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {stats.badgeStatuses.map(b => (
+                  <div
+                    key={b.id}
+                    className={`rounded-xl border p-3 flex items-center gap-2.5 ${
+                      b.unlocked ? 'border-amber-500/40 bg-amber-500/10 text-white' : 'border-white/10 bg-white/5 text-slate-500 opacity-60'
+                    }`}
+                  >
+                    <span className="text-xl">{b.icon}</span>
+                    <div>
+                      <p className="text-xs font-semibold">{t ? t(b.titleKey) : b.titleKey}</p>
+                      <p className="text-[10px]">{b.unlocked ? 'Unlocked' : 'Locked'}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </section>
+
+            <section className="card">
+              <h3 className="text-base font-bold text-white mb-4">Check-in History ({logs.length})</h3>
+              {logs.length === 0 ? (
+                <p className="muted">No workout logs recorded by this student.</p>
+              ) : (
+                <div className="space-y-2">
+                  {logs.map(l => (
+                    <div key={l.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{ACTIVITY_ICONS[l.activity_type] || '⚡'}</span>
+                        <span className="font-semibold text-white">{l.activity_type || 'Workout'}</span>
+                      </div>
+                      <span className="text-xs text-slate-400">{l.log_date}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
-        )}
-      </section>
+        )
+      ) : (
+        dietLoading ? (
+          <div className="card space-y-3">
+            <div className="skeleton h-20 rounded-xl" />
+            <div className="skeleton h-40 rounded-xl" />
+          </div>
+        ) : (
+          <DietNutritionTab
+            userId={studentId}
+            goals={nutritionGoals}
+            logs={nutritionLogs}
+            hasSetGoals={hasSetNutritionGoals}
+            readOnly={true}
+          />
+        )
+      )}
     </div>
   )
 }
+
+const ExerciseManagerTab = HealthManagerTab
 
 function Field({ label, children }) {
   return <label className="block"><span className="label">{label}</span>{children}</label>
