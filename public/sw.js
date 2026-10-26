@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v28-android-notifications'
+const CACHE_NAME = 'axon-v29-force-unique-heads-up'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {
@@ -83,9 +83,8 @@ self.addEventListener('push', event => {
   const announcementId = data.announcement_id || null
   const targetUrl = data.url || (announcementId ? `/?open_announcement=${announcementId}` : '/')
 
-  // The server persists an event id, and this tag makes a retry safe at the
-  // OS tray level. Avoid doing cache/network work before showNotification:
-  // a failed cache operation must never prevent a push from being displayed.
+  // The server persists an event id, and this unique tag ensures Android treats
+  // each arrival as a brand-new notification instead of a silent text update.
   event.waitUntil(self.registration.showNotification(data.title, {
     body: data.body,
     icon: '/icons/logo-colored.png',
@@ -96,7 +95,8 @@ self.addEventListener('push', event => {
       announcement_id: announcementId
     },
     color: '#000000',
-    tag: data.id || `${data.title}|${data.body}`,
-    renotify: true
+    tag: `${data.id || 'axon'}_${Date.now()}`,
+    renotify: true,
+    requireInteraction: true
   }))
 })

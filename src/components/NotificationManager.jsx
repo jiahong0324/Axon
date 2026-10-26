@@ -106,7 +106,9 @@ export default function NotificationManager() {
           icon: '/icons/logo.png',
           badge: '/icons/logo.png',
           vibrate: [200, 100, 200],
-          tag: `reminder_${r.id}_${todayDate}`
+          tag: `reminder_${r.id}_${todayDate}_${Date.now()}`,
+          renotify: true,
+          requireInteraction: true
         })
         localStorage.setItem(key, '1')
 
@@ -151,7 +153,9 @@ export default function NotificationManager() {
             icon: '/icons/logo.png',
             badge: '/icons/logo.png',
             vibrate: [200, 100, 200],
-            tag: `class_${cls.id}_${todayDate}`
+            tag: `class_${cls.id}_${todayDate}_${Date.now()}`,
+            renotify: true,
+            requireInteraction: true
           })
           localStorage.setItem(key, '1')
         })
@@ -178,7 +182,9 @@ export default function NotificationManager() {
             icon: '/icons/logo.png',
             badge: '/icons/logo.png',
             vibrate: [200, 100, 200],
-            tag: `attendance_${cls.id}_${todayDate}`
+            tag: `attendance_${cls.id}_${todayDate}_${Date.now()}`,
+            renotify: true,
+            requireInteraction: true
           })
           localStorage.setItem(key, '1')
         })
@@ -208,7 +214,9 @@ export default function NotificationManager() {
               icon: '/icons/logo.png',
               badge: '/icons/logo.png',
               vibrate: [300, 100, 300, 100, 300],
-              tag: `exam_${exam.id}_${todayDate}`
+              tag: `exam_${exam.id}_${todayDate}_${Date.now()}`,
+              renotify: true,
+              requireInteraction: true
             })
             localStorage.setItem(key, '1')
           }
@@ -243,7 +251,9 @@ export default function NotificationManager() {
               icon: '/icons/logo.png',
               badge: '/icons/logo.png',
               vibrate: [200, 100, 200],
-              tag: `assignment_due_${a.id}_${todayDate}`
+              tag: `assignment_due_${a.id}_${todayDate}_${Date.now()}`,
+              renotify: true,
+              requireInteraction: true
             })
             localStorage.setItem(key, '1')
           })
@@ -264,7 +274,9 @@ export default function NotificationManager() {
               icon: '/icons/logo.png',
               badge: '/icons/logo.png',
               vibrate: [300, 100, 300, 100, 300],
-              tag: `exam_countdown_${e.id}_${todayDate}`
+              tag: `exam_countdown_${e.id}_${todayDate}_${Date.now()}`,
+              renotify: true,
+              requireInteraction: true
             })
             localStorage.setItem(key, '1')
           })

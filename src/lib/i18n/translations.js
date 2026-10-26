@@ -326,9 +326,9 @@ export const translations = {
     'results.mySemesters': 'My Semesters',
     'results.mySemestersShort': 'Semesters',
     'results.gpaSimulator': 'GPA Simulator',
-    'results.gpaSimulatorShort': 'GPA Calc',
+    'results.gpaSimulatorShort': 'GPA',
     'results.courseCalc': 'Course Calculator',
-    'results.courseCalcShort': 'Course Calc',
+    'results.courseCalcShort': 'Course',
     'results.overallCgpa': 'Overall CGPA',
     'results.credits': 'Credits',
 
@@ -895,9 +895,9 @@ export const translations = {
     'results.mySemesters': '学期成绩单',
     'results.mySemestersShort': '学期成绩',
     'results.gpaSimulator': 'GPA 模拟器',
-    'results.gpaSimulatorShort': 'GPA 模拟',
+    'results.gpaSimulatorShort': 'GPA',
     'results.courseCalc': '课程成绩计算器',
-    'results.courseCalcShort': '课程计算',
+    'results.courseCalcShort': '课程',
     'results.overallCgpa': '总 CGPA',
     'results.credits': '学分',
 
