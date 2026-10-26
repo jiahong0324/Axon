@@ -501,32 +501,30 @@ Deno.serve(async req => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light dark">
-  <meta name="supported-color-schemes" content="light dark">
   <title>${safeSubject}</title>
   <style>
-    :root {
-      color-scheme: light dark;
-      supported-color-schemes: light dark;
-    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: #0f172a;
-      margin: 0;
-      padding: 0;
+      background-color: #0f172a !important;
+      background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
+      margin: 0 !important;
+      padding: 0 !important;
       -webkit-font-smoothing: antialiased;
     }
     .container {
       max-width: 600px;
       margin: 0 auto;
       padding: 40px 20px;
+      background-color: #0f172a !important;
+      background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
     }
     .card {
-      background-color: #1e293b;
-      border-radius: 16px;
+      background-color: #1e293b !important;
+      background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
+      border-radius: 16px !important;
       padding: 40px;
       text-align: center;
-      border: 1px solid #334155;
+      border: 1px solid #334155 !important;
     }
     .logo {
       width: 64px;
@@ -536,7 +534,7 @@ Deno.serve(async req => {
       display: inline-block;
     }
     h1 {
-      color: #ffffff;
+      color: #ffffff !important;
       font-size: 24px;
       line-height: 1.3;
       margin-top: 0;
@@ -545,7 +543,7 @@ Deno.serve(async req => {
       text-align: center;
     }
     .content {
-      color: #94a3b8;
+      color: #94a3b8 !important;
       font-size: 16px;
       line-height: 1.6;
       margin-bottom: 32px;
@@ -554,16 +552,18 @@ Deno.serve(async req => {
     .footer {
       text-align: center;
       margin-top: 32px;
-      color: #64748b;
+      color: #64748b !important;
       font-size: 14px;
     }
 
     @media (prefers-color-scheme: dark) {
-      body {
+      body, .container {
         background-color: #0f172a !important;
+        background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
       }
       .card {
         background-color: #1e293b !important;
+        background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
         border: 1px solid #334155 !important;
         border-radius: 16px !important;
       }
@@ -578,11 +578,13 @@ Deno.serve(async req => {
       }
     }
 
-    [data-ogsc] body {
+    [data-ogsc] body, [data-ogsb] body, [data-ogsc] .container, [data-ogsb] .container {
       background-color: #0f172a !important;
+      background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
     }
-    [data-ogsc] .card {
+    [data-ogsc] .card, [data-ogsb] .card {
       background-color: #1e293b !important;
+      background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
       border: 1px solid #334155 !important;
       border-radius: 16px !important;
     }
@@ -597,9 +599,9 @@ Deno.serve(async req => {
     }
   </style>
 </head>
-<body style="background-color: #0f172a; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
-  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-    <div class="card" style="background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155;">
+<body style="background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important; margin: 0 !important; padding: 0 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;">
+    <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important; border-radius: 16px !important; border: 1px solid #334155 !important; padding: 40px; text-align: center;">
       <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; display: inline-block;">
       <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; line-height: 1.3; margin-top: 0; margin-bottom: 20px; font-weight: 700; text-align: center;">${safeSubject}</h1>
       <div class="content" data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.6; margin-bottom: 32px; text-align: left;">
@@ -675,12 +677,14 @@ Deno.serve(async req => {
         const includeExams = data?.exams ?? true
         const includeResults = data?.results ?? true
         const includeExercise = data?.exercise ?? true
+        const includeNutrition = data?.nutrition ?? true
 
         let classesData: any[] = []
         let assignmentsData: any[] = []
         let examsData: any[] = []
         let semestersData: any[] = []
         let exerciseData: any[] = []
+        let nutritionData: any = null
 
         if (includeClasses) {
           const { data: classes } = await adminClient.from('classes').select('*').eq('user_id', studentId)
@@ -711,6 +715,17 @@ Deno.serve(async req => {
           exerciseData = exercises || []
         }
 
+        if (includeNutrition) {
+          const [goalsRes, logsRes] = await Promise.all([
+            adminClient.from('nutrition_goals').select('*').eq('user_id', studentId).maybeSingle(),
+            adminClient.from('nutrition_logs').select('*').eq('user_id', studentId).order('log_date', { ascending: false }).limit(30)
+          ])
+          nutritionData = {
+            goals: goalsRes?.data || null,
+            logs: logsRes?.data || []
+          }
+        }
+
         const htmlContent = buildAcademicDigestHtml({
           fullName: studentProfile.full_name || 'Student',
           email: studentProfile.email,
@@ -725,7 +740,9 @@ Deno.serve(async req => {
           includeResults,
           semesters: semestersData,
           includeExercise,
-          exercises: exerciseData
+          exercises: exerciseData,
+          includeNutrition,
+          nutrition: nutritionData
         })
 
         const res = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -838,10 +855,12 @@ interface AcademicDigestParams {
   semesters?: any[]
   includeExercise?: boolean
   exercises?: any[]
+  includeNutrition?: boolean
+  nutrition?: any
 }
 
 function buildAcademicDigestHtml(params: AcademicDigestParams): string {
-  const { fullName, university, course, includeClasses, classes, includeAssignments, assignments, includeExams, exams, includeResults, semesters = [], includeExercise, exercises = [] } = params
+  const { fullName, university, course, includeClasses, classes, includeAssignments, assignments, includeExams, exams, includeResults, semesters = [], includeExercise, exercises = [], includeNutrition, nutrition } = params
   const dateStr = new Date().toLocaleDateString('en-US', { dateStyle: 'long' })
   
   let classesHtml = ''
@@ -1038,17 +1057,44 @@ function buildAcademicDigestHtml(params: AcademicDigestParams): string {
     })
     exercisesHtml = `
       <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 24px;">
-        <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">🏃 Exercise & Habit Logs</h2>
+        <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">🏋️ Workout & Habit Logs</h2>
         ${itemsHtml}
       </div>
     `
   } else if (includeExercise) {
     exercisesHtml = `
       <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 24px;">
-        <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">🏃 Exercise & Habit Logs</h2>
+        <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 16px;">🏋️ Workout & Habit Logs</h2>
         <div style="text-align: center; padding: 24px; color: #94a3b8; background: #1e293b; border-radius: 8px; border: 1px solid #334155;">
-          🏃 No recent workout check-ins logged.
+          🏋️ No recent workout check-ins logged.
         </div>
+      </div>
+    `
+  }
+
+  let nutritionHtml = ''
+  if (includeNutrition && nutrition) {
+    const goals = nutrition.goals || { calories: 2000, protein: 120, carbs: 250, fats: 65 }
+    const logs = nutrition.logs || []
+    let mealItemsHtml = ''
+    logs.slice(0, 15).forEach((l: any) => {
+      mealItemsHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; margin-bottom: 8px;">
+          <div>
+            <span style="font-weight: bold; color: #ffffff; font-size: 14px;">${l.name || 'Meal'}</span>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">🍽️ ${l.meal_type || 'Lunch'} · 📅 ${formatDate(l.log_date || l.date)}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">P: ${l.protein || 0}g · C: ${l.carbs || 0}g · F: ${l.fats || 0}g</div>
+          </div>
+          <span style="font-size: 12px; background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 4px 10px; border-radius: 9999px; border: 1px solid rgba(245, 158, 11, 0.2); font-weight: bold;">${l.calories || 0} kcal</span>
+        </div>
+      `
+    })
+
+    nutritionHtml = `
+      <div style="background: #111827; border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 24px;">
+        <h2 style="color: #ffffff; font-size: 18px; margin-top: 0; margin-bottom: 6px;">🍽️ Diet & Nutrition Intake</h2>
+        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 14px;">Daily Targets: <strong>${goals.calories} kcal</strong> · P: <strong>${goals.protein}g</strong> · C: <strong>${goals.carbs}g</strong> · F: <strong>${goals.fats}g</strong></div>
+        ${mealItemsHtml || '<div style="text-align: center; padding: 20px; color: #94a3b8; background: #1e293b; border-radius: 8px; border: 1px solid #334155;">No recent meal intake logged.</div>'}
       </div>
     `
   }
@@ -1090,6 +1136,7 @@ function buildAcademicDigestHtml(params: AcademicDigestParams): string {
       ${examsHtml}
       ${resultsHtml}
       ${exercisesHtml}
+      ${nutritionHtml}
       
       <div style="text-align: center; margin-top: 32px; border-top: 1px solid #334155; padding-top: 20px;">
         <a href="https://axon-com.vercel.app/login" style="display: inline-block; background-color: #3b82f6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 10px; font-size: 14px;">Open Axon App</a>

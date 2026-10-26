@@ -6,6 +6,8 @@ import { createStudentReportDoc, downloadStudentReport } from '../../lib/generat
 import { fetchFullStudentDetail } from '../../lib/manageStudent'
 import { supabase } from '../../lib/supabase'
 import { initials } from '../../lib/utils'
+import { fetchExerciseData, calculateStreakAndStats, getLevelInfo, getTodayStr } from '../../lib/exerciseUtils'
+import { fetchNutritionData } from '../../lib/nutritionUtils'
 
 export default function ManagerReportsPage() {
   const [students, setStudents] = useState([])
@@ -68,8 +70,38 @@ export default function ManagerReportsPage() {
           if (full?.examResultsSemesters?.length) {
             payload.semesters = full.examResultsSemesters
           }
+          if (full?.nutritionGoals || full?.nutritionLogs) {
+            payload.nutrition = { goals: full.nutritionGoals, logs: full.nutritionLogs }
+          }
         } catch (e) {}
       }
+
+      try {
+        const exData = await fetchExerciseData(student.id)
+        const stats = calculateStreakAndStats(exData.logs, exData.weeklyGoal, exData.freezesAvailable, getTodayStr(), exData.xpTotal, exData.frozenDates)
+        const lvl = getLevelInfo(exData.xpTotal)
+        payload.exercise = {
+          logs: exData.logs,
+          xpTotal: exData.xpTotal,
+          weeklyGoal: exData.weeklyGoal,
+          weeklyCount: stats.weeklyCount,
+          currentStreak: stats.currentStreak,
+          longestStreak: stats.longestStreak,
+          level: lvl.level,
+          levelTitle: lvl.title
+        }
+      } catch (e) {}
+
+      if (!payload.nutrition) {
+        try {
+          const nutData = await fetchNutritionData(student.id, student.metadata)
+          payload.nutrition = {
+            goals: nutData.goals,
+            logs: nutData.logs
+          }
+        } catch (e) {}
+      }
+
       const { doc, fileName } = createStudentReportDoc(payload)
       zip.file(fileName, doc.output('blob'))
     }

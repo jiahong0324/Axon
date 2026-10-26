@@ -252,10 +252,10 @@ export default function HomePage() {
       </header>
 
       <section className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
-        <Summary icon={BookOpen} label={t('home.todayClasses')} value={todayClasses.length} tone="text-theme-600 dark:text-theme-400" border="border-l-theme-500" />
-        <Summary icon={AlertCircle} label={t('home.dueSoon')} value={dueSoon.length} tone="text-amber-600 dark:text-yellow-400" border="border-l-yellow-500" />
-        <Summary icon={Calendar} label={t('home.daysToExam')} value={nextExamValue} valueClass={nextExamDays === 0 ? 'text-red-500' : ''} tone="text-violet-600 dark:text-purple-400" border="border-l-purple-500" />
-        <Summary icon={Dumbbell} label={t('exercise.currentStreak')} value={`${exStats.currentStreak} 🔥`} tone="text-orange-600 dark:text-orange-400" border="border-l-orange-500" />
+        <Summary icon={BookOpen} label={t('home.todayClasses')} value={todayClasses.length} tone="text-theme-600 dark:text-theme-400" border="border-l-theme-500" to="/timetable" />
+        <Summary icon={AlertCircle} label={t('home.dueSoon')} value={dueSoon.length} tone="text-amber-600 dark:text-yellow-400" border="border-l-yellow-500" to="/assignments" />
+        <Summary icon={Calendar} label={t('home.daysToExam')} value={nextExamValue} valueClass={nextExamDays === 0 ? 'text-red-500' : ''} tone="text-violet-600 dark:text-purple-400" border="border-l-purple-500" to="/exams" />
+        <Summary icon={Dumbbell} label={t('exercise.currentStreak')} value={`${exStats.currentStreak} 🔥`} tone="text-orange-600 dark:text-orange-400" border="border-l-orange-500" to="/health" />
       </section>
 
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
@@ -321,8 +321,17 @@ export default function HomePage() {
   )
 }
 
-function Summary({ icon: Icon, label, value, tone, border, valueClass = '' }) {
-  return <div className={`summary-card card flex items-center gap-4 border-l-4 ${border}`}><span className="summary-icon-wrap"><Icon className={`h-7 w-7 ${tone}`} /></span><div><p className="muted">{label}</p><p className={`text-2xl font-bold ${valueClass}`}>{value}</p></div></div>
+function Summary({ icon: Icon, label, value, tone, border, valueClass = '', to }) {
+  const content = (
+    <div className={`summary-card card flex items-center gap-4 border-l-4 ${border} ${to ? 'hover:bg-white/[0.07] transition-all cursor-pointer' : ''}`}>
+      <span className="summary-icon-wrap"><Icon className={`h-7 w-7 ${tone}`} /></span>
+      <div>
+        <p className="muted">{label}</p>
+        <p className={`text-2xl font-bold ${valueClass}`}>{value}</p>
+      </div>
+    </div>
+  )
+  return to ? <Link to={to} className="block no-underline">{content}</Link> : content
 }
 
 function ClassCard({ item }) {

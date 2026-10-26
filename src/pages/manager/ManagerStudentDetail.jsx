@@ -274,7 +274,7 @@ export default function ManagerStudentDetail() {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <button className="btn-ghost" onClick={() => setEditing(true)}><Pencil className="h-4 w-4" /> Edit Student</button>
-            <button className="manager-primary-btn" onClick={() => downloadStudentReport({ student, classes, assignments, exams, examResults: results, semesters, reminders })}><Download className="h-4 w-4" /> Export PDF Report</button>
+            <button className="manager-primary-btn" onClick={() => downloadStudentReport({ student, classes, assignments, exams, examResults: results, semesters, reminders, metadata })}><Download className="h-4 w-4" /> Export PDF Report</button>
           </div>
         </div>
       </header>

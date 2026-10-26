@@ -3,6 +3,7 @@ import { supabase } from './supabase'
 import { formatTime } from './utils'
 import { calculateOverallCGPA, calculateSemesterGPA } from './tarumtGrading'
 import { fetchExerciseData, calculateStreakAndStats, getLevelInfo } from './exerciseUtils'
+import { fetchNutritionData } from './nutritionUtils'
 import { translations } from './i18n/translations'
 import { DEFAULT_PREFERENCES } from './preferences'
 import { faqs } from '../data/faqs'
@@ -143,7 +144,7 @@ ${faqs.map(f => `- Q: ${f.question}\n  A: ${f.answer}`).join('\n\n')}
 `.trim()
   }
 
-  const [classesRes, assignmentsRes, examsRes, remindersRes, semsRes, coursesRes, exerciseData, blogRes] = await Promise.all([
+  const [classesRes, assignmentsRes, examsRes, remindersRes, semsRes, coursesRes, exerciseData, nutritionData, blogRes] = await Promise.all([
     supabase.from('classes').select('*').eq('user_id', user.id),
     supabase.from('assignments').select('*').eq('user_id', user.id).neq('status', 'Done'),
     supabase.from('exams').select('*').eq('user_id', user.id).gte('exam_date', todayStr).order('exam_date'),
@@ -151,6 +152,7 @@ ${faqs.map(f => `- Q: ${f.question}\n  A: ${f.answer}`).join('\n\n')}
     supabase.from('student_semesters').select('*').eq('user_id', user.id).order('created_at'),
     supabase.from('student_semester_courses').select('*').eq('user_id', user.id).order('created_at'),
     fetchExerciseData(user.id),
+    fetchNutritionData(user.id),
     supabase.from('blog_posts').select('slug, title, category, read_time, description, views_count, likes_count').order('created_at', { ascending: false }).limit(20)
   ])
 
@@ -248,7 +250,7 @@ ${exams.length === 0 ? 'No upcoming exams.' : exams.map(e => `- [Exam ID: ${e.id
 === ACTIVE REMINDERS ===
 ${reminders.length === 0 ? 'No active reminders.' : reminders.map(r => `- [Reminder ID: ${r.id}] "${r.title}" at ${formatTime(r.reminder_time) || 'no time set'} (${r.repeat_type})`).join('\n')}
 
-=== EXERCISE & HABIT TRACKING ===
+=== HEALTH: WORKOUT & HABIT TRACKING ===
 Current Streak: ${exerciseStats.currentStreak} days (Longest: ${exerciseStats.longestStreak} days)
 Weekly Goal Progress: ${exerciseStats.weeklyCount} / ${exerciseStats.weeklyGoal} days completed this week
 Level & Rank: Level ${exerciseLevel.level} - ${exerciseLevel.title} (${exerciseData.xpTotal} Total XP)
@@ -257,6 +259,11 @@ Checked In Today (${todayStr}): ${exerciseStats.isCheckedInToday ? `Yes (${exerc
 Unlocked Badges (${unlockedBadges.length} total): ${unlockedBadges.map(b => b.titleKey).join(', ') || 'None yet'}
 Recent Workout History:
 ${exerciseData.logs.length === 0 ? 'No workouts logged yet.' : exerciseData.logs.slice(0, 10).map(l => `- ${l.log_date}: ${l.activity_type || 'Workout'} (+${l.xp_earned || 20} XP)`).join('\n')}
+
+=== HEALTH: DIET & NUTRITION TRACKING ===
+Daily Targets: ${nutritionData?.goals?.calories || 2000} kcal | Protein: ${nutritionData?.goals?.protein || 120}g | Carbs: ${nutritionData?.goals?.carbs || 250}g | Fats: ${nutritionData?.goals?.fats || 65}g
+Recent Meals Logged:
+${(!nutritionData?.logs || nutritionData.logs.length === 0) ? 'No meal logs recorded yet.' : nutritionData.logs.slice(0, 10).map(m => `- [${m.date || 'N/A'}] ${m.meal_type || 'Meal'}: ${m.name || 'Food'} (${m.calories || 0} kcal, P:${m.protein || 0}g, C:${m.carbs || 0}g, F:${m.fats || 0}g)${m.notes ? ' - ' + m.notes : ''}`).join('\n')}
 
 === PUBLIC BLOG ARTICLES & STUDY GUIDES ===
 ${blogPosts.length === 0 ? 'No blog posts found.' : blogPosts.map(p => `- [${p.category}] "${p.title}" (${p.read_time}, ${p.views_count || 0} views, ${p.likes_count || 0} likes)\n  Slug: /blog/${p.slug}\n  Summary: ${p.description}`).join('\n\n')}

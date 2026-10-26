@@ -5,8 +5,20 @@ import { dateLabel, formatTime } from './utils'
 import { calculateOverallCGPA, getAcademicStanding } from './tarumtGrading'
 import { supabase } from './supabase'
 import { fetchFullStudentDetail } from './manageStudent'
+import { fetchExerciseData, calculateStreakAndStats, getLevelInfo, getTodayStr } from './exerciseUtils'
+import { fetchNutritionData, formatMealTime } from './nutritionUtils'
 
-export function createStudentReportDoc({ student = {}, classes = [], assignments = [], exams = [], examResults = [], semesters = [], reminders = [] }) {
+export function createStudentReportDoc({
+  student = {},
+  classes = [],
+  assignments = [],
+  exams = [],
+  examResults = [],
+  semesters = [],
+  reminders = [],
+  exercise = null,
+  nutrition = null
+}) {
   const doc = new jsPDF()
   const fullName = student.full_name || student.email || 'Student'
   const resultByExam = new Map(examResults.map(result => [result.exam_id, result]))
@@ -172,6 +184,46 @@ export function createStudentReportDoc({ student = {}, classes = [], assignments
     )
   }
 
+  // Health: Workout & Habits Section
+  if (exercise) {
+    const exLogs = exercise.logs || []
+    const workoutSubtitle = `Streak: ${exercise.currentStreak || 0} Days (Longest: ${exercise.longestStreak || 0} Days) · Weekly Target: ${exercise.weeklyCount || 0}/${exercise.weeklyGoal || 4} Days · Level ${exercise.level || 1} (${exercise.xpTotal || 0} Total XP)`
+    addSection(
+      'Health: Workout & Habit Logs',
+      ['Date', 'Workout / Activity', 'XP Earned'],
+      exLogs.slice(0, 30).map(l => [
+        l.log_date || 'N/A',
+        l.activity_type || 'Workout',
+        `+${l.xp_earned || 20} XP`
+      ]),
+      'No workout logs recorded.',
+      workoutSubtitle
+    )
+  }
+
+  // Health: Diet & Nutrition Section
+  if (nutrition) {
+    const nutGoals = nutrition.goals || { calories: 2000, protein: 120, carbs: 250, fats: 65 }
+    const nutLogs = nutrition.logs || []
+    const nutSubtitle = `Daily Targets: ${nutGoals.calories} kcal · Protein: ${nutGoals.protein}g · Carbs: ${nutGoals.carbs}g · Fats: ${nutGoals.fats}g`
+    addSection(
+      'Health: Diet & Nutrition Intake',
+      ['Date', 'Time', 'Meal', 'Food Item', 'Calories', 'Protein', 'Carbs', 'Fats'],
+      nutLogs.slice(0, 30).map(l => [
+        l.date || 'N/A',
+        formatMealTime(l.meal_time, l.created_at) || 'N/A',
+        l.meal_type || 'Lunch',
+        l.name || 'Meal',
+        `${l.calories || 0} kcal`,
+        `${l.protein || 0}g`,
+        `${l.carbs || 0}g`,
+        `${l.fats || 0}g`
+      ]),
+      'No diet or nutrition intake logs recorded.',
+      nutSubtitle
+    )
+  }
+
   const pageCount = doc.internal.getNumberOfPages()
   for (let page = 1; page <= pageCount; page += 1) {
     doc.setPage(page)
@@ -185,7 +237,7 @@ export function createStudentReportDoc({ student = {}, classes = [], assignments
 }
 
 export async function downloadStudentReport(payload) {
-  let { student, semesters, reminders } = payload || {}
+  let { student, semesters, reminders, exercise, nutrition, metadata } = payload || {}
 
   // Auto-fetch missing semesters asynchronously
   if ((!semesters || semesters.length === 0) && student?.id) {
@@ -234,6 +286,40 @@ export async function downloadStudentReport(payload) {
         payload.reminders = rems
       }
     } catch (e) {}
+  }
+
+  // Auto-fetch Health: Workout data if not provided
+  if (!payload.exercise && student?.id) {
+    try {
+      const exData = await fetchExerciseData(student.id)
+      const stats = calculateStreakAndStats(exData.logs, exData.weeklyGoal, exData.freezesAvailable, getTodayStr(), exData.xpTotal, exData.frozenDates)
+      const lvl = getLevelInfo(exData.xpTotal)
+      payload.exercise = {
+        logs: exData.logs,
+        xpTotal: exData.xpTotal,
+        weeklyGoal: exData.weeklyGoal,
+        weeklyCount: stats.weeklyCount,
+        currentStreak: stats.currentStreak,
+        longestStreak: stats.longestStreak,
+        level: lvl.level,
+        levelTitle: lvl.title
+      }
+    } catch (e) {
+      console.warn('Auto-fetch exercise in downloadStudentReport:', e)
+    }
+  }
+
+  // Auto-fetch Health: Diet & Nutrition data if not provided
+  if (!payload.nutrition && student?.id) {
+    try {
+      const nutData = await fetchNutritionData(student.id, metadata || student.metadata)
+      payload.nutrition = {
+        goals: nutData.goals,
+        logs: nutData.logs
+      }
+    } catch (e) {
+      console.warn('Auto-fetch nutrition in downloadStudentReport:', e)
+    }
   }
 
   const { doc, fileName } = createStudentReportDoc(payload)

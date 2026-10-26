@@ -16,6 +16,7 @@ import { studentManager } from '../lib/manageStudent'
 import { useLanguage } from '../components/LanguageProvider'
 import { markExplicitLogout } from '../lib/authEvents'
 import { fetchExerciseData } from '../lib/exerciseUtils'
+import { fetchNutritionData, formatMealTime } from '../lib/nutritionUtils'
 import { logActivity } from '../lib/logActivity'
 const tabs = [
   ['profile', 'Profile'],
@@ -40,11 +41,11 @@ export default function SettingsPage() {
   const [sendingTest, setSendingTest] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
-  const [digestOptions, setDigestOptions] = useState({ classes: true, assignments: true, exams: true, results: true, exercise: true })
+  const [digestOptions, setDigestOptions] = useState({ classes: true, assignments: true, exams: true, results: true, exercise: true, nutrition: true })
   const [sendingDigest, setSendingDigest] = useState(false)
 
   async function sendAcademicEmail() {
-    if (!digestOptions.classes && !digestOptions.assignments && !digestOptions.exams && !digestOptions.results && !digestOptions.exercise) {
+    if (!digestOptions.classes && !digestOptions.assignments && !digestOptions.exams && !digestOptions.results && !digestOptions.exercise && !digestOptions.nutrition) {
       return showToast('Please select at least one planner section to include.', 'warning')
     }
     setSendingDigest(true)
@@ -149,7 +150,10 @@ export default function SettingsPage() {
         const { data } = await supabase.from(table).select('*').eq('user_id', user.id)
         result[table] = data || []
       }
-      const exerciseInfo = await fetchExerciseData(user.id)
+      const [exerciseInfo, nutritionInfo] = await Promise.all([
+        fetchExerciseData(user.id),
+        fetchNutritionData(user.id)
+      ])
 
       const doc = new jsPDF()
 
@@ -335,17 +339,36 @@ export default function SettingsPage() {
         'No semester exam results found.'
       )
 
-      // 6. Exercise & Workout Logs
+      // 6. Health: Workout & Habit Logs
       const exerciseLogsData = (exerciseInfo.logs || []).map(l => [
         l.log_date ? new Date(l.log_date + 'T00:00:00').toLocaleDateString('en-US', { dateStyle: 'medium' }) : 'N/A',
         l.activity_type || 'Gym',
         `+${l.xp_earned || 20} XP`
       ])
       addSectionTable(
-        `Health, Exercise & Habit Logs (Total XP: ${exerciseInfo.xpTotal || 0})`,
+        `Health: Workout & Habit Logs (Total XP: ${exerciseInfo.xpTotal || 0})`,
         ['Date', 'Activity Type', 'XP Earned'],
         exerciseLogsData,
-        'No exercise logs found.'
+        'No workout logs found.'
+      )
+
+      // 7. Health: Diet & Nutrition Intake
+      const nutGoals = nutritionInfo?.goals || { calories: 2000, protein: 120, carbs: 250, fats: 65 }
+      const nutritionLogsData = (nutritionInfo?.logs || []).slice(0, 40).map(l => [
+        l.date ? new Date(l.date + 'T00:00:00').toLocaleDateString('en-US', { dateStyle: 'medium' }) : 'N/A',
+        formatMealTime(l.meal_time, l.created_at) || 'N/A',
+        l.meal_type || 'Lunch',
+        l.name || 'Meal',
+        `${l.calories || 0} kcal`,
+        `${l.protein || 0}g`,
+        `${l.carbs || 0}g`,
+        `${l.fats || 0}g`
+      ])
+      addSectionTable(
+        `Health: Diet & Nutrition Intake (Target: ${nutGoals.calories} kcal · P: ${nutGoals.protein}g · C: ${nutGoals.carbs}g · F: ${nutGoals.fats}g)`,
+        ['Date', 'Time', 'Meal', 'Food Item', 'Calories', 'Protein', 'Carbs', 'Fats'],
+        nutritionLogsData,
+        'No diet or nutrition intake logs recorded.'
       )
 
       // Add Page Numbers/Footer dynamically on each page
@@ -628,7 +651,8 @@ export default function SettingsPage() {
             <ToggleRow label="Include Pending Assignments" checked={digestOptions.assignments} onChange={next => setDigestOptions(prev => ({ ...prev, assignments: next }))} />
             <ToggleRow label="Include Exam Schedules" checked={digestOptions.exams} onChange={next => setDigestOptions(prev => ({ ...prev, exams: next }))} />
             <ToggleRow label="Include Results" checked={digestOptions.results} onChange={next => setDigestOptions(prev => ({ ...prev, results: next }))} />
-            <ToggleRow label="Include Health & Habit Logs" checked={digestOptions.exercise} onChange={next => setDigestOptions(prev => ({ ...prev, exercise: next }))} />
+            <ToggleRow label="Include Health: Workout & Habit Logs" checked={digestOptions.exercise} onChange={next => setDigestOptions(prev => ({ ...prev, exercise: next }))} />
+            <ToggleRow label="Include Health: Diet & Nutrition Logs" checked={digestOptions.nutrition} onChange={next => setDigestOptions(prev => ({ ...prev, nutrition: next }))} />
           </div>
           <button className="btn-primary w-full mt-4" onClick={sendAcademicEmail} disabled={sendingDigest}>
             <Mail className="h-4 w-4" /> {sendingDigest ? 'Sending Email...' : 'Email Academic Report'}
