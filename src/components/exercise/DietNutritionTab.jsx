@@ -35,7 +35,8 @@ export default function DietNutritionTab({
   hasSetGoals,
   onSaveGoals,
   onSaveFood,
-  onDeleteFood
+  onDeleteFood,
+  readOnly = false
 }) {
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
@@ -104,7 +105,7 @@ export default function DietNutritionTab({
       {ConfirmDialog}
 
       {/* Top Welcome / Initial Setup Banner if goals haven't been set */}
-      {!hasSetGoals && (
+      {!hasSetGoals && !readOnly && (
         <div className="rounded-2xl bg-gradient-to-r from-blue-900/30 via-indigo-900/20 to-slate-900/40 p-4 sm:p-5 border border-blue-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-500/20 text-blue-400">
@@ -177,29 +178,37 @@ export default function DietNutritionTab({
         </div>
 
         {/* Action Buttons: AI Scan, Manual Add, Edit Goals */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setScannerOpen(true)}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold bg-blue-500 hover:bg-blue-600 text-white shadow-md shadow-blue-500/20 transition-all active:scale-95 whitespace-nowrap"
-          >
-            <Sparkles className="h-4 w-4 shrink-0 text-amber-200" />
-            <span>AI Food Scan</span>
-          </button>
-          <button
-            onClick={() => { setEditingItem(null); setManualModalOpen(true) }}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold bg-[#131b2e] hover:bg-slate-800 border border-white/10 text-slate-200 transition-all active:scale-95 whitespace-nowrap"
-          >
-            <Plus className="h-4 w-4 shrink-0 text-blue-400" />
-            <span>Log Manually</span>
-          </button>
-          <button
-            onClick={() => setGoalModalOpen(true)}
-            className="h-10 w-10 sm:h-[42px] sm:w-[42px] inline-flex items-center justify-center rounded-xl bg-[#131b2e] hover:bg-slate-800 border border-white/10 text-slate-300 hover:text-white transition-all active:scale-95 shrink-0"
-            title="Edit Daily Nutrition Goals"
-          >
-            <Settings2 className="h-4 w-4 shrink-0" />
-          </button>
-        </div>
+        {!readOnly ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setScannerOpen(true)}
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold bg-blue-500 hover:bg-blue-600 text-white shadow-md shadow-blue-500/20 transition-all active:scale-95 whitespace-nowrap"
+            >
+              <Sparkles className="h-4 w-4 shrink-0 text-amber-200" />
+              <span>AI Food Scan</span>
+            </button>
+            <button
+              onClick={() => { setEditingItem(null); setManualModalOpen(true) }}
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold bg-[#131b2e] hover:bg-slate-800 border border-white/10 text-slate-200 transition-all active:scale-95 whitespace-nowrap"
+            >
+              <Plus className="h-4 w-4 shrink-0 text-blue-400" />
+              <span>Log Manually</span>
+            </button>
+            <button
+              onClick={() => setGoalModalOpen(true)}
+              className="h-10 w-10 sm:h-[42px] sm:w-[42px] inline-flex items-center justify-center rounded-xl bg-[#131b2e] hover:bg-slate-800 border border-white/10 text-slate-300 hover:text-white transition-all active:scale-95 shrink-0"
+              title="Edit Daily Nutrition Goals"
+            >
+              <Settings2 className="h-4 w-4 shrink-0" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-3 py-1.5 rounded-xl bg-slate-800/80 border border-white/10 text-slate-400 font-medium">
+              Read-only student nutrition summary
+            </span>
+          </div>
+        )}
       </div>
 
       {/* HERO DASHBOARD: 4 CLEAN COLORED PROGRESS BARS (CALORIES, PROTEIN, CARBS, FATS) */}
@@ -216,13 +225,19 @@ export default function DietNutritionTab({
               </h3>
             </div>
           </div>
-          <button
-            onClick={() => setGoalModalOpen(true)}
-            className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
-          >
-            <span>Goal: {goals.calories} kcal</span>
-            <Pencil className="h-3 w-3" />
-          </button>
+          {!readOnly ? (
+            <button
+              onClick={() => setGoalModalOpen(true)}
+              className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
+            >
+              <span>Goal: {goals.calories} kcal</span>
+              <Pencil className="h-3 w-3" />
+            </button>
+          ) : (
+            <span className="text-xs font-semibold text-slate-400">
+              Goal: {goals.calories} kcal
+            </span>
+          )}
         </div>
 
         {/* 4 Colored Progress Bars Grid */}
@@ -400,23 +415,27 @@ export default function DietNutritionTab({
             </div>
             <h4 className="text-base font-bold text-white mb-1">No meals logged for this day</h4>
             <p className="text-xs text-slate-400 max-w-sm mx-auto mb-5">
-              Snap a quick photo with AI or log your meal manually to track your calories and macros!
+              {readOnly
+                ? 'The student has not recorded any meals or nutrition intake for this date.'
+                : 'Snap a quick photo with AI or log your meal manually to track your calories and macros!'}
             </p>
-            <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={() => setScannerOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-blue-500/20 transition-all"
-              >
-                <Sparkles className="h-4 w-4 text-amber-200" />
-                <span>AI Scan Meal</span>
-              </button>
-              <button
-                onClick={() => { setEditingItem(null); setManualModalOpen(true) }}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm border border-slate-700 transition-all"
-              >
-                <span>Add Manually</span>
-              </button>
-            </div>
+            {!readOnly && (
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setScannerOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-blue-500/20 transition-all"
+                >
+                  <Sparkles className="h-4 w-4 text-amber-200" />
+                  <span>AI Scan Meal</span>
+                </button>
+                <button
+                  onClick={() => { setEditingItem(null); setManualModalOpen(true) }}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm border border-slate-700 transition-all"
+                >
+                  <span>Add Manually</span>
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           /* Grouped by Meal Categories */
@@ -492,22 +511,24 @@ export default function DietNutritionTab({
                           <span className="text-sm font-bold text-white">
                             {item.calories} <span className="text-xs text-slate-400 font-normal">kcal</span>
                           </span>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleEdit(item)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center"
-                              title="Edit item"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors inline-flex items-center justify-center"
-                              title="Delete item"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
+                          {!readOnly && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleEdit(item)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center"
+                                title="Edit item"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(item)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors inline-flex items-center justify-center"
+                                title="Delete item"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}) }
@@ -521,36 +542,40 @@ export default function DietNutritionTab({
       </div>
 
       {/* MODALS */}
-      <DietGoalModal
-        isOpen={goalModalOpen}
-        onClose={() => setGoalModalOpen(false)}
-        currentGoals={goals}
-        onSave={async (newGoals) => {
-          await onSaveGoals(newGoals)
-          showToast('Daily nutrition goals updated!', 'success')
-        }}
-      />
+      {!readOnly && (
+        <>
+          <DietGoalModal
+            isOpen={goalModalOpen}
+            onClose={() => setGoalModalOpen(false)}
+            currentGoals={goals}
+            onSave={async (newGoals) => {
+              if (onSaveGoals) await onSaveGoals(newGoals)
+              showToast('Daily nutrition goals updated!', 'success')
+            }}
+          />
 
-      <ManualFoodModal
-        isOpen={manualModalOpen}
-        onClose={() => { setManualModalOpen(false); setEditingItem(null) }}
-        initialData={editingItem}
-        defaultDate={activeDate}
-        onSave={async (item) => {
-          await onSaveFood(item)
-          showToast(editingItem ? 'Food updated!' : 'Food logged successfully!', 'success')
-        }}
-      />
+          <ManualFoodModal
+            isOpen={manualModalOpen}
+            onClose={() => { setManualModalOpen(false); setEditingItem(null) }}
+            initialData={editingItem}
+            defaultDate={activeDate}
+            onSave={async (item) => {
+              if (onSaveFood) await onSaveFood(item)
+              showToast(editingItem ? 'Food updated!' : 'Food logged successfully!', 'success')
+            }}
+          />
 
-      <AIFoodScannerModal
-        isOpen={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        defaultDate={activeDate}
-        onSave={async (item) => {
-          await onSaveFood(item)
-          showToast(`Added "${item.name}" to today's log!`, 'success')
-        }}
-      />
+          <AIFoodScannerModal
+            isOpen={scannerOpen}
+            onClose={() => setScannerOpen(false)}
+            defaultDate={activeDate}
+            onSave={async (item) => {
+              if (onSaveFood) await onSaveFood(item)
+              showToast(`Added "${item.name}" to today's log!`, 'success')
+            }}
+          />
+        </>
+      )}
     </>
   )
 }

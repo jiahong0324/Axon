@@ -92,7 +92,7 @@ export function formatMealTime(timeStr, isoDate) {
   }
   return '';
 }
-export async function fetchNutritionData(userId) {
+export async function fetchNutritionData(userId, fallbackMetadata = null) {
   const goalsKey = userId ? `axon_nutrition_goals_${userId}` : 'axon_nutrition_goals_global'
   const logsKey = userId ? `axon_nutrition_logs_${userId}` : 'axon_nutrition_logs_global'
 
@@ -128,7 +128,9 @@ export async function fetchNutritionData(userId) {
   // 2. Fetch from Supabase cloud (both table and auth user_metadata fallback)
   try {
     const authRes = await supabase.auth.getUser()
-    const metadata = authRes?.data?.user?.user_metadata || {}
+    const currentUser = authRes?.data?.user
+    const isSelf = Boolean(currentUser && currentUser.id === userId)
+    const metadata = isSelf ? (currentUser?.user_metadata || {}) : (fallbackMetadata || {})
 
     // Check user_metadata first for offline-first sync
     if (metadata.axon_nutrition_goals && typeof metadata.axon_nutrition_goals.calories === 'number') {
@@ -162,7 +164,7 @@ export async function fetchNutritionData(userId) {
         hasSetGoals = true
       }
 
-      if (logsRes?.data && Array.isArray(logsRes.data)) {
+      if (logsRes?.data && Array.isArray(logsRes.data) && logsRes.data.length > 0) {
         const tableLogs = logsRes.data.map(row => ({
           id: row.id,
           user_id: row.user_id,
@@ -178,9 +180,7 @@ export async function fetchNutritionData(userId) {
           image_url: row.image_url || '',
           created_at: row.created_at
         }))
-        if (tableLogs.length > 0) {
-          logs = tableLogs
-        }
+        logs = tableLogs
       }
     } catch (tblErr) {
       // Table doesn't exist yet, fallback already handled smoothly by user_metadata
