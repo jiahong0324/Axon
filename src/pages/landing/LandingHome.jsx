@@ -227,13 +227,13 @@ export default function LandingHome() {
                     download
                     className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700"
                   >
-                    <Download className="h-5 w-5" /> 立即下载
+                    <Download className="h-5 w-5" /> Download
                   </a>
                   <Link
                     to="/login"
                     className="inline-flex min-h-[56px] items-center justify-center rounded-xl border border-slate-200 bg-white px-7 text-base font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                   >
-                    在浏览器中使用
+                    Continue in Browser
                   </Link>
                 </>
               ) : device === 'ios' ? (
@@ -242,7 +242,7 @@ export default function LandingHome() {
                   onClick={() => setShowIosGuide(true)}
                   className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700"
                 >
-                  <Smartphone className="h-5 w-5" /> 安装到 iPhone
+                  <Smartphone className="h-5 w-5" /> Install on iPhone
                 </button>
               ) : (
                 <>
@@ -301,8 +301,8 @@ export default function LandingHome() {
       <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 border-t border-slate-200 dark:border-white/10">
         <SectionIntro
           eyebrow="Mobile"
-          title="随时随地使用 Axon"
-          desc="在手机上快速查看课程表、接收提醒与管理学业进度。"
+          title="Axon Everywhere You Go"
+          desc="Check your timetable, receive alerts, and track your academic progress right on your phone."
         />
         <div className="mt-10 grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
           {/* Android Card */}
@@ -312,7 +312,7 @@ export default function LandingHome() {
                 <Smartphone className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">Android</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">安装包 (~2.1 MB)</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Android APK (~2.1 MB)</p>
             </div>
             <div className="mt-6">
               <a
@@ -320,7 +320,7 @@ export default function LandingHome() {
                 download
                 className="inline-flex w-full min-h-[46px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-5 text-sm font-bold text-white shadow-lg shadow-theme-600/20 transition hover:bg-theme-700"
               >
-                <Download className="h-4 w-4" /> 立即下载
+                <Download className="h-4 w-4" /> Download
               </a>
             </div>
           </div>
@@ -332,7 +332,7 @@ export default function LandingHome() {
                 <Smartphone className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">iOS (iPhone / iPad)</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">PWA 网页应用</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Progressive Web App</p>
             </div>
             <div className="mt-6">
               <button
@@ -340,7 +340,7 @@ export default function LandingHome() {
                 onClick={() => setShowIosGuide(true)}
                 className="inline-flex w-full min-h-[46px] items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
               >
-                查看安装指引
+                View Install Guide
               </button>
             </div>
           </div>
@@ -379,7 +379,7 @@ export default function LandingHome() {
       <Modal
         isOpen={showIosGuide}
         onClose={() => setShowIosGuide(false)}
-        title="安装到 iPhone"
+        title="Install on iPhone"
       >
         <div className="space-y-4 py-2 text-slate-800 dark:text-slate-200">
           <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
@@ -387,9 +387,9 @@ export default function LandingHome() {
               1
             </div>
             <div>
-              <p className="font-semibold text-sm">点击 Safari 底部分享按钮</p>
+              <p className="font-semibold text-sm">Tap the Share button in Safari</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                在 Safari 底部工具栏中，点击带有向上箭头的分享图标 <strong>⎋</strong>。
+                In Safari's bottom toolbar, tap the Share icon with an upward arrow.
               </p>
             </div>
           </div>
@@ -399,9 +399,9 @@ export default function LandingHome() {
               2
             </div>
             <div>
-              <p className="font-semibold text-sm">选择「添加到主屏幕」</p>
+              <p className="font-semibold text-sm">Select "Add to Home Screen"</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                往下滑动菜单，点击 <strong>添加到主屏幕 (Add to Home Screen)</strong>，然后点击右上角「添加」。
+                Scroll down the share sheet and tap <strong>Add to Home Screen</strong>, then tap <strong>Add</strong> at the top right.
               </p>
             </div>
           </div>
@@ -412,7 +412,7 @@ export default function LandingHome() {
               onClick={() => setShowIosGuide(false)}
               className="w-full btn-primary py-2.5 rounded-xl text-sm font-semibold"
             >
-              我知道了
+              Got it
             </button>
           </div>
         </div>
