@@ -1,5 +1,28 @@
 import { supabase } from './supabase'
 import { registerPushSubscription } from './pushNotifications'
+import { logActivity } from './logActivity'
+
+export const PREFERENCE_LABELS = {
+  theme: { name: 'Theme', format: v => v === 'dark' ? 'Dark' : v === 'light' ? 'Light' : 'System' },
+  accentColor: { name: 'Accent Color', format: v => v ? v.charAt(0).toUpperCase() + v.slice(1) : v },
+  fontSize: { name: 'Font Size', format: v => v ? v.charAt(0).toUpperCase() + v.slice(1) : v },
+  fontFamily: { name: 'Text Style', format: v => v === 'mono' ? 'Monospace' : v === 'serif' ? 'Serif' : 'Sans-Serif' },
+  compactMode: { name: 'Compact Mode', format: v => v === 'true' ? 'Enabled' : 'Disabled' },
+  appLanguage: { name: 'Interface Language', format: v => v === 'zh' ? '中文' : 'English' },
+  aiLanguage: { name: 'AI Language', format: v => v },
+  aiStyle: { name: 'AI Style', format: v => v },
+  dailyTipEnabled: { name: 'Daily AI Tip', format: v => v === 'true' ? 'Enabled' : 'Disabled' },
+  firstDay: { name: 'First Day of Week', format: v => v },
+  timeFormat: { name: 'Time Format', format: v => v },
+  assignmentReminders: { name: 'Assignment Deadline Alerts', format: v => v === 'true' ? 'Enabled' : 'Disabled' },
+  examAlerts: { name: 'Exam Alerts', format: v => v === 'true' ? 'Enabled' : 'Disabled' },
+  reminderLeadTime: { name: 'Deadline Reminder Notice', format: v => v },
+  axon_class_notify: { name: 'Class Starting Alerts', format: v => v === 'true' ? 'Enabled' : 'Disabled' },
+  axon_exam_notify: { name: 'Exam Starting Alerts', format: v => v === 'true' ? 'Enabled' : 'Disabled' },
+  axon_notify_minutes: { name: 'Class/Exam Alert Lead Time', format: v => `${v} minutes before` },
+  axon_attendance_notify: { name: 'Attendance Code Reminder', format: v => v === 'true' ? 'Enabled' : 'Disabled' },
+  axon_attendance_minutes: { name: 'Attendance Reminder Lead Time', format: v => `${v} minutes before` }
+}
 
 export const DEFAULT_PREFERENCES = {
   axon_notify_minutes: '10',
@@ -132,6 +155,19 @@ export async function updatePreference(user, key, value) {
         console.error('Failed to sync push subscription on preference update:', err)
       }
     }
+
+    // 5. Record activity in activity_log for manager visibility
+    try {
+      const prefInfo = PREFERENCE_LABELS[key]
+      const label = prefInfo?.name || key
+      const friendlyVal = prefInfo?.format ? prefInfo.format(strValue) : strValue
+      logActivity('Updated setting', 'settings', label, currentUser.id, {
+        key,
+        value: strValue,
+        label,
+        friendly_value: friendlyVal
+      }).catch(() => {})
+    } catch (e) {}
   }
 }
 

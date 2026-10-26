@@ -16,6 +16,7 @@ import { studentManager } from '../lib/manageStudent'
 import { useLanguage } from '../components/LanguageProvider'
 import { markExplicitLogout } from '../lib/authEvents'
 import { fetchExerciseData } from '../lib/exerciseUtils'
+import { logActivity } from '../lib/logActivity'
 const tabs = [
   ['profile', 'Profile'],
   ['account', 'Account'],

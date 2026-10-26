@@ -136,6 +136,47 @@ Deno.serve(async req => {
         }
         finalChats.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
 
+        // Fetch nutrition goals & logs
+        let dbNutritionGoals = null
+        let dbNutritionLogs: any[] = []
+        try {
+          const [goalsRes, logsRes] = await Promise.all([
+            adminClient.from('nutrition_goals').select('*').eq('user_id', studentId).maybeSingle(),
+            adminClient.from('nutrition_logs').select('*').eq('user_id', studentId).order('created_at', { ascending: false })
+          ])
+          dbNutritionGoals = goalsRes?.data || null
+          dbNutritionLogs = logsRes?.data || []
+        } catch (e) {
+          console.warn('manage-student edge nutrition fetch fallback:', e)
+        }
+
+        const resolvedNutritionGoals = dbNutritionGoals
+          ? {
+              calories: Number(dbNutritionGoals.calories) || 2000,
+              protein: Number(dbNutritionGoals.protein) || 120,
+              carbs: Number(dbNutritionGoals.carbs) || 250,
+              fats: Number(dbNutritionGoals.fats) || 65
+            }
+          : (meta.axon_nutrition_goals || null)
+
+        const resolvedNutritionLogs = (dbNutritionLogs && dbNutritionLogs.length > 0)
+          ? dbNutritionLogs.map((row: any) => ({
+              id: row.id,
+              user_id: row.user_id,
+              date: row.log_date,
+              meal_type: row.meal_type || 'Lunch',
+              meal_time: row.meal_time || '',
+              name: row.name,
+              calories: Number(row.calories) || 0,
+              protein: Number(row.protein) || 0,
+              carbs: Number(row.carbs) || 0,
+              fats: Number(row.fats) || 0,
+              notes: row.notes || '',
+              image_url: row.image_url || '',
+              created_at: row.created_at
+            }))
+          : (meta.axon_nutrition_logs || [])
+
         result = {
           data: {
             metadata: meta,
@@ -152,7 +193,9 @@ Deno.serve(async req => {
             classes: classes || [],
             exams: exams || [],
             examResults: examResults || [],
-            reminders: reminders || []
+            reminders: reminders || [],
+            nutritionGoals: resolvedNutritionGoals,
+            nutritionLogs: resolvedNutritionLogs
           }
         }
         break
