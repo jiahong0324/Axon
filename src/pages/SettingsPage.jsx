@@ -52,6 +52,11 @@ export default function SettingsPage() {
     try {
       await studentManager.sendAcademicDigest(user.id, digestOptions)
       showToast('Academic report successfully sent to your email!', 'success')
+      if (user?.id) {
+        logActivity('Emailed academic report', 'settings', 'Email digest', user.id, {
+          sections: Object.keys(digestOptions).filter(k => digestOptions[k]).join(', ')
+        }).catch(() => {})
+      }
     } catch (err) {
       console.error(err)
       showToast(err.message || 'Failed to send email report.', 'error')
@@ -86,18 +91,34 @@ export default function SettingsPage() {
         student_id: profile.student_id,
         avatar_color: accentHex(profile.avatar_color)
       }).eq('id', user.id)
+
+      logActivity('Updated profile', 'settings', profile.full_name || 'Profile details', user.id, {
+        full_name: profile.full_name,
+        university: profile.university,
+        course: profile.course,
+        student_id: profile.student_id,
+        avatar_color: profile.avatar_color
+      }).catch(() => {})
     }
     showToast(error ? 'Profile could not be saved.' : 'Profile saved.', error ? 'error' : 'success')
   }
 
   async function updateEmail() {
     const { error } = await supabase.auth.updateUser({ email: security.email })
-    if (!error && user) await supabase.from('profiles').update({ email: security.email }).eq('id', user.id)
+    if (!error && user) {
+      await supabase.from('profiles').update({ email: security.email }).eq('id', user.id)
+      logActivity('Changed email', 'settings', security.email, user.id, {
+        new_email: security.email
+      }).catch(() => {})
+    }
     showToast(error ? 'Email update failed.' : 'Check your inbox to confirm the new email.', error ? 'error' : 'success')
   }
 
   async function updatePassword() {
     const { error } = await supabase.auth.updateUser({ password: security.password })
+    if (!error && user) {
+      logActivity('Changed password', 'settings', 'Account security', user.id).catch(() => {})
+    }
     showToast(error ? 'Password update failed.' : 'Password updated.', error ? 'error' : 'success')
     setSecurity(s => ({ ...s, password: '' }))
   }
@@ -339,6 +360,9 @@ export default function SettingsPage() {
 
       doc.save('axon-academic-report.pdf')
       showToast('PDF report successfully exported!', 'success')
+      if (user?.id) {
+        logActivity('Exported academic PDF', 'settings', 'PDF Report', user.id).catch(() => {})
+      }
     } catch (error) {
       console.error(error)
       showToast('Failed to export PDF report.', 'error')

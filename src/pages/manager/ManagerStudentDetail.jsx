@@ -1,8 +1,8 @@
 import {
   ArrowLeft, ArrowUpDown, Award, Bell, Bot, Calendar, Check, CheckCircle2, Clock, Copy,
-  Download, Image, Info,
+  Download, Dumbbell, Image, Info,
   Moon, Palette, Pencil, Search, Settings, Shield,
-  Sparkles, Sun, User
+  Sparkles, Sun, User, Utensils
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { Link, useParams } from 'react-router-dom'
@@ -20,9 +20,11 @@ import { dateLabel, days, daysFromToday, formatTime, initials, markdownToHtml } 
 import { calculateOverallCGPA, calculateSemesterGPA, getAcademicStanding, getGradeBadgeStyle } from '../../lib/tarumtGrading'
 import { ACTIVITY_ICONS, calculateStreakAndStats, fetchExerciseData, getLevelInfo, getTodayStr } from '../../lib/exerciseUtils'
 import { fetchFullStudentDetail } from '../../lib/manageStudent'
+import DietNutritionTab from '../../components/exercise/DietNutritionTab'
+import { DEFAULT_NUTRITION_GOALS, fetchNutritionData } from '../../lib/nutritionUtils'
 import { isInternalSync, formatHumanActivity } from './ManagerActivityPage'
 
-const tabs = ['Timetable', 'Assignments', 'Exams & Results', 'Reminders', 'Exercise', 'Activity', 'AI Chats', 'Settings']
+const tabs = ['Timetable', 'Assignments', 'Exams & Results', 'Reminders', 'Health', 'Activity', 'AI Chats', 'Settings']
 const resultInitial = { score: '', grade: 'A', remarks: '' }
 
 export default function ManagerStudentDetail() {
@@ -42,6 +44,7 @@ export default function ManagerStudentDetail() {
   const [metadata, setMetadata] = useState({})
   const [activity, setActivity] = useState([])
   const [initialChats, setInitialChats] = useState([])
+  const [studentNutrition, setStudentNutrition] = useState({ goals: null, logs: [] })
   const [activeTab, setActiveTab] = useState('Timetable')
   const [editing, setEditing] = useState(false)
   const [resultExam, setResultExam] = useState(null)
@@ -180,6 +183,13 @@ export default function ManagerStudentDetail() {
 
       setAccountInfo(fullDetail?.accountInfo || null)
       setMetadata(fullDetail?.metadata || {})
+
+      if (fullDetail?.nutritionGoals || fullDetail?.nutritionLogs) {
+        setStudentNutrition({
+          goals: fullDetail.nutritionGoals || null,
+          logs: fullDetail.nutritionLogs || []
+        })
+      }
 
       // Chats
       if (fullDetail?.chats && fullDetail.chats.length > 0) {
