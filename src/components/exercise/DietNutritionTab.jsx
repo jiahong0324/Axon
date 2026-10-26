@@ -576,6 +576,11 @@ export default function DietNutritionTab({
           <AIFoodScannerModal
             isOpen={scannerOpen}
             onClose={() => setScannerOpen(false)}
+            onSwitchToManual={() => {
+              setScannerOpen(false)
+              setEditingItem(null)
+              setManualModalOpen(true)
+            }}
             defaultDate={activeDate}
             onSave={async (item) => {
               if (onSaveFood) await onSaveFood(item)

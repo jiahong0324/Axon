@@ -4,6 +4,7 @@ import TimePicker from '../TimePicker'
 import { Camera, Upload, Sparkles, AlertCircle, Check, RotateCcw, Flame, Clock } from 'lucide-react'
 import { analyzeImageWithGroq } from '../../lib/groq'
 import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr, getCurrentTimeStr, getMealTypeFromTime } from '../../lib/nutritionUtils'
+import { useLanguage } from '../LanguageProvider'
 
 const FOOD_SCAN_PROMPT = `Analyze this food image. Identify the dish/food, estimate the portion shown, and calculate its nutritional content.
 CRITICAL INSTRUCTIONS:
@@ -152,10 +153,11 @@ function processFoodImage(file) {
   })
 }
 
-export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSave }) {
+export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSave, onSwitchToManual }) {
+  const { language } = useLanguage()
   const [step, setStep] = useState('upload') // 'upload' | 'analyzing' | 'review'
   const [imagePreview, setImagePreview] = useState(null)
-  const [errorMsg, setErrorMsg] = useState('')
+  const [errorInfo, setErrorInfo] = useState(null) // { type: 'limit' | 'unrecognized' } | null
   const [saving, setSaving] = useState(false)
 
   // Review Form States
@@ -175,7 +177,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
     if (isOpen) {
       setStep('upload')
       setImagePreview(null)
-      setErrorMsg('')
+      setErrorInfo(null)
       setFoodName('')
       const nowTime = getCurrentTimeStr()
       setMealTime(nowTime)
@@ -190,7 +192,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
 
   async function handleFileSelect(file) {
     if (!file) return
-    setErrorMsg('')
+    setErrorInfo(null)
     setStep('analyzing')
 
     try {
@@ -229,11 +231,18 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
         setMealType(getMealTypeFromTime(currentScanTime))
         setStep('review')
       } else {
-        throw new Error('AI could not clearly identify the food in this photo. Please try a clearer picture or enter details manually.')
+        setErrorInfo({ type: 'unrecognized' })
+        setStep('upload')
       }
     } catch (err) {
       console.error('Food scanning error:', err)
-      setErrorMsg(err.message || 'Failed to analyze food image. Please try again.')
+      const rawMsg = String(err?.message || '').toLowerCase()
+      if (rawMsg.includes('identify') || rawMsg.includes('unclear') || rawMsg.includes('dimen') || rawMsg.includes('read image')) {
+        setErrorInfo({ type: 'unrecognized' })
+      } else {
+        // AI model error, rate limit, provider exhaustion, timeout, etc.
+        setErrorInfo({ type: 'limit' })
+      }
       setStep('upload')
     }
   }
@@ -319,10 +328,51 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
         {/* STEP 1: Upload or Take Photo */}
         {step === 'upload' && (
           <div className="space-y-4">
-            {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{errorMsg}</span>
+            {errorInfo && (
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-200 text-xs space-y-2.5 animate-[fadeIn_.2s_ease]">
+                <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
+                  <Sparkles className="h-4 w-4 shrink-0 text-amber-400" />
+                  <span>
+                    {errorInfo.type === 'unrecognized'
+                      ? (language === 'zh' ? '未能清晰辨识食物' : 'Could Not Identify Food')
+                      : (language === 'zh' ? 'AI 算力额度达上限或繁忙' : 'AI Rate Limit or Busy')}
+                  </span>
+                </div>
+
+                <div className="text-slate-300 leading-relaxed text-xs whitespace-pre-line">
+                  {errorInfo.type === 'unrecognized' ? (
+                    language === 'zh'
+                      ? 'AI 暂时未能清晰识别出照片中的食物。你可以尝试换个光线更好、更清晰的角度重新拍摄，或者直接使用“手动记录”快速添加～'
+                      : "AI couldn't clearly identify the food in this photo. Please try a clearer picture with good lighting, or log it manually."
+                  ) : (
+                    language === 'zh'
+                      ? '非常抱歉！🥹 因为 Axon 是一款完全免费向大家开放的学习与健身平台，我们能提供的免费 AI 视觉算力与识别额度确实有限。\n\n如果遇到使用高峰导致限额或系统繁忙，请稍等 3～5 分钟后再试～\n\n💡 提示：你也可以点击下方直接切换为手动记录快速添加饮食热量，非常感谢你的包容与体谅！✨'
+                      : "We're really sorry! 🥹 Since Axon is a completely free companion platform, our free AI vision compute resources and scanning limits are limited.\n\nIf peak usage limit has been reached or the service is temporarily busy, please wait 3–5 minutes and try again~\n\n💡 Tip: You can also switch to Manual Entry to log your meal instantly. Thank you so much for your kind patience and understanding! ✨"
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setErrorInfo(null)}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-medium text-xs transition-colors"
+                  >
+                    {language === 'zh' ? '稍后再试' : 'Try Again'}
+                  </button>
+
+                  {onSwitchToManual && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setErrorInfo(null)
+                        onSwitchToManual()
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 font-medium text-xs transition-colors"
+                    >
+                      {language === 'zh' ? '转为手动记录' : 'Log Manually'}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
