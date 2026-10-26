@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axon-v29-force-unique-heads-up'
+const CACHE_NAME = 'axon-v30-restore-heads-up'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', event => {
@@ -96,7 +96,6 @@ self.addEventListener('push', event => {
     },
     color: '#000000',
     tag: `${data.id || 'axon'}_${Date.now()}`,
-    renotify: true,
-    requireInteraction: true
+    renotify: true
   }))
 })

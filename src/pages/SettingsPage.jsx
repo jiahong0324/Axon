@@ -480,7 +480,6 @@ export default function SettingsPage() {
         badge: '/icons/badge.png',
         tag: `axon-test-${Date.now()}`,
         renotify: true,
-        requireInteraction: true,
         silent: false,
         vibrate: [200, 100, 200],
         timestamp: Date.now()
