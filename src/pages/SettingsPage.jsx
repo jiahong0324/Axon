@@ -39,6 +39,7 @@ export default function SettingsPage() {
   const [security, setSecurity] = useState({ email: '', password: '' })
   const [notificationPermission, setNotificationPermission] = useState('Notification' in window ? Notification.permission : 'default')
   const [sendingTest, setSendingTest] = useState(false)
+  const isAndroidDevice = /Android/i.test(navigator.userAgent)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
   const [digestOptions, setDigestOptions] = useState({ classes: true, assignments: true, exams: true, results: true, exercise: true, nutrition: true })
@@ -471,7 +472,22 @@ export default function SettingsPage() {
       setNotificationPermission(permission)
     }
     if (Notification.permission !== 'granted') return showToast('Notification permission is not enabled.', 'error')
-    new Notification('Axon test', { body: 'Notifications are working.', icon: '/icons/logo.png' })
+    try {
+      const registration = await navigator.serviceWorker.ready
+      await registration.showNotification('Axon test', {
+        body: 'Notifications are working.',
+        icon: '/icons/logo-colored.png',
+        badge: '/icons/badge.png',
+        tag: `axon-test-${Date.now()}`,
+        renotify: true,
+        silent: false,
+        vibrate: [200, 100, 200],
+        timestamp: Date.now()
+      })
+    } catch (error) {
+      console.error('Could not show test notification:', error)
+      showToast('Could not show a test notification on this device.', 'error')
+    }
   }
 
   const [prefTick, setPrefTick] = useState(0)
@@ -547,6 +563,11 @@ export default function SettingsPage() {
                     <p className="text-xs leading-relaxed text-green-400/90 bg-green-500/10 p-3 rounded-xl border border-green-500/20">
                       ✅ This device is successfully registered to receive background notifications!
                     </p>
+                    {isAndroidDevice && (
+                      <p className="text-xs leading-relaxed text-amber-200/90 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+                        {t('settings.androidHeadsUpHelp')}
+                      </p>
+                    )}
                     <div className="flex gap-2">
                       <button className="btn-ghost flex-1 py-2 text-xs" onClick={sendTestPushNotification} disabled={sendingTest}>
                         {sendingTest ? 'Sending...' : '🚀 Send Test Background Push'}
