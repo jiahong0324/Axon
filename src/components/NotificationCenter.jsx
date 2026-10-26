@@ -387,20 +387,11 @@ export default function NotificationCenter({ user, profile }) {
             }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Dedicated Status Bar Spacer for iPhone / PWA - only on mobile */}
-            <div
-              className="block sm:hidden w-full shrink-0 bg-[#0F172A]"
-              style={{
-                height: 'max(env(safe-area-inset-top, 0px) + 14px, 64px)',
-                minHeight: '64px',
-                backgroundColor: '#0F172A'
-              }}
-            />
-
-            {/* Drawer Header - strictly below the status bar on mobile, flush at top on laptop */}
+            {/* Drawer Header */}
             <div
               className="flex items-center justify-between border-b border-white/10 px-4 sm:px-5 py-3 sm:py-3.5 bg-[#0F172A] shrink-0"
               style={{
+                paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.875rem)',
                 backgroundColor: '#0F172A',
                 backdropFilter: 'none',
                 WebkitBackdropFilter: 'none'
@@ -458,7 +449,10 @@ export default function NotificationCenter({ user, profile }) {
             )}
 
             {/* Notification List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 scrollbar-hide">
+            <div
+              className="flex-1 overflow-y-auto p-4 space-y-2.5 scrollbar-hide"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.25rem)' }}
+            >
               {displayedAnnouncements.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-3 shadow-inner">

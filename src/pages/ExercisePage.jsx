@@ -61,7 +61,6 @@ export default function ExercisePage() {
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const lastLoadedRef = useRef(Date.now())
   const currentUserIdRef = useRef(null)
-  const isAndroid = useMemo(() => typeof navigator !== 'undefined' && /Android/i.test(navigator?.userAgent || ''), [])
 
   const [userId, setUserId] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -232,6 +231,7 @@ export default function ExercisePage() {
   const messagesPool = t('exercise.dailyMessages')
   const dailyMsg = useMemo(() => getDailyMessage(messagesPool, todayStr), [messagesPool, todayStr])
   const renderedAiPlan = useMemo(() => markdownToHtml(aiPlan), [aiPlan])
+  const todayLog = useMemo(() => logs.find(l => l.log_date === todayStr), [logs, todayStr])
 
   // Determine Duolingo 3-State Flame: 'lit' | 'frozen' | 'pending'
   const flameState = stats.isCheckedInToday
@@ -522,10 +522,10 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
       {activeTab === 'workout' ? (
         <>
         {/* TOP 2 HERO CARDS - CLEAN DUOLINGO-STYLE DESIGN */}
-      <div className="grid gap-6 md:grid-cols-2 mb-8">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2 mb-6 sm:mb-8">
         {/* HERO CARD 1: Streak & Consistency */}
         <section
-          className={`rounded-2xl bg-[#131b2e] p-6 sm:p-7 shadow-xl border border-white/5 border-l-4 transition-colors flex flex-col justify-between ${
+          className={`rounded-2xl bg-[#131b2e] p-5 sm:p-7 shadow-xl border border-white/5 border-l-4 transition-colors flex flex-col justify-between ${
             flameState === 'lit'
               ? 'border-l-orange-500'
               : flameState === 'frozen'
@@ -578,12 +578,14 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
             </div>
 
             {/* Clean 1-Line Status Subtitle */}
-            <p className="text-xs font-medium text-slate-300 mt-1 mb-4 flex items-center gap-1.5">
+            <p className="text-xs font-medium text-slate-300 mt-1 mb-3 sm:mb-4 flex items-center gap-1.5">
               {flameState === 'lit' ? (
                 stats.isYesterdayFrozen ? (
                   <span className="text-cyan-300">🧊 Yesterday protected by Freeze · Streak extended today!</span>
                 ) : (
-                  <span className="text-emerald-400">✅ Checked in today · Streak is active!</span>
+                  <span className="text-emerald-400">
+                    ✅ Checked in today{todayLog?.activity_type ? ` (${t(`exercise.activity.${todayLog.activity_type}`) || todayLog.activity_type})` : ''} · Streak is active!
+                  </span>
                 )
               ) : flameState === 'frozen' ? (
                 <span className="text-cyan-300">🧊 Streak frozen yesterday · Check in today to unfreeze!</span>
@@ -616,7 +618,7 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
         </section>
 
         {/* HERO CARD 2: Level & XP Progress */}
-        <section className="rounded-2xl bg-[#131b2e] p-6 sm:p-7 shadow-xl border border-white/5 border-l-4 border-l-purple-500 flex flex-col justify-between">
+        <section className="rounded-2xl bg-[#131b2e] p-5 sm:p-7 shadow-xl border border-white/5 border-l-4 border-l-purple-500 flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="min-w-0">
@@ -918,37 +920,28 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
         </section>
 
         {/* Explicit bottom spacer ensuring full scroll clearance on mobile above floating check-in bar */}
-        <div className="h-44 sm:h-24 w-full shrink-0 pointer-events-none" />
+        <div className={`${stats.isCheckedInToday ? 'h-6 sm:h-2' : 'h-36 sm:h-20'} w-full shrink-0 pointer-events-none transition-all`} />
       </div>
 
-      {/* STICKY BOTTOM CHECK-IN BAR (bottom-[101px] for iOS/default; bottom-[69px] for Android) */}
-      {!celebrationModal && !showGoalSheet && !selectedBadge && (
-        <div className={`fixed inset-x-0 ${isAndroid ? 'bottom-[69px]' : 'bottom-[101px]'} md:left-60 md:right-0 md:bottom-2 z-30 px-3 sm:px-4 pointer-events-none flex justify-center`}>
-          <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-white/10 bg-[#131b2e] p-3 shadow-2xl">
-            {/* Activity Tag Selector: exact original flex-wrap for iOS, single-row flex-1 for Android */}
-            <div className={`mb-3.5 flex ${isAndroid ? 'items-center justify-between gap-1 sm:gap-1.5' : 'flex-wrap items-center justify-center gap-1.5'} w-full`}>
+      {/* STICKY BOTTOM CHECK-IN BAR (Only shown when today's check-in is pending) */}
+      {!stats.isCheckedInToday && !celebrationModal && !showGoalSheet && !selectedBadge && (
+        <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:left-60 md:right-0 md:bottom-4 z-30 px-3 sm:px-4 pointer-events-none flex justify-center animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="w-full max-w-xl pointer-events-auto rounded-2xl border border-white/10 bg-[#131b2e] p-3 shadow-2xl backdrop-blur-xl">
+            {/* Activity Tag Selector: single clean row across all mobile and desktop devices */}
+            <div className="mb-3 flex items-center justify-between gap-1.5 sm:gap-2 w-full">
               {ACTIVITY_TYPES.map(type => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setSelectedTag(type)}
-                  disabled={stats.isCheckedInToday}
-                  className={
-                    isAndroid
-                      ? `flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 rounded-full px-1.5 sm:px-3 py-1.5 text-xs font-medium transition-all ${
-                          selectedTag === type
-                            ? 'bg-[#3B82F6]/25 text-[#38BDF8] border border-[#3B82F6]/50 shadow-sm'
-                            : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.05] hover:text-white'
-                        }`
-                      : `flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-                          selectedTag === type
-                            ? 'bg-[#3B82F6]/25 text-[#38BDF8] border border-[#3B82F6]/50 shadow-sm'
-                            : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.05] hover:text-white'
-                        }`
-                  }
+                  className={`flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 rounded-full px-1.5 sm:px-3 py-1.5 text-xs font-medium transition-all ${
+                    selectedTag === type
+                      ? 'bg-[#3B82F6]/25 text-[#38BDF8] border border-[#3B82F6]/50 shadow-sm'
+                      : 'bg-[#192032] text-[#8E9BAE] border border-white/[0.05] hover:text-white'
+                  }`}
                 >
-                  <span className={isAndroid ? 'shrink-0' : ''}>{ACTIVITY_ICONS[type]}</span>
-                  <span className={isAndroid ? 'truncate' : ''}>{t(`exercise.activity.${type}`) || type}</span>
+                  <span className="shrink-0">{ACTIVITY_ICONS[type]}</span>
+                  <span className="truncate">{t(`exercise.activity.${type}`) || type}</span>
                 </button>
               ))}
             </div>
@@ -956,24 +949,11 @@ Keep table text concise. Do NOT output anything extra outside the table and the 
             {/* Mark Today Done button */}
             <button
               onClick={handleCheckIn}
-              disabled={stats.isCheckedInToday || checkingIn}
-              className={`w-full min-h-[48px] rounded-full font-bold text-sm md:text-base transition-all flex items-center justify-center gap-2 ${
-                stats.isCheckedInToday
-                  ? 'bg-[#10B981] text-white cursor-default'
-                  : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-lg shadow-blue-600/20'
-              }`}
+              disabled={checkingIn}
+              className="w-full min-h-[46px] rounded-full font-bold text-sm md:text-base transition-all flex items-center justify-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.99] text-white shadow-lg shadow-blue-600/20 disabled:opacity-50"
             >
-              {stats.isCheckedInToday ? (
-                <>
-                  <Check className="h-5 w-5 stroke-[1.5]" />
-                  {t('exercise.checkedInToday')}
-                </>
-              ) : (
-                <>
-                  <Flame className="h-5 w-5 stroke-[1.5]" />
-                  {t('exercise.markTodayDone')} (+20 XP)
-                </>
-              )}
+              <Flame className="h-5 w-5 stroke-[1.5]" />
+              {t('exercise.markTodayDone')} (+20 XP)
             </button>
           </div>
         </div>
