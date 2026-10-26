@@ -692,6 +692,7 @@ function ActivityTab({ activity }) {
               : item.entity_type === 'exercise' ? 'bg-orange-400'
               : item.entity_type === 'diet' ? 'bg-emerald-400'
               : item.entity_type === 'reminder' ? 'bg-blue-400'
+              : item.entity_type === 'settings' || item.entity_type === 'profile' ? 'bg-pink-400'
               : 'bg-amber-400'
 
             return (

@@ -475,6 +475,7 @@ function ActivityRow({ item, profile }) {
     : item.entity_type === 'exercise' ? 'bg-orange-400'
     : item.entity_type === 'diet' ? 'bg-emerald-400'
     : item.entity_type === 'reminder' ? 'bg-blue-400'
+    : item.entity_type === 'settings' || item.entity_type === 'profile' ? 'bg-pink-400'
     : 'bg-emerald-400'
   const { verb, target, details } = formatHumanActivity(item)
   const displayName = profile?.full_name || profile?.email || (item.role === 'manager' || item.entity_name?.startsWith?.('/manager') ? 'Manager' : 'Student')

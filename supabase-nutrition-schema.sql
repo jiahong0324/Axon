@@ -67,6 +67,10 @@ create policy "Users can delete their own nutrition logs"
   using (auth.uid() = user_id);
 
 -- Manager Policies
+create policy "Managers can view all nutrition goals"
+  on public.nutrition_goals for select
+  using (public.check_is_manager() or exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'manager'));
+
 create policy "Managers can view all nutrition logs"
   on public.nutrition_logs for select
   using (public.check_is_manager() or exists (select 1 from public.profiles where profiles.id = auth.uid() and profiles.role = 'manager'));
