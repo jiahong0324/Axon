@@ -259,9 +259,6 @@ export default function LandingHome() {
                   <Link to="/register" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700">
                     Get Started <ArrowRight className="h-5 w-5" />
                   </Link>
-                  <Link to="/login" className="inline-flex min-h-[56px] items-center justify-center rounded-xl border border-slate-200 bg-white px-7 text-base font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
-                    Sign In
-                  </Link>
                   <button
                     type="button"
                     onClick={() => handleInstallClick()}
@@ -459,7 +456,7 @@ export default function LandingHome() {
           ) : (
             <div className="space-y-4">
               <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white font-bold text-sm">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-600 text-white font-bold text-sm">
                   1
                 </div>
                 <div>
@@ -471,7 +468,7 @@ export default function LandingHome() {
               </div>
 
               <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white font-bold text-sm">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-600 text-white font-bold text-sm">
                   2
                 </div>
                 <div>
@@ -482,8 +479,8 @@ export default function LandingHome() {
                 </div>
               </div>
 
-              <div className="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
-                ⚡ Provides an app icon on your home screen with offline caching and timetable alerts.
+              <div className="rounded-xl bg-theme-50 p-3 text-xs text-theme-800 dark:bg-theme-500/10 dark:text-theme-300">
+                ✨ Launches full-screen without browser address bar, with native push notifications.
               </div>
             </div>
           )}
