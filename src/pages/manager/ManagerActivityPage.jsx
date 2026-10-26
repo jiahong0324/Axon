@@ -17,30 +17,129 @@ export function isInternalSync(item) {
   return false
 }
 
-export function formatActionLabel(action) {
-  if (!action) return 'Activity recorded'
-  if (action === 'SYNC_LINKED_TIMETABLES') return 'Updated timetable schedule'
-  if (action === 'SYNC_EXAM_RESULTS') return 'Updated exam results record'
-  return action
+const routeNames = {
+  '/': 'Landing Page',
+  '/home': 'Student Dashboard',
+  '/timetable': 'Class Timetable',
+  '/assignments': 'Assignments',
+  '/exams': 'Upcoming Exams',
+  '/results': 'Exam Results & GPA',
+  '/exam-results': 'Exam Results & GPA',
+  '/health': 'Health & Fitness Tracker',
+  '/exercise': 'Health & Fitness Tracker',
+  '/ai-helper': 'AI Study Companion',
+  '/reminders': 'Reminders',
+  '/settings': 'Account Settings',
+  '/login': 'Login Page',
+  '/register': 'Registration Page',
+  '/onboarding': 'Onboarding Guide',
+  '/manager': 'Manager Dashboard',
+  '/manager/students': 'Student Directory',
+  '/manager/monitoring': 'System Monitoring & Telemetry',
+  '/manager/announcements': 'Announcements Management',
+  '/manager/activity': 'Live Activity Audit Stream',
+  '/manager/ai-chats': 'Student AI Chats',
+  '/manager/reports': 'Academic Reports',
+  '/manager/feedback': 'Student Feedback'
 }
 
-export function formatEntityLabel(entityName) {
-  if (!entityName) return null
-  const text = String(entityName).trim()
-  if (text.startsWith('[{') || text.startsWith('{"') || text.startsWith('[{"')) {
+export function formatHumanActivity(item) {
+  if (!item) return { verb: 'recorded activity', target: null }
+  const action = (item.action || '').trim()
+  const entityType = (item.entity_type || '').toLowerCase()
+  const rawEntity = item.entity_name ? String(item.entity_name).trim() : ''
+
+  // 1. Page views & navigation
+  if (action === 'PAGE_VIEW' || entityType === 'page') {
+    const cleanPath = rawEntity || item.path || ''
+    let pageLabel = routeNames[cleanPath]
+    if (!pageLabel) {
+      if (cleanPath.startsWith('/manager/students/')) pageLabel = 'Student Profile Details'
+      else if (cleanPath.startsWith('/manager/')) {
+        const seg = cleanPath.replace('/manager/', '').replace(/[-_]/g, ' ')
+        pageLabel = 'Manager ' + seg.charAt(0).toUpperCase() + seg.slice(1)
+      } else if (cleanPath) {
+        const seg = cleanPath.replace(/^\//, '').replace(/[-_]/g, ' ')
+        pageLabel = seg.charAt(0).toUpperCase() + seg.slice(1)
+      } else {
+        pageLabel = 'Dashboard'
+      }
+    }
+    return { verb: 'viewed', target: pageLabel }
+  }
+
+  // 2. Timetable & Exam sync
+  if (action === 'SYNC_LINKED_TIMETABLES') {
+    return { verb: 'synced', target: 'timetable schedule' }
+  }
+  if (action === 'SYNC_EXAM_RESULTS') {
+    return { verb: 'updated', target: 'exam results & GPA' }
+  }
+
+  let targetLabel = rawEntity
+  if (rawEntity.startsWith('[{') || rawEntity.startsWith('{"') || rawEntity.startsWith('[{"')) {
     try {
-      const parsed = JSON.parse(text)
-      if (Array.isArray(parsed)) return `${parsed.length} items`
-      return parsed.name || parsed.title || 'details'
-    } catch (e) {
-      return null
+      const parsed = JSON.parse(rawEntity)
+      if (Array.isArray(parsed)) targetLabel = `${parsed.length} items`
+      else targetLabel = parsed.title || parsed.subject || parsed.name || 'records'
+    } catch {
+      targetLabel = 'records'
     }
   }
-  return text
+
+  // 3. Exercise & streak freezes
+  if (action.includes('Streak freeze') || action.includes('Streak Freeze')) {
+    return { verb: 'used', target: 'Streak Freeze protection' }
+  }
+  if (action.includes('Earned +1 Streak Freeze')) {
+    return { verb: 'earned', target: 'Streak Freeze milestone reward' }
+  }
+  if (action.toLowerCase().includes('exercise check-in')) {
+    return { verb: 'logged workout', target: targetLabel ? `"${targetLabel}"` : null }
+  }
+
+  // 4. Academic verbs (added, completed, updated, deleted)
+  if (/^added\s+/i.test(action)) {
+    const type = action.replace(/^added\s+/i, '')
+    return { verb: `added ${type}`, target: targetLabel ? `"${targetLabel}"` : null }
+  }
+  if (/^completed\s+/i.test(action)) {
+    const type = action.replace(/^completed\s+/i, '')
+    return { verb: `completed ${type}`, target: targetLabel ? `"${targetLabel}"` : null }
+  }
+  if (/^updated\s+/i.test(action)) {
+    const type = action.replace(/^updated\s+/i, '')
+    return { verb: `updated ${type}`, target: targetLabel ? `"${targetLabel}"` : null }
+  }
+  if (/^deleted\s+/i.test(action)) {
+    const type = action.replace(/^deleted\s+/i, '')
+    return { verb: `deleted ${type}`, target: targetLabel ? `"${targetLabel}"` : null }
+  }
+
+  // 5. Generic underscore actions
+  if (action.includes('_')) {
+    const humanVerb = action.toLowerCase().replace(/_/g, ' ')
+    return { verb: humanVerb, target: targetLabel ? `"${targetLabel}"` : null }
+  }
+
+  return { verb: action.toLowerCase(), target: targetLabel ? `"${targetLabel}"` : null }
+}
+
+export function formatActionLabel(action, entityName, entityType) {
+  if (!action) return 'recorded activity'
+  const res = formatHumanActivity({ action, entity_name: entityName, entity_type: entityType })
+  return res.verb
+}
+
+export function formatEntityLabel(entityName, action) {
+  if (!entityName && !action) return null
+  const res = formatHumanActivity({ action, entity_name: entityName })
+  return res.target
 }
 
 export default function ManagerActivityPage() {
   const [students, setStudents] = useState([])
+  const [allProfilesList, setAllProfilesList] = useState([])
   const [activity, setActivity] = useState([])
   const [studentId, setStudentId] = useState('all')
   const [type, setType] = useState('all')
@@ -53,11 +152,13 @@ export default function ManagerActivityPage() {
     // Proactively clean up lingering sync logs from database in background
     studentManager.cleanupActivityLogs?.().catch?.(() => {})
 
-    const [studentsRes, activityRes] = await Promise.all([
-      supabase.from('profiles').select('*').eq('role', 'student').order('full_name'),
+    const [profilesRes, activityRes] = await Promise.all([
+      supabase.from('profiles').select('*').order('full_name'),
       supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(500)
     ])
-    setStudents(studentsRes.data || [])
+    const allProfiles = profilesRes.data || []
+    setAllProfilesList(allProfiles)
+    setStudents(allProfiles.filter(p => p.role === 'student'))
     // Exclude internal JSON sync logs
     const validActivities = (activityRes.data || []).filter(item => !isInternalSync(item))
     setActivity(validActivities)
@@ -74,7 +175,7 @@ export default function ManagerActivityPage() {
     return true
   }), [activity, studentId, type, dateFilter])
 
-  const profileById = useMemo(() => new Map(students.map(student => [student.id, student])), [students])
+  const profileById = useMemo(() => new Map(allProfilesList.map(p => [p.id, p])), [allProfilesList])
   const visible = filtered.slice(0, limit)
   const grouped = visible.reduce((map, item) => {
     const key = format(new Date(item.created_at), 'EEEE, dd MMM yyyy')
@@ -113,20 +214,20 @@ export default function ManagerActivityPage() {
 
 function ActivityRow({ item, profile }) {
   const dot = item.entity_type === 'class' ? 'bg-theme-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : item.entity_type === 'exercise' ? 'bg-orange-400' : 'bg-emerald-400'
-  const actionLabel = formatActionLabel(item.action)
-  const entityLabel = formatEntityLabel(item.entity_name)
+  const { verb, target } = formatHumanActivity(item)
+  const displayName = profile?.full_name || profile?.email || (item.role === 'manager' || item.entity_name?.startsWith?.('/manager') ? 'Manager' : 'Student')
 
   return (
     <article className="grid grid-cols-[auto_auto_1fr] items-start gap-3 rounded-xl border border-white/10 p-3">
       <span className={`mt-4 h-2.5 w-2.5 rounded-full ${dot}`} />
       <div className="grid h-10 w-10 place-items-center rounded-full text-xs font-semibold text-white" style={{ background: profile?.avatar_color || '#F59E0B' }}>
-        {initials(profile?.full_name || profile?.email || 'S')}
+        {initials(displayName)}
       </div>
       <div className="min-w-0">
         <p className="text-sm">
-          <span className="font-semibold text-white">{profile?.full_name || profile?.email || 'Student'}</span>{' '}
-          <span className="text-slate-300">{actionLabel}</span>{' '}
-          {entityLabel && <span className="font-medium text-amber-300">"{entityLabel}"</span>}
+          <span className="font-semibold text-white">{displayName}</span>{' '}
+          <span className="text-slate-300">{verb}</span>{' '}
+          {target && <span className="font-medium text-amber-300">{target}</span>}
         </p>
         <p className="text-xs text-slate-500 mt-0.5">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
       </div>

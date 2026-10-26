@@ -9,7 +9,8 @@ import { useToast } from '../../components/Toast'
 import { supabase } from '../../lib/supabase'
 import { initials } from '../../lib/utils'
 import { studentManager } from '../../lib/manageStudent'
-import { isInternalSync, formatActionLabel, formatEntityLabel } from './ManagerActivityPage'
+import { buildEmailHtml } from '../../lib/emailTemplate'
+import { isInternalSync, formatHumanActivity } from './ManagerActivityPage'
 
 const announcementInitial = { title: '', message: '', type: 'info', expires_at: '' }
 
@@ -34,13 +35,15 @@ export default function ManagerDashboard() {
     const { data: { user } } = await supabase.auth.getUser()
     const [me, studentsRes, assignmentsRes, examsRes, announcementsRes, activityRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
-      supabase.from('profiles').select('*').eq('role', 'student').order('created_at', { ascending: false }),
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
       supabase.from('assignments').select('id,status').neq('status', 'Done'),
       supabase.from('exams').select('id,exam_date').gte('exam_date', today).lte('exam_date', nextWeek),
       supabase.from('announcements').select('id,expires_at'),
       supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(20)
     ])
-    const studentProfiles = studentsRes.data || []
+    const allProfiles = studentsRes.data || []
+    const studentProfiles = allProfiles.filter(p => p.role === 'student')
+    const profileMap = new Map(allProfiles.map(p => [p.id, p]))
     setProfile(me.data)
     setProfiles(studentProfiles)
     setStats({
@@ -78,6 +81,7 @@ export default function ManagerDashboard() {
       const payload = {
         subject: emailForm.subject,
         message: emailForm.message,
+        htmlContent: buildEmailHtml({ subject: emailForm.subject, message: emailForm.message }),
         audience: 'custom',
       }
       if (emailForm.audience === 'custom') {

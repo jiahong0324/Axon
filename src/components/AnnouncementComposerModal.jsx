@@ -20,6 +20,7 @@ import { supabase } from '../lib/supabase'
 import { studentManager } from '../lib/manageStudent'
 import { useToast } from './Toast'
 import { parseAnnouncement, encodeAnnouncementMessage } from '../lib/announcements'
+import { buildEmailHtml } from '../lib/emailTemplate'
 
 export default function AnnouncementComposerModal({
   isOpen,
@@ -346,6 +347,7 @@ export default function AnnouncementComposerModal({
             const emailRes = await studentManager.sendPromotionalEmail({
               subject: title.trim(),
               message: message.trim(),
+              htmlContent: buildEmailHtml({ subject: title.trim(), message: message.trim() }),
               audience: 'custom',
               emails: emailRecipients
             })

@@ -2,6 +2,8 @@ import React, { Component, useState, useEffect, useMemo } from 'react'
 import {
   Activity,
   ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Compass,
   Cpu,
@@ -84,6 +86,13 @@ function MonitoringDashboard() {
   const [activeLogFilter, setActiveLogFilter] = useState('all') // 'all' | 'page' | 'action'
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLog, setSelectedLog] = useState(null)
+  const [pageSize, setPageSize] = useState(10) // '放10个就好' -> default 10
+  const [currentPage, setCurrentPage] = useState(1)
+
+  // Reset to page 1 whenever filters, search, or page size change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeLogFilter, searchQuery, pageSize])
 
   // Track page view for this manager route and dismiss splash screen immediately
   useEffect(() => {
@@ -136,6 +145,18 @@ function MonitoringDashboard() {
     })
   }, [data?.recentLogs, activeLogFilter, searchQuery])
 
+  // Pagination calculations for Live Telemetry Stream
+  const totalLogs = filteredLogs.length
+  const effectivePageSize = pageSize === 'all' ? Math.max(totalLogs, 1) : Number(pageSize)
+  const totalPages = Math.max(1, Math.ceil(totalLogs / effectivePageSize))
+  const validCurrentPage = Math.min(currentPage, totalPages)
+
+  const paginatedLogs = useMemo(() => {
+    if (pageSize === 'all') return filteredLogs
+    const start = (validCurrentPage - 1) * effectivePageSize
+    return filteredLogs.slice(start, start + effectivePageSize)
+  }, [filteredLogs, validCurrentPage, effectivePageSize, pageSize])
+
   // Real chart points calculation
   const chartPoints = useMemo(() => {
     if (!data?.trend || data.trend.length === 0) return []
@@ -150,22 +171,32 @@ function MonitoringDashboard() {
     })
   }, [data?.trend])
 
-  // SVG Area path generator
+  // SVG Area path generator with smooth cubic bezier curve through exact points
   const svgPathD = useMemo(() => {
     if (chartPoints.length === 0) return ''
-    return chartPoints.reduce((acc, pt, idx) => {
-      if (idx === 0) return `M ${pt.x} ${pt.y}`
-      const prev = chartPoints[idx - 1]
-      const cx = (prev.x + pt.x) / 2
-      const cy = (prev.y + pt.y) / 2
-      return `${acc} Q ${prev.x} ${prev.y}, ${cx} ${cy} T ${pt.x} ${pt.y}`
-    }, '')
+    if (chartPoints.length === 1) return `M ${chartPoints[0].x} ${chartPoints[0].y}`
+    let d = `M ${chartPoints[0].x} ${chartPoints[0].y}`
+    for (let i = 0; i < chartPoints.length - 1; i++) {
+      const p0 = i > 0 ? chartPoints[i - 1] : chartPoints[i]
+      const p1 = chartPoints[i]
+      const p2 = chartPoints[i + 1]
+      const p3 = i < chartPoints.length - 2 ? chartPoints[i + 2] : p2
+
+      const cp1x = p1.x + (p2.x - p0.x) / 6
+      const cp1y = p1.y + (p2.y - p0.y) / 6
+      const cp2x = p2.x - (p3.x - p1.x) / 6
+      const cp2y = p2.y - (p3.y - p1.y) / 6
+
+      d += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`
+    }
+    return d
   }, [chartPoints])
 
   const svgAreaD = useMemo(() => {
     if (!svgPathD || chartPoints.length === 0) return ''
+    const firstX = chartPoints[0].x
     const lastX = chartPoints[chartPoints.length - 1].x
-    return `${svgPathD} L ${lastX} 100 L 0 100 Z`
+    return `${svgPathD} L ${lastX} 100 L ${firstX} 100 Z`
   }, [svgPathD, chartPoints])
 
   const stats = data?.stats || {}
@@ -368,92 +399,117 @@ function MonitoringDashboard() {
 
         {/* Chart Canvas with generous top padding to prevent tooltip clipping */}
         <div className="relative h-60 w-full pt-8 pb-2">
-          {/* Background Grid Lines */}
-          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-10">
-            <div className="border-b border-dashed border-slate-500 w-full" />
-            <div className="border-b border-dashed border-slate-500 w-full" />
-            <div className="border-b border-dashed border-slate-500 w-full" />
-            <div className="border-b border-dashed border-slate-500 w-full" />
-          </div>
+          {/* Synchronized coordinate frame for SVG curve, hover guide line, and circle dot */}
+          <div className="relative h-full w-full">
+            {/* Background Grid Lines */}
+            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-10">
+              <div className="border-b border-dashed border-slate-500 w-full" />
+              <div className="border-b border-dashed border-slate-500 w-full" />
+              <div className="border-b border-dashed border-slate-500 w-full" />
+              <div className="border-b border-dashed border-slate-500 w-full" />
+            </div>
 
-          {/* SVG Curve */}
-          <svg className="h-full w-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="purpleAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.38" />
-                <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
+            {/* SVG Curve */}
+            <svg className="absolute inset-0 h-full w-full overflow-visible pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="purpleAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.38" />
+                  <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
 
-            {svgAreaD && <path d={svgAreaD} fill="url(#purpleAreaGradient)" />}
-            {svgPathD && (
-              <path
-                d={svgPathD}
-                fill="none"
-                stroke="#A855F7"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            )}
-          </svg>
+              {svgAreaD && <path d={svgAreaD} fill="url(#purpleAreaGradient)" />}
+              {svgPathD && (
+                <path
+                  d={svgPathD}
+                  fill="none"
+                  stroke="#A855F7"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              )}
+            </svg>
 
-          {/* Interactive Hover anchors */}
-          <div className="absolute inset-0 flex items-stretch">
-            {chartPoints.map((pt, idx) => (
-              <div
-                key={idx}
-                onMouseEnter={() => setHoveredPoint(pt)}
-                onMouseLeave={() => setHoveredPoint(null)}
-                className="flex-1 relative group cursor-pointer"
-              >
-                <div className="absolute inset-y-0 left-1/2 w-[1px] bg-purple-500/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+            {/* Active Indicator: Vertical Guide Line & Circle Dot located PRECISELY on the Curve */}
+            {hoveredPoint && (
+              <div className="pointer-events-none absolute inset-0 z-20">
+                {/* Vertical Guide Line */}
                 <div
-                  className="absolute left-1/2 -translate-x-1/2 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-navy-950 bg-purple-500 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                  style={{ top: `${pt.y}%` }}
+                  className="absolute inset-y-0 w-[1px] bg-purple-500/50"
+                  style={{ left: `${hoveredPoint.x}%` }}
+                />
+                {/* Exact Circle Dot on the Curve */}
+                <div
+                  className="absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-navy-950 bg-purple-500 shadow-md ring-4 ring-purple-500/20"
+                  style={{
+                    left: `${hoveredPoint.x}%`,
+                    top: `${hoveredPoint.y}%`
+                  }}
                 />
               </div>
-            ))}
-          </div>
+            )}
 
-          {/* Tooltip Overlay - Intelligently positions BELOW if near peak to prevent clipping */}
-          {hoveredPoint && (
-            <div
-              className={`pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-purple-500/40 bg-white/95 dark:bg-navy-900/95 p-3 text-xs shadow-2xl backdrop-blur-md transition-all ${
-                hoveredPoint.y < 45
-                  ? '-translate-x-1/2 translate-y-3'
-                  : '-translate-x-1/2 -translate-y-full -translate-y-3'
-              }`}
-              style={{
-                left: `${Math.max(10, Math.min(90, hoveredPoint.x))}%`,
-                top: `${hoveredPoint.y}%`
-              }}
-            >
-              <p className="font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-white/10 pb-1 mb-1.5 whitespace-nowrap">
-                {hoveredPoint.label}
-              </p>
-              <div className="space-y-1 text-slate-600 dark:text-slate-300">
-                <p className="flex items-center gap-2 whitespace-nowrap">
-                  <span className="h-2 w-2 rounded-full bg-purple-500" />
-                  <span>Real Traffic:</span>
-                  <strong className="text-slate-900 dark:text-white">{hoveredPoint.count} hits</strong>
-                </p>
-                <p className="flex items-center gap-2 whitespace-nowrap">
-                  <span className="h-2 w-2 rounded-full bg-amber-400" />
-                  <span>Activity Logs:</span>
-                  <strong className="text-slate-900 dark:text-white">{hoveredPoint.activityCount} acts</strong>
-                </p>
-              </div>
+            {/* Interactive Hover columns (hit-test zones) */}
+            <div className="absolute inset-0 flex items-stretch z-10">
+              {chartPoints.map((pt, idx) => (
+                <div
+                  key={idx}
+                  onMouseEnter={() => setHoveredPoint(pt)}
+                  onMouseLeave={() => setHoveredPoint(null)}
+                  className="flex-1 cursor-pointer"
+                />
+              ))}
             </div>
-          )}
+
+            {/* Tooltip Overlay */}
+            {hoveredPoint && (
+              <div
+                className={`pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-purple-500/40 bg-white/95 dark:bg-navy-900/95 p-3 text-xs shadow-2xl backdrop-blur-md transition-all ${
+                  hoveredPoint.y < 45
+                    ? '-translate-x-1/2 translate-y-3'
+                    : '-translate-x-1/2 -translate-y-full -translate-y-3'
+                }`}
+                style={{
+                  left: `${Math.max(12, Math.min(88, hoveredPoint.x))}%`,
+                  top: `${hoveredPoint.y}%`
+                }}
+              >
+                <p className="font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-white/10 pb-1 mb-1.5 whitespace-nowrap">
+                  {hoveredPoint.label}
+                </p>
+                <div className="space-y-1 text-slate-600 dark:text-slate-300">
+                  <p className="flex items-center gap-2 whitespace-nowrap">
+                    <span className="h-2 w-2 rounded-full bg-purple-500" />
+                    <span>Real Traffic:</span>
+                    <strong className="text-slate-900 dark:text-white">{hoveredPoint.count} hits</strong>
+                  </p>
+                  <p className="flex items-center gap-2 whitespace-nowrap">
+                    <span className="h-2 w-2 rounded-full bg-amber-400" />
+                    <span>Activity Logs:</span>
+                    <strong className="text-slate-900 dark:text-white">{hoveredPoint.activityCount} acts</strong>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* X-Axis Labels */}
         <div className="mt-3 flex justify-between text-[11px] text-slate-400 px-1 font-mono">
-          {chartPoints.filter((_, i) => i % Math.max(1, Math.ceil(chartPoints.length / 6)) === 0).map((pt, i) => (
-            <span key={i}>{pt.label}</span>
-          ))}
-          {chartPoints.length > 0 && <span>{chartPoints[chartPoints.length - 1].label}</span>}
+          {chartPoints.map((pt, idx) => {
+            const step = Math.max(1, Math.ceil(chartPoints.length / 6))
+            const isFirst = idx === 0
+            const isLast = idx === chartPoints.length - 1
+            const isStep = idx % step === 0
+            if (!isFirst && !isLast && !isStep) return null
+            return (
+              <span key={pt.timestamp || idx} className={isLast ? 'text-right' : isFirst ? 'text-left' : 'text-center'}>
+                {pt.label}
+              </span>
+            )
+          })}
         </div>
       </section>
 
@@ -716,14 +772,14 @@ function MonitoringDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-white/5">
-              {filteredLogs.length === 0 ? (
+              {paginatedLogs.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="py-8 text-center text-slate-400">
                     No matching real activity logs found in the database.
                   </td>
                 </tr>
               ) : (
-                filteredLogs.map(log => (
+                paginatedLogs.map(log => (
                   <tr
                     key={log.id}
                     className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
@@ -772,6 +828,83 @@ function MonitoringDashboard() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Table Footer: Page Size Selector & Pagination */}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-500 border-t border-slate-200 dark:border-white/10 pt-3">
+          {/* Showing Count */}
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+            <span>
+              Showing{' '}
+              <strong className="text-slate-900 dark:text-white font-semibold">
+                {totalLogs === 0 ? 0 : (validCurrentPage - 1) * effectivePageSize + 1}
+              </strong>{' '}
+              to{' '}
+              <strong className="text-slate-900 dark:text-white font-semibold">
+                {Math.min(validCurrentPage * effectivePageSize, totalLogs)}
+              </strong>{' '}
+              of{' '}
+              <strong className="text-slate-900 dark:text-white font-semibold">{totalLogs}</strong> events
+            </span>
+          </div>
+
+          {/* Controls: Per Page Selector & Prev/Next */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Rows Per Page Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-400">Per page:</span>
+              <div className="flex rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-navy-900/60 p-0.5">
+                {[
+                  { label: '10', value: 10 },
+                  { label: '25', value: 25 },
+                  { label: '50', value: 50 },
+                  { label: '100', value: 100 },
+                  { label: 'All', value: 'all' }
+                ].map(opt => (
+                  <button
+                    key={opt.label}
+                    onClick={() => setPageSize(opt.value)}
+                    className={`min-h-[26px] px-2.5 rounded-md text-[11px] font-semibold transition-all ${
+                      pageSize === opt.value
+                        ? 'bg-amber-500 text-white shadow-sm'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Pagination Prev/Next */}
+            {pageSize !== 'all' && totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={validCurrentPage <= 1}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-navy-900/60 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Previous page"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Prev</span>
+                </button>
+
+                <span className="px-2 font-mono text-[11px] text-slate-400">
+                  {validCurrentPage} / {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={validCurrentPage >= totalPages}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-navy-900/60 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Next page"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Selected Log Inspector */}

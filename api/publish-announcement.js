@@ -147,7 +147,7 @@ export default async function handler(req, res) {
           const pushPayload = JSON.stringify({
             id: `announcement_${annId || Date.now()}`,
             announcement_id: annId,
-            title: `📢 ${title.trim()}`,
+            title: title.trim(),
             body: message.trim(),
             url: annId ? `/?open_announcement=${annId}` : '/'
           })

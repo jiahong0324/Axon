@@ -28,27 +28,43 @@ export function detectClientEnvironment() {
   }
 
   const ua = navigator.userAgent || ''
+  const platform = navigator.platform || ''
+  const maxTouchPoints = navigator.maxTouchPoints || 0
+  const isStandalone = typeof window !== 'undefined' && Boolean(
+    window.navigator?.standalone ||
+    window.matchMedia?.('(display-mode: standalone)')?.matches
+  )
 
-  let deviceType = 'desktop'
-  if (/tablet|ipad|playbook|silk/i.test(ua)) {
-    deviceType = 'tablet'
-  } else if (/mobile|iphone|ipod|android|blackberry|mini|windows\sce|palm/i.test(ua)) {
-    deviceType = 'mobile'
-  }
+  // 1. Tablet detection (Modern iPad on iPadOS 13+ identifies as MacIntel with touch points)
+  const isIPad = /ipad/i.test(ua) || (platform === 'MacIntel' && maxTouchPoints > 1)
+  const isAndroidTablet = /android/i.test(ua) && !/mobile/i.test(ua)
+  const isTablet = isIPad || isAndroidTablet || /tablet|playbook|silk/i.test(ua)
 
+  // 2. Mobile detection (smartphones or small touch screens)
+  const isMobile = !isTablet && (
+    /mobile|iphone|ipod|android|blackberry|mini|windows\sce|palm/i.test(ua) ||
+    (typeof window !== 'undefined' && window.innerWidth <= 768 && maxTouchPoints > 0)
+  )
+
+  const deviceType = isTablet ? 'tablet' : isMobile ? 'mobile' : 'desktop'
+
+  // 3. OS detection (Must check iOS BEFORE macOS because iPhone/iPad UA contains "like Mac OS X")
   let os = 'Unknown'
-  if (/windows/i.test(ua)) os = 'Windows'
-  else if (/macintosh|mac os x/i.test(ua)) os = 'macOS'
+  if (isIPad) os = 'iPadOS'
+  else if (/iphone|ipod/i.test(ua)) os = 'iOS'
   else if (/android/i.test(ua)) os = 'Android'
-  else if (/iphone|ipad|ipod/i.test(ua)) os = 'iOS'
+  else if (/windows/i.test(ua)) os = 'Windows'
+  else if (/macintosh|mac os x/i.test(ua)) os = 'macOS'
   else if (/linux/i.test(ua)) os = 'Linux'
 
+  // 4. Browser detection
   let browser = 'Other'
-  if (/edg/i.test(ua)) browser = 'Edge'
-  else if (/chrome|crios/i.test(ua) && !/opr|opera/i.test(ua)) browser = 'Chrome'
-  else if (/safari/i.test(ua) && !/chrome/i.test(ua)) browser = 'Safari'
+  if (/edg|edgios|edga/i.test(ua)) browser = 'Edge'
+  else if (/opr|opera|opios/i.test(ua)) browser = 'Opera'
   else if (/firefox|fxios/i.test(ua)) browser = 'Firefox'
-  else if (/opr|opera/i.test(ua)) browser = 'Opera'
+  else if (/chrome|crios/i.test(ua)) browser = 'Chrome'
+  else if (/safari/i.test(ua) && !/chrome|crios|android/i.test(ua)) browser = 'Safari'
+  else if ((os === 'iOS' || os === 'iPadOS') && (/applewebkit/i.test(ua) || isStandalone)) browser = 'Safari'
 
   return { deviceType, browser, os }
 }
@@ -171,7 +187,15 @@ export async function trackPageView(path, metadata = {}) {
         user_id: userId,
         action: 'PAGE_VIEW',
         entity_type: 'page',
-        entity_name: path
+        entity_name: path,
+        metadata: {
+          device_type: env.deviceType,
+          browser: env.browser,
+          os: env.os,
+          title: typeof document !== 'undefined' ? document.title || '' : '',
+          screen: typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight}` : '',
+          ...metadata
+        }
       }).then(() => {}).catch(() => {})
     }
   } catch {
@@ -285,14 +309,15 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
     const key = `${path}_${a.created_at}_${a.user_id}`
     if (!allPageViewsMap.has(key)) {
       const p = profileMap.get(a.user_id)
+      const meta = a.metadata || {}
       allPageViewsMap.set(key, {
         id: a.id,
         path,
         timestamp: a.created_at,
         visitor_id: a.user_id,
-        device_type: 'desktop',
-        browser: 'Chrome',
-        os: 'Windows',
+        device_type: meta.device_type || null,
+        browser: meta.browser || null,
+        os: meta.os || null,
         load_time_ms: 135,
         role: p?.role || 'student',
         user: p?.full_name || p?.email || 'Student'
@@ -404,22 +429,34 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
 
   // Device breakdown
   const deviceCounts = { desktop: 0, mobile: 0, tablet: 0 }
-  mergedPageViews.forEach(v => {
-    const d = (v.device_type || 'desktop').toLowerCase()
-    if (deviceCounts[d] !== undefined) deviceCounts[d]++
-    else deviceCounts.desktop++
-  })
+  let recordedDeviceCount = 0
 
-  // Also account for student activities in selected period
-  filteredActivities.forEach(a => {
-    if (a.action !== 'PAGE_VIEW') {
-      // In mobile PWA, exercise and timetable are predominantly mobile
-      if (a.entity_type === 'exercise') deviceCounts.mobile++
-      else deviceCounts.desktop++
+  mergedPageViews.forEach(v => {
+    if (v.device_type) {
+      const d = v.device_type.toLowerCase()
+      if (deviceCounts[d] !== undefined) {
+        deviceCounts[d]++
+        recordedDeviceCount++
+      }
     }
   })
 
-  if (deviceCounts.desktop + deviceCounts.mobile + deviceCounts.tablet === 0) {
+  // Also account for student activities in selected period that have device metadata
+  filteredActivities.forEach(a => {
+    if (a.action !== 'PAGE_VIEW') {
+      const meta = a.metadata || {}
+      if (meta.device_type) {
+        const d = meta.device_type.toLowerCase()
+        if (deviceCounts[d] !== undefined) {
+          deviceCounts[d]++
+          recordedDeviceCount++
+        }
+      }
+    }
+  })
+
+  // If no explicit device events have been recorded yet, register the current visitor's real environment
+  if (recordedDeviceCount === 0) {
     deviceCounts[currentEnv.deviceType] = 1
   }
 
@@ -430,15 +467,24 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
     { name: 'Tablet', count: deviceCounts.tablet, percent: Math.min(100, Math.round((deviceCounts.tablet / totalDevs) * 100)), color: '#10B981' }
   ]
 
-  // Browser breakdown
+  // Browser breakdown (aggregate from BOTH real page views and activity logs)
   const browserCounts = {}
   mergedPageViews.forEach(v => {
-    const b = v.browser || 'Other'
-    browserCounts[b] = (browserCounts[b] || 0) + 1
+    if (v.browser && v.browser !== 'Browser' && v.browser !== 'Other') {
+      browserCounts[v.browser] = (browserCounts[v.browser] || 0) + 1
+    }
   })
+  filteredActivities.forEach(a => {
+    const meta = a.metadata || {}
+    if (meta.browser && meta.browser !== 'Browser' && meta.browser !== 'Other') {
+      browserCounts[meta.browser] = (browserCounts[meta.browser] || 0) + 1
+    }
+  })
+
   if (Object.keys(browserCounts).length === 0) {
     browserCounts[currentEnv.browser] = 1
   }
+
   const totalBrowsers = Object.values(browserCounts).reduce((s, c) => s + c, 0) || 1
   const browsers = Object.entries(browserCounts)
     .sort((a, b) => b[1] - a[1])
@@ -545,8 +591,12 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
       status: 200,
       details: { path: v.path, visitorId: v.visitor_id, device: v.device_type, browser: v.browser }
     })),
-    ...allActivities.slice(0, 30).map(a => {
+    ...allActivities.slice(0, 200).map(a => {
       const p = profileMap.get(a.user_id)
+      const meta = a.metadata || {}
+      const platformLabel = meta.browser
+        ? `${meta.browser} on ${meta.os || meta.device_type || 'Device'}`
+        : 'Database Action'
       return {
         id: a.id,
         created_at: a.created_at,
@@ -555,13 +605,13 @@ export async function fetchAllRealSupabaseData(timeRange = '24h') {
         path: `/${a.entity_type || 'activity'}`,
         user: p?.full_name || p?.email || 'Student',
         role: p?.role || 'student',
-        platform: 'Database Action',
+        platform: platformLabel,
         latency: '35ms',
         status: 200,
-        details: { entity: a.entity_name, type: a.entity_type }
+        details: { entity: a.entity_name, type: a.entity_type, metadata: a.metadata }
       }
     })
-  ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 60)
+  ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 300)
 
   return {
     dbPingMs,
