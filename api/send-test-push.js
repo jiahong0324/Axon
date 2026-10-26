@@ -56,7 +56,7 @@ export default async function handler(req, res) {
           url: '/settings',
           id: `test_${Date.now()}`
         }),
-        { TTL: 600, urgency: 'high' }
+        { TTL: 86400, urgency: 'high' }
       ).catch(async (err) => {
         console.error(`Failed to send test push to subscription ${sub.id}:`, err)
         if (err.statusCode === 410 || err.statusCode === 404) {

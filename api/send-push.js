@@ -237,7 +237,7 @@ async function processSubscription(sub, context) {
         }),
         // High urgency helps mobile push services wake a sleeping device. TTL
         // also lets the provider deliver shortly after a temporary disconnect.
-        { TTL: 600, urgency: 'high' }
+        { TTL: 86400, urgency: 'high' }
       )
 
       sentState[payload.key] = Date.now()

@@ -37,29 +37,7 @@ export default async function handler(req, res) {
         .neq('endpoint', endpoint)
         .is('subscription->>deviceId', null)
 
-      // Also clean up orphaned subscriptions from the same push service origin.
-      // When localStorage is cleared the client generates a fresh deviceId, so
-      // the old row (with the stale deviceId) escapes the above two queries.
-      // Two endpoints on the same push service for the same user almost
-      // certainly belong to the same browser/device, so it is safe to remove
-      // the older one.
-      let deleteOrphanedSameOrigin = null
-      try {
-        const endpointOrigin = new URL(endpoint).origin
-        deleteOrphanedSameOrigin = supabase
-          .from('push_subscriptions')
-          .delete()
-          .eq('user_id', userId)
-          .neq('endpoint', endpoint)
-          .neq('subscription->>deviceId', deviceId)
-          .like('endpoint', `${endpointOrigin}%`)
-      } catch (e) {
-        // endpoint wasn't a valid URL, skip orphan cleanup
-      }
-
-      const cleanupPromises = [deleteSameDevice, deleteLegacyDevices]
-      if (deleteOrphanedSameOrigin) cleanupPromises.push(deleteOrphanedSameOrigin)
-      const results = await Promise.all(cleanupPromises)
+      const results = await Promise.all([deleteSameDevice, deleteLegacyDevices])
 
       results.forEach((r, i) => {
         if (r.error) {
