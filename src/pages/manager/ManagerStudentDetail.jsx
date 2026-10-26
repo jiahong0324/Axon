@@ -280,7 +280,22 @@ export default function ManagerStudentDetail() {
       </header>
 
       <nav className="scrollbar-hide mb-5 flex gap-2 overflow-x-auto">
-        {tabs.map(tab => <button key={tab} className={`min-h-[44px] shrink-0 rounded-full px-4 text-sm font-medium ${activeTab === tab ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'border border-white/10 text-slate-400 hover:text-white'}`} onClick={() => setActiveTab(tab)}>{tab}</button>)}
+        {tabs.map(tab => {
+          const isTabActive = activeTab === tab || (tab === 'Health' && activeTab === 'Exercise')
+          return (
+            <button
+              key={tab}
+              className={`min-h-[44px] shrink-0 rounded-full px-4 text-sm font-medium ${
+                isTabActive
+                  ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
+                  : 'border border-white/10 text-slate-400 hover:text-white'
+              }`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </button>
+          )
+        })}
       </nav>
 
       {activeTab === 'Timetable' && (
@@ -300,7 +315,13 @@ export default function ManagerStudentDetail() {
         />
       )}
       {activeTab === 'Reminders' && <RemindersTab reminders={reminders} />}
-      {activeTab === 'Exercise' && <ExerciseManagerTab studentId={studentId} />}
+      {(activeTab === 'Health' || activeTab === 'Exercise') && (
+        <HealthManagerTab
+          studentId={studentId}
+          metadata={metadata}
+          initialNutrition={studentNutrition}
+        />
+      )}
       {activeTab === 'Activity' && <ActivityTab activity={activity} />}
       {activeTab === 'AI Chats' && (
         <StudentAIChatsTab
