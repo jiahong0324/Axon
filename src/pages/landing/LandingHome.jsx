@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
-import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen, Download, Smartphone } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
 import { supabase, createProfile } from '../../lib/supabase'
 import { useToast } from '../../components/Toast'
 import SEO from '../../components/SEO'
-import Modal from '../../components/Modal'
 import LandingShowcase from './LandingShowcase'
 import LandingTestimonials from './LandingTestimonials'
 
@@ -147,19 +146,6 @@ export default function LandingHome() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const [guestLoading, setGuestLoading] = useState(false)
-  const [device, setDevice] = useState('desktop')
-  const [showIosGuide, setShowIosGuide] = useState(false)
-
-  useEffect(() => {
-    const ua = navigator.userAgent || ''
-    if (/android/i.test(ua)) {
-      setDevice('android')
-    } else if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
-      setDevice('ios')
-    } else {
-      setDevice('desktop')
-    }
-  }, [])
 
   async function handleGuestDemo() {
     setGuestLoading(true)
@@ -220,30 +206,6 @@ export default function LandingHome() {
                 <Link to="/onboarding" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700">
                   Go to Dashboard <ArrowRight className="h-5 w-5" />
                 </Link>
-              ) : device === 'android' ? (
-                <>
-                  <a
-                    href="/axon.apk"
-                    download
-                    className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700"
-                  >
-                    <Download className="h-5 w-5" /> Download
-                  </a>
-                  <Link
-                    to="/login"
-                    className="inline-flex min-h-[56px] items-center justify-center rounded-xl border border-slate-200 bg-white px-7 text-base font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-                  >
-                    Continue in Browser
-                  </Link>
-                </>
-              ) : device === 'ios' ? (
-                <button
-                  type="button"
-                  onClick={() => setShowIosGuide(true)}
-                  className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700"
-                >
-                  <Smartphone className="h-5 w-5" /> Install on iPhone
-                </button>
               ) : (
                 <>
                   <Link to="/register" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700">
@@ -297,56 +259,6 @@ export default function LandingHome() {
       {/* Real Student Testimonials & Trust */}
       <LandingTestimonials />
 
-      {/* Available on Mobile */}
-      <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 border-t border-slate-200 dark:border-white/10">
-        <SectionIntro
-          eyebrow="Mobile"
-          title="Axon Everywhere You Go"
-          desc="Check your timetable, receive alerts, and track your academic progress right on your phone."
-        />
-        <div className="mt-10 grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
-          {/* Android Card */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900 flex flex-col justify-between">
-            <div>
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-                <Smartphone className="h-6 w-6" />
-              </div>
-              <h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">Android</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Android APK (~2.1 MB)</p>
-            </div>
-            <div className="mt-6">
-              <a
-                href="/axon.apk"
-                download
-                className="inline-flex w-full min-h-[46px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-5 text-sm font-bold text-white shadow-lg shadow-theme-600/20 transition hover:bg-theme-700"
-              >
-                <Download className="h-4 w-4" /> Download
-              </a>
-            </div>
-          </div>
-
-          {/* iOS Card */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900 flex flex-col justify-between">
-            <div>
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-theme-100 text-theme-700 dark:bg-theme-500/15 dark:text-theme-300">
-                <Smartphone className="h-6 w-6" />
-              </div>
-              <h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">iOS (iPhone / iPad)</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Progressive Web App</p>
-            </div>
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => setShowIosGuide(true)}
-                className="inline-flex w-full min-h-[46px] items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-              >
-                View Install Guide
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="mx-auto max-w-7xl px-5 pt-16 md:px-8">
         <div className="rounded-3xl bg-slate-950 px-6 py-12 text-center text-white shadow-2xl shadow-slate-300/40 dark:bg-slate-900 dark:border dark:border-white/10 dark:shadow-black/20 md:px-10">
           <h2 className="font-heading text-3xl font-extrabold tracking-tight md:text-5xl text-white">
@@ -374,49 +286,6 @@ export default function LandingHome() {
           </div>
         </div>
       </section>
-
-      {/* iOS Installation Guide Modal */}
-      <Modal
-        isOpen={showIosGuide}
-        onClose={() => setShowIosGuide(false)}
-        title="Install on iPhone"
-      >
-        <div className="space-y-4 py-2 text-slate-800 dark:text-slate-200">
-          <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-600 text-white font-bold text-sm">
-              1
-            </div>
-            <div>
-              <p className="font-semibold text-sm">Tap the Share button in Safari</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                In Safari's bottom toolbar, tap the Share icon with an upward arrow.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-600 text-white font-bold text-sm">
-              2
-            </div>
-            <div>
-              <p className="font-semibold text-sm">Select "Add to Home Screen"</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Scroll down the share sheet and tap <strong>Add to Home Screen</strong>, then tap <strong>Add</strong> at the top right.
-              </p>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => setShowIosGuide(false)}
-              className="w-full btn-primary py-2.5 rounded-xl text-sm font-semibold"
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-      </Modal>
     </>
   )
 }

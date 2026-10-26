@@ -1,8 +1,0 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "app.axon.student",
-        "sha256_cert_fingerprints": ["AA:96:75:BB:36:6F:83:97:68:75:8F:C8:A8:92:33:08:A3:3D:BD:B5:58:EE:FE:C1:36:CB:C7:2B:03:83:31:0F"]
-      }
-    }]
