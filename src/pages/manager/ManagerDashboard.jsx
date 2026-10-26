@@ -56,7 +56,7 @@ export default function ManagerDashboard() {
       .filter(item => !isInternalSync(item))
       .map(item => ({
         ...item,
-        profile: studentProfiles.find(p => p.id === item.user_id)
+        profile: profileMap.get(item.user_id) || (item.user_id === user.id ? me.data : null)
       }))
     )
     window.hidePrerenderSplash?.()
