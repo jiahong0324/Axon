@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
-import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen, Download, Smartphone } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
 import { supabase, createProfile } from '../../lib/supabase'
 import { useToast } from '../../components/Toast'
 import SEO from '../../components/SEO'
+import Modal from '../../components/Modal'
 import LandingShowcase from './LandingShowcase'
 import LandingTestimonials from './LandingTestimonials'
 
@@ -146,6 +147,19 @@ export default function LandingHome() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const [guestLoading, setGuestLoading] = useState(false)
+  const [device, setDevice] = useState('desktop')
+  const [showIosGuide, setShowIosGuide] = useState(false)
+
+  useEffect(() => {
+    const ua = navigator.userAgent || ''
+    if (/android/i.test(ua)) {
+      setDevice('android')
+    } else if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+      setDevice('ios')
+    } else {
+      setDevice('desktop')
+    }
+  }, [])
 
   async function handleGuestDemo() {
     setGuestLoading(true)
@@ -206,6 +220,30 @@ export default function LandingHome() {
                 <Link to="/onboarding" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700">
                   Go to Dashboard <ArrowRight className="h-5 w-5" />
                 </Link>
+              ) : device === 'android' ? (
+                <>
+                  <a
+                    href="/axon.apk"
+                    download
+                    className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700"
+                  >
+                    <Download className="h-5 w-5" /> 立即下载
+                  </a>
+                  <Link
+                    to="/login"
+                    className="inline-flex min-h-[56px] items-center justify-center rounded-xl border border-slate-200 bg-white px-7 text-base font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                  >
+                    在浏览器中使用
+                  </Link>
+                </>
+              ) : device === 'ios' ? (
+                <button
+                  type="button"
+                  onClick={() => setShowIosGuide(true)}
+                  className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700"
+                >
+                  <Smartphone className="h-5 w-5" /> 安装到 iPhone
+                </button>
               ) : (
                 <>
                   <Link to="/register" className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-7 text-base font-bold text-white shadow-xl shadow-theme-600/20 transition hover:bg-theme-700">
@@ -259,6 +297,56 @@ export default function LandingHome() {
       {/* Real Student Testimonials & Trust */}
       <LandingTestimonials />
 
+      {/* Available on Mobile */}
+      <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 border-t border-slate-200 dark:border-white/10">
+        <SectionIntro
+          eyebrow="Mobile"
+          title="随时随地使用 Axon"
+          desc="在手机上快速查看课程表、接收提醒与管理学业进度。"
+        />
+        <div className="mt-10 grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
+          {/* Android Card */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900 flex flex-col justify-between">
+            <div>
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                <Smartphone className="h-6 w-6" />
+              </div>
+              <h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">Android</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">安装包 (~2.1 MB)</p>
+            </div>
+            <div className="mt-6">
+              <a
+                href="/axon.apk"
+                download
+                className="inline-flex w-full min-h-[46px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-5 text-sm font-bold text-white shadow-lg shadow-theme-600/20 transition hover:bg-theme-700"
+              >
+                <Download className="h-4 w-4" /> 立即下载
+              </a>
+            </div>
+          </div>
+
+          {/* iOS Card */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900 flex flex-col justify-between">
+            <div>
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-theme-100 text-theme-700 dark:bg-theme-500/15 dark:text-theme-300">
+                <Smartphone className="h-6 w-6" />
+              </div>
+              <h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">iOS (iPhone / iPad)</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">PWA 网页应用</p>
+            </div>
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => setShowIosGuide(true)}
+                className="inline-flex w-full min-h-[46px] items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+              >
+                查看安装指引
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-7xl px-5 pt-16 md:px-8">
         <div className="rounded-3xl bg-slate-950 px-6 py-12 text-center text-white shadow-2xl shadow-slate-300/40 dark:bg-slate-900 dark:border dark:border-white/10 dark:shadow-black/20 md:px-10">
           <h2 className="font-heading text-3xl font-extrabold tracking-tight md:text-5xl text-white">
@@ -286,6 +374,49 @@ export default function LandingHome() {
           </div>
         </div>
       </section>
+
+      {/* iOS Installation Guide Modal */}
+      <Modal
+        isOpen={showIosGuide}
+        onClose={() => setShowIosGuide(false)}
+        title="安装到 iPhone"
+      >
+        <div className="space-y-4 py-2 text-slate-800 dark:text-slate-200">
+          <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-600 text-white font-bold text-sm">
+              1
+            </div>
+            <div>
+              <p className="font-semibold text-sm">点击 Safari 底部分享按钮</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                在 Safari 底部工具栏中，点击带有向上箭头的分享图标 <strong>⎋</strong>。
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-600 text-white font-bold text-sm">
+              2
+            </div>
+            <div>
+              <p className="font-semibold text-sm">选择「添加到主屏幕」</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                往下滑动菜单，点击 <strong>添加到主屏幕 (Add to Home Screen)</strong>，然后点击右上角「添加」。
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setShowIosGuide(false)}
+              className="w-full btn-primary py-2.5 rounded-xl text-sm font-semibold"
+            >
+              我知道了
+            </button>
+          </div>
+        </div>
+      </Modal>
     </>
   )
 }
