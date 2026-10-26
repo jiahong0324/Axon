@@ -20,7 +20,7 @@ import { dateLabel, days, daysFromToday, formatTime, initials, markdownToHtml } 
 import { calculateOverallCGPA, calculateSemesterGPA, getAcademicStanding, getGradeBadgeStyle } from '../../lib/tarumtGrading'
 import { ACTIVITY_ICONS, calculateStreakAndStats, fetchExerciseData, getLevelInfo, getTodayStr } from '../../lib/exerciseUtils'
 import { fetchFullStudentDetail } from '../../lib/manageStudent'
-import { isInternalSync, formatActionLabel, formatEntityLabel } from './ManagerActivityPage'
+import { isInternalSync, formatHumanActivity } from './ManagerActivityPage'
 
 const tabs = ['Timetable', 'Assignments', 'Exams & Results', 'Reminders', 'Exercise', 'Activity', 'AI Chats', 'Settings']
 const resultInitial = { score: '', grade: 'A', remarks: '' }
@@ -654,15 +654,14 @@ function ActivityTab({ activity }) {
           <p className="muted py-4 text-center">No student activity records found.</p>
         ) : (
           visible.map(item => {
-            const actionLabel = formatActionLabel(item.action)
-            const entityLabel = formatEntityLabel(item.entity_name)
+            const { verb, target } = formatHumanActivity(item)
             return (
               <article key={item.id} className="flex gap-3 rounded-xl border border-white/10 p-3">
                 <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm">
-                    <span className="text-slate-200">{actionLabel}</span>{' '}
-                    {entityLabel && <span className="font-medium text-amber-300">"{entityLabel}"</span>}
+                    <span className="text-slate-200">{verb}</span>{' '}
+                    {target && <span className="font-medium text-amber-300">{target}</span>}
                   </p>
                   <p className="text-xs text-slate-500 mt-0.5">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
                 </div>

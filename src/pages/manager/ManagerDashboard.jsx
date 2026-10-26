@@ -140,7 +140,7 @@ export default function ManagerDashboard() {
       <section className="grid gap-5 xl:grid-cols-[1.4fr_0.9fr]">
         <div className="card">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="section-header mb-0"><Activity className="h-5 w-5 text-amber-400" /> Recent Student Activity</h2>
+            <h2 className="section-header mb-0"><Activity className="h-5 w-5 text-amber-400" /> Recent Activity</h2>
             <Link to="/manager/activity" className="text-sm font-medium text-amber-400 hover:text-amber-300">View all</Link>
           </div>
           <div className="scrollbar-hide max-h-96 space-y-3 overflow-y-auto">
@@ -180,18 +180,20 @@ function QuickLink({ to, icon: Icon, label }) {
 function ActivityItem({ item }) {
   const profile = item.profile || {}
   const color = item.entity_type === 'class' ? 'bg-theme-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : item.entity_type === 'exercise' ? 'bg-orange-400' : 'bg-emerald-400'
-  const actionLabel = formatActionLabel(item.action)
-  const entityLabel = formatEntityLabel(item.entity_name)
+  const { verb, target } = formatHumanActivity(item)
+  const displayName = profile.full_name || profile.email || (item.role === 'manager' || item.entity_name?.startsWith?.('/manager') ? 'Manager' : 'Student')
 
   return (
     <article className="flex items-start gap-3 rounded-xl border border-white/10 p-3">
       <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${color}`} />
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold text-white" style={{ background: profile.avatar_color || '#F59E0B' }}>{initials(profile.full_name || profile.email || 'S')}</div>
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold text-white" style={{ background: profile.avatar_color || '#F59E0B' }}>
+        {initials(displayName)}
+      </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm">
-          <span className="font-semibold text-white">{profile.full_name || profile.email || 'Student'}</span>{' '}
-          <span className="text-slate-300">{actionLabel}</span>{' '}
-          {entityLabel && <span className="font-medium text-amber-300">"{entityLabel}"</span>}
+          <span className="font-semibold text-white">{displayName}</span>{' '}
+          <span className="text-slate-300">{verb}</span>{' '}
+          {target && <span className="font-medium text-amber-300">{target}</span>}
         </p>
         <p className="text-xs text-slate-500 mt-0.5">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
       </div>
