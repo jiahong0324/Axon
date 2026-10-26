@@ -180,7 +180,25 @@ export async function fetchNutritionData(userId, fallbackMetadata = null) {
           image_url: row.image_url || '',
           created_at: row.created_at
         }))
-        logs = tableLogs
+
+        // Merge with existing local logs to preserve image_url if table row doesn't have it
+        const mergedTableLogs = tableLogs.map(rowItem => {
+          const localMatch = logs.find(l => l.id === rowItem.id || (l.date === rowItem.date && l.name === rowItem.name))
+          if (!rowItem.image_url && localMatch?.image_url) {
+            return { ...rowItem, image_url: localMatch.image_url }
+          }
+          return rowItem
+        })
+
+        // Also retain any pending local items not yet in tableLogs
+        const tableIds = new Set(tableLogs.map(t => t.id))
+        for (const localItem of logs) {
+          if (localItem && localItem.id && !tableIds.has(localItem.id) && localItem.id.startsWith('food-')) {
+            mergedTableLogs.push(localItem)
+          }
+        }
+
+        logs = mergedTableLogs
       }
     } catch (tblErr) {
       // Table doesn't exist yet, fallback already handled smoothly by user_metadata
@@ -256,13 +274,20 @@ export async function syncNutritionLogsToCloud(userId, logs) {
   const logsKey = userId ? `axon_nutrition_logs_${userId}` : 'axon_nutrition_logs_global'
   try {
     localStorage.setItem(logsKey, JSON.stringify(logs))
-  } catch (e) {}
+  } catch (e) {
+    console.warn('Failed to save full logs to localStorage:', e)
+    // If quota exceeded, strip older images to guarantee new meals persist
+    try {
+      const trimmed = logs.map((l, idx) => idx < 10 ? l : { ...l, image_url: '' })
+      localStorage.setItem(logsKey, JSON.stringify(trimmed))
+    } catch (err2) {}
+  }
 
   if (!userId) return
 
-  // Sync latest 100 items to auth user_metadata
+  // Sync latest 50 items to auth user_metadata
   try {
-    const compactLogs = logs.slice(0, 100).map(l => ({
+    const compactLogs = logs.slice(0, 50).map((l, idx) => ({
       id: l.id,
       date: l.date,
       meal_type: l.meal_type,
@@ -273,6 +298,8 @@ export async function syncNutritionLogsToCloud(userId, logs) {
       carbs: l.carbs,
       fats: l.fats,
       notes: l.notes || '',
+      // Preserve lightweight thumbnail for recent meals
+      image_url: idx < 10 ? (l.image_url || '') : '',
       created_at: l.created_at
     }))
     await supabase.auth.updateUser({
@@ -328,10 +355,10 @@ export async function saveFoodLogItem(userId, foodItem, currentLogs) {
   // 1. Local & metadata sync
   syncNutritionLogsToCloud(userId, updatedLogs).catch(() => {})
 
-  // 2. Direct table upsert
+  // 2. Direct table upsert (including image_url)
   if (userId) {
     try {
-      await supabase.from('nutrition_logs').upsert({
+      const { data: upsertData } = await supabase.from('nutrition_logs').upsert({
         id: itemToSave.id.startsWith('food-') ? undefined : itemToSave.id,
         user_id: userId,
         log_date: itemToSave.date,
@@ -342,8 +369,18 @@ export async function saveFoodLogItem(userId, foodItem, currentLogs) {
         carbs: itemToSave.carbs,
         fats: itemToSave.fats,
         notes: itemToSave.notes,
+        image_url: itemToSave.image_url || '',
         created_at: itemToSave.created_at
-      })
+      }).select().maybeSingle()
+
+      if (upsertData?.id) {
+        itemToSave.id = upsertData.id
+        if (index >= 0) {
+          updatedLogs[index] = itemToSave
+        } else {
+          updatedLogs[0] = itemToSave
+        }
+      }
     } catch (e) {
       // Handled by user_metadata fallback
     }

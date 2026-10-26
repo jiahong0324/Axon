@@ -26,39 +26,129 @@ CRITICAL INSTRUCTIONS:
   "fats": 12
 }`
 
-function resizeImageFile(file, maxDimension = 1280) {
+function processFoodImage(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const img = new Image()
-      img.onload = () => {
-        let width = img.width
-        let height = img.height
+    if (!file) return reject(new Error('No image file selected.'))
 
-        if (width > maxDimension || height > maxDimension) {
-          if (width > height) {
-            height = Math.round((height * maxDimension) / width)
-            width = maxDimension
+    let objectUrl = null
+    try {
+      objectUrl = URL.createObjectURL(file)
+    } catch (e) {
+      // Fallback below
+    }
+
+    const img = new Image()
+
+    function cleanup() {
+      if (objectUrl) {
+        try { URL.revokeObjectURL(objectUrl) } catch (e) {}
+      }
+    }
+
+    img.onload = () => {
+      try {
+        const origWidth = img.naturalWidth || img.width
+        const origHeight = img.naturalHeight || img.height
+
+        if (!origWidth || !origHeight) {
+          cleanup()
+          return reject(new Error('Unable to read image dimensions.'))
+        }
+
+        // 1. Generate AI Vision image (max 1024px, JPEG 0.8) for fast & accurate Groq detection
+        const aiMax = 1024
+        let aiWidth = origWidth
+        let aiHeight = origHeight
+        if (aiWidth > aiMax || aiHeight > aiMax) {
+          if (aiWidth > aiHeight) {
+            aiHeight = Math.round((aiHeight * aiMax) / aiWidth)
+            aiWidth = aiMax
           } else {
-            width = Math.round((width * maxDimension) / height)
-            height = maxDimension
+            aiWidth = Math.round((aiWidth * aiMax) / aiHeight)
+            aiHeight = aiMax
           }
         }
 
-        const canvas = document.createElement('canvas')
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, width, height)
+        const aiCanvas = document.createElement('canvas')
+        aiCanvas.width = aiWidth
+        aiCanvas.height = aiHeight
+        const aiCtx = aiCanvas.getContext('2d')
+        if (!aiCtx) {
+          cleanup()
+          return reject(new Error('Canvas context not available.'))
+        }
+        aiCtx.drawImage(img, 0, 0, aiWidth, aiHeight)
+        const aiBase64 = aiCanvas.toDataURL('image/jpeg', 0.8)
 
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85)
-        resolve(compressedBase64)
+        // 2. Generate lightweight thumbnail for storage & UI display (max 320px, JPEG 0.72)
+        // Keeps thumbnail under ~15-20KB so it never exceeds localStorage quota
+        const thumbMax = 320
+        let thumbWidth = origWidth
+        let thumbHeight = origHeight
+        if (thumbWidth > thumbMax || thumbHeight > thumbMax) {
+          if (thumbWidth > thumbHeight) {
+            thumbHeight = Math.round((thumbHeight * thumbMax) / thumbWidth)
+            thumbWidth = thumbMax
+          } else {
+            thumbWidth = Math.round((thumbWidth * thumbMax) / thumbHeight)
+            thumbHeight = thumbMax
+          }
+        }
+
+        const thumbCanvas = document.createElement('canvas')
+        thumbCanvas.width = thumbWidth
+        thumbCanvas.height = thumbHeight
+        const thumbCtx = thumbCanvas.getContext('2d')
+        thumbCtx.drawImage(img, 0, 0, thumbWidth, thumbHeight)
+        const thumbnailBase64 = thumbCanvas.toDataURL('image/jpeg', 0.72)
+
+        cleanup()
+        resolve({
+          aiBase64,
+          thumbnailBase64
+        })
+      } catch (err) {
+        cleanup()
+        reject(err)
       }
-      img.onerror = reject
-      img.src = e.target.result
     }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
+
+    img.onerror = () => {
+      cleanup()
+      // Fallback to FileReader if objectUrl was rejected by WebKit
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const fallbackImg = new Image()
+        fallbackImg.onload = () => {
+          try {
+            const w = fallbackImg.width || 400
+            const h = fallbackImg.height || 300
+            const canvas = document.createElement('canvas')
+            canvas.width = Math.min(w, 800)
+            canvas.height = Math.round((h * canvas.width) / w)
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(fallbackImg, 0, 0, canvas.width, canvas.height)
+            const b64 = canvas.toDataURL('image/jpeg', 0.75)
+            resolve({ aiBase64: b64, thumbnailBase64: b64 })
+          } catch (err) {
+            reject(err)
+          }
+        }
+        fallbackImg.onerror = () => reject(new Error('Failed to load image from camera or library.'))
+        fallbackImg.src = e.target.result
+      }
+      reader.onerror = () => reject(new Error('Failed to read image file.'))
+      reader.readAsDataURL(file)
+    }
+
+    if (objectUrl) {
+      img.src = objectUrl
+    } else {
+      const reader = new FileReader()
+      reader.onload = (e) => { img.src = e.target.result }
+      reader.onerror = () => reject(new Error('Failed to read image file.'))
+      reader.readAsDataURL(file)
+    }
   })
 }
 
@@ -104,12 +194,12 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
     setStep('analyzing')
 
     try {
-      const base64Image = await resizeImageFile(file, 1280)
-      setImagePreview(base64Image)
+      const { aiBase64, thumbnailBase64 } = await processFoodImage(file)
+      setImagePreview(thumbnailBase64)
 
-      // Call AI Vision endpoint
+      // Call AI Vision endpoint with optimized AI image
       const rawResponse = await analyzeImageWithGroq(
-        base64Image,
+        aiBase64,
         'image/jpeg',
         FOOD_SCAN_PROMPT
       )
@@ -197,15 +287,18 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
       maxWidth="max-w-lg"
     >
       <div className="p-1 space-y-4">
-        {/* Hidden inputs */}
+        {/* Hidden inputs with delayed value clear to prevent WebKit dropping file stream */}
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
           className="hidden"
           onChange={e => {
-            if (e.target.files?.[0]) handleFileSelect(e.target.files[0])
-            e.target.value = ''
+            const file = e.target.files?.[0]
+            if (file) handleFileSelect(file)
+            setTimeout(() => {
+              if (fileInputRef.current) fileInputRef.current.value = ''
+            }, 100)
           }}
         />
         <input
@@ -215,8 +308,11 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
           capture="environment"
           className="hidden"
           onChange={e => {
-            if (e.target.files?.[0]) handleFileSelect(e.target.files[0])
-            e.target.value = ''
+            const file = e.target.files?.[0]
+            if (file) handleFileSelect(file)
+            setTimeout(() => {
+              if (cameraInputRef.current) cameraInputRef.current.value = ''
+            }, 100)
           }}
         />
 
