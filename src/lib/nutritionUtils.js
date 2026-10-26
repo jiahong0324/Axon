@@ -275,19 +275,19 @@ export async function syncNutritionLogsToCloud(userId, logs) {
   try {
     localStorage.setItem(logsKey, JSON.stringify(logs))
   } catch (e) {
-    console.warn('Failed to save full logs to localStorage:', e)
-    // If quota exceeded, strip older images to guarantee new meals persist
+    console.warn('Failed to save full logs to localStorage, trimming older thumbnails:', e)
+    // If local quota is reached, keep images for the recent 15 meals and purge older thumbnails
     try {
-      const trimmed = logs.map((l, idx) => idx < 10 ? l : { ...l, image_url: '' })
+      const trimmed = logs.map((l, idx) => idx < 15 ? l : { ...l, image_url: '' })
       localStorage.setItem(logsKey, JSON.stringify(trimmed))
     } catch (err2) {}
   }
 
   if (!userId) return
 
-  // Sync latest 50 items to auth user_metadata
+  // Sync latest 50 items to auth user_metadata (Pure text/numbers, zero image bloat)
   try {
-    const compactLogs = logs.slice(0, 50).map((l, idx) => ({
+    const compactLogs = logs.slice(0, 50).map(l => ({
       id: l.id,
       date: l.date,
       meal_type: l.meal_type,
@@ -298,8 +298,6 @@ export async function syncNutritionLogsToCloud(userId, logs) {
       carbs: l.carbs,
       fats: l.fats,
       notes: l.notes || '',
-      // Preserve lightweight thumbnail for recent meals
-      image_url: idx < 10 ? (l.image_url || '') : '',
       created_at: l.created_at
     }))
     await supabase.auth.updateUser({
@@ -352,12 +350,14 @@ export async function saveFoodLogItem(userId, foodItem, currentLogs) {
     updatedLogs = [itemToSave, ...currentLogs]
   }
 
-  // 1. Local & metadata sync
+  // 1. Local & metadata sync (preserves image_url in local cache for device display)
   syncNutritionLogsToCloud(userId, updatedLogs).catch(() => {})
 
-  // 2. Direct table upsert (including image_url)
+  // 2. Direct table upsert: Cloud DB stores pure text/numbers (~150B per row).
+  // Heavy Base64 strings are never uploaded to Postgres, keeping the 500MB free quota 100% safe.
   if (userId) {
     try {
+      const cloudImageUrl = itemToSave.image_url?.startsWith('http') ? itemToSave.image_url : ''
       const { data: upsertData } = await supabase.from('nutrition_logs').upsert({
         id: itemToSave.id.startsWith('food-') ? undefined : itemToSave.id,
         user_id: userId,
@@ -369,7 +369,7 @@ export async function saveFoodLogItem(userId, foodItem, currentLogs) {
         carbs: itemToSave.carbs,
         fats: itemToSave.fats,
         notes: itemToSave.notes,
-        image_url: itemToSave.image_url || '',
+        image_url: cloudImageUrl,
         created_at: itemToSave.created_at
       }).select().maybeSingle()
 
