@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
-import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Target, Sparkles, Bell, BookOpen, Smartphone } from 'lucide-react'
 import { SectionIntro } from './LandingShared'
 import { supabase, createProfile } from '../../lib/supabase'
 import { useToast } from '../../components/Toast'
 import SEO from '../../components/SEO'
+import Modal from '../../components/Modal'
 import LandingShowcase from './LandingShowcase'
 import LandingTestimonials from './LandingTestimonials'
 
@@ -49,48 +50,52 @@ const features = [
 
 function FeatureCard({ feature }) {
   const Icon = feature.icon
-
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/80 dark:border-white/10 dark:bg-slate-900 dark:hover:shadow-black/20">
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
       <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${feature.tone}`}>
         <Icon className="h-6 w-6" />
       </div>
-      <h3 className="mt-5 text-xl font-extrabold text-slate-950 dark:text-white">{feature.title}</h3>
-      <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{feature.desc}</p>
-    </article>
+      <h3 className="mt-5 font-heading text-xl font-extrabold text-slate-950 dark:text-white">{feature.title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{feature.desc}</p>
+    </div>
   )
 }
 
 function Step({ number, title, desc }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 dark:border-white/10 dark:bg-slate-950">
-      <p className="font-heading text-4xl font-extrabold text-theme-600 dark:text-theme-300">{number}</p>
-      <h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">{title}</h3>
-      <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{desc}</p>
-    </article>
+    <div className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900">
+      <p className="font-heading text-3xl font-extrabold text-theme-600 dark:text-theme-400">{number}</p>
+      <h3 className="mt-4 font-heading text-xl font-extrabold text-slate-950 dark:text-white">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{desc}</p>
+    </div>
   )
 }
 
 function DashboardPreview() {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-300/70 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/30">
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950">
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Today</p>
-            <h2 className="font-heading text-2xl font-extrabold text-slate-950 dark:text-white">Academic Overview</h2>
-          </div>
-          <div className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">On track</div>
+    <div className="relative mx-auto w-full max-w-xl rounded-3xl border border-slate-200/80 bg-white/90 p-4 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-slate-900/90">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-white/10">
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full bg-rose-500" />
+          <span className="h-3 w-3 rounded-full bg-amber-500" />
+          <span className="h-3 w-3 rounded-full bg-emerald-500" />
+          <span className="ml-2 text-xs font-semibold text-slate-400">axon-dashboard-preview</span>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <MiniMetric label="Classes" value="4" tone="text-theme-600 dark:text-theme-300" />
-          <MiniMetric label="Assignments" value="3" tone="text-emerald-600 dark:text-emerald-300" />
-          <MiniMetric label="Exams" value="2" tone="text-violet-600 dark:text-violet-300" />
+        <span className="rounded-full bg-theme-100 px-3 py-1 text-xs font-bold text-theme-700 dark:bg-theme-500/20 dark:text-theme-300">
+          Semester 1
+        </span>
+      </div>
+      <div className="mt-4 space-y-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <MiniMetric label="Classes Today" value="3" tone="text-theme-600 dark:text-theme-400" />
+          <MiniMetric label="Due This Week" value="4" tone="text-amber-500" />
+          <MiniMetric label="Study Streak" value="12d" tone="text-emerald-500" />
+          <MiniMetric label="Attendance" value="94%" tone="text-violet-500" />
         </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_0.85fr]">
+        <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Upcoming schedule</p>
-            <div className="mt-4 space-y-3">
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Today's Schedule</p>
+            <div className="mt-3 space-y-2.5">
               <ScheduleRow time="09:00" title="Data Structures" meta="Lecture Hall A" />
               <ScheduleRow time="13:30" title="Web Development" meta="Practical Lab" />
               <ScheduleRow time="16:00" title="Revision Block" meta="Library" />
@@ -146,6 +151,49 @@ export default function LandingHome() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const [guestLoading, setGuestLoading] = useState(false)
+  const [showInstallGuide, setShowInstallGuide] = useState(false)
+  const [activeTab, setActiveTab] = useState('ios')
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+
+  useEffect(() => {
+    const ua = navigator.userAgent || ''
+    if (/android/i.test(ua)) {
+      setActiveTab('android')
+    } else if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+      setActiveTab('ios')
+    } else {
+      setActiveTab('ios')
+    }
+
+    const handler = (e) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstallClick = async (tabPreference) => {
+    const targetTab = tabPreference || activeTab
+    if (tabPreference) {
+      setActiveTab(tabPreference)
+    }
+
+    if (targetTab === 'android' && deferredPrompt) {
+      try {
+        deferredPrompt.prompt()
+        const { outcome } = await deferredPrompt.userChoice
+        if (outcome === 'accepted') {
+          setDeferredPrompt(null)
+          return
+        }
+      } catch (err) {
+        console.warn('Native install prompt error:', err)
+      }
+    }
+
+    setShowInstallGuide(true)
+  }
 
   async function handleGuestDemo() {
     setGuestLoading(true)
@@ -214,6 +262,14 @@ export default function LandingHome() {
                   <Link to="/login" className="inline-flex min-h-[56px] items-center justify-center rounded-xl border border-slate-200 bg-white px-7 text-base font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
                     Sign In
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleInstallClick()}
+                    className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 text-base font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                  >
+                    <Smartphone className="h-5 w-5 text-theme-600 dark:text-theme-400" />
+                    Install App
+                  </button>
                 </>
               )}
             </div>
@@ -259,6 +315,56 @@ export default function LandingHome() {
       {/* Real Student Testimonials & Trust */}
       <LandingTestimonials />
 
+      {/* Mobile Installation Guide Section */}
+      <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 border-t border-slate-200 dark:border-white/10">
+        <SectionIntro
+          eyebrow="Mobile"
+          title="Add Axon to Your Home Screen"
+          desc="Enjoy a fast, full-screen student workspace on your phone with class notifications — no app store download required."
+        />
+        <div className="mt-10 grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
+          {/* iOS Card */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900 flex flex-col justify-between">
+            <div>
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-theme-100 text-theme-700 dark:bg-theme-500/15 dark:text-theme-300">
+                <Smartphone className="h-6 w-6" />
+              </div>
+              <h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">iOS (iPhone & iPad)</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Add to home screen via Safari Share sheet</p>
+            </div>
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => { setActiveTab('ios'); setShowInstallGuide(true); }}
+                className="inline-flex w-full min-h-[46px] items-center justify-center gap-2 rounded-xl bg-theme-600 px-5 text-sm font-bold text-white shadow-lg shadow-theme-600/20 transition hover:bg-theme-700"
+              >
+                View iOS Guide
+              </button>
+            </div>
+          </div>
+
+          {/* Android Card */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-slate-900 flex flex-col justify-between">
+            <div>
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                <Smartphone className="h-6 w-6" />
+              </div>
+              <h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">Android</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Add to home screen via Chrome / Browser</p>
+            </div>
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => { setActiveTab('android'); handleInstallClick('android'); }}
+                className="inline-flex w-full min-h-[46px] items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+              >
+                {deferredPrompt ? 'Install App' : 'View Android Guide'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-7xl px-5 pt-16 md:px-8">
         <div className="rounded-3xl bg-slate-950 px-6 py-12 text-center text-white shadow-2xl shadow-slate-300/40 dark:bg-slate-900 dark:border dark:border-white/10 dark:shadow-black/20 md:px-10">
           <h2 className="font-heading text-3xl font-extrabold tracking-tight md:text-5xl text-white">
@@ -286,6 +392,113 @@ export default function LandingHome() {
           </div>
         </div>
       </section>
+
+      {/* Install Guide Modal */}
+      <Modal
+        isOpen={showInstallGuide}
+        onClose={() => setShowInstallGuide(false)}
+        title="Add Axon to Home Screen"
+      >
+        <div className="py-2 text-slate-800 dark:text-slate-200">
+          {/* Tab Switcher */}
+          <div className="flex rounded-xl bg-slate-100 p-1 dark:bg-white/5 mb-5">
+            <button
+              type="button"
+              onClick={() => setActiveTab('ios')}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition ${
+                activeTab === 'ios'
+                  ? 'bg-white shadow text-slate-950 dark:bg-slate-800 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              iPhone / iPad (iOS)
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('android')}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition ${
+                activeTab === 'android'
+                  ? 'bg-white shadow text-slate-950 dark:bg-slate-800 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              Android
+            </button>
+          </div>
+
+          {activeTab === 'ios' ? (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-600 text-white font-bold text-sm">
+                  1
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Tap the Share button in Safari</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    In Safari's bottom toolbar, tap the <strong>Share</strong> icon (the square with an upward arrow ⎋).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-600 text-white font-bold text-sm">
+                  2
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Select "Add to Home Screen"</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Scroll down the menu, tap <strong>Add to Home Screen</strong>, then tap <strong>Add</strong> in the top right.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-theme-50 p-3 text-xs text-theme-800 dark:bg-theme-500/10 dark:text-theme-300">
+                ✨ Launches full-screen without browser address bar, with native push notifications.
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white font-bold text-sm">
+                  1
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Tap the Menu button in Chrome</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    In the top right corner of Chrome (or Samsung Internet), tap the <strong>three dots</strong> menu icon (⋮).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white font-bold text-sm">
+                  2
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Select "Install app" or "Add to Home screen"</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Tap <strong>Install app</strong> (or <strong>Add to Home screen</strong>), then tap <strong>Install</strong> to confirm.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
+                ⚡ Provides an app icon on your home screen with offline caching and timetable alerts.
+              </div>
+            </div>
+          )}
+
+          <div className="pt-4">
+            <button
+              type="button"
+              onClick={() => setShowInstallGuide(false)}
+              className="w-full btn-primary py-2.5 rounded-xl text-sm font-semibold"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      </Modal>
     </>
   )
 }
