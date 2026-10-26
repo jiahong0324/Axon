@@ -654,16 +654,23 @@ function ActivityTab({ activity }) {
           <p className="muted py-4 text-center">No student activity records found.</p>
         ) : (
           visible.map(item => {
-            const { verb, target } = formatHumanActivity(item)
+            const { verb, target, details } = formatHumanActivity(item)
             return (
-              <article key={item.id} className="flex gap-3 rounded-xl border border-white/10 p-3">
+              <article key={item.id} className="flex gap-3 rounded-xl border border-white/10 p-3 hover:border-white/20 transition-colors">
                 <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm">
                     <span className="text-slate-200">{verb}</span>{' '}
                     {target && <span className="font-medium text-amber-300">{target}</span>}
                   </p>
-                  <p className="text-xs text-slate-500 mt-0.5">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
+                  {details && (
+                    <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+                      <span className="inline-block rounded-md bg-white/5 px-2 py-0.5 border border-white/10 text-slate-300">
+                        {details}
+                      </span>
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-500 mt-1">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
                 </div>
               </article>
             )

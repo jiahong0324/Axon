@@ -80,7 +80,9 @@ export default function RemindersPage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('reminders').insert({ ...form, user_id: user.id })
     if (error) return showToast('Reminder could not be added.', 'error')
-    await logActivity('Added reminder', 'reminder', form.title)
+    await logActivity('Added reminder', 'reminder', form.title, user.id, {
+      reminder_time: form.reminder_time
+    })
     setForm(initialForm)
     setShowForm(false)
     fetchItems()
@@ -88,12 +90,24 @@ export default function RemindersPage() {
 
   async function updateItem(id, updates) {
     await supabase.from('reminders').update(updates).eq('id', id)
+    const item = items.find(i => i.id === id)
+    if (updates.completed !== undefined) {
+      const { data: { user } } = await supabase.auth.getUser()
+      await logActivity(updates.completed ? 'Completed reminder' : 'Updated reminder', 'reminder', item?.title || 'Reminder', user?.id, {
+        reminder_time: item?.reminder_time
+      })
+    }
     setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item))
   }
 
   async function deleteItem(id) {
     if (!await confirm({ title: 'Delete reminder?', message: 'This reminder will be removed.', confirmText: 'Delete' })) return
+    const item = items.find(i => i.id === id)
     await supabase.from('reminders').delete().eq('id', id)
+    if (item) {
+      const { data: { user } } = await supabase.auth.getUser()
+      await logActivity('Deleted reminder', 'reminder', item.title, user?.id)
+    }
     setItems(prev => prev.filter(item => item.id !== id))
   }
 

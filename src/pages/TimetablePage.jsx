@@ -738,7 +738,14 @@ export default function TimetablePage() {
       }
     }
 
-    await logActivity('Added class', 'class', form.subject)
+    await logActivity('Added class', 'class', finalForm.subject, user.id, {
+      day: finalForm.day,
+      start_time: finalForm.start_time,
+      end_time: finalForm.end_time,
+      classroom: finalForm.classroom || finalForm.venue,
+      class_type: finalForm.class_type,
+      lecturer: finalForm.lecturer
+    })
     clearCache(classesCacheKey(user.id))
     showToast(t('timetable.added'), 'success')
     setForm(initialForm)
@@ -764,7 +771,14 @@ export default function TimetablePage() {
       console.error('Error inserting extracted classes:', error)
       return showToast(t('timetable.saveExtractedFailed'), 'error')
     }
-    await Promise.all(liveRows.map(item => logActivity('Added class', 'class', item.subject)))
+    await Promise.all(liveRows.map(item => logActivity('Added class', 'class', item.subject, user.id, {
+      day: item.day,
+      start_time: item.start_time,
+      end_time: item.end_time,
+      classroom: item.classroom || item.venue,
+      class_type: item.class_type,
+      lecturer: item.lecturer
+    })))
     clearCache(classesCacheKey(user.id))
     showToast(t('timetable.savedExtracted'), 'success')
     setAnalyzerOpen(false)
@@ -786,7 +800,15 @@ export default function TimetablePage() {
       } else {
          await supabase.from('classes').delete().eq('id', id)
       }
-      if (deleted) await logActivity('Deleted class', 'class', deleted.subject)
+      if (deleted) {
+        await logActivity('Deleted class', 'class', deleted.subject, user.id, {
+          day: deleted.day,
+          start_time: deleted.start_time,
+          end_time: deleted.end_time,
+          classroom: deleted.classroom || deleted.venue,
+          class_type: deleted.class_type
+        })
+      }
       clearCache(classesCacheKey(user.id))
       setClasses(prev => prev.filter(c => c.id !== id))
     } else {

@@ -158,7 +158,13 @@ export async function executeAccountAction(action, user) {
 
         if (error) throw error
 
-        await logActivity('Added exam', 'exam', payload.subject, currentUser.id)
+        await logActivity('Added exam', 'exam', payload.subject, currentUser.id, {
+          exam_date: payload.exam_date,
+          start_time: payload.start_time,
+          end_time: payload.end_time,
+          venue: payload.venue,
+          exam_type: payload.exam_type
+        })
         window.dispatchEvent(new CustomEvent('axon_exams_updated', { detail: inserted || payload }))
 
         return {
@@ -191,7 +197,13 @@ export async function executeAccountAction(action, user) {
         const { error } = await query
         if (error) throw error
 
-        await logActivity('Updated exam', 'exam', data.subject || 'Exam', currentUser.id)
+        await logActivity('Updated exam', 'exam', data.subject || 'Exam', currentUser.id, {
+          exam_date: data.exam_date,
+          start_time: data.start_time,
+          end_time: data.end_time,
+          venue: data.venue,
+          exam_type: data.exam_type
+        })
         window.dispatchEvent(new CustomEvent('axon_exams_updated'))
 
         return { success: true, type, message: `Updated exam "${data.subject || ''}"` }
@@ -210,7 +222,9 @@ export async function executeAccountAction(action, user) {
         const { error } = await query
         if (error) throw error
 
-        await logActivity('Deleted exam', 'exam', data.subject || 'Exam', currentUser.id)
+        await logActivity('Deleted exam', 'exam', data.subject || 'Exam', currentUser.id, {
+          exam_date: data.exam_date
+        })
         window.dispatchEvent(new CustomEvent('axon_exams_updated'))
 
         return { success: true, type, message: `Deleted exam "${data.subject || ''}"` }
@@ -245,7 +259,11 @@ export async function executeAccountAction(action, user) {
 
         if (error) throw error
 
-        await logActivity('Added assignment', 'assignment', payload.title, currentUser.id)
+        await logActivity('Added assignment', 'assignment', payload.title, currentUser.id, {
+          subject: payload.subject,
+          deadline: payload.deadline,
+          priority: payload.priority
+        })
         window.dispatchEvent(new CustomEvent('axon_assignments_updated', { detail: inserted || payload }))
 
         return {
@@ -276,7 +294,12 @@ export async function executeAccountAction(action, user) {
         const { error } = await query
         if (error) throw error
 
-        await logActivity('Updated assignment', 'assignment', data.title || 'Assignment', currentUser.id)
+        await logActivity('Updated assignment', 'assignment', data.title || 'Assignment', currentUser.id, {
+          subject: data.subject,
+          deadline: data.deadline,
+          priority: data.priority,
+          status: data.status
+        })
         window.dispatchEvent(new CustomEvent('axon_assignments_updated'))
 
         return { success: true, type, message: `Updated assignment "${data.title || ''}"` }
@@ -294,7 +317,9 @@ export async function executeAccountAction(action, user) {
         const { error } = await query
         if (error) throw error
 
-        await logActivity('Deleted assignment', 'assignment', data.title || 'Assignment', currentUser.id)
+        await logActivity('Deleted assignment', 'assignment', data.title || 'Assignment', currentUser.id, {
+          subject: data.subject
+        })
         window.dispatchEvent(new CustomEvent('axon_assignments_updated'))
 
         return { success: true, type, message: `Deleted assignment "${data.title || ''}"` }
@@ -402,7 +427,14 @@ export async function executeAccountAction(action, user) {
         }
 
         clearCache(`axon_classes_${currentUser.id}`)
-        await logActivity('Added class', 'class', subject, currentUser.id)
+        await logActivity('Added class', 'class', subject, currentUser.id, {
+          day,
+          start_time: startTime,
+          end_time: endTime,
+          classroom,
+          lecturer,
+          class_type: classType
+        })
         window.dispatchEvent(new CustomEvent('axon_classes_updated'))
 
         return {
@@ -437,7 +469,14 @@ export async function executeAccountAction(action, user) {
         if (error) throw error
 
         clearCache(`axon_classes_${currentUser.id}`)
-        await logActivity('Updated class', 'class', data.subject || 'Class', currentUser.id)
+        await logActivity('Updated class', 'class', data.subject || 'Class', currentUser.id, {
+          day: data.day ? normalizeDay(data.day) : undefined,
+          start_time: data.start_time ? normalizeTime(data.start_time) : undefined,
+          end_time: data.end_time ? normalizeTime(data.end_time) : undefined,
+          classroom: data.classroom,
+          lecturer: data.lecturer,
+          class_type: data.class_type ? normalizeClassType(data.class_type) : undefined
+        })
         window.dispatchEvent(new CustomEvent('axon_classes_updated'))
 
         return { success: true, type, message: `Updated class "${data.subject || ''}"` }
@@ -473,7 +512,9 @@ export async function executeAccountAction(action, user) {
         }
 
         clearCache(`axon_classes_${currentUser.id}`)
-        await logActivity('Deleted class', 'class', data.subject || 'Class', currentUser.id)
+        await logActivity('Deleted class', 'class', data.subject || 'Class', currentUser.id, {
+          day: cleanDay
+        })
         window.dispatchEvent(new CustomEvent('axon_classes_updated'))
 
         return { success: true, type, message: `Deleted class "${data.subject || ''}"` }
@@ -506,7 +547,9 @@ export async function executeAccountAction(action, user) {
 
         if (error) throw error
 
-        await logActivity('Added reminder', 'reminder', payload.title, currentUser.id)
+        await logActivity('Added reminder', 'reminder', payload.title, currentUser.id, {
+          reminder_time: payload.reminder_time
+        })
         window.dispatchEvent(new CustomEvent('axon_reminder_updated', { detail: inserted || payload }))
 
         return {
@@ -535,7 +578,9 @@ export async function executeAccountAction(action, user) {
         const { error } = await query
         if (error) throw error
 
-        await logActivity('Updated reminder', 'reminder', data.title || 'Reminder', currentUser.id)
+        await logActivity('Updated reminder', 'reminder', data.title || 'Reminder', currentUser.id, {
+          reminder_time: data.reminder_time
+        })
         window.dispatchEvent(new CustomEvent('axon_reminder_updated'))
 
         return { success: true, type, message: `Updated reminder "${data.title || ''}"` }
@@ -581,7 +626,13 @@ export async function executeAccountAction(action, user) {
 
         // Even if already checked in or special status, emit update
         window.dispatchEvent(new CustomEvent('axon_exercise_updated'))
-        await logActivity('Exercise check-in', 'exercise', activityType, currentUser.id)
+        await logActivity('Exercise check-in', 'exercise', activityType, currentUser.id, {
+          activity_type: activityType,
+          log_date: logDate,
+          duration: data.duration,
+          distance: data.distance,
+          calories: data.calories
+        })
 
         return {
           success: true,

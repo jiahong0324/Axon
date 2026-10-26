@@ -39,7 +39,12 @@ export default function ManagerDashboard() {
       supabase.from('assignments').select('id,status').neq('status', 'Done'),
       supabase.from('exams').select('id,exam_date').gte('exam_date', today).lte('exam_date', nextWeek),
       supabase.from('announcements').select('id,expires_at'),
-      supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(20)
+      supabase.from('activity_log')
+        .select('*')
+        .neq('action', 'PAGE_VIEW')
+        .neq('entity_type', 'page')
+        .order('created_at', { ascending: false })
+        .limit(20)
     ])
     const allProfiles = studentsRes.data || []
     const studentProfiles = allProfiles.filter(p => p.role === 'student')
@@ -180,11 +185,11 @@ function QuickLink({ to, icon: Icon, label }) {
 function ActivityItem({ item }) {
   const profile = item.profile || {}
   const color = item.entity_type === 'class' ? 'bg-theme-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : item.entity_type === 'exercise' ? 'bg-orange-400' : 'bg-emerald-400'
-  const { verb, target } = formatHumanActivity(item)
+  const { verb, target, details } = formatHumanActivity(item)
   const displayName = profile.full_name || profile.email || (item.role === 'manager' || item.entity_name?.startsWith?.('/manager') ? 'Manager' : 'Student')
 
   return (
-    <article className="flex items-start gap-3 rounded-xl border border-white/10 p-3">
+    <article className="flex items-start gap-3 rounded-xl border border-white/10 p-3 hover:border-white/20 transition-colors">
       <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${color}`} />
       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold text-white" style={{ background: profile.avatar_color || '#F59E0B' }}>
         {initials(displayName)}
@@ -195,7 +200,14 @@ function ActivityItem({ item }) {
           <span className="text-slate-300">{verb}</span>{' '}
           {target && <span className="font-medium text-amber-300">{target}</span>}
         </p>
-        <p className="text-xs text-slate-500 mt-0.5">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
+        {details && (
+          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+            <span className="inline-block rounded-md bg-white/5 px-2 py-0.5 border border-white/10 text-slate-300">
+              {details}
+            </span>
+          </p>
+        )}
+        <p className="text-xs text-slate-500 mt-1">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
       </div>
     </article>
   )

@@ -74,6 +74,11 @@ export default async function handler(req, res) {
           .from('activity_log')
           .delete()
           .like('entity_name', '[{%')
+
+        await adminSupabase
+          .from('activity_log')
+          .delete()
+          .or('action.eq.PAGE_VIEW,entity_type.eq.page')
       } catch (e) {
         console.warn('cleanup_activity error:', e)
       }

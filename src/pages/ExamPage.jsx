@@ -85,6 +85,13 @@ export default function ExamPage() {
         setIsSubmitting(false)
         return showToast('Exam could not be updated.', 'error')
       }
+      await logActivity('Updated exam', 'exam', form.subject, user.id, {
+        exam_date: form.exam_date,
+        start_time: form.start_time,
+        end_time: form.end_time,
+        venue: form.venue,
+        exam_type: form.exam_type
+      })
       showToast('Exam updated.', 'success')
     } else {
       const { error } = await supabase.from('exams').insert({ ...form, user_id: user.id })
@@ -92,7 +99,13 @@ export default function ExamPage() {
         setIsSubmitting(false)
         return showToast('Exam could not be added.', 'error')
       }
-      await logActivity('Added exam', 'exam', form.subject)
+      await logActivity('Added exam', 'exam', form.subject, user.id, {
+        exam_date: form.exam_date,
+        start_time: form.start_time,
+        end_time: form.end_time,
+        venue: form.venue,
+        exam_type: form.exam_type
+      })
       showToast('Exam added.', 'success')
     }
 
@@ -115,7 +128,13 @@ export default function ExamPage() {
     if (validItems.length === 0) return showToast('No valid exams to save. Check subject and date fields.', 'error')
     const { error } = await supabase.from('exams').insert(validItems.map(item => ({ ...item, user_id: user.id })))
     if (error) return showToast(`Could not save exams: ${error.message}`, 'error')
-    await Promise.all(validItems.map(item => logActivity('Added exam', 'exam', item.subject)))
+    await Promise.all(validItems.map(item => logActivity('Added exam', 'exam', item.subject, user.id, {
+      exam_date: item.exam_date,
+      start_time: item.start_time,
+      end_time: item.end_time,
+      venue: item.venue,
+      exam_type: item.exam_type
+    })))
     showToast(`${validItems.length} exam(s) saved successfully.`, 'success')
     setAnalyzerOpen(false)
     fetchExams()
@@ -123,7 +142,15 @@ export default function ExamPage() {
 
   async function deleteExam(id) {
     if (!await confirm({ title: 'Delete exam?', message: 'This exam will be removed from your planner.', confirmText: 'Delete' })) return
+    const deleted = exams.find(e => e.id === id)
     await supabase.from('exams').delete().eq('id', id)
+    if (deleted) {
+      const { data: { user } } = await supabase.auth.getUser()
+      await logActivity('Deleted exam', 'exam', deleted.subject, user?.id, {
+        exam_date: deleted.exam_date,
+        venue: deleted.venue
+      })
+    }
     setExams(prev => prev.filter(e => e.id !== id))
   }
 

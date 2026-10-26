@@ -847,7 +847,13 @@ export async function logExerciseCheckIn({
   } catch {}
 
   try {
-    await logActivity(`Exercise check-in (${activityType})`, 'exercise', activityType, userId)
+    await logActivity(`Exercise check-in (${activityType})`, 'exercise', activityType, userId, {
+      activity_type: activityType,
+      xp_earned: xpEarned,
+      duration: newLog?.duration,
+      distance: newLog?.distance,
+      calories: newLog?.calories
+    })
     if (finalAfterStats.earnedMilestoneFreezeToday) {
       await logActivity('Earned +1 Streak Freeze (5 workouts milestone)', 'exercise', 'Streak Freeze', userId)
     }

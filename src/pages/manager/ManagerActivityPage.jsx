@@ -10,6 +10,7 @@ const dateOptions = ['Today', 'This Week', 'This Month', 'All Time']
 
 export function isInternalSync(item) {
   if (!item) return false
+  if (item.action === 'PAGE_VIEW' || item.entity_type === 'page') return true
   if (item.entity_type === 'axon_linked_timetables' || item.entity_type === 'axon_exam_results_semesters') return true
   if (typeof item.entity_type === 'string' && item.entity_type.startsWith('axon_')) return true
   if (typeof item.action === 'string' && (item.action.startsWith('SYNC_') || item.action.startsWith('sync_'))) return true
@@ -44,12 +45,16 @@ const routeNames = {
 }
 
 export function formatHumanActivity(item) {
-  if (!item) return { verb: 'recorded activity', target: null }
+  if (!item) return { verb: 'recorded activity', target: null, details: null }
   const action = (item.action || '').trim()
   const entityType = (item.entity_type || '').toLowerCase()
   const rawEntity = item.entity_name ? String(item.entity_name).trim() : ''
+  let meta = item.metadata || {}
+  if (typeof meta === 'string') {
+    try { meta = JSON.parse(meta) } catch { meta = {} }
+  }
 
-  // 1. Page views & navigation
+  // 1. Page views & navigation (fallback in case any leak through)
   if (action === 'PAGE_VIEW' || entityType === 'page') {
     const cleanPath = rawEntity || item.path || ''
     let pageLabel = routeNames[cleanPath]
@@ -65,19 +70,147 @@ export function formatHumanActivity(item) {
         pageLabel = 'Dashboard'
       }
     }
-    return { verb: 'viewed', target: pageLabel }
+    return { verb: 'viewed', target: pageLabel, details: null }
   }
 
-  // 2. Timetable & Exam sync
+  // 2. Timetable / Classes
+  if (entityType === 'class' || action.toLowerCase().includes('class')) {
+    const day = meta.day || meta.day_name || ''
+    const startTime = meta.start_time || meta.startTime || ''
+    const endTime = meta.end_time || meta.endTime || ''
+    const timeStr = startTime ? `${startTime}${endTime ? ' - ' + endTime : ''}` : ''
+    const venue = meta.classroom || meta.venue ? `Room ${meta.classroom || meta.venue}` : ''
+    const classType = meta.class_type || meta.classType || ''
+    const lecturer = meta.lecturer ? `Lecturer: ${meta.lecturer}` : ''
+    const detailsList = [day, timeStr, venue, classType, lecturer].filter(Boolean)
+    const details = detailsList.length > 0 ? detailsList.join(' • ') : null
+
+    let verb = 'updated class'
+    if (/^added\s+/i.test(action)) verb = 'added class'
+    else if (/^deleted\s+/i.test(action)) verb = 'deleted class'
+
+    return {
+      verb,
+      target: rawEntity ? `"${rawEntity}"` : null,
+      details
+    }
+  }
+
+  // 3. Assignments
+  if (entityType === 'assignment' || action.toLowerCase().includes('assignment')) {
+    const subject = meta.subject || ''
+    const deadline = meta.deadline || meta.due_date || meta.dueDate || ''
+    const priority = meta.priority && meta.priority !== 'Medium' ? `${meta.priority} Priority` : ''
+    const detailsList = [subject, deadline ? `Due ${deadline}` : '', priority].filter(Boolean)
+    const details = detailsList.length > 0 ? detailsList.join(' • ') : null
+
+    let verb = 'updated assignment'
+    if (/^added\s+/i.test(action)) verb = 'added assignment'
+    else if (/^completed\s+/i.test(action)) verb = 'completed assignment'
+    else if (/^deleted\s+/i.test(action)) verb = 'deleted assignment'
+
+    return {
+      verb,
+      target: rawEntity ? `"${rawEntity}"` : null,
+      details
+    }
+  }
+
+  // 4. Exams
+  if (entityType === 'exam' || action.toLowerCase().includes('exam')) {
+    const examDate = meta.exam_date || meta.date || ''
+    const startTime = meta.start_time || meta.startTime || ''
+    const endTime = meta.end_time || meta.endTime || ''
+    const timeStr = startTime ? `${startTime}${endTime ? ' - ' + endTime : ''}` : ''
+    const venue = meta.venue || meta.classroom ? `Venue: ${meta.venue || meta.classroom}` : ''
+    const examType = meta.exam_type || ''
+    const detailsList = [examDate ? `Date: ${examDate}` : '', timeStr, venue, examType].filter(Boolean)
+    const details = detailsList.length > 0 ? detailsList.join(' • ') : null
+
+    let verb = 'updated exam'
+    if (/^added\s+/i.test(action)) verb = 'scheduled exam'
+    else if (/^deleted\s+/i.test(action)) verb = 'removed exam'
+
+    return {
+      verb,
+      target: rawEntity ? `"${rawEntity}"` : null,
+      details
+    }
+  }
+
+  // 5. Exercise / Workouts
+  if (entityType === 'exercise' || action.toLowerCase().includes('exercise')) {
+    if (action.includes('Streak freeze') || action.includes('Streak Freeze')) {
+      return { verb: 'used', target: 'Streak Freeze protection', details: null }
+    }
+    if (action.includes('Earned +1 Streak Freeze')) {
+      return { verb: 'earned', target: 'Streak Freeze milestone reward', details: null }
+    }
+    const duration = meta.duration ? `${meta.duration} mins` : ''
+    const calories = meta.calories ? `${meta.calories} kcal` : ''
+    const distance = meta.distance ? `${meta.distance} km` : ''
+    const detailsList = [duration, distance, calories].filter(Boolean)
+    const details = detailsList.length > 0 ? detailsList.join(' • ') : null
+
+    return {
+      verb: 'logged workout',
+      target: rawEntity ? `"${rawEntity}"` : null,
+      details
+    }
+  }
+
+  // 6. Reminders
+  if (entityType === 'reminder' || action.toLowerCase().includes('reminder')) {
+    const due = meta.reminder_time || meta.due_date || meta.date || ''
+    const time = meta.time || ''
+    const detailsList = [due, time].filter(Boolean)
+    const details = detailsList.length > 0 ? detailsList.join(' ') : null
+
+    let verb = 'updated reminder'
+    if (/^added\s+/i.test(action)) verb = 'set reminder'
+    else if (/^completed\s+/i.test(action)) verb = 'completed reminder'
+    else if (/^deleted\s+/i.test(action)) verb = 'removed reminder'
+
+    return {
+      verb,
+      target: rawEntity ? `"${rawEntity}"` : null,
+      details
+    }
+  }
+
+  // 7. Course grades / GPA results
+  if (entityType === 'exam_result' || action.toLowerCase().includes('grade')) {
+    let verb = 'recorded course grade'
+    if (/^deleted\s+/i.test(action)) verb = 'removed course grade'
+    return {
+      verb,
+      target: rawEntity ? `"${rawEntity}"` : null,
+      details: null
+    }
+  }
+
+  // 8. Announcements
+  if (entityType === 'announcement' || action.toLowerCase().includes('announcement')) {
+    let verb = 'published announcement'
+    if (/^deleted\s+/i.test(action)) verb = 'deleted announcement'
+    return {
+      verb,
+      target: rawEntity ? `"${rawEntity}"` : null,
+      details: null
+    }
+  }
+
+  // 9. Timetable & Exam sync
   if (action === 'SYNC_LINKED_TIMETABLES') {
-    return { verb: 'synced', target: 'timetable schedule' }
+    return { verb: 'synced', target: 'timetable schedule', details: null }
   }
   if (action === 'SYNC_EXAM_RESULTS') {
-    return { verb: 'updated', target: 'exam results & GPA' }
+    return { verb: 'updated', target: 'exam results & GPA', details: null }
   }
 
+  // Fallbacks
   let targetLabel = rawEntity
-  if (rawEntity.startsWith('[{') || rawEntity.startsWith('{"') || rawEntity.startsWith('[{"')) {
+  if (rawEntity.startsWith('[{') || rawEntity.startsWith('{"')) {
     try {
       const parsed = JSON.parse(rawEntity)
       if (Array.isArray(parsed)) targetLabel = `${parsed.length} items`
@@ -87,42 +220,15 @@ export function formatHumanActivity(item) {
     }
   }
 
-  // 3. Exercise & streak freezes
-  if (action.includes('Streak freeze') || action.includes('Streak Freeze')) {
-    return { verb: 'used', target: 'Streak Freeze protection' }
-  }
-  if (action.includes('Earned +1 Streak Freeze')) {
-    return { verb: 'earned', target: 'Streak Freeze milestone reward' }
-  }
-  if (action.toLowerCase().includes('exercise check-in')) {
-    return { verb: 'logged workout', target: targetLabel ? `"${targetLabel}"` : null }
-  }
-
-  // 4. Academic verbs (added, completed, updated, deleted)
-  if (/^added\s+/i.test(action)) {
-    const type = action.replace(/^added\s+/i, '')
-    return { verb: `added ${type}`, target: targetLabel ? `"${targetLabel}"` : null }
-  }
-  if (/^completed\s+/i.test(action)) {
-    const type = action.replace(/^completed\s+/i, '')
-    return { verb: `completed ${type}`, target: targetLabel ? `"${targetLabel}"` : null }
-  }
-  if (/^updated\s+/i.test(action)) {
-    const type = action.replace(/^updated\s+/i, '')
-    return { verb: `updated ${type}`, target: targetLabel ? `"${targetLabel}"` : null }
-  }
-  if (/^deleted\s+/i.test(action)) {
-    const type = action.replace(/^deleted\s+/i, '')
-    return { verb: `deleted ${type}`, target: targetLabel ? `"${targetLabel}"` : null }
-  }
-
-  // 5. Generic underscore actions
+  let finalVerb = action.toLowerCase()
   if (action.includes('_')) {
-    const humanVerb = action.toLowerCase().replace(/_/g, ' ')
-    return { verb: humanVerb, target: targetLabel ? `"${targetLabel}"` : null }
+    finalVerb = action.toLowerCase().replace(/_/g, ' ')
   }
-
-  return { verb: action.toLowerCase(), target: targetLabel ? `"${targetLabel}"` : null }
+  return {
+    verb: finalVerb,
+    target: targetLabel ? `"${targetLabel}"` : null,
+    details: null
+  }
 }
 
 export function formatActionLabel(action, entityName, entityType) {
@@ -154,7 +260,12 @@ export default function ManagerActivityPage() {
 
     const [profilesRes, activityRes] = await Promise.all([
       supabase.from('profiles').select('*').order('full_name'),
-      supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(500)
+      supabase.from('activity_log')
+        .select('*')
+        .neq('action', 'PAGE_VIEW')
+        .neq('entity_type', 'page')
+        .order('created_at', { ascending: false })
+        .limit(500)
     ])
     const allProfiles = profilesRes.data || []
     setAllProfilesList(allProfiles)
@@ -214,11 +325,11 @@ export default function ManagerActivityPage() {
 
 function ActivityRow({ item, profile }) {
   const dot = item.entity_type === 'class' ? 'bg-theme-400' : item.entity_type === 'assignment' ? 'bg-yellow-400' : item.entity_type === 'exam' ? 'bg-purple-400' : item.entity_type === 'exercise' ? 'bg-orange-400' : 'bg-emerald-400'
-  const { verb, target } = formatHumanActivity(item)
+  const { verb, target, details } = formatHumanActivity(item)
   const displayName = profile?.full_name || profile?.email || (item.role === 'manager' || item.entity_name?.startsWith?.('/manager') ? 'Manager' : 'Student')
 
   return (
-    <article className="grid grid-cols-[auto_auto_1fr] items-start gap-3 rounded-xl border border-white/10 p-3">
+    <article className="grid grid-cols-[auto_auto_1fr] items-start gap-3 rounded-xl border border-white/10 p-3 hover:border-white/20 transition-colors">
       <span className={`mt-4 h-2.5 w-2.5 rounded-full ${dot}`} />
       <div className="grid h-10 w-10 place-items-center rounded-full text-xs font-semibold text-white" style={{ background: profile?.avatar_color || '#F59E0B' }}>
         {initials(displayName)}
@@ -229,7 +340,14 @@ function ActivityRow({ item, profile }) {
           <span className="text-slate-300">{verb}</span>{' '}
           {target && <span className="font-medium text-amber-300">{target}</span>}
         </p>
-        <p className="text-xs text-slate-500 mt-0.5">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
+        {details && (
+          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+            <span className="inline-block rounded-md bg-white/5 px-2 py-0.5 border border-white/10 text-slate-300">
+              {details}
+            </span>
+          </p>
+        )}
+        <p className="text-xs text-slate-500 mt-1">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</p>
       </div>
     </article>
   )

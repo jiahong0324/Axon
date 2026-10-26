@@ -180,24 +180,6 @@ export async function trackPageView(path, metadata = {}) {
         ...metadata
       }
     }).then(() => {}).catch(() => {})
-
-    // 3. Also record into activity_log if logged in
-    if (userId) {
-      supabase.from('activity_log').insert({
-        user_id: userId,
-        action: 'PAGE_VIEW',
-        entity_type: 'page',
-        entity_name: path,
-        metadata: {
-          device_type: env.deviceType,
-          browser: env.browser,
-          os: env.os,
-          title: typeof document !== 'undefined' ? document.title || '' : '',
-          screen: typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight}` : '',
-          ...metadata
-        }
-      }).then(() => {}).catch(() => {})
-    }
   } catch {
     // Non-blocking telemetry
   }

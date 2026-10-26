@@ -64,6 +64,11 @@ export default function AssignmentPage() {
         setIsSubmitting(false)
         return showToast('Assignment could not be updated.', 'error')
       }
+      await logActivity('Updated assignment', 'assignment', form.title, user.id, {
+        subject: form.subject,
+        deadline: form.deadline,
+        priority: form.priority
+      })
       showToast('Assignment updated.', 'success')
     } else {
       const { error } = await supabase.from('assignments').insert({ ...form, user_id: user.id })
@@ -71,7 +76,11 @@ export default function AssignmentPage() {
         setIsSubmitting(false)
         return showToast('Assignment could not be added.', 'error')
       }
-      await logActivity('Added assignment', 'assignment', form.title)
+      await logActivity('Added assignment', 'assignment', form.title, user.id, {
+        subject: form.subject,
+        deadline: form.deadline,
+        priority: form.priority
+      })
       showToast('Assignment added.', 'success')
     }
 
@@ -95,7 +104,11 @@ export default function AssignmentPage() {
     const rows = validItems.map(item => ({ priority: 'Medium', status: 'Pending', notes: '', ...item, user_id: user.id }))
     const { error } = await supabase.from('assignments').insert(rows)
     if (error) return showToast(`Could not save assignments: ${error.message}`, 'error')
-    await Promise.all(rows.map(item => logActivity('Added assignment', 'assignment', item.title)))
+    await Promise.all(rows.map(item => logActivity('Added assignment', 'assignment', item.title, user.id, {
+      subject: item.subject,
+      deadline: item.deadline,
+      priority: item.priority
+    })))
     showToast(`${rows.length} assignment(s) saved successfully.`, 'success')
     setAnalyzerOpen(false)
     fetchItems()
@@ -104,13 +117,26 @@ export default function AssignmentPage() {
   async function updateItem(id, updates) {
     await supabase.from('assignments').update(updates).eq('id', id)
     const item = items.find(item => item.id === id)
-    if (updates.status === 'Done' && item?.status !== 'Done') await logActivity('Completed assignment', 'assignment', item.title)
+    if (updates.status === 'Done' && item?.status !== 'Done') {
+      const { data: { user } } = await supabase.auth.getUser()
+      await logActivity('Completed assignment', 'assignment', item.title, user?.id, {
+        subject: item.subject,
+        deadline: item.deadline
+      })
+    }
     setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item))
   }
 
   async function deleteItem(id) {
     if (!await confirm({ title: 'Delete assignment?', message: 'This assignment card will be removed.', confirmText: 'Delete' })) return
+    const item = items.find(i => i.id === id)
     await supabase.from('assignments').delete().eq('id', id)
+    if (item) {
+      const { data: { user } } = await supabase.auth.getUser()
+      await logActivity('Deleted assignment', 'assignment', item.title, user?.id, {
+        subject: item.subject
+      })
+    }
     setItems(prev => prev.filter(item => item.id !== id))
   }
 
