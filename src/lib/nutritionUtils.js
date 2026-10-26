@@ -53,19 +53,26 @@ export function getCurrentTimeStr() {
 }
 
 export function getMealTypeFromTime(timeStr = '') {
-  let h
+  let minutes = 0
   if (timeStr && /^\d{1,2}:\d{2}/.test(timeStr)) {
-    h = parseInt(timeStr.split(':')[0], 10)
+    const [hStr, mStr] = timeStr.split(':')
+    minutes = parseInt(hStr, 10) * 60 + (parseInt(mStr, 10) || 0)
   } else {
-    h = new Date().getHours()
+    const now = new Date()
+    minutes = now.getHours() * 60 + now.getMinutes()
   }
-  // Breakfast: 05:00 - 10:59
-  // Lunch: 11:00 - 15:59
-  // Dinner: 16:00 - 21:59
-  // Snack: 22:00 - 04:59
-  if (h >= 5 && h < 11) return 'Breakfast'
-  if (h >= 11 && h < 16) return 'Lunch'
-  if (h >= 16 && h < 22) return 'Dinner'
+
+  // Breakfast: 06:00 - 10:29 (360 - 629)
+  // Snack:     10:30 - 11:29 (630 - 689)
+  // Lunch:     11:30 - 14:29 (690 - 869)
+  // Snack:     14:30 - 17:29 (870 - 1049)
+  // Dinner:    17:30 - 20:59 (1050 - 1259)
+  // Snack:     21:00 - 05:59 (1260+ or < 360)
+  if (minutes >= 6 * 60 && minutes < 10 * 60 + 30) return 'Breakfast'
+  if (minutes >= 10 * 60 + 30 && minutes < 11 * 60 + 30) return 'Snack'
+  if (minutes >= 11 * 60 + 30 && minutes < 14 * 60 + 30) return 'Lunch'
+  if (minutes >= 14 * 60 + 30 && minutes < 17 * 60 + 30) return 'Snack'
+  if (minutes >= 17 * 60 + 30 && minutes < 21 * 60) return 'Dinner'
   return 'Snack'
 }
 
