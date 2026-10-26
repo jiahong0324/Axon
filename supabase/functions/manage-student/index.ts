@@ -299,45 +299,61 @@ Deno.serve(async req => {
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light only">
-  <meta name="supported-color-schemes" content="light">
+  <meta name="supported-color-schemes" content="light only">
   <style>
-    :root { color-scheme: light only; supported-color-schemes: light; }
+    :root { color-scheme: light only; supported-color-schemes: light only; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
-    .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155 !important; }
-    .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; display: inline-block; }
-    h1 { color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
-    p { color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
-    .btn { display: inline-block; background-color: #3b82f6 !important; background-image: linear-gradient(#3b82f6, #3b82f6) !important; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
-    .footer { text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px; }
+    .email-wrapper { width: 100% !important; min-width: 100% !important; margin: 0 !important; padding: 0 !important; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; border-collapse: collapse; }
+    .email-cell { padding: 40px 20px !important; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
+    .card { max-width: 560px !important; margin: 0 auto !important; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px !important; padding: 40px !important; text-align: center !important; border: 1px solid #334155 !important; box-sizing: border-box !important; }
+    .logo { width: 64px !important; height: 64px !important; margin-bottom: 24px !important; border-radius: 16px !important; display: inline-block !important; }
+    h1 { color: #ffffff !important; font-size: 24px !important; margin-top: 0 !important; margin-bottom: 16px !important; font-weight: 700 !important; }
+    p { color: #94a3b8 !important; font-size: 16px !important; line-height: 1.5 !important; margin-bottom: 32px !important; }
+    .btn { display: inline-block !important; background-color: #3b82f6 !important; background-image: linear-gradient(#3b82f6, #3b82f6) !important; color: #ffffff !important; text-decoration: none !important; font-weight: 600 !important; padding: 14px 32px !important; border-radius: 12px !important; font-size: 16px !important; }
+    .footer { text-align: center !important; margin-top: 32px !important; color: #64748b !important; font-size: 14px !important; }
+    u + .body .gmail-blend-screen { background: #000000; mix-blend-mode: screen; }
+    u + .body .gmail-blend-difference { background: #000000; mix-blend-mode: difference; }
     @media (prefers-color-scheme: dark) {
-      body, .container { background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
+      body, .email-wrapper, .email-cell { background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
       .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border: 1px solid #334155 !important; }
-      h1 { color: #ffffff !important; }
+      h1, h1 span { color: #ffffff !important; }
       p { color: #94a3b8 !important; }
       .footer { color: #64748b !important; }
     }
-    [data-ogsc] body, [data-ogsb] body, [data-ogsc] .container, [data-ogsb] .container { background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
+    [data-ogsc] body, [data-ogsb] body, [data-ogsc] .email-wrapper, [data-ogsb] .email-wrapper, [data-ogsc] .email-cell, [data-ogsb] .email-cell { background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
     [data-ogsc] .card, [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border: 1px solid #334155 !important; }
-    [data-ogsc] h1 { color: #ffffff !important; }
+    [data-ogsc] h1, [data-ogsc] h1 span { color: #ffffff !important; }
     [data-ogsc] p { color: #94a3b8 !important; }
     [data-ogsc] .footer { color: #64748b !important; }
   </style>
 </head>
-<body style="background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
-  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important;">
-    <div class="card" style="background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155 !important;">
-      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; display: inline-block;">
-      <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px; margin-top: 0; margin-bottom: 16px;">Welcome to Axon, ${studentProfile.full_name || 'Student'}!</h1>
-      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">We are absolutely thrilled to have you here. Your academic life is about to get a lot more organized and productive.</p>
-      <p data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px; line-height: 1.5; margin-bottom: 32px;">Dive right in and start exploring!</p>
-      <a href="https://axon-com.vercel.app/login" class="btn" style="display: inline-block; background-color: #3b82f6 !important; background-image: linear-gradient(#3b82f6, #3b82f6) !important; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px;"><span data-ogsc="color: #ffffff;" style="color: #ffffff !important;">Go to Dashboard</span></a>
-    </div>
-    <div class="footer" data-ogsc="color: #64748b;" style="text-align: center; margin-top: 32px; color: #64748b !important; font-size: 14px;">
-      &copy; 2026 Axon. All rights reserved.
-    </div>
-  </div>
+<body class="body" style="background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-wrapper">
+    <tr>
+      <td align="center" class="email-cell">
+        <div class="card">
+          <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
+          <div class="gmail-blend-screen">
+            <div class="gmail-blend-difference">
+              <h1 data-ogsc="color: #ffffff;"><span style="color: #ffffff !important;">Welcome to Axon, ${studentProfile.full_name || 'Student'}!</span></h1>
+              <p data-ogsc="color: #94a3b8;">We are absolutely thrilled to have you here. Your academic life is about to get a lot more organized and productive.</p>
+              <p data-ogsc="color: #94a3b8;">Dive right in and start exploring!</p>
+              <a href="https://axon-com.vercel.app/login" class="btn"><span data-ogsc="color: #ffffff;" style="color: #ffffff !important;">Go to Dashboard</span></a>
+            </div>
+          </div>
+        </div>
+        <div class="gmail-blend-screen">
+          <div class="gmail-blend-difference">
+            <div class="footer" data-ogsc="color: #64748b;">
+              &copy; 2026 Axon. All rights reserved.
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
             `
@@ -380,30 +396,60 @@ Deno.serve(async req => {
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-    .card { background-color: #1e293b; border-radius: 16px; padding: 40px; text-align: center; border: 1px solid #334155; }
-    .logo { width: 64px; height: 64px; margin-bottom: 24px; border-radius: 16px; }
-    h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 16px; }
-    p { color: #94a3b8; font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
-    .btn { display: inline-block; background-color: #3b82f6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 16px; }
-    .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 14px; }
+    :root { color-scheme: light only; supported-color-schemes: light only; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    .email-wrapper { width: 100% !important; min-width: 100% !important; margin: 0 !important; padding: 0 !important; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; border-collapse: collapse; }
+    .email-cell { padding: 40px 20px !important; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
+    .card { max-width: 560px !important; margin: 0 auto !important; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px !important; padding: 40px !important; text-align: center !important; border: 1px solid #334155 !important; box-sizing: border-box !important; }
+    .logo { width: 64px !important; height: 64px !important; margin-bottom: 24px !important; border-radius: 16px !important; display: inline-block !important; }
+    h1 { color: #ffffff !important; font-size: 24px !important; margin-top: 0 !important; margin-bottom: 16px !important; font-weight: 700 !important; }
+    p { color: #94a3b8 !important; font-size: 16px !important; line-height: 1.5 !important; margin-bottom: 24px !important; text-align: left !important; }
+    .footer { text-align: center !important; margin-top: 32px !important; color: #64748b !important; font-size: 14px !important; }
+    u + .body .gmail-blend-screen { background: #000000; mix-blend-mode: screen; }
+    u + .body .gmail-blend-difference { background: #000000; mix-blend-mode: difference; }
+    @media (prefers-color-scheme: dark) {
+      body, .email-wrapper, .email-cell { background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border: 1px solid #334155 !important; }
+      h1, h1 span { color: #ffffff !important; }
+      p { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+    }
+    [data-ogsc] body, [data-ogsb] body, [data-ogsc] .email-wrapper, [data-ogsb] .email-wrapper, [data-ogsc] .email-cell, [data-ogsb] .email-cell { background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
+    [data-ogsc] .card, [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border: 1px solid #334155 !important; }
+    [data-ogsc] h1, [data-ogsc] h1 span { color: #ffffff !important; }
+    [data-ogsc] p { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="card">
-      <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-      <h1>New Login Alert</h1>
-      <p>Hi ${studentProfile.full_name || 'Student'},</p>
-      <p>We detected a new login to your Axon account. If this was you, no further action is needed.</p>
-      <p>If you did not authorize this login, please reset your password immediately or contact your administrator.</p>
-    </div>
-    <div class="footer">
-      &copy; 2026 Axon. All rights reserved.
-    </div>
-  </div>
+<body class="body" style="background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-wrapper">
+    <tr>
+      <td align="center" class="email-cell">
+        <div class="card">
+          <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
+          <div class="gmail-blend-screen">
+            <div class="gmail-blend-difference">
+              <h1 data-ogsc="color: #ffffff;"><span style="color: #ffffff !important;">New Login Alert</span></h1>
+              <p data-ogsc="color: #94a3b8;">Hi ${studentProfile.full_name || 'Student'},</p>
+              <p data-ogsc="color: #94a3b8;">We detected a new login to your Axon account. If this was you, no further action is needed.</p>
+              <p data-ogsc="color: #94a3b8;">If you did not authorize this login, please reset your password immediately or contact your administrator.</p>
+            </div>
+          </div>
+        </div>
+        <div class="gmail-blend-screen">
+          <div class="gmail-blend-difference">
+            <div class="footer" data-ogsc="color: #64748b;">
+              &copy; 2026 Axon. All rights reserved.
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
             `
@@ -501,13 +547,13 @@ Deno.serve(async req => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light dark">
-  <meta name="supported-color-schemes" content="light dark">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
   <title>${safeSubject}</title>
   <style>
     :root {
-      color-scheme: light dark;
-      supported-color-schemes: light dark;
+      color-scheme: light only;
+      supported-color-schemes: light only;
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -571,6 +617,16 @@ Deno.serve(async req => {
       font-size: 14px !important;
     }
 
+    /* Gmail iOS / Android dark mode inversion counter-shield */
+    u + .body .gmail-blend-screen {
+      background: #000000;
+      mix-blend-mode: screen;
+    }
+    u + .body .gmail-blend-difference {
+      background: #000000;
+      mix-blend-mode: difference;
+    }
+
     @media (prefers-color-scheme: dark) {
       body, .email-wrapper, .email-cell {
         background-color: #0f172a !important;
@@ -582,13 +638,13 @@ Deno.serve(async req => {
         border: 1px solid #334155 !important;
         border-radius: 16px !important;
       }
-      h1 {
+      h1, h1 span {
         color: #ffffff !important;
       }
       .content, .content * {
         color: #94a3b8 !important;
       }
-      .footer {
+      .footer, .footer * {
         color: #64748b !important;
       }
     }
@@ -603,7 +659,7 @@ Deno.serve(async req => {
       border: 1px solid #334155 !important;
       border-radius: 16px !important;
     }
-    [data-ogsc] h1 {
+    [data-ogsc] h1, [data-ogsc] h1 span {
       color: #ffffff !important;
     }
     [data-ogsc] .content, [data-ogsc] .content * {
@@ -614,19 +670,29 @@ Deno.serve(async req => {
     }
   </style>
 </head>
-<body style="background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important; margin: 0 !important; padding: 0 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+<body class="body" style="background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important; margin: 0 !important; padding: 0 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-wrapper" style="width: 100% !important; min-width: 100% !important; margin: 0 !important; padding: 0 !important; background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important; border-collapse: collapse;">
     <tr>
       <td align="center" class="email-cell" style="padding: 40px 20px !important; background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;">
         <div class="card" style="max-width: 560px !important; margin: 0 auto !important; background-color: #1e293b !important; background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important; border-radius: 16px !important; border: 1px solid #334155 !important; padding: 40px !important; text-align: center !important; box-sizing: border-box !important;">
           <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px !important; height: 64px !important; margin-bottom: 24px !important; border-radius: 16px !important; display: inline-block !important;">
-          <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px !important; line-height: 1.3 !important; margin-top: 0 !important; margin-bottom: 20px !important; font-weight: 700 !important; text-align: center !important;">${safeSubject}</h1>
-          <div class="content" data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px !important; line-height: 1.6 !important; margin-bottom: 32px !important; text-align: left !important;">
-            ${formattedMessage}
+          <div class="gmail-blend-screen">
+            <div class="gmail-blend-difference">
+              <h1 data-ogsc="color: #ffffff;" style="color: #ffffff !important; font-size: 24px !important; line-height: 1.3 !important; margin-top: 0 !important; margin-bottom: 20px !important; font-weight: 700 !important; text-align: center !important;">
+                <span style="color: #ffffff !important;">${safeSubject}</span>
+              </h1>
+              <div class="content" data-ogsc="color: #94a3b8;" style="color: #94a3b8 !important; font-size: 16px !important; line-height: 1.6 !important; margin-bottom: 32px !important; text-align: left !important;">
+                ${formattedMessage}
+              </div>
+            </div>
           </div>
         </div>
-        <div class="footer" data-ogsc="color: #64748b;" style="text-align: center !important; margin-top: 32px !important; color: #64748b !important; font-size: 14px !important;">
-          &copy; 2026 Axon. All rights reserved.
+        <div class="gmail-blend-screen">
+          <div class="gmail-blend-difference">
+            <div class="footer" data-ogsc="color: #64748b;" style="text-align: center !important; margin-top: 32px !important; color: #64748b !important; font-size: 14px !important;">
+              &copy; 2026 Axon. All rights reserved.
+            </div>
+          </div>
         </div>
       </td>
     </tr>
@@ -1124,48 +1190,78 @@ function buildAcademicDigestHtml(params: AcademicDigestParams): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-    .card { background-color: #1e293b; border-radius: 16px; padding: 32px; border: 1px solid #334155; }
-    .logo { width: 56px; height: 56px; margin-bottom: 20px; border-radius: 12px; }
-    h1 { color: #ffffff; font-size: 24px; margin-top: 0; margin-bottom: 8px; }
-    .subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 24px; }
-    .footer { text-align: center; margin-top: 32px; color: #64748b; font-size: 12px; }
-    .profile-card { background: #111827; border: 1px solid #334155; padding: 16px; border-radius: 12px; margin-bottom: 24px; }
+    :root { color-scheme: light only; supported-color-schemes: light only; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    .email-wrapper { width: 100% !important; min-width: 100% !important; margin: 0 !important; padding: 0 !important; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; border-collapse: collapse; }
+    .email-cell { padding: 40px 20px !important; background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
+    .card { max-width: 600px !important; margin: 0 auto !important; background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border-radius: 16px !important; padding: 32px !important; border: 1px solid #334155 !important; box-sizing: border-box !important; }
+    .logo { width: 56px !important; height: 56px !important; margin-bottom: 20px !important; border-radius: 12px !important; }
+    h1 { color: #ffffff !important; font-size: 24px !important; margin-top: 0 !important; margin-bottom: 8px !important; }
+    .subtitle { color: #94a3b8 !important; font-size: 14px !important; margin-bottom: 24px !important; }
+    .footer { text-align: center !important; margin-top: 32px !important; color: #64748b !important; font-size: 12px !important; }
+    .profile-card { background: #111827 !important; background-image: linear-gradient(#111827, #111827) !important; border: 1px solid #334155 !important; padding: 16px !important; border-radius: 12px !important; margin-bottom: 24px !important; }
+    u + .body .gmail-blend-screen { background: #000000; mix-blend-mode: screen; }
+    u + .body .gmail-blend-difference { background: #000000; mix-blend-mode: difference; }
+    @media (prefers-color-scheme: dark) {
+      body, .email-wrapper, .email-cell { background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
+      .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border: 1px solid #334155 !important; }
+      h1, h1 span { color: #ffffff !important; }
+      .subtitle { color: #94a3b8 !important; }
+      .footer { color: #64748b !important; }
+    }
+    [data-ogsc] body, [data-ogsb] body, [data-ogsc] .email-wrapper, [data-ogsb] .email-wrapper, [data-ogsc] .email-cell, [data-ogsb] .email-cell { background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; }
+    [data-ogsc] .card, [data-ogsb] .card { background-color: #1e293b !important; background-image: linear-gradient(#1e293b, #1e293b) !important; border: 1px solid #334155 !important; }
+    [data-ogsc] h1, [data-ogsc] h1 span { color: #ffffff !important; }
+    [data-ogsc] .subtitle { color: #94a3b8 !important; }
+    [data-ogsc] .footer { color: #64748b !important; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="card">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
-        <h1>Academic Planner Digest</h1>
-        <div class="subtitle">Weekly planner summary compiled on ${dateStr}</div>
-      </div>
-      
-      <div class="profile-card">
-        <div style="font-weight: bold; color: #ffffff; font-size: 15px; margin-bottom: 4px;">👤 ${fullName}</div>
-        ${university ? `<div style="font-size: 12px; color: #94a3b8;">🏫 ${university}</div>` : ''}
-        ${course ? `<div style="font-size: 12px; color: #94a3b8;">📚 ${course}</div>` : ''}
-      </div>
+<body class="body" style="background-color: #0f172a !important; background-image: linear-gradient(#0f172a, #0f172a) !important; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-wrapper">
+    <tr>
+      <td align="center" class="email-cell">
+        <div class="card">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo">
+            <div class="gmail-blend-screen">
+              <div class="gmail-blend-difference">
+                <h1 data-ogsc="color: #ffffff;"><span style="color: #ffffff !important;">Academic Planner Digest</span></h1>
+                <div class="subtitle" data-ogsc="color: #94a3b8;">Weekly planner summary compiled on ${dateStr}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="profile-card">
+            <div style="font-weight: bold; color: #ffffff; font-size: 15px; margin-bottom: 4px;">👤 ${fullName}</div>
+            ${university ? `<div style="font-size: 12px; color: #94a3b8;">🏫 ${university}</div>` : ''}
+            ${course ? `<div style="font-size: 12px; color: #94a3b8;">📚 ${course}</div>` : ''}
+          </div>
 
-      ${classesHtml}
-      ${assignmentsHtml}
-      ${examsHtml}
-      ${resultsHtml}
-      ${exercisesHtml}
-      ${nutritionHtml}
-      
-      <div style="text-align: center; margin-top: 32px; border-top: 1px solid #334155; padding-top: 20px;">
-        <a href="https://axon-com.vercel.app/login" style="display: inline-block; background-color: #3b82f6; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 10px; font-size: 14px;">Open Axon App</a>
-      </div>
-    </div>
-    <div class="footer">
-      &copy; 2026 Axon. All rights reserved. <br>
-      You received this because you requested a copy of your academic planner from your account settings.
-    </div>
-  </div>
+          ${classesHtml}
+          ${assignmentsHtml}
+          ${examsHtml}
+          ${resultsHtml}
+          ${exercisesHtml}
+          ${nutritionHtml}
+          
+          <div style="text-align: center; margin-top: 32px; border-top: 1px solid #334155; padding-top: 20px;">
+            <a href="https://axon-com.vercel.app/login" style="display: inline-block; background-color: #3b82f6 !important; background-image: linear-gradient(#3b82f6, #3b82f6) !important; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 10px; font-size: 14px;"><span style="color: #ffffff !important;">Open Axon App</span></a>
+          </div>
+        </div>
+        <div class="gmail-blend-screen">
+          <div class="gmail-blend-difference">
+            <div class="footer" data-ogsc="color: #64748b;">
+              &copy; 2026 Axon. All rights reserved. <br>
+              You received this because you requested a copy of your academic planner from your account settings.
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
   `
