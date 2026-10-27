@@ -56,12 +56,12 @@ export function buildEmailHtml({ subject, message, logoUrl = 'https://axon-com.v
     .card {
       max-width: 560px !important;
       margin: 0 auto !important;
-      background-color: #1e293b !important;
-      background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
-      border-radius: 16px !important;
+      background-color: #0f172a !important;
+      background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
+      border-radius: 0 !important;
       padding: 40px !important;
       text-align: center !important;
-      border: 1px solid #334155 !important;
+      border: 0 !important;
       box-sizing: border-box !important;
     }
     .logo {
@@ -110,10 +110,10 @@ export function buildEmailHtml({ subject, message, logoUrl = 'https://axon-com.v
         background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
       }
       .card {
-        background-color: #1e293b !important;
-        background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
-        border: 1px solid #334155 !important;
-        border-radius: 16px !important;
+        background-color: #0f172a !important;
+        background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
+        border: 0 !important;
+        border-radius: 0 !important;
       }
       h1, h1 span {
         color: #ffffff !important;
@@ -131,10 +131,10 @@ export function buildEmailHtml({ subject, message, logoUrl = 'https://axon-com.v
       background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
     }
     [data-ogsc] .card, [data-ogsb] .card {
-      background-color: #1e293b !important;
-      background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
-      border: 1px solid #334155 !important;
-      border-radius: 16px !important;
+      background-color: #0f172a !important;
+      background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
+      border: 0 !important;
+      border-radius: 0 !important;
     }
     [data-ogsc] h1, [data-ogsc] h1 span {
       color: #ffffff !important;
@@ -151,7 +151,7 @@ export function buildEmailHtml({ subject, message, logoUrl = 'https://axon-com.v
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-wrapper" bgcolor="#0f172a" style="width: 100% !important; min-width: 100% !important; margin: 0 !important; padding: 0 !important; background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important; border-collapse: collapse;">
     <tr>
       <td align="center" class="email-cell" bgcolor="#0f172a" style="padding: 40px 20px !important; background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;">
-        <div class="card" style="max-width: 560px !important; margin: 0 auto !important; background-color: #1e293b !important; background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important; border-radius: 16px !important; border: 1px solid #334155 !important; padding: 40px !important; text-align: center !important; box-sizing: border-box !important;">
+        <div class="card" style="max-width: 560px !important; margin: 0 auto !important; background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important; border-radius: 0 !important; border: 0 !important; padding: 40px !important; text-align: center !important; box-sizing: border-box !important;">
           <img src="${logoUrl}" alt="Axon" class="logo" style="width: 64px !important; height: 64px !important; margin-bottom: 24px !important; border-radius: 16px !important; display: inline-block !important;">
           <div class="gmail-blend-screen">
             <div class="gmail-blend-difference">
