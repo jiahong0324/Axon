@@ -43,7 +43,7 @@ flowchart TD
     subgraph CloudServices ["Backend & External Services"]
         SupabaseDB[("Supabase (PostgreSQL + RLS)\n• Profiles, Timetable, Exams\n• Exercises, Badges, Chat Logs")]
         EdgeFn["Supabase Edge Functions\n• manage-student (Brevo Email & Admin)"]
-        GroqCloud["Groq / Gemini / OpenRouter / Cloudflare\n• gpt-oss-120b & Gemini 2.0 Flash\n• Whisper Large v3 Voice"]
+        GroqCloud["Groq / Gemini / OpenRouter / Cloudflare\n• gpt-oss-120b & Gemini 3.5 Flash-Lite\n• Whisper Large v3 Voice"]
         BrevoEmail["Brevo (Sendinblue) API\n• Targeted Student Email Broadcasts"]
         WebPushGateway["Web Push Services (Apple / Google / Mozilla)\n• VAPID Notifications"]
         DatadogCloud["Datadog Observability Cloud\n• Browser RUM & Session Replay\n• AI / LLM Observability & Logs"]
@@ -100,7 +100,7 @@ flowchart TD
 - **Autonomous AI Study Companion (`/ai-helper`)**:
   - **Context-Aware Reasoning**: Dynamic injection of the student's personal schedule, upcoming deadlines, exam dates, and recent performance into LLM memory.
   - **Autonomous Account Actions Engine**: Interprets natural-language commands (e.g., *"Add Software Engineering tutorial every Tuesday at 2 PM in Block B"* or *"Schedule exam for BACS2023 on Dec 12"*) and safely creates or updates records directly in the student's account.
-  - **Multimodal Vision OCR**: Multi-provider fallback chain (Google Gemini 2.5/2.0 Flash -> OpenRouter -> Cloudflare Workers AI -> Groq Vision) for timetable and document extraction.
+  - **Multimodal Vision OCR**: Multi-provider fallback chain (Google Gemini 3.5 Flash-Lite / 2.5 Flash -> OpenRouter -> Cloudflare Workers AI -> Groq Vision) for timetable and document extraction.
   - **Whisper Voice Input**: Built-in voice message recording transcribed with `whisper-large-v3-turbo` and automatically translated to English if spoken in Chinese or mixed dialects.
   - **Mathematical Formula Rendering**: Native KaTeX rendering for complex formulas and clean Markdown table formatting.
 
@@ -183,7 +183,7 @@ flowchart TD
 | **Edge Functions** | Supabase Edge Functions (Deno / TypeScript) |
 | **Serverless API** | Vercel Serverless Functions (`api/*.js`) |
 | **AI LLM & Reasoning** | Groq API (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`) |
-| **AI Multimodal Vision** | Google Gemini 2.5/2.0 Flash, OpenRouter, Cloudflare Workers AI (`llama-3.2-11b/90b-vision`) |
+| **AI Multimodal Vision** | Google Gemini 3.5 Flash-Lite / 2.5 Flash, OpenRouter, Cloudflare Workers AI (`llama-3.2-11b/90b-vision`) |
 | **AI Voice Transcription**| Groq Whisper (`whisper-large-v3-turbo` / `whisper-large-v3`) |
 | **Push Notifications** | Web Push (VAPID) with timezone-aware cron (`Asia/Kuala_Lumpur`) |
 | **Email Delivery** | Brevo (Sendinblue) Transactional API |

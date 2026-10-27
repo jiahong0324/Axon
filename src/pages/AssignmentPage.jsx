@@ -37,7 +37,15 @@ export default function AssignmentPage() {
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { t } = useLanguage()
 
-  useEffect(() => { fetchItems() }, [])
+  useEffect(() => {
+    fetchItems()
+    window.addEventListener('axon_assignments_updated', fetchItems)
+    window.addEventListener('focus', fetchItems)
+    return () => {
+      window.removeEventListener('axon_assignments_updated', fetchItems)
+      window.removeEventListener('focus', fetchItems)
+    }
+  }, [])
 
   async function fetchItems() {
     setLoading(true)

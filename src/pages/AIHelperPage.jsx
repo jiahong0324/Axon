@@ -533,7 +533,8 @@ export default function AIHelperPage({ role = 'student' }) {
       // Execute autonomous account actions requested by user
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       const actionResults = await parseAndExecuteActions(answer, currentUser, {
-        image_url: imgData?.storageThumbnail || null
+        image_url: imgData?.storageThumbnail || null,
+        userPrompt: userText
       })
       if (actionResults && actionResults.length > 0) {
         const successes = actionResults.filter(r => r.success)

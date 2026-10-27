@@ -132,296 +132,259 @@ function normalizePrefValue(normKey, val) {
 
 export { ACTION_SCHEMA_PROMPT } from './actionSchemaPrompt.js'
 
+export function extractDateFromText(text = '') {
+  if (!text) return null
+  const isoMatch = text.match(/\b(20\d{2}-\d{2}-\d{2})\b/)
+  if (isoMatch && isoMatch[1] !== '2026-10-15') return isoMatch[1]
+
+  const monthNames = {
+    jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+    jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+  }
+  const datePattern = /\b(\d{1,2})(?:st|nd|rd|th)?\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*(?:\s+(20\d{2}))?\b/i
+  const dmMatch = text.match(datePattern)
+  if (dmMatch) {
+    const day = dmMatch[1].padStart(2, '0')
+    const mon = monthNames[dmMatch[2].slice(0, 3).toLowerCase()] || '01'
+    const yr = dmMatch[3] || '2026'
+    return `${yr}-${mon}-${day}`
+  }
+
+  const zhDateMatch = text.match(/(?:(\d{4})年)?\s*(\d{1,2})月(\d{1,2})日/)
+  if (zhDateMatch) {
+    const yr = zhDateMatch[1] || '2026'
+    const mon = String(zhDateMatch[2]).padStart(2, '0')
+    const day = String(zhDateMatch[3]).padStart(2, '0')
+    return `${yr}-${mon}-${day}`
+  }
+
+  if (/tomorrow|明天|esok/i.test(text)) {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    return d.toISOString().split('T')[0]
+  }
+
+  return null
+}
+
+function getCol(parts, headers, pattern) {
+  const idx = headers.findIndex(h => pattern.test(h))
+  return idx >= 0 && parts[idx] ? parts[idx] : null
+}
+
 /**
  * Fallback parser that reconstructs actions from markdown confirmation tables
- * if the AI model outputted the table without the machine <axon_action> tag.
+ * with dynamic column position detection and flexible header names.
  */
 export function parseTableFallback(content = '') {
   const actions = []
+  const lines = content.split('\n').map(l => l.trim()).filter(l => l.startsWith('|'))
+  if (lines.length < 2) return actions
 
-  // 1. Workout table fallback: | ACTIVITY | DATE |
-  if (/\|\s*ACTIVITY\s*\|\s*DATE/i.test(content) || /Workout logged/i.test(content)) {
-    const lines = content.split('\n')
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (!line.startsWith('|')) continue
-      if (!line.replace(/[|\s\-:]/g, '')) continue
-      if (/\|\s*ACTIVITY\s*\|/i.test(line)) continue
-
-      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
-      if (parts.length >= 2) {
-        const activity = parts[0]
-        const dateStr = parts[1]
-        if (activity) {
-          actions.push({
-            type: 'log_exercise',
-            data: {
-              activity_type: activity || 'Gym',
-              log_date: /^\d{4}-\d{2}-\d{2}$/.test(dateStr) && dateStr !== '2026-10-15' ? dateStr : getTodayStr()
-            }
-          })
-          break
-        }
-      }
+  let headerIndex = -1
+  let headers = []
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i]
+    if (!raw.replace(/[|\s\-:]/g, '')) continue
+    const parts = raw.split('|').map(s => s.trim().toLowerCase()).filter(Boolean)
+    if (parts.length >= 2) {
+      headerIndex = i
+      headers = parts
+      break
     }
   }
 
-  // 2. Timetable Class table fallback: | TYPE | COURSE | DAY | TIME |
-  if (/\|\s*(TYPE\s*\|\s*COURSE|COURSE\s*\|\s*DAY)/i.test(content) && /\|\s*DAY\s*\|/i.test(content)) {
-    const lines = content.split('\n')
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (!line.startsWith('|')) continue
-      if (!line.replace(/[|\s\-:]/g, '')) continue
-      if (/\|\s*(TYPE|COURSE)\s*\|/i.test(line) && /\|\s*DAY\s*\|/i.test(line)) continue
+  if (headerIndex === -1 || headerIndex >= lines.length - 1) return actions
 
-      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
-      if (parts.length >= 4) {
-        let classType = 'C'
-        let subject = ''
-        let day = ''
-        let time = ''
-        let venue = 'TBA'
-        let lecturer = 'TBA'
+  const isClassTable = headers.some(h => /day|hari|星期|周期/i.test(h)) && headers.some(h => /time|masa|时间/i.test(h))
+  const isWorkoutTable = headers.some(h => /activity|workout|exercise|运动|健身/i.test(h))
+  const isDietTable = headers.some(h => /calorie|kcal|protein|热量|卡路里/i.test(h))
+  const isExamTable = headers.some(h => /exam|test|quiz|考试|测验/i.test(h)) || (headers.some(h => /course|subject|科目/i.test(h)) && headers.some(h => /date|日期/i.test(h)) && !isClassTable)
+  const isAssignTable = headers.some(h => /assignment|task|coursework|作业|任务/i.test(h)) || headers.some(h => /deadline|due|截止/i.test(h))
+  const isSettingsTable = headers.some(h => /setting|preference|设置|偏好/i.test(h)) && headers.some(h => /value|status|值|状态/i.test(h))
+  const isResultTable = headers.some(h => /grade|score|成绩/i.test(h)) && headers.some(h => /credit|学分/i.test(h))
+  const isReminderTable = headers.some(h => /reminder|remind|提醒/i.test(h)) && headers.some(h => /time|时间/i.test(h))
 
-        if (/lecture|tutorial|practical|class/i.test(parts[0])) {
-          classType = parts[0]
-          subject = parts[1]
-          day = parts[2]
-          time = parts[3]
-          venue = parts[4] || 'TBA'
-          lecturer = parts[5] || 'TBA'
-        } else {
-          subject = parts[0]
-          day = parts[1]
-          time = parts[2]
-          venue = parts[3] || 'TBA'
-          lecturer = parts[4] || 'TBA'
-        }
+  for (let i = headerIndex + 1; i < lines.length; i++) {
+    const line = lines[i]
+    if (!line.replace(/[|\s\-:]/g, '')) continue
+    const parts = line.split('|').map(s => s.trim()).filter(Boolean)
+    if (parts.length < 2) continue
 
-        if (subject && day && time) {
-          const timeParts = time.split(/[-–—to~]/i).map(s => s.trim())
-          actions.push({
-            type: 'add_class',
-            data: {
-              subject,
-              day,
-              start_time: timeParts[0] || time,
-              end_time: timeParts[1] || undefined,
-              classroom: venue,
-              lecturer,
-              class_type: classType
-            }
-          })
-        }
+    // 1. Workout table
+    if (isWorkoutTable) {
+      const act = getCol(parts, headers, /activity|workout|exercise|运动/i) || parts[0]
+      const rawDate = getCol(parts, headers, /date|日期/i)
+      const date = (rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) && rawDate !== '2026-10-15') ? rawDate : getTodayStr()
+      if (act && !/activity|workout/i.test(act)) {
+        actions.push({
+          type: 'log_exercise',
+          data: {
+            activity_type: act,
+            log_date: date
+          }
+        })
+        break
       }
     }
-  }
 
-  // 3. Exam table fallback: | TYPE | COURSE | TITLE | DATE | TIME |
-  if (/\|\s*(TYPE\s*\|\s*COURSE|COURSE\s*\|\s*TITLE|TITLE.*PRACTICAL)/i.test(content) && /\|\s*DATE/i.test(content) && !/ACTIVITY/i.test(content)) {
-    const lines = content.split('\n')
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (!line.startsWith('|')) continue
-      if (!line.replace(/[|\s\-:]/g, '')) continue
-      if (/\|\s*(TYPE|COURSE)\s*\|/i.test(line) && /\|\s*DATE\s*\|/i.test(line)) continue
+    // 2. Timetable class table
+    else if (isClassTable) {
+      const subj = getCol(parts, headers, /subject|course|class|module|name|科目/i) || parts[0]
+      const rawDay = getCol(parts, headers, /day|hari|星期|周期/i)
+      const day = normalizeDay(rawDay)
+      const rawTime = getCol(parts, headers, /time|masa|时间/i)
+      const room = getCol(parts, headers, /venue|room|loc|classroom|地点/i) || 'TBA'
+      const lec = getCol(parts, headers, /lecturer|teacher|instructor|讲师/i) || 'TBA'
+      const type = getCol(parts, headers, /type|jenis|类型/i) || 'C'
 
-      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
-      if (parts.length >= 4) {
-        let examType = 'Exam'
-        let subject = ''
-        let title = ''
-        let examDate = ''
-        let time = ''
-        let venue = 'TBA'
-
-        if (/exam|test|quiz|practical|midterm|final/i.test(parts[0])) {
-          examType = parts[0]
-          subject = parts[1]
-          title = parts[2]
-          examDate = parts[3]
-          time = parts[4] || ''
-          venue = parts[5] || 'TBA'
-        } else {
-          subject = parts[0]
-          title = parts[1]
-          examDate = parts[2]
-          time = parts[3] || ''
-          venue = parts[4] || 'TBA'
-        }
-
-        const dateMatch = examDate.match(/\d{4}-\d{2}-\d{2}/)
-        if (subject && dateMatch) {
-          const timeParts = time ? time.split(/[-–—to~]/i).map(s => s.trim()) : []
-          actions.push({
-            type: 'add_exam',
-            data: {
-              subject,
-              exam_date: dateMatch[0],
-              start_time: timeParts[0] || '09:00',
-              end_time: timeParts[1] || undefined,
-              venue: venue.replace(/Alert.*/i, '').trim() || 'TBA',
-              exam_type: examType,
-              notes: title && title !== subject ? title : undefined
-            }
-          })
-        }
+      let startTime = normalizeTime(rawTime)
+      let endTime = null
+      if (rawTime && /[-~to]/i.test(rawTime)) {
+        const tParts = rawTime.split(/[-~to]/i)
+        startTime = normalizeTime(tParts[0])
+        endTime = normalizeTime(tParts[1])
+      }
+      if (subj && day && startTime) {
+        actions.push({
+          type: 'add_class',
+          data: {
+            subject: subj,
+            day,
+            start_time: startTime,
+            end_time: endTime || startTime,
+            classroom: room,
+            lecturer: lec,
+            class_type: type,
+            color: 'pink'
+          }
+        })
       }
     }
-  }
 
-  // 4. Assignment table fallback: | ASSIGNMENT | COURSE | DEADLINE |
-  if (/\|\s*ASSIGNMENT\s*\|\s*COURSE/i.test(content) && /\|\s*DEADLINE/i.test(content)) {
-    const lines = content.split('\n')
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (!line.startsWith('|')) continue
-      if (!line.replace(/[|\s\-:]/g, '')) continue
-      if (/\|\s*ASSIGNMENT\s*\|/i.test(line)) continue
+    // 3. Exam table
+    else if (isExamTable) {
+      const subj = getCol(parts, headers, /subject|course|module|name|title|科目/i) || parts[0]
+      const rawDate = getCol(parts, headers, /date|tarikh|日期/i)
+      const date = extractDateFromText(rawDate)
+      const rawTime = getCol(parts, headers, /time|masa|时间/i)
+      const startTime = normalizeTime(rawTime)
+      const venue = getCol(parts, headers, /venue|room|loc|地点/i) || 'TBA'
+      const type = getCol(parts, headers, /type|jenis|类型/i) || 'Exam'
 
-      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
-      if (parts.length >= 3) {
-        const title = parts[0]
-        const subject = parts[1]
-        const deadline = parts[2]
-        const priority = parts[3] || 'Medium'
-        const status = parts[4] || 'Pending'
-
-        const dateMatch = deadline.match(/\d{4}-\d{2}-\d{2}/)
-        if (title && (dateMatch || deadline)) {
-          actions.push({
-            type: 'add_assignment',
-            data: {
-              title,
-              subject: subject || title,
-              deadline: dateMatch ? dateMatch[0] : deadline,
-              priority: /high/i.test(priority) ? 'High' : /low/i.test(priority) ? 'Low' : 'Medium',
-              status: /done/i.test(status) ? 'Done' : /progress/i.test(status) ? 'In Progress' : 'Pending'
-            }
-          })
-        }
+      if (subj && date && startTime) {
+        actions.push({
+          type: 'add_exam',
+          data: {
+            subject: subj,
+            exam_date: date,
+            start_time: startTime,
+            end_time: startTime,
+            venue: venue.replace(/Alert.*/i, '').trim() || 'TBA',
+            exam_type: type
+          }
+        })
       }
     }
-  }
 
-  // 5. Reminder table fallback: | REMINDER | TIME |
-  if (/\|\s*REMINDER\s*\|\s*TIME/i.test(content)) {
-    const lines = content.split('\n')
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (!line.startsWith('|')) continue
-      if (!line.replace(/[|\s\-:]/g, '')) continue
-      if (/\|\s*REMINDER\s*\|/i.test(line)) continue
+    // 4. Assignment table
+    else if (isAssignTable) {
+      const title = getCol(parts, headers, /assignment|task|coursework|title|name|作业/i) || parts[0]
+      const rawDate = getCol(parts, headers, /deadline|due|tarikh|截止/i)
+      const deadline = extractDateFromText(rawDate)
+      const subj = getCol(parts, headers, /subject|course|科目/i) || ''
+      const prio = getCol(parts, headers, /priority|优先级/i) || 'Medium'
 
-      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
-      if (parts.length >= 2) {
-        const title = parts[0]
-        const time = parts[1]
-        const repeat = parts[2] || 'once'
-
-        if (title && time) {
-          actions.push({
-            type: 'add_reminder',
-            data: {
-              title,
-              reminder_time: time,
-              repeat_type: /daily/i.test(repeat) ? 'daily' : /weekday/i.test(repeat) ? 'weekdays' : /week/i.test(repeat) ? 'weekly' : 'once'
-            }
-          })
-        }
+      if (title && deadline) {
+        actions.push({
+          type: 'add_assignment',
+          data: {
+            title,
+            subject: subj,
+            deadline,
+            priority: /high/i.test(prio) ? 'High' : /low/i.test(prio) ? 'Low' : 'Medium',
+            status: 'Pending'
+          }
+        })
       }
     }
-  }
 
-  // 6. Diet / Food table fallback: | MEAL TYPE | FOOD ITEM | PORTION | CALORIES | PROTEIN | CARBS | FATS |
-  if (/\|\s*(MEAL|FOOD|DISH|ITEM|餐|食物|菜品)\s*\|/i.test(content) && /\|\s*(CALORIE|KCAL|PROTEIN|热量|卡路里|蛋白质)\s*\|/i.test(content)) {
-    const lines = content.split('\n')
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (!line.startsWith('|')) continue
-      if (!line.replace(/[|\s\-:]/g, '')) continue
-      if (/CALORIE|KCAL|PROTEIN|热量|卡路里|蛋白质/i.test(line)) continue
+    // 5. Diet / Food table
+    else if (isDietTable) {
+      const name = getCol(parts, headers, /food|item|meal|dish|食物|菜品/i) || parts[0]
+      const rawCal = getCol(parts, headers, /calorie|kcal|热量|卡路里/i)
+      const cal = parseNutrient(rawCal)
+      const rawProt = getCol(parts, headers, /protein|蛋白质/i)
+      const prot = parseNutrient(rawProt)
+      const rawCarb = getCol(parts, headers, /carb|碳水/i)
+      const carbs = parseNutrient(rawCarb)
+      const rawFat = getCol(parts, headers, /fat|脂肪/i)
+      const fats = parseNutrient(rawFat)
+      const mealType = getCol(parts, headers, /meal\s*type|type|餐别/i) || 'Snack'
+      const portion = getCol(parts, headers, /portion|份量/i) || ''
 
-      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
-      if (parts.length >= 3) {
-        let mealType = 'Snack'
-        let name = ''
-        let portion = ''
-        let calories = 0
-        let protein = 0
-        let carbs = 0
-        let fats = 0
-
-        if (parts.length >= 7) {
-          mealType = parts[0]
-          name = parts[1]
-          portion = parts[2]
-          calories = parseNutrient(parts[3])
-          protein = parseNutrient(parts[4])
-          carbs = parseNutrient(parts[5])
-          fats = parseNutrient(parts[6])
-        } else if (parts.length >= 5) {
-          name = parts[0]
-          portion = parts[1]
-          calories = parseNutrient(parts[2])
-          protein = parseNutrient(parts[3])
-          carbs = parseNutrient(parts[4])
-          fats = parts[5] ? parseNutrient(parts[5]) : 0
-        } else if (parts.length >= 4) {
-          name = parts[0]
-          portion = parts[1]
-          calories = parseNutrient(parts[2])
-          protein = parseNutrient(parts[3])
-        } else {
-          name = parts[0]
-          calories = parseNutrient(parts[1])
-          protein = parseNutrient(parts[2])
-        }
-
-        if (name && (calories > 0 || protein > 0)) {
-          actions.push({
-            type: 'log_diet',
-            data: {
-              name,
-              calories,
-              protein,
-              carbs,
-              fats,
-              meal_type: mealType || 'Snack',
-              notes: portion || '',
-              date: getTodayDateStr(),
-              meal_time: getCurrentTimeStr()
-            }
-          })
-          break
-        }
+      if (name && (cal > 0 || prot > 0)) {
+        actions.push({
+          type: 'log_diet',
+          data: {
+            name,
+            calories: cal,
+            protein: prot,
+            carbs,
+            fats,
+            meal_type: mealType,
+            notes: portion,
+            date: getTodayDateStr(),
+            meal_time: getCurrentTimeStr()
+          }
+        })
+        break
       }
     }
-  }
 
-  // 7. Settings / Preference table fallback: | SETTING | VALUE |
-  if (/\|\s*(SETTING|PREFERENCE)\s*\|/i.test(content) && /\|\s*(VALUE|STATUS|SELECTION)\s*\|/i.test(content)) {
-    const lines = content.split('\n')
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (!line.startsWith('|')) continue
-      if (!line.replace(/[|\s\-:]/g, '')) continue
-      if (/\|\s*(SETTING|PREFERENCE)\s*\|/i.test(line)) continue
+    // 6. Settings table
+    else if (isSettingsTable) {
+      const k = getCol(parts, headers, /setting|preference|设置/i) || parts[0]
+      const v = getCol(parts, headers, /value|status|值/i) || parts[1]
+      if (k && v) {
+        actions.push({ type: 'update_preference', data: { key: k, value: v } })
+      }
+    }
 
-      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
-      if (parts.length >= 2) {
-        const rawKey = parts[0]
-        const rawVal = parts[1]
-        if (rawKey && rawVal) {
-          actions.push({
-            type: 'update_preference',
-            data: {
-              key: rawKey,
-              value: rawVal
-            }
-          })
-        }
+    // 7. Exam Result table
+    else if (isResultTable) {
+      const code = getCol(parts, headers, /code|course|subject|科目/i) || parts[0]
+      const grade = getCol(parts, headers, /grade|score|成绩/i)
+      const credit = getCol(parts, headers, /credit|ch|学分/i)
+      const sem = getCol(parts, headers, /semester|term|学期/i) || 'Year 1 Semester 1'
+      if (code && grade) {
+        actions.push({
+          type: 'add_exam_result',
+          data: {
+            course_code: code,
+            grade: grade.toUpperCase(),
+            credit_hours: parseInt(credit, 10) || 3,
+            semester_name: sem
+          }
+        })
+      }
+    }
+
+    // 8. Reminder table
+    else if (isReminderTable) {
+      const title = getCol(parts, headers, /reminder|task|remind|提醒/i) || parts[0]
+      const rawTime = getCol(parts, headers, /time|时间/i)
+      const time = normalizeTime(rawTime)
+      const repeat = getCol(parts, headers, /repeat|频率/i) || 'once'
+      if (title && time) {
+        actions.push({
+          type: 'add_reminder',
+          data: {
+            title,
+            reminder_time: time,
+            repeat_type: /daily/i.test(repeat) ? 'daily' : /weekday/i.test(repeat) ? 'weekdays' : /week/i.test(repeat) ? 'weekly' : 'once'
+          }
+        })
       }
     }
   }
@@ -430,9 +393,207 @@ export function parseTableFallback(content = '') {
 }
 
 /**
- * Extracts and parses all <axon_action> JSON blocks from AI response text.
+ * Extracts account actions directly from conversational intent (natural language)
+ * if the AI responded positively to the user's action request without tags or tables.
  */
-export function parseAccountActions(content = '') {
+export function parseConversationalIntent(content = '', userPrompt = '') {
+  const actions = []
+  const combo = `${userPrompt}\n${content}`
+
+  // 1. Workout Intent
+  const isWorkoutReq = /(log|check\s*in|record|track|did|completed?)\s*(my\s*)?(workout|gym|exercise|run|training)|workout\s*today|gym\s*today|运动打卡|健身打卡/i.test(userPrompt)
+  const isWorkoutConfirmed = /(logged|checked\s*in|recorded|done|great job|streak|active|\+20\s*xp|打卡成功|已记录)/i.test(content)
+  const isWorkoutDenied = /(please specify|what workout|which activity|could you tell me)/i.test(content)
+
+  if (isWorkoutReq && isWorkoutConfirmed && !isWorkoutDenied) {
+    let act = 'Gym'
+    if (/run|jog|跑步/i.test(combo)) act = 'Run'
+    else if (/swim|游泳/i.test(combo)) act = 'Swim'
+    else if (/yoga|瑜伽/i.test(combo)) act = 'Yoga'
+    else if (/basketball|篮球/i.test(combo)) act = 'Basketball'
+    else if (/walk|散步|徒步/i.test(combo)) act = 'Walk'
+
+    actions.push({
+      type: 'log_exercise',
+      data: {
+        activity_type: act,
+        log_date: getTodayStr()
+      }
+    })
+    return actions
+  }
+
+  // 2. Settings Intent
+  if (/dark\s*mode|theme\s*to\s*dark|switch.*dark|深色模式|暗黑模式/i.test(userPrompt)) {
+    actions.push({ type: 'update_preference', data: { key: 'theme', value: 'dark' } })
+    return actions
+  } else if (/light\s*mode|theme\s*to\s*light|switch.*light|浅色模式|明亮模式/i.test(userPrompt)) {
+    actions.push({ type: 'update_preference', data: { key: 'theme', value: 'light' } })
+    return actions
+  }
+
+  const accentMatch = userPrompt.match(/accent\s*(?:color)?\s*(?:to\s*)?(purple|blue|emerald|green|rose|pink|amber|orange|cyan|indigo)/i)
+  if (accentMatch) {
+    actions.push({ type: 'update_preference', data: { key: 'accentColor', value: accentMatch[1].toLowerCase() } })
+    return actions
+  }
+
+  const fontMatch = userPrompt.match(/font\s*(?:size)?\s*(?:to\s*)?(small|medium|large)/i)
+  if (fontMatch) {
+    actions.push({ type: 'update_preference', data: { key: 'fontSize', value: fontMatch[1].toLowerCase() } })
+    return actions
+  }
+
+  // 3. Timetable Class Intent
+  const isClassReq = /(add|put|schedule|insert).*(class|timetable|course|lecture|tutorial|practical)|(加课|添加课表|加到课表)/i.test(userPrompt)
+  const isClassConfirmed = /(added|scheduled|timetable|put on your schedule|已添加|已安排|安排在)/i.test(content)
+  if (isClassReq && isClassConfirmed) {
+    const dayMatch = combo.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun|周一|周二|周三|周四|周五|周六|周日|星期一|星期二|星期三|星期四|星期五|星期六|星期日)\b/i)
+    const normDay = dayMatch ? normalizeDay(dayMatch[1]) : null
+
+    const timeRangeMatch = combo.match(/\b(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:-|to|~)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b/i)
+    const singleTimeMatch = !timeRangeMatch ? combo.match(/\b(?:at\s*)?(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b/i) : null
+
+    let start = null
+    let end = null
+    if (timeRangeMatch) {
+      start = normalizeTime(timeRangeMatch[1])
+      end = normalizeTime(timeRangeMatch[2])
+    } else if (singleTimeMatch) {
+      start = normalizeTime(singleTimeMatch[1])
+      const [h, m] = start.split(':').map(Number)
+      end = `${String(Math.min(23, h + 1)).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+    }
+
+    const courseCodeMatch = combo.match(/\b([A-Z]{4}\d{4})\b/i)
+    let subject = courseCodeMatch ? courseCodeMatch[1].toUpperCase() : ''
+    if (!subject) {
+      const nameMatch = userPrompt.match(/(?:name|course|subject|class)\s+([A-Za-z0-9\s]{2,20})/i)
+      if (nameMatch) subject = nameMatch[1].trim()
+    }
+    if (!subject) {
+      const addedMatch = content.match(/(?:added|scheduled)\s+([A-Za-z0-9\s]+?)\s+(?:on|for|every|to|at)/i)
+      if (addedMatch) subject = addedMatch[1].trim()
+    }
+
+    if (subject && normDay && start) {
+      actions.push({
+        type: 'add_class',
+        data: {
+          subject,
+          day: normDay,
+          start_time: start,
+          end_time: end || start,
+          classroom: 'TBA',
+          lecturer: 'TBA',
+          class_type: /practical|lab|实验/i.test(combo) ? 'P' : /tutorial|辅导/i.test(combo) ? 'T' : /lecture|大课/i.test(combo) ? 'L' : 'C',
+          color: 'pink'
+        }
+      })
+      return actions
+    }
+  }
+
+  // 4. Exam / Test Intent
+  const isExamReq = /(add|record|schedule|got\s*a).*(exam|test|quiz|midterm|final|测验|考试)/i.test(userPrompt)
+  const isExamConfirmed = /(added|recorded|scheduled|countdown|已添加|已记录)/i.test(content)
+  if (isExamReq && isExamConfirmed) {
+    const examDate = extractDateFromText(combo)
+    const timeMatch = combo.match(/\b(?:at\s*)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b/i)
+    const startTime = timeMatch ? normalizeTime(timeMatch[1]) : null
+
+    const courseCodeMatch = combo.match(/\b([A-Z]{4}\d{4})\b/i)
+    let subject = courseCodeMatch ? courseCodeMatch[1].toUpperCase() : ''
+    if (!subject) {
+      const subjMatch = userPrompt.match(/(?:for|exam\s*for|test\s*for)\s+([A-Za-z0-9\s]{2,25})/i)
+      if (subjMatch) subject = subjMatch[1].trim()
+    }
+    if (!subject) {
+      const addedMatch = content.match(/(?:added|scheduled)\s+(?:your\s+)?([A-Za-z0-9\s]+?)\s+(?:exam|test|on|at)/i)
+      if (addedMatch) subject = addedMatch[1].trim()
+    }
+
+    if (subject && examDate && startTime) {
+      actions.push({
+        type: 'add_exam',
+        data: {
+          subject,
+          exam_date: examDate,
+          start_time: startTime,
+          end_time: startTime,
+          venue: 'TBA',
+          exam_type: /quiz|小测/i.test(combo) ? 'Quiz' : /practical/i.test(combo) ? 'Practical Test' : 'Exam'
+        }
+      })
+      return actions
+    }
+  }
+
+  // 5. Assignment Intent
+  const isAssignReq = /(add|record|new).*(assignment|homework|coursework|project|lab\s*report|作业)/i.test(userPrompt)
+  const isAssignConfirmed = /(added|recorded|deadline|due|已添加|已记录)/i.test(content)
+  if (isAssignReq && isAssignConfirmed) {
+    const deadline = extractDateFromText(combo)
+    const titleMatch = userPrompt.match(/(?:assignment|homework|coursework|project)\s*(?:named|called|title)?\s*([A-Za-z0-9\s]{2,30})/i)
+    let title = titleMatch ? titleMatch[1].trim() : ''
+    if (!title) {
+      const addedMatch = content.match(/(?:added|recorded)\s+([A-Za-z0-9\s]+?)\s+(?:due|to|with)/i)
+      if (addedMatch) title = addedMatch[1].trim()
+    }
+    if (deadline && title) {
+      actions.push({
+        type: 'add_assignment',
+        data: {
+          title,
+          deadline,
+          priority: 'Medium',
+          status: 'Pending'
+        }
+      })
+      return actions
+    }
+  }
+
+  // 6. Diet / Food Intent
+  const isDietReq = /(log|record|ate|eat|had|track).*(food|meal|apple|rice|chicken|bread|snack|calories|diet|吃|热量|饮食)/i.test(userPrompt)
+  const isDietConfirmed = /(logged|recorded|added to your diet|kcal|calories|已记录|已添加)/i.test(content)
+  if (isDietReq && isDietConfirmed) {
+    const calMatch = combo.match(/(\d{2,4})\s*(?:kcal|calories|cal|大卡|卡路里)/i)
+    const calories = calMatch ? parseInt(calMatch[1], 10) : 0
+    let foodName = ''
+    const foodMatch = userPrompt.match(/(?:ate|log|had|eat)\s+([a-zA-Z\s]{2,20})(?:\s+\d|\s+for|\s+with|$)/i)
+    if (foodMatch) foodName = foodMatch[1].trim()
+    if (!foodName) {
+      const addedMatch = content.match(/(?:logged|added)\s+(?:a\s+|an\s+|\d+\s+)?([A-Za-z\s]+?)\s+(?:with|to|for|\()/i)
+      if (addedMatch) foodName = addedMatch[1].trim()
+    }
+
+    if (foodName && calories > 0) {
+      actions.push({
+        type: 'log_diet',
+        data: {
+          name: foodName,
+          calories,
+          protein: 0,
+          carbs: 0,
+          fats: 0,
+          meal_type: 'Snack',
+          date: getTodayDateStr(),
+          meal_time: getCurrentTimeStr()
+        }
+      })
+      return actions
+    }
+  }
+
+  return actions
+}
+
+/**
+ * Extracts and parses all <axon_action> JSON blocks from AI response text.
+ * Falls back to dynamic table parsing and conversational intent inference.
+ */
+export function parseAccountActions(content = '', userPrompt = '') {
   if (!content || typeof content !== 'string') return []
   const actions = []
 
@@ -484,11 +645,19 @@ export function parseAccountActions(content = '') {
     }
   }
 
-  // 4. If still no actions, fall back to parsing Markdown confirmation tables
+  // 4. Fall back to parsing Markdown confirmation tables
   if (actions.length === 0) {
     const tableActions = parseTableFallback(cleanContent)
     if (tableActions.length > 0) {
       actions.push(...tableActions)
+    }
+  }
+
+  // 5. Fall back to conversational intent inference
+  if (actions.length === 0 && (userPrompt || cleanContent)) {
+    const intentActions = parseConversationalIntent(cleanContent, userPrompt)
+    if (intentActions.length > 0) {
+      actions.push(...intentActions)
     }
   }
 
@@ -1523,7 +1692,8 @@ export async function executeAccountAction(action, user, contextMeta = {}) {
  * Parses and executes all account actions found in the content.
  */
 export async function parseAndExecuteActions(content = '', user, contextMeta = {}) {
-  const actions = parseAccountActions(content)
+  const userPrompt = contextMeta.userPrompt || ''
+  const actions = parseAccountActions(content, userPrompt)
   if (!actions || actions.length === 0) return []
 
   const results = []

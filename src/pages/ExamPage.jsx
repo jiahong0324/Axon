@@ -57,7 +57,15 @@ export default function ExamPage() {
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { t } = useLanguage()
 
-  useEffect(() => { fetchExams() }, [])
+  useEffect(() => {
+    fetchExams()
+    window.addEventListener('axon_exams_updated', fetchExams)
+    window.addEventListener('focus', fetchExams)
+    return () => {
+      window.removeEventListener('axon_exams_updated', fetchExams)
+      window.removeEventListener('focus', fetchExams)
+    }
+  }, [])
 
   async function fetchExams() {
     setLoading(true)
