@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { registerPushSubscription } from './pushNotifications'
+import { safeSetItem } from './safeStorage'
 import { logActivity } from './logActivity'
 
 export const PREFERENCE_LABELS = {
@@ -60,7 +61,7 @@ export async function syncPreferences(user) {
       const val = user.user_metadata?.[metaKey] !== undefined
         ? String(user.user_metadata[metaKey] || '')
         : (user.user_metadata?.preferences?.[key] !== undefined ? String(user.user_metadata.preferences[key] || '') : (localStorage.getItem(key) || ''))
-      localStorage.setItem(key, val)
+      safeSetItem(key, val)
       mergedPrefs[key] = val
       return
     }
@@ -70,7 +71,7 @@ export async function syncPreferences(user) {
 
     if (localVal === null) {
       // Local doesn't have it, set from merged (remote or default)
-      localStorage.setItem(key, String(remoteVal))
+      safeSetItem(key, String(remoteVal))
       needsUpload = true // Ensure everything is uploaded if it's new
     } else if (remotePrefs[key] === undefined) {
       // Local has a value but remote doesn't have this key yet, prepare upload
@@ -78,7 +79,7 @@ export async function syncPreferences(user) {
       needsUpload = true
     } else if (localVal !== String(remoteVal)) {
       // Local and remote differ, update local storage with the remote database value
-      localStorage.setItem(key, String(remoteVal))
+      safeSetItem(key, String(remoteVal))
     }
   })
 
@@ -110,7 +111,7 @@ export async function syncPreferences(user) {
 export async function updatePreference(user, key, value) {
   const strValue = String(value)
   // 1. Save locally in localStorage
-  localStorage.setItem(key, strValue)
+  safeSetItem(key, strValue)
 
   // 2. Trigger custom events for real-time appearance context updates if needed
   if (key === 'theme') window.dispatchEvent(new CustomEvent('theme-changed', { detail: strValue }))
@@ -177,9 +178,9 @@ export async function saveSemesterPreferences(user, { name, startDate, endDate, 
   const nextEndDate = String(endDate || '').trim()
 
   // 1. Save locally
-  localStorage.setItem('axon_semester_name', nextName)
-  localStorage.setItem('axon_semester_start_date', nextStartDate)
-  localStorage.setItem('axon_semester_end_date', nextEndDate)
+  safeSetItem('axon_semester_name', nextName)
+  safeSetItem('axon_semester_start_date', nextStartDate)
+  safeSetItem('axon_semester_end_date', nextEndDate)
 
   // 2. Fetch fresh user if not provided
   let currentUser = user

@@ -98,7 +98,7 @@ export function stripActionTags(content = '') {
 /**
  * Executes a single parsed account action in Supabase using the authenticated user's session.
  */
-export async function executeAccountAction(action, user) {
+export async function executeAccountAction(action, user, contextMeta = {}) {
   if (!action || !action.type || !action.data) {
     return { success: false, error: 'Invalid action payload' }
   }
@@ -955,6 +955,89 @@ export async function executeAccountAction(action, user) {
         return { success: true, type, message: `Deleted announcement "${data.title || ''}"` }
       }
 
+      // 21. LOG DIET / FOOD
+      case 'log_diet':
+      case 'add_food':
+      case 'log_food':
+      case 'add_diet': {
+        const foodName = (data.name || data.food_name || '').trim()
+        if (!foodName) {
+          return { success: false, error: 'Cannot log food: Food or meal name is missing.' }
+        }
+
+        const calories = Math.max(0, Math.round(Number(data.calories) || 0))
+        const protein = Math.max(0, Math.round((Number(data.protein) || 0) * 10) / 10)
+        const carbs = Math.max(0, Math.round((Number(data.carbs) || 0) * 10) / 10)
+        const fats = Math.max(0, Math.round((Number(data.fats) || 0) * 10) / 10)
+
+        const date = (data.date || data.log_date || getTodayDateStr()).trim()
+        const mealTime = (data.meal_time || getCurrentTimeStr()).trim()
+        const mealType = data.meal_type || getMealTypeFromTime(mealTime)
+        const notes = (data.notes || data.portion || '').trim()
+        const imageUrl = (data.image_url || contextMeta?.image_url || '').trim()
+
+        const nutritionData = await fetchNutritionData(currentUser.id)
+        const currentLogs = nutritionData.logs || []
+
+        const foodItem = {
+          user_id: currentUser.id,
+          date,
+          meal_type: mealType,
+          meal_time: mealTime,
+          name: foodName,
+          calories,
+          protein,
+          carbs,
+          fats,
+          notes,
+          image_url: imageUrl
+        }
+
+        const result = await saveFoodLogItem(currentUser.id, foodItem, currentLogs)
+        window.dispatchEvent(new CustomEvent('axon_diet_updated'))
+
+        return {
+          success: true,
+          type: 'log_diet',
+          data: result.item,
+          message: `Logged "${foodName}" (${calories} kcal, ${protein}g protein) to your diet!`
+        }
+      }
+
+      // 22. DELETE DIET / FOOD ITEM
+      case 'delete_diet':
+      case 'delete_food':
+      case 'delete_diet_log': {
+        const nutritionData = await fetchNutritionData(currentUser.id)
+        const currentLogs = nutritionData.logs || []
+        let targetId = data.id
+        if (!targetId && (data.name || data.food_name)) {
+          const searchName = (data.name || data.food_name).toLowerCase().trim()
+          const match = currentLogs.find(l => (l.name || '').toLowerCase().includes(searchName))
+          if (match) targetId = match.id
+        }
+        if (!targetId) {
+          return { success: false, error: 'Cannot find meal item to delete.' }
+        }
+
+        await deleteFoodLogItem(currentUser.id, targetId, currentLogs)
+        window.dispatchEvent(new CustomEvent('axon_diet_updated'))
+        return { success: true, type: 'delete_diet', message: `Deleted meal from your diet log.` }
+      }
+
+      // 23. UPDATE DIET GOALS
+      case 'update_diet_goals':
+      case 'update_nutrition_goals': {
+        const saved = await saveNutritionGoals(currentUser.id, {
+          calories: data.calories,
+          protein: data.protein,
+          carbs: data.carbs,
+          fats: data.fats
+        })
+        window.dispatchEvent(new CustomEvent('axon_diet_updated'))
+        return { success: true, type: 'update_diet_goals', message: `Updated daily nutrition goals to ${saved.calories} kcal!` }
+      }
+
       default:
         console.warn('Unknown account action type:', type)
         return { success: false, error: `Unknown action type: ${type}` }
@@ -968,13 +1051,13 @@ export async function executeAccountAction(action, user) {
 /**
  * Parses and executes all account actions found in the content.
  */
-export async function parseAndExecuteActions(content = '', user) {
+export async function parseAndExecuteActions(content = '', user, contextMeta = {}) {
   const actions = parseAccountActions(content)
   if (!actions || actions.length === 0) return []
 
   const results = []
   for (const act of actions) {
-    const res = await executeAccountAction(act, user)
+    const res = await executeAccountAction(act, user, contextMeta)
     results.push(res)
   }
   return results

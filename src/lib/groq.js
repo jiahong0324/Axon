@@ -36,6 +36,12 @@ export async function askGroq(prompt, systemContext = '', history = []) {
 }
 
 export async function analyzeImageWithGroq(base64Image, mimeType, prompt, history = [], systemContext = '') {
+  const isManager = systemContext.includes('=== MANAGER AI CONTROL CENTER') || systemContext.includes('=== MANAGER PROFILE ===')
+  const basePrompt = isManager ? MANAGER_SYSTEM_PROMPT : STUDY_SYSTEM_PROMPT
+  const fullSystemContext = systemContext.includes(basePrompt)
+    ? systemContext
+    : `${basePrompt}\n\n${systemContext || ''}${getPreferenceContext()}`
+
   const response = await fetch('/api/groq', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -44,7 +50,7 @@ export async function analyzeImageWithGroq(base64Image, mimeType, prompt, histor
       base64Image,
       mimeType,
       prompt,
-      systemContext,
+      systemContext: fullSystemContext,
       history
     })
   })

@@ -22,7 +22,8 @@ import {
   GraduationCap,
   CalendarPlus,
   ListTodo,
-  Dumbbell
+  Dumbbell,
+  Utensils
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { buildUserContext } from '../lib/buildUserContext'
@@ -78,6 +79,13 @@ const studentActions = [
     promptKey: 'ai.promptLogWorkout'
   },
   {
+    icon: Utensils,
+    id: 'logDiet',
+    labelKey: 'ai.logDiet',
+    mobileLabelKey: 'ai.mobileLogDiet',
+    promptKey: 'ai.promptLogDiet'
+  },
+  {
     icon: Bell,
     id: 'reminder',
     labelKey: 'ai.reminder',
@@ -126,6 +134,29 @@ I have secure access to your university database. Ask me about student profiles,
   timestamp: new Date()
 }
 
+function safelyPersistChat(key, chatMessages) {
+  try {
+    localStorage.setItem(key, JSON.stringify(chatMessages))
+  } catch (err) {
+    console.warn('LocalStorage quota limit reached, pruning images from older messages:', err)
+    try {
+      // Keep image only on the last 2 messages, prune older images
+      const pruned = chatMessages.map((m, idx) => {
+        if (idx < chatMessages.length - 2 && m.image) {
+          return { ...m, image: undefined }
+        }
+        return m
+      })
+      localStorage.setItem(key, JSON.stringify(pruned))
+    } catch (e2) {
+      try {
+        const textOnly = chatMessages.map(m => ({ ...m, image: undefined }))
+        localStorage.setItem(key, JSON.stringify(textOnly))
+      } catch (e3) {}
+    }
+  }
+}
+
 export default function AIHelperPage({ role = 'student' }) {
   const isManager = role === 'manager'
   const welcomeMessage = isManager ? managerWelcome : studentWelcome
@@ -134,9 +165,13 @@ export default function AIHelperPage({ role = 'student' }) {
   const { showToast } = useToast()
 
   const [messages, setMessages] = useState(() => {
-    const saved = JSON.parse(localStorage.getItem(isManager ? 'aiManagerChat' : 'aiChat') || '[]')
-    if (saved.length > 0) {
-      return saved.map(m => isWelcomeMessage(m.content) ? { ...m, content: welcomeMessage.content } : m)
+    try {
+      const saved = JSON.parse(localStorage.getItem(isManager ? 'aiManagerChat' : 'aiChat') || '[]')
+      if (Array.isArray(saved) && saved.length > 0) {
+        return saved.map(m => isWelcomeMessage(m.content) ? { ...m, content: welcomeMessage.content } : m)
+      }
+    } catch (e) {
+      console.warn('Failed to parse cached aiChat:', e)
     }
     return [welcomeMessage]
   })
@@ -215,7 +250,7 @@ export default function AIHelperPage({ role = 'student' }) {
           timestamp: new Date(m.created_at)
         }))
         setMessages(formatted)
-        localStorage.setItem(isManager ? 'aiManagerChat' : 'aiChat', JSON.stringify(formatted))
+        safelyPersistChat(isManager ? 'aiManagerChat' : 'aiChat', formatted)
       } else {
         // If cloud is empty or missing records, sync localStorage chat history to cloud
         const localSaved = JSON.parse(localStorage.getItem(isManager ? 'aiManagerChat' : 'aiChat') || '[]')
@@ -297,7 +332,7 @@ export default function AIHelperPage({ role = 'student' }) {
 
   async function clearChatHistory() {
     setMessages([welcomeMessage])
-    localStorage.setItem(isManager ? 'aiManagerChat' : 'aiChat', JSON.stringify([welcomeMessage]))
+    safelyPersistChat(isManager ? 'aiManagerChat' : 'aiChat', [welcomeMessage])
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -324,7 +359,7 @@ export default function AIHelperPage({ role = 'student' }) {
         const canvas = document.createElement('canvas')
         let width = img.width
         let height = img.height
-        const maxDim = 1600
+        const maxDim = 1024
         
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -340,11 +375,11 @@ export default function AIHelperPage({ role = 'student' }) {
         canvas.height = height
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, width, height)
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
 
-        // Lightweight storage thumbnail to guarantee DB insert never exceeds payload limits
+        // Lightweight storage thumbnail to guarantee DB insert and localStorage never exceeds quota
         const thumbCanvas = document.createElement('canvas')
-        const thumbMax = 600
+        const thumbMax = 320
         let tw = img.width
         let th = img.height
         if (tw > thumbMax || th > thumbMax) {
@@ -360,7 +395,7 @@ export default function AIHelperPage({ role = 'student' }) {
         thumbCanvas.height = th
         const thumbCtx = thumbCanvas.getContext('2d')
         thumbCtx.drawImage(img, 0, 0, tw, th)
-        const storageThumb = thumbCanvas.toDataURL('image/jpeg', 0.5)
+        const storageThumb = thumbCanvas.toDataURL('image/jpeg', 0.6)
 
         setSelectedImage({
           url: dataUrl,
@@ -442,7 +477,7 @@ export default function AIHelperPage({ role = 'student' }) {
   }
 
   useEffect(() => {
-    localStorage.setItem(isManager ? 'aiManagerChat' : 'aiChat', JSON.stringify(messages))
+    safelyPersistChat(isManager ? 'aiManagerChat' : 'aiChat', messages)
   }, [messages, isManager])
 
   useEffect(() => {
@@ -497,7 +532,9 @@ export default function AIHelperPage({ role = 'student' }) {
 
       // Execute autonomous account actions requested by user
       const { data: { user: currentUser } } = await supabase.auth.getUser()
-      const actionResults = await parseAndExecuteActions(answer, currentUser)
+      const actionResults = await parseAndExecuteActions(answer, currentUser, {
+        image_url: imgData?.storageThumbnail || null
+      })
       if (actionResults && actionResults.length > 0) {
         const successes = actionResults.filter(r => r.success)
         const failures = actionResults.filter(r => !r.success)
@@ -746,10 +783,21 @@ function Message({ msg }) {
         <Bot className="h-3.5 w-3.5 md:h-4 md:w-4" />
       </div>
       <div className="ai-assistant-bubble min-w-0 max-w-[calc(100%-2.25rem)] break-words rounded-2xl rounded-bl-md px-3.5 py-3 text-sm leading-relaxed overflow-hidden md:max-w-[88%] md:px-5 md:py-4">
-        {isWelcomeMessage(msg.content) ? <WelcomeContent content={msg.content} /> : <div className="ai-formatted-content w-full min-w-0 overflow-x-auto" dangerouslySetInnerHTML={{ __html: markdownToHtml(stripActionTags(msg.content)) }} />}
+        {isWelcomeMessage(msg.content) ? <WelcomeContent content={msg.content} /> : <SafeMarkdown content={msg.content} />}
       </div>
     </div>
   )
+}
+
+function SafeMarkdown({ content = '' }) {
+  try {
+    const cleanContent = stripActionTags(content || '')
+    const html = markdownToHtml(cleanContent)
+    return <div className="ai-formatted-content w-full min-w-0 overflow-x-auto" dangerouslySetInnerHTML={{ __html: html }} />
+  } catch (err) {
+    console.warn('SafeMarkdown fallback caught error:', err)
+    return <div className="ai-formatted-content whitespace-pre-wrap">{stripActionTags(content || '')}</div>
+  }
 }
 
 function WelcomeContent({ content }) {

@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { logActivity } from './logActivity'
+import { safeSetItem } from './safeStorage'
 
 export const DEFAULT_NUTRITION_GOALS = {
   calories: 2000,
@@ -214,8 +215,9 @@ export async function fetchNutritionData(userId, fallbackMetadata = null) {
 
     // Update local cache with latest reconciled data
     try {
-      localStorage.setItem(goalsKey, JSON.stringify(goals))
-      localStorage.setItem(logsKey, JSON.stringify(logs))
+      safeSetItem(goalsKey, JSON.stringify(goals))
+      const compactReconciled = logs.map((l, idx) => idx < 3 ? l : { ...l, image_url: '' })
+      safeSetItem(logsKey, JSON.stringify(compactReconciled))
     } catch (e) {}
 
   } catch (err) {
@@ -280,14 +282,16 @@ export async function saveNutritionGoals(userId, newGoals) {
 export async function syncNutritionLogsToCloud(userId, logs) {
   const logsKey = userId ? `axon_nutrition_logs_${userId}` : 'axon_nutrition_logs_global'
   try {
-    localStorage.setItem(logsKey, JSON.stringify(logs))
+    // Keep image thumbnails only on the 3 most recent meals to keep local cache ultra-light (<30KB)
+    const compactLogs = logs.map((l, idx) => idx < 3 ? l : { ...l, image_url: '' })
+    const saved = safeSetItem(logsKey, JSON.stringify(compactLogs))
+    if (!saved) {
+      // Emergency fallback: strip all images to preserve nutritional log records safely
+      const textOnly = logs.map(l => ({ ...l, image_url: '' }))
+      safeSetItem(logsKey, JSON.stringify(textOnly))
+    }
   } catch (e) {
-    console.warn('Failed to save full logs to localStorage, trimming older thumbnails:', e)
-    // If local quota is reached, keep images for the recent 15 meals and purge older thumbnails
-    try {
-      const trimmed = logs.map((l, idx) => idx < 15 ? l : { ...l, image_url: '' })
-      localStorage.setItem(logsKey, JSON.stringify(trimmed))
-    } catch (err2) {}
+    console.warn('Failed to save logs to safeStorage:', e)
   }
 
   if (!userId) return

@@ -312,7 +312,61 @@ export default async function handler(req, res) {
         }
       }
 
-      const summaryError = lastErrorDetails.length > 0 ? lastErrorDetails.join(' | ') : 'No valid vision provider API keys (GEMINI_API_KEY, OPENROUTER_API_KEY, or CLOUDFLARE_ACCOUNT_ID) configured in Vercel settings.'
+      // 4. Try Groq Vision API (if GROQ_API_KEY is configured)
+      if (apiKey) {
+        const groqVisionModels = ['llama-3.2-11b-vision-preview', 'llama-3.2-90b-vision-preview']
+        for (const modelName of groqVisionModels) {
+          try {
+            const body = {
+              model: modelName,
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    { type: 'text', text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + visionPromptText },
+                    { type: 'image_url', image_url: { url: `data:${safeMimeType};base64,${rawBase64}` } }
+                  ]
+                }
+              ],
+              max_tokens: 2048,
+              temperature: 0.2
+            }
+
+            const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+              },
+              body: JSON.stringify(body)
+            })
+
+            const data = await groqRes.json().catch(() => ({}))
+            if (groqRes.ok) {
+              let content = data.choices?.[0]?.message?.content || ''
+              content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
+              if (content) {
+                await sendDatadogLog({
+                  message: 'Vision OCR Success (Groq)',
+                  mode: 'vision',
+                  provider: 'groq',
+                  model: modelName,
+                  duration_ms: Date.now() - startTime,
+                  status: 'success',
+                  completion_length: content.length
+                })
+                return res.status(200).json({ content })
+              }
+            } else {
+              lastErrorDetails.push(`Groq (${modelName}): ${data.error?.message || groqRes.status}`)
+            }
+          } catch (err) {
+            lastErrorDetails.push(`Groq (${modelName}): ${err.message}`)
+          }
+        }
+      }
+
+      const summaryError = lastErrorDetails.length > 0 ? lastErrorDetails.join(' | ') : 'No valid vision provider API keys (GEMINI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY, or CLOUDFLARE_ACCOUNT_ID) configured in Vercel settings.'
       await sendDatadogLog({
         message: 'Vision OCR Failed',
         mode: 'vision',

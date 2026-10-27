@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import Modal from '../Modal'
 import TimePicker from '../TimePicker'
-import { Camera, Upload, Sparkles, AlertCircle, Check, RotateCcw, Flame, Clock } from 'lucide-react'
+import { Camera, Upload, Sparkles, AlertCircle, Check, RotateCcw, Flame, Clock, HardDrive } from 'lucide-react'
 import { analyzeImageWithGroq } from '../../lib/groq'
 import { MEAL_TYPES, MEAL_TYPE_ICONS, getTodayDateStr, getCurrentTimeStr, getMealTypeFromTime } from '../../lib/nutritionUtils'
+import { purgeStorageBloat } from '../../lib/safeStorage'
 import { useLanguage } from '../LanguageProvider'
 
 const FOOD_SCAN_PROMPT = `Analyze this food image. Identify the dish/food, estimate the portion shown, and calculate its nutritional content.
@@ -81,9 +82,9 @@ function processFoodImage(file) {
         aiCtx.drawImage(img, 0, 0, aiWidth, aiHeight)
         const aiBase64 = aiCanvas.toDataURL('image/jpeg', 0.8)
 
-        // 2. Generate lightweight thumbnail for storage & UI display (max 320px, JPEG 0.72)
-        // Keeps thumbnail under ~15-20KB so it never exceeds localStorage quota
-        const thumbMax = 320
+        // 2. Generate ultra-lightweight thumbnail for storage & UI display (max 180px, JPEG 0.6)
+        // Keeps thumbnail under ~3-5KB so it never exceeds mobile browser localStorage quota
+        const thumbMax = 180
         let thumbWidth = origWidth
         let thumbHeight = origHeight
         if (thumbWidth > thumbMax || thumbHeight > thumbMax) {
@@ -101,7 +102,7 @@ function processFoodImage(file) {
         thumbCanvas.height = thumbHeight
         const thumbCtx = thumbCanvas.getContext('2d')
         thumbCtx.drawImage(img, 0, 0, thumbWidth, thumbHeight)
-        const thumbnailBase64 = thumbCanvas.toDataURL('image/jpeg', 0.72)
+        const thumbnailBase64 = thumbCanvas.toDataURL('image/jpeg', 0.6)
 
         cleanup()
         resolve({
@@ -239,6 +240,9 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
       const rawMsg = String(err?.message || '').toLowerCase()
       if (rawMsg.includes('identify') || rawMsg.includes('unclear') || rawMsg.includes('dimen') || rawMsg.includes('read image')) {
         setErrorInfo({ type: 'unrecognized' })
+      } else if (rawMsg.includes('quota') || err?.name === 'QuotaExceededError') {
+        purgeStorageBloat()
+        setErrorInfo({ type: 'storage_quota' })
       } else {
         // AI model error, rate limit, provider exhaustion, timeout, etc.
         setErrorInfo({ type: 'limit' })
@@ -335,6 +339,8 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                   <span>
                     {errorInfo.type === 'unrecognized'
                       ? (language === 'zh' ? '未能清晰辨识食物' : 'Could Not Identify Food')
+                      : errorInfo.type === 'storage_quota'
+                      ? (language === 'zh' ? '手机浏览器缓存已满' : 'Browser Storage Full')
                       : (language === 'zh' ? 'AI 算力额度达上限或繁忙' : 'AI Rate Limit or Busy')}
                   </span>
                 </div>
@@ -344,6 +350,10 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
                     language === 'zh'
                       ? 'AI 暂时未能清晰识别出照片中的食物。你可以尝试换个光线更好、更清晰的角度重新拍摄，或者直接使用“手动记录”快速添加～'
                       : "AI couldn't clearly identify the food in this photo. Please try a clearer picture with good lighting, or log it manually."
+                  ) : errorInfo.type === 'storage_quota' ? (
+                    language === 'zh'
+                      ? '手机浏览器的本地存储额度已达到上限（多张高画质照片或历史聊天占满空间）。我们已自动为你清理了旧图片的冗余缓存，请点击“重新扫描”即可正常使用！✨'
+                      : "Your mobile browser's local storage is full from saved meal photos or chat history. We've automatically cleaned up cached thumbnails—please tap 'Try Again' now!"
                   ) : (
                     language === 'zh'
                       ? '非常抱歉！🥹 因为 Axon 是一款完全免费向大家开放的学习与健身平台，我们能提供的免费 AI 视觉算力与识别额度确实有限。\n\n如果遇到使用高峰导致限额或系统繁忙，请稍等 3～5 分钟后再试～\n\n💡 提示：你也可以点击下方直接切换为手动记录快速添加饮食热量，非常感谢你的包容与体谅！✨'

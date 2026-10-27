@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, useRef } from 'react'
 import { updatePreference } from '../lib/preferences'
+import { safeSetItem } from '../lib/safeStorage'
 
 const ThemeContext = createContext(null)
 export const useTheme = () => useContext(ThemeContext)
@@ -29,7 +30,7 @@ export function ThemeProvider({ children }) {
       : theme
     document.documentElement.setAttribute('data-theme', resolved)
     document.documentElement.classList.toggle('dark', resolved === 'dark')
-    localStorage.setItem('theme', theme)
+    safeSetItem('theme', theme)
     if (isMounted.current.theme) {
       updatePreference(null, 'theme', theme)
     }
@@ -39,7 +40,7 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     document.documentElement.style.setProperty('--accent', accents[accentColor] || accents.blue)
     document.documentElement.setAttribute('data-accent', accentColor)
-    localStorage.setItem('accentColor', accentColor)
+    safeSetItem('accentColor', accentColor)
     if (isMounted.current.accentColor) {
       updatePreference(null, 'accentColor', accentColor)
     }
@@ -48,7 +49,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.style.fontSize = fontSize === 'small' ? '15px' : fontSize === 'large' ? '18px' : '16px'
-    localStorage.setItem('fontSize', fontSize)
+    safeSetItem('fontSize', fontSize)
     if (isMounted.current.fontSize) {
       updatePreference(null, 'fontSize', fontSize)
     }
@@ -57,7 +58,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-font', fontFamily)
-    localStorage.setItem('fontFamily', fontFamily)
+    safeSetItem('fontFamily', fontFamily)
     if (isMounted.current.fontFamily) {
       updatePreference(null, 'fontFamily', fontFamily)
     }
@@ -65,7 +66,7 @@ export function ThemeProvider({ children }) {
   }, [fontFamily])
 
   useEffect(() => {
-    localStorage.setItem('compactMode', compactMode)
+    safeSetItem('compactMode', compactMode)
     if (isMounted.current.compactMode) {
       updatePreference(null, 'compactMode', compactMode)
     }

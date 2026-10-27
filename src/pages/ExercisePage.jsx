@@ -142,14 +142,22 @@ export default function ExercisePage() {
       }
     }, 30000)
 
+    function handleExternalUpdate() {
+      loadInitialData(false)
+    }
+
     window.addEventListener('visibilitychange', handleAutoRefresh)
     window.addEventListener('focus', handleAutoRefresh)
+    window.addEventListener('axon_diet_updated', handleExternalUpdate)
+    window.addEventListener('axon_exercise_updated', handleExternalUpdate)
 
     return () => {
       clearInterval(midnightTimer)
       authSub?.subscription?.unsubscribe()
       window.removeEventListener('visibilitychange', handleAutoRefresh)
       window.removeEventListener('focus', handleAutoRefresh)
+      window.removeEventListener('axon_diet_updated', handleExternalUpdate)
+      window.removeEventListener('axon_exercise_updated', handleExternalUpdate)
     }
   }, [todayStr])
 
