@@ -45,6 +45,52 @@ export default async function handler(req, res) {
     const { mode, prompt, systemContext, base64Image, mimeType, history = [] } = req.body || {}
     const safeMimeType = mimeType || 'image/jpeg'
     const cleanBase64 = base64Image ? base64Image.replace(/\s+/g, '') : ''
+
+    if (mode === 'diagnostic') {
+      const diagResults = {}
+      try {
+        const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: { Authorization: `Bearer ${apiKey}` }
+        })
+        const modelsData = await modelsRes.json().catch(() => ({}))
+        diagResults.availableModels = modelsRes.ok
+          ? (modelsData.data || []).map(m => m.id).filter(id => id.includes('gpt') || id.includes('oss') || id.includes('llama'))
+          : modelsData
+      } catch (e) {
+        diagResults.availableModels = { error: e.message }
+      }
+
+      const modelsToTest = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'llama-3.3-70b-versatile']
+      for (const m of modelsToTest) {
+        try {
+          const testRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: m,
+              messages: [{ role: 'user', content: 'Say OK in one word' }],
+              max_tokens: 50
+            })
+          })
+          const testData = await testRes.json().catch(() => ({}))
+          diagResults[m] = {
+            ok: testRes.ok,
+            status: testRes.status,
+            data: testData
+          }
+        } catch (err) {
+          diagResults[m] = { error: err.message }
+        }
+      }
+      return res.status(200).json({
+        hasGroqKey: !!apiKey,
+        keyPrefix: apiKey ? apiKey.slice(0, 7) + '...' : null,
+        results: diagResults
+      })
+    }
     
     const cleanHistory = (Array.isArray(history) ? history : [])
       .filter(msg => (msg.role === 'user' || msg.role === 'assistant') && msg.content && typeof msg.content === 'string')
@@ -424,7 +470,7 @@ export default async function handler(req, res) {
                   prompt_length: prompt?.length || 0,
                   completion_length: content.length
                 })
-                return res.status(200).json({ content })
+                return res.status(200).json({ content, provider: 'groq', model })
               }
             } else {
               lastStatus = groqRes.status || 500
@@ -496,7 +542,7 @@ export default async function handler(req, res) {
                   prompt_length: prompt?.length || 0,
                   completion_length: cleanContent.length
                 })
-                return res.status(200).json({ content: cleanContent })
+                return res.status(200).json({ content: cleanContent, provider: 'gemini', model: modelName, fallback: true, errors: lastErrorDetails })
               }
             } else {
               const gErr = gData.error?.message || `HTTP ${geminiRes.status}`
@@ -559,7 +605,7 @@ export default async function handler(req, res) {
                   prompt_length: prompt?.length || 0,
                   completion_length: content.length
                 })
-                return res.status(200).json({ content })
+                return res.status(200).json({ content, provider: 'openrouter', model: modelName, fallback: true, errors: lastErrorDetails })
               }
             } else {
               const oErr = data.error?.message || `HTTP ${openrouterRes.status}`
@@ -614,7 +660,7 @@ export default async function handler(req, res) {
                 prompt_length: prompt?.length || 0,
                 completion_length: cleanContent.length
               })
-              return res.status(200).json({ content: cleanContent })
+              return res.status(200).json({ content: cleanContent, provider: 'cloudflare', model: modelName, fallback: true, errors: lastErrorDetails })
             } else {
               const cfErr = data.errors?.[0]?.message || `HTTP ${resCf.status}`
               lastErrorDetails.push(`Cloudflare (${modelName}): ${cfErr}`)
