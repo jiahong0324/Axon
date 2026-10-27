@@ -194,7 +194,7 @@ export default async function handler(req, res) {
 
       // 1. Try Google Gemini API (if GEMINI_API_KEY is configured)
       if (geminiKey) {
-        const geminiModels = ['gemini-3.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+        const geminiModels = ['gemini-3.5-flash-lite', 'gemini-3.8-flash']
         for (const modelName of geminiModels) {
           try {
             const body = {
@@ -218,14 +218,14 @@ export default async function handler(req, res) {
               }
             }
 
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey}`, {
+            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(body)
             })
 
-            const data = await res.json().catch(() => ({}))
-            if (res.ok) {
+            const data = await geminiRes.json().catch(() => ({}))
+            if (geminiRes.ok) {
               const content = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''
               if (content) {
                 let cleanContent = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
@@ -238,10 +238,10 @@ export default async function handler(req, res) {
                   status: 'success',
                   completion_length: cleanContent.length
                 })
-                return res.status(200).json({ content: cleanContent })
+                return res.status(200).json({ content: cleanContent, provider: 'gemini', model: modelName })
               }
             } else {
-              lastErrorDetails.push(`Gemini (${modelName}): ${data.error?.message || res.status}`)
+              lastErrorDetails.push(`Gemini (${modelName}): ${data.error?.message || geminiRes.status}`)
             }
           } catch (err) {
             lastErrorDetails.push(`Gemini (${modelName}): ${err.message}`)
@@ -490,7 +490,7 @@ export default async function handler(req, res) {
       // 2. Try Google Gemini API (if GEMINI_API_KEY is configured)
       const geminiFallbackKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
       if (geminiFallbackKey) {
-        const geminiModels = ['gemini-3.5-flash-lite', 'gemini-2.5-flash']
+        const geminiModels = ['gemini-3.5-flash-lite', 'gemini-3.8-flash']
 
         let geminiContents = []
         for (const msg of cleanHistory) {

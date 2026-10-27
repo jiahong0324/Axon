@@ -59,9 +59,12 @@ export async function analyzeImageWithGroq(base64Image, mimeType, prompt, histor
   })
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Groq Vision API error');
+    throw new Error(errorData.message || errorData.error || 'Groq Vision API error');
   }
   const data = await response.json()
+  if (data.provider) {
+    console.log(`%c[Axon Vision Engine] Provider: ${data.provider} | Model: ${data.model} ⚡ [Vision Active]`, 'color: #3b82f6; font-weight: bold; font-size: 11px;')
+  }
   return data.content || ''
 }
 
