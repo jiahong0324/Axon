@@ -326,6 +326,32 @@ export function parseTableFallback(content = '') {
     }
   }
 
+  // 7. Settings / Preference table fallback: | SETTING | VALUE |
+  if (/\|\s*(SETTING|PREFERENCE)\s*\|/i.test(content) && /\|\s*(VALUE|STATUS|SELECTION)\s*\|/i.test(content)) {
+    const lines = content.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line.startsWith('|')) continue
+      if (!line.replace(/[|\s\-:]/g, '')) continue
+      if (/\|\s*(SETTING|PREFERENCE)\s*\|/i.test(line)) continue
+
+      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
+      if (parts.length >= 2) {
+        const rawKey = parts[0]
+        const rawVal = parts[1]
+        if (rawKey && rawVal) {
+          actions.push({
+            type: 'update_preference',
+            data: {
+              key: rawKey,
+              value: rawVal
+            }
+          })
+        }
+      }
+    }
+  }
+
   return actions
 }
 
@@ -1005,13 +1031,95 @@ export async function executeAccountAction(action, user, contextMeta = {}) {
         return { success: true, type, message: 'Updated account profile details.' }
       }
 
-      // 16. UPDATE PREFERENCE
-      case 'update_preference': {
-        if (data.key && data.value !== undefined) {
-          await updatePreference(currentUser, data.key, String(data.value))
-          await logActivity('Updated preference', 'settings', `${data.key}: ${data.value}`, currentUser.id)
+      // 16. UPDATE PREFERENCE / SETTINGS
+      case 'update_preference':
+      case 'update_preferences':
+      case 'update_setting':
+      case 'update_settings':
+      case 'change_setting':
+      case 'change_settings': {
+        const normalizePrefKey = (k) => {
+          const lk = String(k || '').trim().toLowerCase().replace(/[_\s-]+/g, '')
+          if (lk === 'theme' || lk === 'darkmode' || lk === 'lightmode' || lk === 'appearance') return 'theme'
+          if (lk.includes('accent') || lk === 'color' || lk === 'themecolor') return 'accentColor'
+          if (lk.includes('font') || lk === 'size' || lk === 'fontsize') return 'fontSize'
+          if (lk.includes('compact')) return 'compactMode'
+          if (lk === 'language' || lk === 'applanguage' || lk === 'interfacelanguage') return 'appLanguage'
+          if (lk === 'ailanguage') return 'aiLanguage'
+          if (lk === 'aistyle') return 'aiStyle'
+          if (lk.includes('timeformat') || lk === 'time') return 'timeFormat'
+          if (lk.includes('firstday') || lk.includes('startofweek')) return 'firstDay'
+          if (lk.includes('dailytip')) return 'dailyTipEnabled'
+          if (lk.includes('classnotif')) return 'axon_class_notify'
+          if (lk.includes('examnotif')) return 'axon_exam_notify'
+          if (lk.includes('notifyminute') || lk.includes('leadtime')) return 'axon_notify_minutes'
+          return k
         }
-        return { success: true, type, message: `Updated preference ${data.key}.` }
+
+        const normalizePrefValue = (normKey, val) => {
+          let s = String(val || '').trim().toLowerCase()
+          if (normKey === 'theme') {
+            if (s.includes('dark')) return 'dark'
+            if (s.includes('light')) return 'light'
+            if (s.includes('sys') || s.includes('auto')) return 'system'
+            return s
+          }
+          if (normKey === 'compactMode' || normKey === 'dailyTipEnabled' || normKey === 'axon_class_notify' || normKey === 'axon_exam_notify') {
+            if (s === 'true' || s.includes('enable') || s.includes('on') || s.includes('yes')) return 'true'
+            if (s === 'false' || s.includes('disable') || s.includes('off') || s.includes('no')) return 'false'
+            return s
+          }
+          if (normKey === 'appLanguage') {
+            if (s.includes('zh') || s.includes('中文') || s.includes('chinese')) return 'zh'
+            if (s.includes('en') || s.includes('eng')) return 'en'
+            return s
+          }
+          if (normKey === 'timeFormat') {
+            if (s.includes('12')) return '12hr'
+            if (s.includes('24')) return '24hr'
+            return s
+          }
+          if (normKey === 'firstDay') {
+            if (s.includes('sun')) return 'Sunday'
+            if (s.includes('mon')) return 'Monday'
+            return s
+          }
+          if (normKey === 'fontSize') {
+            if (s.includes('sm')) return 'small'
+            if (s.includes('lg') || s.includes('big') || s.includes('lar')) return 'large'
+            return 'medium'
+          }
+          return String(val).trim()
+        }
+
+        const entriesToUpdate = []
+        if (data.key && data.value !== undefined) {
+          const k = normalizePrefKey(data.key)
+          const v = normalizePrefValue(k, data.value)
+          entriesToUpdate.push([k, v])
+        } else {
+          const reserved = ['type', 'id', 'user_id']
+          for (const [k, v] of Object.entries(data)) {
+            if (reserved.includes(k) || v === undefined || v === null) continue
+            const normKey = normalizePrefKey(k)
+            const normVal = normalizePrefValue(normKey, v)
+            entriesToUpdate.push([normKey, normVal])
+          }
+        }
+
+        const updatedMessages = []
+        for (const [k, v] of entriesToUpdate) {
+          await updatePreference(currentUser, k, String(v))
+          await logActivity('Updated preference', 'settings', `${k}: ${v}`, currentUser.id)
+          updatedMessages.push(`${k} -> ${v}`)
+        }
+
+        return {
+          success: true,
+          type,
+          data: Object.fromEntries(entriesToUpdate),
+          message: updatedMessages.length > 0 ? `Updated settings: ${updatedMessages.join(', ')}` : 'Settings updated.'
+        }
       }
 
       // 17. ADD EXAM RESULT / COURSE GRADE

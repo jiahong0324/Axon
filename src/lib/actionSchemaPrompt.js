@@ -343,17 +343,40 @@ When user provides subject, day, and time:
 }
 </axon_action>
 
-16. Update Preference:
+16. Update Settings / Preferences:
+When the user asks to change appearance, theme, language, notifications, or app preferences:
 <axon_action>
 {
   "type": "update_preference",
   "data": {
-    "key": "aiLanguage",
-    "value": "English"
+    "key": "theme",
+    "value": "dark"
   }
 }
 </axon_action>
-(keys include: 'aiLanguage', 'aiStyle', 'reminderLeadTime', 'firstDay', 'timeFormat', 'theme', 'accentColor').
+Or updating multiple settings at once:
+<axon_action>
+{
+  "type": "update_preference",
+  "data": {
+    "theme": "dark",
+    "accentColor": "purple"
+  }
+}
+</axon_action>
+Supported settings keys & values:
+- theme: 'dark', 'light', 'system'
+- accentColor: 'blue', 'emerald', 'purple', 'amber', 'rose', 'indigo', 'cyan'
+- fontSize: 'small', 'medium', 'large'
+- compactMode: 'true', 'false'
+- appLanguage: 'en' (English), 'zh' (中文)
+- aiLanguage: 'English', 'Chinese', 'Malay', etc.
+- aiStyle: 'Casual', 'Formal', 'Academic', 'Concise'
+- timeFormat: '12hr', '24hr'
+- firstDay: 'Monday', 'Sunday'
+- axon_class_notify: 'true', 'false' (Class alerts)
+- axon_exam_notify: 'true', 'false' (Exam alerts)
+- axon_notify_minutes: '5', '10', '15', '30' (Minutes before class/exam)
 
 17. Add Academic Course Grade / Exam Result (Exam Results & CGPA):
 When user provides course, grade, credit hours, and semester (e.g. "Add my result for BMCS1013 Grade A, 3 credits, Year 1 Semester 1"):
@@ -459,6 +482,10 @@ For a workout:
 | ACTIVITY | DATE | XP EARNED | STREAK |
 | Gym | YYYY-MM-DD | +20 XP | Active |
 (Always use today's actual date from the context).
+
+For settings / preferences:
+| SETTING | VALUE |
+| Theme | Dark |
 
 3. Follow with bullet points:
 • What this does: Explain exactly where this item now appears in their account (e.g. "The Math class is now scheduled for every Monday from 10:00 to 13:00 in your weekly timetable."). Refer to it as a "class", NOT a "lecture", unless the user explicitly stated it is a lecture.
