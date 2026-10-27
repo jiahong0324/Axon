@@ -202,7 +202,7 @@ export default async function handler(req, res) {
                 {
                   role: 'user',
                   parts: [
-                    { text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + visionPromptText },
+                    { text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon). If asked what model you are currently using, state clearly that you are powered by Google Gemini for vision and image analysis, customized by Axon and developed by Jiahong.\n\n' + visionPromptText },
                     {
                       inlineData: {
                         mimeType: safeMimeType,
@@ -433,12 +433,15 @@ export default async function handler(req, res) {
           { model: 'openai/gpt-oss-20b', maxTokens: 4096 }
         ]
 
+        const groqContext = (systemContext ? `${systemContext}\n\n` : '') +
+          'CRITICAL IDENTITY & MODEL INSTRUCTION: If the user asks what model you are currently using, which AI powers you, or whether you are ChatGPT or Gemini, explain clearly, accurately, and politely: "I am powered by ChatGPT (OpenAI\'s GPT architecture accelerated on Groq), customized by Axon and developed by Jiahong."'
+
         for (const { model, maxTokens } of groqModelsToTry) {
           try {
             const body = {
               model,
               messages: [
-                { role: 'system', content: systemContext || '' },
+                { role: 'system', content: groqContext },
                 ...cleanHistory,
                 { role: 'user', content: prompt }
               ],
@@ -514,10 +517,10 @@ export default async function handler(req, res) {
                 maxOutputTokens: 2048
               }
             }
-            if (systemContext) {
-              geminiBody.systemInstruction = {
-                parts: [{ text: systemContext }]
-              }
+            const geminiContext = (systemContext ? `${systemContext}\n\n` : '') +
+              'CRITICAL IDENTITY & MODEL INSTRUCTION: If the user asks what model you are currently using, which AI powers you, or whether you are ChatGPT or Gemini, explain clearly, accurately, and politely: "I am powered by Google Gemini, customized by Axon and developed by Jiahong."'
+            geminiBody.systemInstruction = {
+              parts: [{ text: geminiContext }]
             }
 
             const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiFallbackKey}`, {
@@ -567,10 +570,13 @@ export default async function handler(req, res) {
 
         for (const modelName of openrouterModels) {
           try {
+            const openrouterContext = (systemContext ? `${systemContext}\n\n` : '') +
+              `CRITICAL IDENTITY & MODEL INSTRUCTION: If the user asks what model you are currently using, which AI powers you, or whether you are ChatGPT or Gemini, explain clearly, accurately, and politely: "I am powered by ${modelName.includes('gemini') ? 'Google Gemini' : 'ChatGPT (OpenAI)'}, customized by Axon and developed by Jiahong."`
+
             const body = {
               model: modelName,
               messages: [
-                ...(systemContext ? [{ role: 'system', content: systemContext }] : []),
+                { role: 'system', content: openrouterContext },
                 ...cleanHistory,
                 { role: 'user', content: prompt }
               ],
