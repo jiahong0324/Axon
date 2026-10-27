@@ -429,8 +429,8 @@ export default async function handler(req, res) {
       // 1. Try Groq (if GROQ_API_KEY is configured)
       if (apiKey) {
         const groqModelsToTry = [
-          { model: 'openai/gpt-oss-120b', maxTokens: 4096 },
-          { model: 'openai/gpt-oss-20b', maxTokens: 4096 }
+          { model: 'openai/gpt-oss-120b', maxTokens: 1500 },
+          { model: 'openai/gpt-oss-20b', maxTokens: 1500 }
         ]
 
         const groqContext = (systemContext ? `${systemContext}\n\n` : '') +

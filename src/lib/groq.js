@@ -34,6 +34,9 @@ export async function askGroq(prompt, systemContext = '', history = []) {
   if (!response.ok) throw new Error(data.error || 'Groq API error')
   if (data.provider) {
     console.log(`%c[Axon AI Engine] Provider: ${data.provider} | Model: ${data.model} ${data.fallback ? '⚠️ [Fallback Active]' : '⚡ [Primary Active]'}`, 'color: #10b981; font-weight: bold; font-size: 11px;')
+    if (data.fallback && data.errors && data.errors.length > 0) {
+      console.warn('[Axon AI Fallback Details / Groq Status]:', data.errors)
+    }
   }
   return data.content || 'AI is unavailable right now.'
 }

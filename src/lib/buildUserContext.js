@@ -258,18 +258,18 @@ Streak Protection: ${exerciseData.freezesAvailable} freezes available
 Checked In Today (${todayStr}): ${exerciseStats.isCheckedInToday ? `Yes (${exerciseData.logs.find(l => l.log_date === todayStr)?.activity_type || 'Workout'})` : 'No (Not checked in yet)'}
 Unlocked Badges (${unlockedBadges.length} total): ${unlockedBadges.map(b => b.titleKey).join(', ') || 'None yet'}
 Recent Workout History:
-${exerciseData.logs.length === 0 ? 'No workouts logged yet.' : exerciseData.logs.slice(0, 10).map(l => `- ${l.log_date}: ${l.activity_type || 'Workout'} (+${l.xp_earned || 20} XP)`).join('\n')}
+${exerciseData.logs.length === 0 ? 'No workouts logged yet.' : exerciseData.logs.slice(0, 5).map(l => `- ${l.log_date}: ${l.activity_type || 'Workout'} (+${l.xp_earned || 20} XP)`).join('\n')}
 
 === HEALTH: DIET & NUTRITION TRACKING ===
 Daily Targets: ${nutritionData?.goals?.calories || 2000} kcal | Protein: ${nutritionData?.goals?.protein || 120}g | Carbs: ${nutritionData?.goals?.carbs || 250}g | Fats: ${nutritionData?.goals?.fats || 65}g
 Recent Meals Logged:
-${(!nutritionData?.logs || nutritionData.logs.length === 0) ? 'No meal logs recorded yet.' : nutritionData.logs.slice(0, 10).map(m => `- [${m.date || 'N/A'}] ${m.meal_type || 'Meal'}: ${m.name || 'Food'} (${m.calories || 0} kcal, P:${m.protein || 0}g, C:${m.carbs || 0}g, F:${m.fats || 0}g)${m.notes ? ' - ' + m.notes : ''}`).join('\n')}
+${(!nutritionData?.logs || nutritionData.logs.length === 0) ? 'No meal logs recorded yet.' : nutritionData.logs.slice(0, 5).map(m => `- [${m.date || 'N/A'}] ${m.meal_type || 'Meal'}: ${m.name || 'Food'} (${m.calories || 0} kcal, P:${m.protein || 0}g, C:${m.carbs || 0}g, F:${m.fats || 0}g)`).join('\n')}
 
 === PUBLIC BLOG ARTICLES & STUDY GUIDES ===
-${blogPosts.length === 0 ? 'No blog posts found.' : blogPosts.map(p => `- [${p.category}] "${p.title}" (${p.read_time}, ${p.views_count || 0} views, ${p.likes_count || 0} likes)\n  Slug: /blog/${p.slug}\n  Summary: ${p.description}`).join('\n\n')}
+${blogPosts.length === 0 ? 'No blog posts found.' : blogPosts.slice(0, 5).map(p => `- [${p.category}] "${p.title}" (/blog/${p.slug})`).join('\n')}
 
 === FREQUENTLY ASKED QUESTIONS (Axon FAQ) ===
-${faqs.map(f => `- Q: ${f.question}\n  A: ${f.answer}`).join('\n\n')}
+${faqs.slice(0, 5).map(f => `- Q: ${f.question}\n  A: ${f.answer}`).join('\n\n')}
 `.trim()
 }
 
