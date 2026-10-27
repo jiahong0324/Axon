@@ -194,7 +194,7 @@ export default async function handler(req, res) {
 
       // 1. Try Google Gemini API (if GEMINI_API_KEY is configured)
       if (geminiKey) {
-        const geminiModels = ['gemini-3.5-flash-lite', 'gemini-3.8-flash']
+        const geminiModels = ['gemini-3.5-flash-lite']
         for (const modelName of geminiModels) {
           try {
             const body = {
@@ -490,7 +490,7 @@ export default async function handler(req, res) {
       // 2. Try Google Gemini API (if GEMINI_API_KEY is configured)
       const geminiFallbackKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
       if (geminiFallbackKey) {
-        const geminiModels = ['gemini-3.5-flash-lite', 'gemini-3.8-flash']
+        const geminiModels = ['gemini-3.5-flash-lite']
 
         let geminiContents = []
         for (const msg of cleanHistory) {
