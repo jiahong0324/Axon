@@ -3,6 +3,15 @@ import { logActivity } from './logActivity.js'
 import { clearCache } from './cache.js'
 import { updatePreference } from './preferences.js'
 import { fetchExerciseData, logExerciseCheckIn, getTodayStr } from './exerciseUtils.js'
+import {
+  fetchNutritionData,
+  saveFoodLogItem,
+  deleteFoodLogItem,
+  saveNutritionGoals,
+  getMealTypeFromTime,
+  getTodayDateStr,
+  getCurrentTimeStr
+} from './nutritionUtils.js'
 
 export const COMMON_SE_COURSES = {
   'BMCS1013': 'Problem Solving and Programming',
@@ -58,6 +67,67 @@ function normalizeClassType(typeStr) {
   if (t === 'L' || t.startsWith('LEC') || t.includes('讲座') || t.includes('大课')) return 'L'
   if (t === 'C' || t.startsWith('CLASS') || t.includes('课')) return 'C'
   return 'C'
+}
+
+function parseNutrient(v) {
+  if (typeof v === 'number') return isNaN(v) ? 0 : v
+  if (!v) return 0
+  const cleaned = String(v).replace(/[^\d.]/g, '')
+  return parseFloat(cleaned) || 0
+}
+
+function normalizePrefKey(k) {
+  const lk = String(k || '').trim().toLowerCase().replace(/[_\s-]+/g, '')
+  if (lk === 'theme' || lk === 'darkmode' || lk === 'lightmode' || lk === 'appearance') return 'theme'
+  if (lk.includes('accent') || lk === 'color' || lk === 'themecolor') return 'accentColor'
+  if (lk.includes('font') || lk === 'size' || lk === 'fontsize') return 'fontSize'
+  if (lk.includes('compact')) return 'compactMode'
+  if (lk === 'language' || lk === 'applanguage' || lk === 'interfacelanguage') return 'appLanguage'
+  if (lk === 'ailanguage') return 'aiLanguage'
+  if (lk === 'aistyle') return 'aiStyle'
+  if (lk.includes('timeformat') || lk === 'time') return 'timeFormat'
+  if (lk.includes('firstday') || lk.includes('startofweek')) return 'firstDay'
+  if (lk.includes('dailytip')) return 'dailyTipEnabled'
+  if (lk.includes('classnotif')) return 'axon_class_notify'
+  if (lk.includes('examnotif')) return 'axon_exam_notify'
+  if (lk.includes('notifyminute') || lk.includes('leadtime')) return 'axon_notify_minutes'
+  return k
+}
+
+function normalizePrefValue(normKey, val) {
+  let s = String(val || '').trim().toLowerCase()
+  if (normKey === 'theme') {
+    if (s.includes('dark')) return 'dark'
+    if (s.includes('light')) return 'light'
+    if (s.includes('sys') || s.includes('auto')) return 'system'
+    return s
+  }
+  if (normKey === 'compactMode' || normKey === 'dailyTipEnabled' || normKey === 'axon_class_notify' || normKey === 'axon_exam_notify') {
+    if (s === 'true' || s.includes('enable') || s.includes('on') || s.includes('yes')) return 'true'
+    if (s === 'false' || s.includes('disable') || s.includes('off') || s.includes('no')) return 'false'
+    return s
+  }
+  if (normKey === 'appLanguage') {
+    if (s.includes('zh') || s.includes('中文') || s.includes('chinese')) return 'zh'
+    if (s.includes('en') || s.includes('eng')) return 'en'
+    return s
+  }
+  if (normKey === 'timeFormat') {
+    if (s.includes('12')) return '12hr'
+    if (s.includes('24')) return '24hr'
+    return s
+  }
+  if (normKey === 'firstDay') {
+    if (s.includes('sun')) return 'Sunday'
+    if (s.includes('mon')) return 'Monday'
+    return s
+  }
+  if (normKey === 'fontSize') {
+    if (s.includes('sm')) return 'small'
+    if (s.includes('lg') || s.includes('big') || s.includes('lar')) return 'large'
+    return 'medium'
+  }
+  return String(val).trim()
 }
 
 export { ACTION_SCHEMA_PROMPT } from './actionSchemaPrompt.js'
@@ -265,16 +335,16 @@ export function parseTableFallback(content = '') {
   }
 
   // 6. Diet / Food table fallback: | MEAL TYPE | FOOD ITEM | PORTION | CALORIES | PROTEIN | CARBS | FATS |
-  if (/\|\s*(MEAL\s*TYPE|FOOD\s*ITEM)\s*\|/i.test(content) && /\|\s*(CALORIES|PROTEIN)\s*\|/i.test(content)) {
+  if (/\|\s*(MEAL|FOOD|DISH|ITEM|餐|食物|菜品)\s*\|/i.test(content) && /\|\s*(CALORIE|KCAL|PROTEIN|热量|卡路里|蛋白质)\s*\|/i.test(content)) {
     const lines = content.split('\n')
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
       if (!line.startsWith('|')) continue
       if (!line.replace(/[|\s\-:]/g, '')) continue
-      if (/\|\s*(MEAL\s*TYPE|FOOD\s*ITEM)\s*\|/i.test(line)) continue
+      if (/CALORIE|KCAL|PROTEIN|热量|卡路里|蛋白质/i.test(line)) continue
 
       const parts = line.split('|').map(s => s.trim()).filter(Boolean)
-      if (parts.length >= 4) {
+      if (parts.length >= 3) {
         let mealType = 'Snack'
         let name = ''
         let portion = ''
@@ -287,25 +357,29 @@ export function parseTableFallback(content = '') {
           mealType = parts[0]
           name = parts[1]
           portion = parts[2]
-          calories = parseFloat(parts[3].replace(/[^\d.]/g, '')) || 0
-          protein = parseFloat(parts[4].replace(/[^\d.]/g, '')) || 0
-          carbs = parseFloat(parts[5].replace(/[^\d.]/g, '')) || 0
-          fats = parseFloat(parts[6].replace(/[^\d.]/g, '')) || 0
+          calories = parseNutrient(parts[3])
+          protein = parseNutrient(parts[4])
+          carbs = parseNutrient(parts[5])
+          fats = parseNutrient(parts[6])
         } else if (parts.length >= 5) {
           name = parts[0]
           portion = parts[1]
-          calories = parseFloat(parts[2].replace(/[^\d.]/g, '')) || 0
-          protein = parseFloat(parts[3].replace(/[^\d.]/g, '')) || 0
-          carbs = parseFloat(parts[4].replace(/[^\d.]/g, '')) || 0
-          fats = parts[5] ? (parseFloat(parts[5].replace(/[^\d.]/g, '')) || 0) : 0
+          calories = parseNutrient(parts[2])
+          protein = parseNutrient(parts[3])
+          carbs = parseNutrient(parts[4])
+          fats = parts[5] ? parseNutrient(parts[5]) : 0
+        } else if (parts.length >= 4) {
+          name = parts[0]
+          portion = parts[1]
+          calories = parseNutrient(parts[2])
+          protein = parseNutrient(parts[3])
         } else {
           name = parts[0]
-          calories = parseFloat(parts[1].replace(/[^\d.]/g, '')) || 0
-          protein = parseFloat(parts[2].replace(/[^\d.]/g, '')) || 0
-          carbs = parseFloat(parts[3].replace(/[^\d.]/g, '')) || 0
+          calories = parseNutrient(parts[1])
+          protein = parseNutrient(parts[2])
         }
 
-        if (name && calories > 0) {
+        if (name && (calories > 0 || protein > 0)) {
           actions.push({
             type: 'log_diet',
             data: {
@@ -1038,60 +1112,6 @@ export async function executeAccountAction(action, user, contextMeta = {}) {
       case 'update_settings':
       case 'change_setting':
       case 'change_settings': {
-        const normalizePrefKey = (k) => {
-          const lk = String(k || '').trim().toLowerCase().replace(/[_\s-]+/g, '')
-          if (lk === 'theme' || lk === 'darkmode' || lk === 'lightmode' || lk === 'appearance') return 'theme'
-          if (lk.includes('accent') || lk === 'color' || lk === 'themecolor') return 'accentColor'
-          if (lk.includes('font') || lk === 'size' || lk === 'fontsize') return 'fontSize'
-          if (lk.includes('compact')) return 'compactMode'
-          if (lk === 'language' || lk === 'applanguage' || lk === 'interfacelanguage') return 'appLanguage'
-          if (lk === 'ailanguage') return 'aiLanguage'
-          if (lk === 'aistyle') return 'aiStyle'
-          if (lk.includes('timeformat') || lk === 'time') return 'timeFormat'
-          if (lk.includes('firstday') || lk.includes('startofweek')) return 'firstDay'
-          if (lk.includes('dailytip')) return 'dailyTipEnabled'
-          if (lk.includes('classnotif')) return 'axon_class_notify'
-          if (lk.includes('examnotif')) return 'axon_exam_notify'
-          if (lk.includes('notifyminute') || lk.includes('leadtime')) return 'axon_notify_minutes'
-          return k
-        }
-
-        const normalizePrefValue = (normKey, val) => {
-          let s = String(val || '').trim().toLowerCase()
-          if (normKey === 'theme') {
-            if (s.includes('dark')) return 'dark'
-            if (s.includes('light')) return 'light'
-            if (s.includes('sys') || s.includes('auto')) return 'system'
-            return s
-          }
-          if (normKey === 'compactMode' || normKey === 'dailyTipEnabled' || normKey === 'axon_class_notify' || normKey === 'axon_exam_notify') {
-            if (s === 'true' || s.includes('enable') || s.includes('on') || s.includes('yes')) return 'true'
-            if (s === 'false' || s.includes('disable') || s.includes('off') || s.includes('no')) return 'false'
-            return s
-          }
-          if (normKey === 'appLanguage') {
-            if (s.includes('zh') || s.includes('中文') || s.includes('chinese')) return 'zh'
-            if (s.includes('en') || s.includes('eng')) return 'en'
-            return s
-          }
-          if (normKey === 'timeFormat') {
-            if (s.includes('12')) return '12hr'
-            if (s.includes('24')) return '24hr'
-            return s
-          }
-          if (normKey === 'firstDay') {
-            if (s.includes('sun')) return 'Sunday'
-            if (s.includes('mon')) return 'Monday'
-            return s
-          }
-          if (normKey === 'fontSize') {
-            if (s.includes('sm')) return 'small'
-            if (s.includes('lg') || s.includes('big') || s.includes('lar')) return 'large'
-            return 'medium'
-          }
-          return String(val).trim()
-        }
-
         const entriesToUpdate = []
         if (data.key && data.value !== undefined) {
           const k = normalizePrefKey(data.key)
@@ -1395,14 +1415,35 @@ export async function executeAccountAction(action, user, contextMeta = {}) {
           return { success: false, error: 'Cannot log food: Food or meal name is missing.' }
         }
 
-        const calories = Math.max(0, Math.round(Number(data.calories) || 0))
-        const protein = Math.max(0, Math.round((Number(data.protein) || 0) * 10) / 10)
-        const carbs = Math.max(0, Math.round((Number(data.carbs) || 0) * 10) / 10)
-        const fats = Math.max(0, Math.round((Number(data.fats) || 0) * 10) / 10)
+        const calories = Math.max(0, Math.round(parseNutrient(data.calories)))
+        const protein = Math.max(0, Math.round(parseNutrient(data.protein) * 10) / 10)
+        const carbs = Math.max(0, Math.round(parseNutrient(data.carbs) * 10) / 10)
+        const fats = Math.max(0, Math.round(parseNutrient(data.fats) * 10) / 10)
 
-        const date = (data.date || data.log_date || getTodayDateStr()).trim()
-        const mealTime = (data.meal_time || getCurrentTimeStr()).trim()
-        const mealType = data.meal_type || getMealTypeFromTime(mealTime)
+        let date = (data.date || data.log_date || '').trim()
+        if (!date || date.toLowerCase() === 'today' || date === '今天' || date === '2026-10-15') {
+          date = getTodayDateStr()
+        }
+
+        let mealTime = (data.meal_time || '').trim()
+        if (!mealTime || mealTime.toLowerCase() === 'now' || mealTime === '现在') {
+          mealTime = getCurrentTimeStr()
+        } else {
+          mealTime = normalizeTime(mealTime, getCurrentTimeStr())
+        }
+
+        let mealType = data.meal_type || ''
+        if (mealType) {
+          const m = String(mealType).toLowerCase()
+          if (m.includes('break') || m.includes('早') || m.includes('sarapan')) mealType = 'Breakfast'
+          else if (m.includes('lunch') || m.includes('午') || m.includes('tengah')) mealType = 'Lunch'
+          else if (m.includes('din') || m.includes('晚') || m.includes('malam')) mealType = 'Dinner'
+          else if (m.includes('snack') || m.includes('零') || m.includes('加') || m.includes('snek')) mealType = 'Snack'
+          else mealType = 'Snack'
+        } else {
+          mealType = getMealTypeFromTime(mealTime)
+        }
+
         const notes = (data.notes || data.portion || '').trim()
         const imageUrl = (data.image_url || contextMeta?.image_url || '').trim()
 
