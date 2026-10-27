@@ -543,7 +543,7 @@ Deno.serve(async req => {
         const formattedMessage = escapeHtml(message || 'We have an update for you!').replace(/\n/g, '<br/>')
 
         const finalHtmlContent = htmlContent || `<!DOCTYPE html>
-<html lang="en" style="background-color: #1e293b;">
+<html lang="en" style="background-color: #0f172a;">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -557,8 +557,8 @@ Deno.serve(async req => {
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: #1e293b !important;
-      background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
+      background-color: #0f172a !important;
+      background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
       margin: 0 !important;
       padding: 0 !important;
       -webkit-font-smoothing: antialiased;
@@ -568,24 +568,23 @@ Deno.serve(async req => {
       min-width: 100% !important;
       margin: 0 !important;
       padding: 0 !important;
-      background-color: #1e293b !important;
-      background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
+      background-color: #0f172a !important;
+      background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
     }
     .email-cell {
-      padding: 0 !important;
-      background-color: #1e293b !important;
-      background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
+      padding: 40px 20px !important;
+      background-color: #0f172a !important;
+      background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
     }
     .card {
-      width: 100% !important;
-      max-width: none !important;
-      margin: 0 !important;
+      max-width: 560px !important;
+      margin: 0 auto !important;
       background-color: #1e293b !important;
       background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
-      border-radius: 0 !important;
-      padding: 40px 24px !important;
+      border-radius: 16px !important;
+      padding: 40px !important;
       text-align: center !important;
-      border: 0 !important;
+      border: 1px solid #334155 !important;
       box-sizing: border-box !important;
     }
     .logo {
@@ -630,14 +629,14 @@ Deno.serve(async req => {
 
     @media (prefers-color-scheme: dark) {
       body, .email-wrapper, .email-cell {
-        background-color: #1e293b !important;
-        background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
+        background-color: #0f172a !important;
+        background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
       }
       .card {
         background-color: #1e293b !important;
         background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
-        border: 0 !important;
-        border-radius: 0 !important;
+        border: 1px solid #334155 !important;
+        border-radius: 16px !important;
       }
       h1, h1 span {
         color: #ffffff !important;
@@ -651,14 +650,14 @@ Deno.serve(async req => {
     }
 
     [data-ogsc] body, [data-ogsb] body, [data-ogsc] .email-wrapper, [data-ogsb] .email-wrapper, [data-ogsc] .email-cell, [data-ogsb] .email-cell {
-      background-color: #1e293b !important;
-      background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
+      background-color: #0f172a !important;
+      background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;
     }
     [data-ogsc] .card, [data-ogsb] .card {
       background-color: #1e293b !important;
       background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;
-      border: 0 !important;
-      border-radius: 0 !important;
+      border: 1px solid #334155 !important;
+      border-radius: 16px !important;
     }
     [data-ogsc] h1, [data-ogsc] h1 span {
       color: #ffffff !important;
@@ -671,11 +670,11 @@ Deno.serve(async req => {
     }
   </style>
 </head>
-<body class="body" bgcolor="#1e293b" style="background-color: #1e293b !important; background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important; margin: 0 !important; padding: 0 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
-  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-wrapper" bgcolor="#1e293b" style="width: 100% !important; min-width: 100% !important; margin: 0 !important; padding: 0 !important; background-color: #1e293b !important; background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important; border-collapse: collapse;">
+<body class="body" bgcolor="#0f172a" style="background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important; margin: 0 !important; padding: 0 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-wrapper" bgcolor="#0f172a" style="width: 100% !important; min-width: 100% !important; margin: 0 !important; padding: 0 !important; background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important; border-collapse: collapse;">
     <tr>
-      <td align="center" class="email-cell" bgcolor="#1e293b" style="padding: 0 !important; background-color: #1e293b !important; background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important;">
-        <div class="card" style="width: 100% !important; max-width: none !important; margin: 0 !important; background-color: #1e293b !important; background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important; border-radius: 0 !important; border: 0 !important; padding: 40px 24px !important; text-align: center !important; box-sizing: border-box !important;">
+      <td align="center" class="email-cell" bgcolor="#0f172a" style="padding: 40px 20px !important; background-color: #0f172a !important; background-image: linear-gradient(to bottom, #0f172a 0%, #0f172a 100%) !important;">
+        <div class="card" style="max-width: 560px !important; margin: 0 auto !important; background-color: #1e293b !important; background-image: linear-gradient(to bottom, #1e293b 0%, #1e293b 100%) !important; border-radius: 16px !important; border: 1px solid #334155 !important; padding: 40px !important; text-align: center !important; box-sizing: border-box !important;">
           <img src="https://axon-com.vercel.app/icons/logo.png" alt="Axon" class="logo" style="width: 64px !important; height: 64px !important; margin-bottom: 24px !important; border-radius: 16px !important; display: inline-block !important;">
           <div class="gmail-blend-screen">
             <div class="gmail-blend-difference">
@@ -687,11 +686,11 @@ Deno.serve(async req => {
               </div>
             </div>
           </div>
-          <div class="gmail-blend-screen">
-            <div class="gmail-blend-difference">
-              <div class="footer" data-ogsc="color: #64748b;" style="text-align: center !important; margin-top: 32px !important; color: #64748b !important; font-size: 14px !important;">
+        </div>
+        <div class="gmail-blend-screen">
+          <div class="gmail-blend-difference">
+            <div class="footer" data-ogsc="color: #64748b;" style="text-align: center !important; margin-top: 32px !important; color: #64748b !important; font-size: 14px !important;">
               &copy; 2026 Axon. All rights reserved.
-              </div>
             </div>
           </div>
         </div>
