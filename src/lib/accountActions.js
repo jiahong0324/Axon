@@ -20,22 +20,26 @@ export const COMMON_SE_COURSES = {
 function normalizeDay(dayStr) {
   if (!dayStr) return null
   const d = String(dayStr).trim().toLowerCase()
-  if (d.startsWith('mon')) return 'Monday'
-  if (d.startsWith('tue')) return 'Tuesday'
-  if (d.startsWith('wed')) return 'Wednesday'
-  if (d.startsWith('thu')) return 'Thursday'
-  if (d.startsWith('fri')) return 'Friday'
-  if (d.startsWith('sat')) return 'Saturday'
-  if (d.startsWith('sun')) return 'Sunday'
+  if (d.startsWith('mon') || d.includes('一') || d.startsWith('isnin')) return 'Monday'
+  if (d.startsWith('tue') || d.includes('二') || d.startsWith('selasa')) return 'Tuesday'
+  if (d.startsWith('wed') || d.includes('三') || d.startsWith('rabu')) return 'Wednesday'
+  if (d.startsWith('thu') || d.includes('四') || d.startsWith('khamis')) return 'Thursday'
+  if (d.startsWith('fri') || d.includes('五') || d.startsWith('jumaat')) return 'Friday'
+  if (d.startsWith('sat') || d.includes('六') || d.startsWith('sabtu')) return 'Saturday'
+  if (d.startsWith('sun') || d.includes('日') || d.includes('天') || d.startsWith('ahad')) return 'Sunday'
   return null
 }
 
 function normalizeTime(timeStr, defaultTime = null) {
   if (!timeStr) return defaultTime
   let s = String(timeStr).trim().toLowerCase()
-  const isPm = s.includes('pm')
-  const isAm = s.includes('am')
-  s = s.replace(/am|pm/g, '').trim()
+  if (s.includes('-') || s.includes('~') || s.includes('to')) {
+    s = s.split(/[-~to]/)[0].trim()
+  }
+  const isPm = s.includes('pm') || s.includes('下午') || s.includes('晚上')
+  const isAm = s.includes('am') || s.includes('上午') || s.includes('早上')
+  s = s.replace(/am|pm|上午|早上|下午|晚上|点|分/g, '').trim()
+  s = s.replace('.', ':')
   const parts = s.split(':')
   let hour = parseInt(parts[0], 10)
   let minute = parts.length > 1 ? parseInt(parts[1], 10) : 0
@@ -49,14 +53,219 @@ function normalizeTime(timeStr, defaultTime = null) {
 function normalizeClassType(typeStr) {
   if (!typeStr) return 'C'
   const t = String(typeStr).trim().toUpperCase()
-  if (t === 'P' || t.startsWith('PRAC') || t.startsWith('LAB')) return 'P'
-  if (t === 'T' || t.startsWith('TUT')) return 'T'
-  if (t === 'L' || t.startsWith('LEC')) return 'L'
-  if (t === 'C' || t.startsWith('CLASS')) return 'C'
+  if (t === 'P' || t.startsWith('PRAC') || t.startsWith('LAB') || t.includes('实验') || t.includes('上机')) return 'P'
+  if (t === 'T' || t.startsWith('TUT') || t.includes('辅导')) return 'T'
+  if (t === 'L' || t.startsWith('LEC') || t.includes('讲座') || t.includes('大课')) return 'L'
+  if (t === 'C' || t.startsWith('CLASS') || t.includes('课')) return 'C'
   return 'C'
 }
 
 export { ACTION_SCHEMA_PROMPT } from './actionSchemaPrompt.js'
+
+/**
+ * Fallback parser that reconstructs actions from markdown confirmation tables
+ * if the AI model outputted the table without the machine <axon_action> tag.
+ */
+export function parseTableFallback(content = '') {
+  const actions = []
+
+  // 1. Workout table fallback: | ACTIVITY | DATE |
+  if (/\|\s*ACTIVITY\s*\|\s*DATE/i.test(content) || /Workout logged/i.test(content)) {
+    const lines = content.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line.startsWith('|')) continue
+      if (/^[|\s\-:]+$/.test(line)) continue
+      if (/\|\s*ACTIVITY\s*\|/i.test(line)) continue
+
+      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
+      if (parts.length >= 2) {
+        const activity = parts[0]
+        const dateStr = parts[1]
+        if (activity) {
+          actions.push({
+            type: 'log_exercise',
+            data: {
+              activity_type: activity || 'Gym',
+              log_date: /^\d{4}-\d{2}-\d{2}$/.test(dateStr) && dateStr !== '2026-10-15' ? dateStr : getTodayStr()
+            }
+          })
+          break
+        }
+      }
+    }
+  }
+
+  // 2. Timetable Class table fallback: | TYPE | COURSE | DAY | TIME |
+  if (/\|\s*(TYPE\s*\|\s*COURSE|COURSE\s*\|\s*DAY)/i.test(content) && /\|\s*DAY\s*\|/i.test(content)) {
+    const lines = content.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line.startsWith('|')) continue
+      if (/^[|\s\-:]+$/.test(line)) continue
+      if (/\|\s*(TYPE|COURSE)\s*\|/i.test(line) && /\|\s*DAY\s*\|/i.test(line)) continue
+
+      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
+      if (parts.length >= 4) {
+        let classType = 'C'
+        let subject = ''
+        let day = ''
+        let time = ''
+        let venue = 'TBA'
+        let lecturer = 'TBA'
+
+        if (/lecture|tutorial|practical|class/i.test(parts[0])) {
+          classType = parts[0]
+          subject = parts[1]
+          day = parts[2]
+          time = parts[3]
+          venue = parts[4] || 'TBA'
+          lecturer = parts[5] || 'TBA'
+        } else {
+          subject = parts[0]
+          day = parts[1]
+          time = parts[2]
+          venue = parts[3] || 'TBA'
+          lecturer = parts[4] || 'TBA'
+        }
+
+        if (subject && day && time) {
+          const timeParts = time.split(/[-–—to~]/i).map(s => s.trim())
+          actions.push({
+            type: 'add_class',
+            data: {
+              subject,
+              day,
+              start_time: timeParts[0] || time,
+              end_time: timeParts[1] || undefined,
+              classroom: venue,
+              lecturer,
+              class_type: classType
+            }
+          })
+        }
+      }
+    }
+  }
+
+  // 3. Exam table fallback: | TYPE | COURSE | TITLE | DATE | TIME |
+  if (/\|\s*(TYPE\s*\|\s*COURSE|COURSE\s*\|\s*TITLE|TITLE.*PRACTICAL)/i.test(content) && /\|\s*DATE/i.test(content) && !/ACTIVITY/i.test(content)) {
+    const lines = content.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line.startsWith('|')) continue
+      if (/^[|\s\-:]+$/.test(line)) continue
+      if (/\|\s*(TYPE|COURSE)\s*\|/i.test(line) && /\|\s*DATE\s*\|/i.test(line)) continue
+
+      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
+      if (parts.length >= 4) {
+        let examType = 'Exam'
+        let subject = ''
+        let title = ''
+        let examDate = ''
+        let time = ''
+        let venue = 'TBA'
+
+        if (/exam|test|quiz|practical|midterm|final/i.test(parts[0])) {
+          examType = parts[0]
+          subject = parts[1]
+          title = parts[2]
+          examDate = parts[3]
+          time = parts[4] || ''
+          venue = parts[5] || 'TBA'
+        } else {
+          subject = parts[0]
+          title = parts[1]
+          examDate = parts[2]
+          time = parts[3] || ''
+          venue = parts[4] || 'TBA'
+        }
+
+        const dateMatch = examDate.match(/\d{4}-\d{2}-\d{2}/)
+        if (subject && dateMatch) {
+          const timeParts = time ? time.split(/[-–—to~]/i).map(s => s.trim()) : []
+          actions.push({
+            type: 'add_exam',
+            data: {
+              subject,
+              exam_date: dateMatch[0],
+              start_time: timeParts[0] || '09:00',
+              end_time: timeParts[1] || undefined,
+              venue: venue.replace(/Alert.*/i, '').trim() || 'TBA',
+              exam_type: examType,
+              notes: title && title !== subject ? title : undefined
+            }
+          })
+        }
+      }
+    }
+  }
+
+  // 4. Assignment table fallback: | ASSIGNMENT | COURSE | DEADLINE |
+  if (/\|\s*ASSIGNMENT\s*\|\s*COURSE/i.test(content) && /\|\s*DEADLINE/i.test(content)) {
+    const lines = content.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line.startsWith('|')) continue
+      if (/^[|\s\-:]+$/.test(line)) continue
+      if (/\|\s*ASSIGNMENT\s*\|/i.test(line)) continue
+
+      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
+      if (parts.length >= 3) {
+        const title = parts[0]
+        const subject = parts[1]
+        const deadline = parts[2]
+        const priority = parts[3] || 'Medium'
+        const status = parts[4] || 'Pending'
+
+        const dateMatch = deadline.match(/\d{4}-\d{2}-\d{2}/)
+        if (title && (dateMatch || deadline)) {
+          actions.push({
+            type: 'add_assignment',
+            data: {
+              title,
+              subject: subject || title,
+              deadline: dateMatch ? dateMatch[0] : deadline,
+              priority: /high/i.test(priority) ? 'High' : /low/i.test(priority) ? 'Low' : 'Medium',
+              status: /done/i.test(status) ? 'Done' : /progress/i.test(status) ? 'In Progress' : 'Pending'
+            }
+          })
+        }
+      }
+    }
+  }
+
+  // 5. Reminder table fallback: | REMINDER | TIME |
+  if (/\|\s*REMINDER\s*\|\s*TIME/i.test(content)) {
+    const lines = content.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line.startsWith('|')) continue
+      if (/^[|\s\-:]+$/.test(line)) continue
+      if (/\|\s*REMINDER\s*\|/i.test(line)) continue
+
+      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
+      if (parts.length >= 2) {
+        const title = parts[0]
+        const time = parts[1]
+        const repeat = parts[2] || 'once'
+
+        if (title && time) {
+          actions.push({
+            type: 'add_reminder',
+            data: {
+              title,
+              reminder_time: time,
+              repeat_type: /daily/i.test(repeat) ? 'daily' : /weekday/i.test(repeat) ? 'weekdays' : /week/i.test(repeat) ? 'weekly' : 'once'
+            }
+          })
+        }
+      }
+    }
+  }
+
+  return actions
+}
 
 /**
  * Extracts and parses all <axon_action> JSON blocks from AI response text.
@@ -64,13 +273,27 @@ export { ACTION_SCHEMA_PROMPT } from './actionSchemaPrompt.js'
 export function parseAccountActions(content = '') {
   if (!content || typeof content !== 'string') return []
   const actions = []
-  const regex = /<axon_action>([\s\S]*?)<\/axon_action>/gi
+
+  // 1. Unescape HTML entities
+  const cleanContent = content
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+
+  // 2. Parse <axon_action> or <action> blocks (including unclosed tags at message end)
+  const tagRegex = /<(?:axon_)?action>([\s\S]*?)(?:<\/(?:axon_)?action>|$)/gi
   let match
 
-  while ((match = regex.exec(content)) !== null) {
+  while ((match = tagRegex.exec(cleanContent)) !== null) {
     let rawJson = match[1]?.trim() || ''
-    // Clean up potential markdown formatting within tags
-    rawJson = rawJson.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```$/s, '').trim()
+    // Clean code blocks
+    rawJson = rawJson.replace(/^```(?:json)?\s*/i, '').replace(/```$/s, '').trim()
+    // Remove single line comments
+    rawJson = rawJson.replace(/\/\/[^\n]*\n/g, '')
+    // Remove trailing commas before closing braces or brackets
+    rawJson = rawJson.replace(/,\s*([\]}])/g, '$1')
+
     try {
       const parsed = JSON.parse(rawJson)
       if (Array.isArray(parsed)) {
@@ -83,6 +306,30 @@ export function parseAccountActions(content = '') {
     }
   }
 
+  // 3. If no actions from tags, check for standalone JSON code block with "type" and "data"
+  if (actions.length === 0) {
+    const jsonBlockRegex = /```(?:json)?\s*({[\s\S]*?"type"\s*:[\s\S]*?})\s*```/gi
+    let jsonMatch
+    while ((jsonMatch = jsonBlockRegex.exec(cleanContent)) !== null) {
+      let rawJson = jsonMatch[1].trim()
+      rawJson = rawJson.replace(/,\s*([\]}])/g, '$1')
+      try {
+        const parsed = JSON.parse(rawJson)
+        if (parsed && parsed.type && parsed.data) {
+          actions.push(parsed)
+        }
+      } catch (e) {}
+    }
+  }
+
+  // 4. If still no actions, fall back to parsing Markdown confirmation tables
+  if (actions.length === 0) {
+    const tableActions = parseTableFallback(cleanContent)
+    if (tableActions.length > 0) {
+      actions.push(...tableActions)
+    }
+  }
+
   return actions
 }
 
@@ -92,7 +339,9 @@ export function parseAccountActions(content = '') {
  */
 export function stripActionTags(content = '') {
   if (!content || typeof content !== 'string') return ''
-  return content.replace(/<axon_action>[\s\S]*?<\/axon_action>/gi, '').trim()
+  return content
+    .replace(/<(?:axon_)?action>[\s\S]*?(?:<\/(?:axon_)?action>|$)/gi, '')
+    .trim()
 }
 
 /**
@@ -342,6 +591,10 @@ export async function executeAccountAction(action, user, contextMeta = {}) {
         }
 
         let endTime = normalizeTime(data.end_time)
+        if (!endTime && data.start_time && /[-~to]/i.test(String(data.start_time))) {
+          const rangeParts = String(data.start_time).split(/[-~to]/i)
+          if (rangeParts[1]) endTime = normalizeTime(rangeParts[1])
+        }
         if (!endTime) {
           const [h, m] = startTime.split(':').map(Number)
           const endH = Math.min(23, h + 1)
@@ -606,11 +859,9 @@ export async function executeAccountAction(action, user, contextMeta = {}) {
 
       // 13. LOG EXERCISE
       case 'log_exercise': {
-        const activityType = (data.activity_type || '').trim()
-        if (!activityType) {
-          return { success: false, error: 'Cannot log workout: Activity type is missing (e.g. Gym, Run, Yoga, Sports).' }
-        }
-        const logDate = data.log_date || getTodayStr()
+        const activityType = (data.activity_type || 'Gym').trim() || 'Gym'
+        const isStaleExampleDate = data.log_date === '2026-10-15'
+        const logDate = (!data.log_date || data.log_date === 'today' || isStaleExampleDate) ? getTodayStr() : data.log_date
 
         const exerciseData = await fetchExerciseData(currentUser.id)
         const checkInResult = await logExerciseCheckIn({
@@ -624,7 +875,7 @@ export async function executeAccountAction(action, user, contextMeta = {}) {
           logs: exerciseData.logs
         })
 
-        // Even if already checked in or special status, emit update
+        // Broadcast exercise update event to all active windows/tabs
         window.dispatchEvent(new CustomEvent('axon_exercise_updated'))
         await logActivity('Exercise check-in', 'exercise', activityType, currentUser.id, {
           activity_type: activityType,
@@ -633,6 +884,15 @@ export async function executeAccountAction(action, user, contextMeta = {}) {
           distance: data.distance,
           calories: data.calories
         })
+
+        if (checkInResult?.error === 'Already checked in today') {
+          return {
+            success: true,
+            type,
+            data: { activityType, logDate },
+            message: `You are already checked in for today (${activityType})! Streak is active 🔥`
+          }
+        }
 
         return {
           success: true,

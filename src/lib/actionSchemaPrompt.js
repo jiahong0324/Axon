@@ -313,12 +313,12 @@ When user provides subject, day, and time:
   "type": "log_exercise",
   "data": {
     "activity_type": "Gym",
-    "log_date": "2026-10-15",
+    "log_date": "YYYY-MM-DD",
     "notes": "Chest & Triceps workout"
   }
 }
 </axon_action>
-(activity_type can be 'Gym', 'Run', 'Yoga', 'Sports', 'Swim', 'Walk', or 'Other').
+(activity_type can be 'Gym', 'Run', 'Yoga', 'Sports', 'Swim', 'Walk', or 'Other'. log_date MUST be today's date from the student context unless the user specified a different date).
 
 14. Update Weekly Exercise Goal:
 <axon_action>
@@ -457,11 +457,27 @@ For a reminder:
 
 For a workout:
 | ACTIVITY | DATE | XP EARNED | STREAK |
-| Gym | 2026-10-15 | +20 XP | Active |
+| Gym | YYYY-MM-DD | +20 XP | Active |
+(Always use today's actual date from the context).
 
 3. Follow with bullet points:
 • What this does: Explain exactly where this item now appears in their account (e.g. "The Math class is now scheduled for every Monday from 10:00 to 13:00 in your weekly timetable."). Refer to it as a "class", NOT a "lecture", unless the user explicitly stated it is a lecture.
 • Next steps: Provide a helpful suggestion on what they can adjust or provide next (e.g. "If you know the exact venue, lecturer, or class type, just let me know and I'll update it.")
 
-4. End with a warm, encouraging closing message (e.g. "Good luck prepping! 🎓 If you'd like a quick revision plan or any topic help, just ask.").
+4. Follow with a warm, encouraging closing message (e.g. "Good luck prepping! 🎓 If you'd like a quick revision plan or any topic help, just ask.").
+
+5. MANDATORY MACHINE EXECUTION BLOCK (CRITICAL):
+On a new line at the very bottom of your response, you MUST ALWAYS append the <axon_action> block!
+WITHOUT THE <axon_action>...</axon_action> BLOCK, THE DATABASE WILL NOT RECORD ANYTHING TO THE STUDENT'S ACCOUNT!
+Never omit this block when confirming any action.
+Example:
+<axon_action>
+{
+  "type": "log_exercise",
+  "data": {
+    "activity_type": "Gym",
+    "log_date": "YYYY-MM-DD"
+  }
+}
+</axon_action>
 `
