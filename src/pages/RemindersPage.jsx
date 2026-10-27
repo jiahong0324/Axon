@@ -27,7 +27,6 @@ export default function RemindersPage() {
 
   useEffect(() => { 
     fetchItems()
-    requestPermission()
     
     // Load daily plan from localStorage
     const savedPlan = localStorage.getItem('daily_study_plan_content')
@@ -64,10 +63,6 @@ export default function RemindersPage() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
-
-  async function requestPermission() {
-    if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission()
-  }
 
   async function fetchItems() {
     const { data: { user } } = await supabase.auth.getUser()
