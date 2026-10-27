@@ -298,7 +298,7 @@ export default function AIHelperPage({ role = 'student' }) {
         user_id: user.id,
         role: msg.role,
         content: safeContent,
-        image: msg.image || null,
+        image: msg.storageImage || msg.image || null,
         is_manager: isManager
       }
 
@@ -359,7 +359,7 @@ export default function AIHelperPage({ role = 'student' }) {
         const canvas = document.createElement('canvas')
         let width = img.width
         let height = img.height
-        const maxDim = 1024
+        const maxDim = 2048
         
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -375,11 +375,11 @@ export default function AIHelperPage({ role = 'student' }) {
         canvas.height = height
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, width, height)
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9)
 
-        // Lightweight storage thumbnail to guarantee DB insert and localStorage never exceeds quota
+        // High-DPI storage thumbnail (720px @ 0.82) ensuring crystal-clear chat display without exceeding storage quota
         const thumbCanvas = document.createElement('canvas')
-        const thumbMax = 320
+        const thumbMax = 720
         let tw = img.width
         let th = img.height
         if (tw > thumbMax || th > thumbMax) {
@@ -395,7 +395,7 @@ export default function AIHelperPage({ role = 'student' }) {
         thumbCanvas.height = th
         const thumbCtx = thumbCanvas.getContext('2d')
         thumbCtx.drawImage(img, 0, 0, tw, th)
-        const storageThumb = thumbCanvas.toDataURL('image/jpeg', 0.6)
+        const storageThumb = thumbCanvas.toDataURL('image/jpeg', 0.82)
 
         setSelectedImage({
           url: dataUrl,
@@ -506,8 +506,13 @@ export default function AIHelperPage({ role = 'student' }) {
     }, 150)
 
     const safeUserText = userText || (imgData ? '[Attached Study Image / Diagram]' : '[Message]')
-    const newMsg = { role: 'user', content: safeUserText, timestamp: new Date() }
-    if (imgData) newMsg.image = imgData.storageThumbnail || `data:${imgData.mimeType};base64,${imgData.base64}`
+    const newMsg = {
+      role: 'user',
+      content: safeUserText,
+      timestamp: new Date(),
+      image: imgData ? (imgData.url || imgData.storageThumbnail) : undefined,
+      storageImage: imgData ? imgData.storageThumbnail : undefined
+    }
 
     setMessages(prev => [...prev, newMsg])
     saveMessageToCloud(newMsg)

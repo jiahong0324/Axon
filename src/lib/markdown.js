@@ -76,6 +76,12 @@ export function markdownToHtml(text = '') {
       })
   }
 
+  // Helper to check if a line is a markdown table divider (| --- | --- |)
+  function isDividerLine(str = '') {
+    const trimmed = str.trim()
+    return /^\s*\|?\s*[:\-]+(\s*\|\s*[:\-]+)+\s*\|?\s*$/.test(trimmed) || (!trimmed.replace(/[|\s\-:]/g, '') && trimmed.includes('-'))
+  }
+
   // 4. Line-by-line / block parser
   const lines = processed.split('\n')
   const htmlLines = []
@@ -84,19 +90,26 @@ export function markdownToHtml(text = '') {
   while (i < lines.length) {
     const line = lines[i]
 
-    // Check for Markdown Table Block
-    if (line.includes('|') && i + 1 < lines.length && /^\s*\|?\s*[:\-]+(\s*\|\s*[:\-]+)+\s*\|?\s*$/.test(lines[i + 1])) {
+    // Check for Markdown Table Block (supports standard divider row or divider-less tables)
+    const hasPipes = line.includes('|') && line.split('|').filter(Boolean).length >= 2
+    const nextHasPipes = i + 1 < lines.length && lines[i + 1].includes('|') && lines[i + 1].split('|').filter(Boolean).length >= 2
+
+    if (hasPipes && nextHasPipes) {
       const headers = parseTableRow(line)
-      i += 2 // skip header and separator lines
+      const hasDivider = isDividerLine(lines[i + 1])
+      i += hasDivider ? 2 : 1 // skip header and divider, or skip header only if divider was omitted
 
       const rows = []
       while (i < lines.length && lines[i].includes('|')) {
-        const rowCells = parseTableRow(lines[i])
-        if (rowCells.length > 0) rows.push(rowCells)
+        if (!isDividerLine(lines[i])) {
+          const rowCells = parseTableRow(lines[i])
+          if (rowCells.length > 0) rows.push(rowCells)
+        }
         i++
       }
 
-      const desktopTableHtml = `
+      if (rows.length > 0) {
+        const desktopTableHtml = `
         <div class="ai-table-wrapper hidden sm:block my-4 w-full max-w-full overflow-x-auto rounded-2xl border border-white/10 bg-[#0a101d] shadow-lg">
           <table class="ai-table w-full min-w-full border-collapse text-left text-xs md:text-sm">
             <thead class="border-b border-white/10 bg-blue-500/15 text-blue-300 text-[11px] md:text-xs font-bold uppercase tracking-wider">
@@ -115,7 +128,7 @@ export function markdownToHtml(text = '') {
         </div>
       `
 
-      const mobileCardsHtml = `
+        const mobileCardsHtml = `
         <div class="ai-mobile-table-cards block sm:hidden space-y-3.5 my-3 w-full min-w-0">
           ${rows.map((row, rIdx) => {
             const title = row[0] || `Row ${rIdx + 1}`
@@ -155,8 +168,9 @@ export function markdownToHtml(text = '') {
         </div>
       `
 
-      htmlLines.push(desktopTableHtml + mobileCardsHtml)
-      continue
+        htmlLines.push(desktopTableHtml + mobileCardsHtml)
+        continue
+      }
     }
 
     // Check for Headings

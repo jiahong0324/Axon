@@ -16,7 +16,7 @@ function createThumbnail(file) {
     const img = new Image()
     img.onload = () => {
       try {
-        const maxDim = 320
+        const maxDim = 480
         let w = img.naturalWidth || img.width
         let h = img.naturalHeight || img.height
         if (w > maxDim || h > maxDim) {
@@ -33,7 +33,7 @@ function createThumbnail(file) {
         canvas.height = h
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, w, h)
-        const b64 = canvas.toDataURL('image/jpeg', 0.72)
+        const b64 = canvas.toDataURL('image/jpeg', 0.85)
         URL.revokeObjectURL(url)
         resolve(b64)
       } catch (e) {

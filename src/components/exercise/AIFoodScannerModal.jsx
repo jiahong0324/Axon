@@ -57,8 +57,8 @@ function processFoodImage(file) {
           return reject(new Error('Unable to read image dimensions.'))
         }
 
-        // 1. Generate AI Vision image (max 1024px, JPEG 0.8) for fast & accurate Groq detection
-        const aiMax = 1024
+        // 1. Generate AI Vision image (max 2048px, JPEG 0.9) for high-definition Groq/Gemini detection
+        const aiMax = 2048
         let aiWidth = origWidth
         let aiHeight = origHeight
         if (aiWidth > aiMax || aiHeight > aiMax) {
@@ -80,11 +80,11 @@ function processFoodImage(file) {
           return reject(new Error('Canvas context not available.'))
         }
         aiCtx.drawImage(img, 0, 0, aiWidth, aiHeight)
-        const aiBase64 = aiCanvas.toDataURL('image/jpeg', 0.8)
+        const aiBase64 = aiCanvas.toDataURL('image/jpeg', 0.9)
 
-        // 2. Generate ultra-lightweight thumbnail for storage & UI display (max 180px, JPEG 0.6)
-        // Keeps thumbnail under ~3-5KB so it never exceeds mobile browser localStorage quota
-        const thumbMax = 180
+        // 2. Generate crisp high-DPI thumbnail for storage (max 480px, JPEG 0.82)
+        // Stays razor-sharp on Retina/mobile screens (~20-30KB) while protecting storage quota
+        const thumbMax = 480
         let thumbWidth = origWidth
         let thumbHeight = origHeight
         if (thumbWidth > thumbMax || thumbHeight > thumbMax) {
@@ -102,7 +102,7 @@ function processFoodImage(file) {
         thumbCanvas.height = thumbHeight
         const thumbCtx = thumbCanvas.getContext('2d')
         thumbCtx.drawImage(img, 0, 0, thumbWidth, thumbHeight)
-        const thumbnailBase64 = thumbCanvas.toDataURL('image/jpeg', 0.6)
+        const thumbnailBase64 = thumbCanvas.toDataURL('image/jpeg', 0.82)
 
         cleanup()
         resolve({
@@ -126,11 +126,11 @@ function processFoodImage(file) {
             const w = fallbackImg.width || 400
             const h = fallbackImg.height || 300
             const canvas = document.createElement('canvas')
-            canvas.width = Math.min(w, 800)
+            canvas.width = Math.min(w, 1600)
             canvas.height = Math.round((h * canvas.width) / w)
             const ctx = canvas.getContext('2d')
             ctx.drawImage(fallbackImg, 0, 0, canvas.width, canvas.height)
-            const b64 = canvas.toDataURL('image/jpeg', 0.75)
+            const b64 = canvas.toDataURL('image/jpeg', 0.88)
             resolve({ aiBase64: b64, thumbnailBase64: b64 })
           } catch (err) {
             reject(err)
@@ -173,11 +173,16 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
 
   const fileInputRef = useRef(null)
   const cameraInputRef = useRef(null)
+  const savedThumbnailRef = useRef('')
 
   useEffect(() => {
     if (isOpen) {
       setStep('upload')
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        try { URL.revokeObjectURL(imagePreview) } catch (e) {}
+      }
       setImagePreview(null)
+      savedThumbnailRef.current = ''
       setErrorInfo(null)
       setFoodName('')
       const nowTime = getCurrentTimeStr()
@@ -188,6 +193,10 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
       setCarbs('')
       setFats('')
       setPortionNotes('')
+    } else {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        try { URL.revokeObjectURL(imagePreview) } catch (e) {}
+      }
     }
   }, [isOpen])
 
@@ -196,9 +205,19 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
     setErrorInfo(null)
     setStep('analyzing')
 
+    // Generate immediate crystal-clear original preview for UI (no downsampling)
+    let localPreviewUrl = null
+    try {
+      localPreviewUrl = URL.createObjectURL(file)
+      setImagePreview(localPreviewUrl)
+    } catch (e) {}
+
     try {
       const { aiBase64, thumbnailBase64 } = await processFoodImage(file)
-      setImagePreview(thumbnailBase64)
+      savedThumbnailRef.current = thumbnailBase64
+      if (!localPreviewUrl) {
+        setImagePreview(aiBase64)
+      }
 
       // Call AI Vision endpoint with optimized AI image
       const rawResponse = await analyzeImageWithGroq(
@@ -281,7 +300,7 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
         carbs: Number(carbs) || 0,
         fats: Number(fats) || 0,
         notes: portionNotes.trim(),
-        image_url: imagePreview || '',
+        image_url: savedThumbnailRef.current || imagePreview || '',
         created_at: createdAt
       })
       onClose()
@@ -472,7 +491,14 @@ export default function AIFoodScannerModal({ isOpen, onClose, defaultDate, onSav
               </div>
               <button
                 type="button"
-                onClick={() => setStep('upload')}
+                onClick={() => {
+                  if (imagePreview && imagePreview.startsWith('blob:')) {
+                    try { URL.revokeObjectURL(imagePreview) } catch (e) {}
+                  }
+                  setImagePreview(null)
+                  savedThumbnailRef.current = ''
+                  setStep('upload')
+                }}
                 className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors inline-flex items-center justify-center shrink-0"
                 title="Retake / Re-upload"
               >

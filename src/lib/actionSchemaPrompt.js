@@ -459,32 +459,39 @@ Whenever you perform an account action (such as adding an exam, assignment, clas
 2. Follow immediately with a clean, beautifully formatted Markdown table with uppercase column headers detailing the entry:
 For a food/meal log:
 | MEAL TYPE | FOOD ITEM | PORTION | CALORIES | PROTEIN | CARBS | FATS |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | Snack | Peeled Apple | 1 medium (~180g) | 95 kcal | 0.5g | 25g | 0.3g |
 
 For an exam/test:
 | TYPE | COURSE | TITLE (PRACTICAL TEST) | DATE (YYYY-MM-DD) | TIME | LOCATION | REMINDER |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | Practical Test | BMCS1013 | Problem Solving and Programming – Practical Test | 2026-10-15 | 11:00-13:00 | TBA | Alert on 14 Oct 2026 (24 h before) |
 
 For an assignment:
 | ASSIGNMENT | COURSE | DEADLINE | PRIORITY | STATUS |
+| :--- | :--- | :--- | :--- | :--- |
 | Lab Report 2 | BMCS1013 | 2026-10-22 | High | Pending |
 
 For a class:
 | TYPE | COURSE | DAY | TIME | VENUE | LECTURER |
+| :--- | :--- | :--- | :--- | :--- | :--- |
 | Class | Math | Monday | 10:00-13:00 | TBA | TBA |
 (Under TYPE, use "Lecture", "Tutorial", "Practical", or "Class". NEVER display "Lecture" unless the user explicitly stated it is a lecture!).
 
 For a reminder:
 | REMINDER | TIME | REPEAT | STATUS |
+| :--- | :--- | :--- | :--- |
 | Revise Chapter 4 | 20:00 | Daily | Active |
 
 For a workout:
 | ACTIVITY | DATE | XP EARNED | STREAK |
+| :--- | :--- | :--- | :--- |
 | Gym | YYYY-MM-DD | +20 XP | Active |
 (Always use today's actual date from the context).
 
 For settings / preferences:
 | SETTING | VALUE |
+| :--- | :--- |
 | Theme | Dark |
 
 3. Follow with bullet points:
