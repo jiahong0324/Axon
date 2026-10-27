@@ -194,7 +194,7 @@ export default async function handler(req, res) {
 
       // 1. Try Google Gemini API (if GEMINI_API_KEY is configured)
       if (geminiKey) {
-        const geminiModels = ['gemini-3.5-flash-lite', 'gemini-2.5-flash']
+        const geminiModels = ['gemini-3.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
         for (const modelName of geminiModels) {
           try {
             const body = {
@@ -204,8 +204,8 @@ export default async function handler(req, res) {
                   parts: [
                     { text: 'Provide the final answer directly and exhaustively. DO NOT output internal reasoning. DO NOT use <think> tags. Do NOT skip, omit, or summarize any items in tables or grids. If showing the answer in a table format is a better, clearer, or more structured way to answer the user question (such as timetables, schedules, lists, or comparisons), always format the output into a clean Markdown table with clear columns. If asked who Jiahong is, state clearly that he is your creator and developer (the creator of Axon).\n\n' + visionPromptText },
                     {
-                      inline_data: {
-                        mime_type: safeMimeType,
+                      inlineData: {
+                        mimeType: safeMimeType,
                         data: rawBase64
                       }
                     }

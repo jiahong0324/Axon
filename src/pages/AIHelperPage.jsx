@@ -359,7 +359,7 @@ export default function AIHelperPage({ role = 'student' }) {
         const canvas = document.createElement('canvas')
         let width = img.width
         let height = img.height
-        const maxDim = 2048
+        const maxDim = 1280
         
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -375,11 +375,11 @@ export default function AIHelperPage({ role = 'student' }) {
         canvas.height = height
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, width, height)
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.9)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
 
-        // High-DPI storage thumbnail (720px @ 0.82) ensuring crystal-clear chat display without exceeding storage quota
+        // Storage thumbnail (640px @ 0.75) ensuring clear chat display while keeping localStorage lightweight
         const thumbCanvas = document.createElement('canvas')
-        const thumbMax = 720
+        const thumbMax = 640
         let tw = img.width
         let th = img.height
         if (tw > thumbMax || th > thumbMax) {
@@ -395,7 +395,7 @@ export default function AIHelperPage({ role = 'student' }) {
         thumbCanvas.height = th
         const thumbCtx = thumbCanvas.getContext('2d')
         thumbCtx.drawImage(img, 0, 0, tw, th)
-        const storageThumb = thumbCanvas.toDataURL('image/jpeg', 0.82)
+        const storageThumb = thumbCanvas.toDataURL('image/jpeg', 0.75)
 
         setSelectedImage({
           url: dataUrl,

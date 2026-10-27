@@ -235,7 +235,7 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
         const canvas = document.createElement('canvas')
         let width = img.width
         let height = img.height
-        const maxDim = 2560
+        const maxDim = 1400
         
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -252,7 +252,7 @@ export default function ImageUploadAnalyzer({ type, onResult, onStepChange }) {
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, width, height)
         
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82)
         const base64 = dataUrl.split(',')[1]
         
         try {

@@ -57,8 +57,8 @@ function processFoodImage(file) {
           return reject(new Error('Unable to read image dimensions.'))
         }
 
-        // 1. Generate AI Vision image (max 2048px, JPEG 0.9) for high-definition Groq/Gemini detection
-        const aiMax = 2048
+        // 1. Generate AI Vision image (max 1200px, JPEG 0.82) for high-definition detection
+        const aiMax = 1200
         let aiWidth = origWidth
         let aiHeight = origHeight
         if (aiWidth > aiMax || aiHeight > aiMax) {
@@ -80,7 +80,7 @@ function processFoodImage(file) {
           return reject(new Error('Canvas context not available.'))
         }
         aiCtx.drawImage(img, 0, 0, aiWidth, aiHeight)
-        const aiBase64 = aiCanvas.toDataURL('image/jpeg', 0.9)
+        const aiBase64 = aiCanvas.toDataURL('image/jpeg', 0.82)
 
         // 2. Generate crisp high-DPI thumbnail for storage (max 480px, JPEG 0.82)
         // Stays razor-sharp on Retina/mobile screens (~20-30KB) while protecting storage quota
