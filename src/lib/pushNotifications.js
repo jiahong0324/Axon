@@ -1,5 +1,7 @@
 import { supabase } from './supabase'
 
+const registrationsInFlight = new Map()
+
 export function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4)
   const base64 = (base64String + padding)
@@ -44,7 +46,22 @@ function getPushPreferences() {
   }
 }
 
-export async function registerPushSubscription(user) {
+export function registerPushSubscription(user) {
+  if (!user?.id) return Promise.resolve(null)
+  const pendingRegistration = registrationsInFlight.get(user.id)
+  if (pendingRegistration) return pendingRegistration
+
+  let trackedRegistration
+  trackedRegistration = registerPushSubscriptionOnce(user).finally(() => {
+    if (registrationsInFlight.get(user.id) === trackedRegistration) {
+      registrationsInFlight.delete(user.id)
+    }
+  })
+  registrationsInFlight.set(user.id, trackedRegistration)
+  return trackedRegistration
+}
+
+async function registerPushSubscriptionOnce(user) {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     localStorage.setItem('axon_push_registered', 'false')
     return null

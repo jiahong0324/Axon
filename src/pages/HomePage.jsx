@@ -18,6 +18,7 @@ import { readCache, writeCache } from '../lib/cache'
 import SEO from '../components/SEO'
 import { NotificationBellButton } from '../components/NotificationCenter'
 import { parseAnnouncement } from '../lib/announcements'
+import { registerPushSubscription } from '../lib/pushNotifications'
 
 export default function HomePage() {
   const [user, setUser] = useState(null)
@@ -28,6 +29,8 @@ export default function HomePage() {
   const [tipLoading, setTipLoading] = useState(false)
   const [announcements, setAnnouncements] = useState([])
   const [banner, setBanner] = useState(() => localStorage.getItem('axon_pwa_dismissed') !== 'true')
+  const [notificationPermission, setNotificationPermission] = useState('Notification' in window ? Notification.permission : 'unsupported')
+  const [enablingNotifications, setEnablingNotifications] = useState(false)
   const [loading, setLoading] = useState(true)
   const { showToast } = useToast()
   const { t } = useLanguage()
@@ -50,6 +53,19 @@ export default function HomePage() {
     const handleUpdate = () => fetchDashboard()
     window.addEventListener('axon_announcements_updated', handleUpdate)
     return () => window.removeEventListener('axon_announcements_updated', handleUpdate)
+  }, [])
+  useEffect(() => {
+    const syncNotificationPermission = () => {
+      if ('Notification' in window && document.visibilityState !== 'hidden') {
+        setNotificationPermission(Notification.permission)
+      }
+    }
+    window.addEventListener('focus', syncNotificationPermission)
+    document.addEventListener('visibilitychange', syncNotificationPermission)
+    return () => {
+      window.removeEventListener('focus', syncNotificationPermission)
+      document.removeEventListener('visibilitychange', syncNotificationPermission)
+    }
   }, [])
   useEffect(() => {
     const timer = setInterval(() => {
@@ -145,6 +161,31 @@ export default function HomePage() {
     }
   }
 
+  async function enableNotifications() {
+    if (!user || !('Notification' in window)) return
+    setEnablingNotifications(true)
+    try {
+      const permission = await Notification.requestPermission()
+      setNotificationPermission(permission)
+      if (permission !== 'granted') {
+        if (permission === 'denied') showToast(t('settings.pushBlocked'), 'warning')
+        return
+      }
+
+      const subscription = await registerPushSubscription(user)
+      if (subscription) {
+        showToast(t('settings.pushRegistered'), 'success')
+      } else {
+        showToast('Push registration failed. Please try again from Settings.', 'error')
+      }
+    } catch (error) {
+      console.error('Could not enable push notifications:', error)
+      showToast('Could not enable push notifications. Please try again from Settings.', 'error')
+    } finally {
+      setEnablingNotifications(false)
+    }
+  }
+
   async function refreshTip() {
     setTipLoading(true)
     try {
@@ -208,6 +249,18 @@ export default function HomePage() {
         <div className="card mb-5 flex items-center justify-between gap-3 border-theme-500/30">
           <p className="text-sm">📲 Add Axon to your home screen! On iOS, tap Share then Add to Home Screen.</p>
           <button className="rounded-lg p-2 hover:bg-white/5" onClick={() => { localStorage.setItem('axon_pwa_dismissed', 'true'); setBanner(false) }}><X className="h-5 w-5" /></button>
+        </div>
+      )}
+
+      {notificationPermission === 'default' && 'serviceWorker' in navigator && 'PushManager' in window && (
+        <div className="card mb-5 flex flex-col gap-3 border-theme-500/30 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-semibold">{t('settings.pushNotifications')}</p>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">{t('settings.pushDesc')}</p>
+          </div>
+          <button className="btn-primary shrink-0 py-2.5" onClick={enableNotifications} disabled={enablingNotifications || !user}>
+            {enablingNotifications ? t('common.loading') : `🔔 ${t('settings.enablePush')}`}
+          </button>
         </div>
       )}
 
