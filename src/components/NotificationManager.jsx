@@ -35,23 +35,49 @@ export default function NotificationManager() {
     }
 
     let interval = null
-    async function initPush() {
-      // On load, only register if permission is already granted.
-      // This prevents iOS Safari from blocking programmatic alerts on load.
-      if ('Notification' in window && Notification.permission === 'granted') {
+    let resumeTimeout = null
+    let registrationPromise = null
+    let lastRegistrationAttempt = 0
+
+    async function syncPushRegistration() {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return
+      if (registrationPromise) return registrationPromise
+
+      lastRegistrationAttempt = Date.now()
+      registrationPromise = (async () => {
         const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          await registerPushSubscription(user)
-        }
-      }
+        if (user) await registerPushSubscription(user)
+      })().catch(error => {
+        console.error('Error syncing web push subscription:', error)
+      }).finally(() => {
+        registrationPromise = null
+      })
+
+      return registrationPromise
     }
-    
-    initPush().finally(() => {
+
+    function handleAppResume() {
+      if (document.visibilityState === 'hidden') return
+      if (resumeTimeout) clearTimeout(resumeTimeout)
+      resumeTimeout = setTimeout(() => {
+        resumeTimeout = null
+        if (Date.now() - lastRegistrationAttempt < 3000) return
+        syncPushRegistration()
+      }, 250)
+    }
+
+    window.addEventListener('focus', handleAppResume)
+    document.addEventListener('visibilitychange', handleAppResume)
+
+    syncPushRegistration().finally(() => {
       interval = checkNotifications()
     })
 
     return () => {
       if (interval) clearInterval(interval)
+      if (resumeTimeout) clearTimeout(resumeTimeout)
+      window.removeEventListener('focus', handleAppResume)
+      document.removeEventListener('visibilitychange', handleAppResume)
     }
   }, [])
 

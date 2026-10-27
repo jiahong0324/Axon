@@ -497,6 +497,20 @@ export default function SettingsPage() {
     return () => window.removeEventListener('preferences-synced', handleSync)
   }, [])
 
+  useEffect(() => {
+    const syncNotificationPermission = () => {
+      if ('Notification' in window && document.visibilityState !== 'hidden') {
+        setNotificationPermission(Notification.permission)
+      }
+    }
+    window.addEventListener('focus', syncNotificationPermission)
+    document.addEventListener('visibilitychange', syncNotificationPermission)
+    return () => {
+      window.removeEventListener('focus', syncNotificationPermission)
+      document.removeEventListener('visibilitychange', syncNotificationPermission)
+    }
+  }, [])
+
   function pref(key, fallback) { return localStorage.getItem(key) ?? fallback }
   function setPref(key, value) { updatePreference(user, key, value); showToast('Preference saved.', 'success') }
 
