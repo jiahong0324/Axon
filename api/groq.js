@@ -148,7 +148,7 @@ export default async function handler(req, res) {
 
       // 1. Try Google Gemini API (if GEMINI_API_KEY is configured)
       if (geminiKey) {
-        const geminiModels = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
+        const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-pro']
         for (const modelName of geminiModels) {
           try {
             const body = {
@@ -206,10 +206,10 @@ export default async function handler(req, res) {
       // 2. Try OpenRouter Vision API (if OPENROUTER_API_KEY is configured)
       if (openrouterKey) {
         const openrouterModels = [
-          'google/gemini-2.5-flash',
           'google/gemini-2.0-flash-001',
           'google/gemini-flash-1.5',
           'meta-llama/llama-3.2-90b-vision-instruct',
+          'meta-llama/llama-3.2-11b-vision-instruct',
           'openrouter/auto'
         ]
         for (const modelName of openrouterModels) {
@@ -387,7 +387,7 @@ export default async function handler(req, res) {
       // 2. Try Google Gemini API (if GEMINI_API_KEY is configured)
       const geminiFallbackKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
       if (geminiFallbackKey) {
-        const geminiModels = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
+        const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-pro']
 
         let geminiContents = []
         for (const msg of cleanHistory) {

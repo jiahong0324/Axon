@@ -5,6 +5,7 @@ import { ThemeProvider } from './components/ThemeProvider'
 import { ToastProvider } from './components/Toast'
 import AuthEmailHandler from './components/AuthEmailHandler'
 import { LanguageProvider } from './components/LanguageProvider'
+import ErrorBoundary from './components/ErrorBoundary'
 import { trackPageView } from './lib/telemetry'
 
 import LoginPage from './pages/LoginPage'
@@ -65,14 +66,15 @@ function TelemetryWatcher() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <BrowserRouter>
-            <SplashController />
-            <TelemetryWatcher />
-            <AuthEmailHandler />
-            <Routes>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <BrowserRouter>
+              <SplashController />
+              <TelemetryWatcher />
+              <AuthEmailHandler />
+              <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<AuthPage mode="forgot" />} />
@@ -118,5 +120,6 @@ export default function App() {
         </ToastProvider>
       </ThemeProvider>
     </LanguageProvider>
+    </ErrorBoundary>
   )
 }
