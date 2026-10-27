@@ -32,6 +32,9 @@ export async function askGroq(prompt, systemContext = '', history = []) {
   })
   const data = await response.json()
   if (!response.ok) throw new Error(data.error || 'Groq API error')
+  if (data.provider) {
+    console.log(`%c[Axon AI Engine] Provider: ${data.provider} | Model: ${data.model} ${data.fallback ? '⚠️ [Fallback Active]' : '⚡ [Primary Active]'}`, 'color: #10b981; font-weight: bold; font-size: 11px;')
+  }
   return data.content || 'AI is unavailable right now.'
 }
 
