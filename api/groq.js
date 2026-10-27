@@ -1,4 +1,4 @@
-const CHAT_MODEL = 'llama-3.3-70b-versatile'
+const CHAT_MODEL = 'openai/gpt-oss-120b'
 
 async function sendDatadogLog(metrics) {
   const ddKey = process.env.DATADOG_API_KEY
@@ -383,8 +383,8 @@ export default async function handler(req, res) {
       // 1. Try Groq (if GROQ_API_KEY is configured)
       if (apiKey) {
         const groqModelsToTry = [
-          { model: 'llama-3.3-70b-versatile', maxTokens: 2048 },
-          { model: 'llama-3.1-8b-instant', maxTokens: 2048 }
+          { model: 'openai/gpt-oss-120b', maxTokens: 4096 },
+          { model: 'openai/gpt-oss-20b', maxTokens: 4096 }
         ]
 
         for (const { model, maxTokens } of groqModelsToTry) {
@@ -411,7 +411,7 @@ export default async function handler(req, res) {
 
             const data = await groqRes.json().catch(() => ({}))
             if (groqRes.ok) {
-              let content = data.choices?.[0]?.message?.content || ''
+              let content = data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning || ''
               content = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim()
               if (content) {
                 await sendDatadogLog({
@@ -512,9 +512,9 @@ export default async function handler(req, res) {
       const openrouterFallbackKey = process.env.OPENROUTER_API_KEY
       if (openrouterFallbackKey) {
         const openrouterModels = [
+          'openai/gpt-oss-120b',
           'google/gemini-2.0-flash-001',
           'google/gemini-flash-1.5',
-          'meta-llama/llama-3.3-70b-instruct',
           'openai/gpt-4o-mini',
           'openrouter/auto'
         ]

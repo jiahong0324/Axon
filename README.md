@@ -43,7 +43,7 @@ flowchart TD
     subgraph CloudServices ["Backend & External Services"]
         SupabaseDB[("Supabase (PostgreSQL + RLS)\n• Profiles, Timetable, Exams\n• Exercises, Badges, Chat Logs")]
         EdgeFn["Supabase Edge Functions\n• manage-student (Brevo Email & Admin)"]
-        GroqCloud["Groq / Gemini / OpenRouter / Cloudflare\n• Llama 3.3 70B & Gemini 2.0 Flash\n• Whisper Large v3 Voice"]
+        GroqCloud["Groq / Gemini / OpenRouter / Cloudflare\n• gpt-oss-120b & Gemini 2.0 Flash\n• Whisper Large v3 Voice"]
         BrevoEmail["Brevo (Sendinblue) API\n• Targeted Student Email Broadcasts"]
         WebPushGateway["Web Push Services (Apple / Google / Mozilla)\n• VAPID Notifications"]
         DatadogCloud["Datadog Observability Cloud\n• Browser RUM & Session Replay\n• AI / LLM Observability & Logs"]
@@ -182,7 +182,7 @@ flowchart TD
 | **Database & Auth** | Supabase (PostgreSQL, Row Level Security, Supabase Auth, Realtime) |
 | **Edge Functions** | Supabase Edge Functions (Deno / TypeScript) |
 | **Serverless API** | Vercel Serverless Functions (`api/*.js`) |
-| **AI LLM & Reasoning** | Groq API (`openai/gpt-oss-120b`, `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`) |
+| **AI LLM & Reasoning** | Groq API (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`) |
 | **AI Multimodal Vision** | Google Gemini 2.5/2.0 Flash, OpenRouter, Cloudflare Workers AI (`llama-3.2-11b/90b-vision`) |
 | **AI Voice Transcription**| Groq Whisper (`whisper-large-v3-turbo` / `whisper-large-v3`) |
 | **Push Notifications** | Web Push (VAPID) with timezone-aware cron (`Asia/Kuala_Lumpur`) |
