@@ -75,7 +75,7 @@ export function parseTableFallback(content = '') {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
       if (!line.startsWith('|')) continue
-      if (/^[|\s\-:]+$/.test(line)) continue
+      if (!line.replace(/[|\s\-:]/g, '')) continue
       if (/\|\s*ACTIVITY\s*\|/i.test(line)) continue
 
       const parts = line.split('|').map(s => s.trim()).filter(Boolean)
@@ -102,7 +102,7 @@ export function parseTableFallback(content = '') {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
       if (!line.startsWith('|')) continue
-      if (/^[|\s\-:]+$/.test(line)) continue
+      if (!line.replace(/[|\s\-:]/g, '')) continue
       if (/\|\s*(TYPE|COURSE)\s*\|/i.test(line) && /\|\s*DAY\s*\|/i.test(line)) continue
 
       const parts = line.split('|').map(s => s.trim()).filter(Boolean)
@@ -154,7 +154,7 @@ export function parseTableFallback(content = '') {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
       if (!line.startsWith('|')) continue
-      if (/^[|\s\-:]+$/.test(line)) continue
+      if (!line.replace(/[|\s\-:]/g, '')) continue
       if (/\|\s*(TYPE|COURSE)\s*\|/i.test(line) && /\|\s*DATE\s*\|/i.test(line)) continue
 
       const parts = line.split('|').map(s => s.trim()).filter(Boolean)
@@ -207,7 +207,7 @@ export function parseTableFallback(content = '') {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
       if (!line.startsWith('|')) continue
-      if (/^[|\s\-:]+$/.test(line)) continue
+      if (!line.replace(/[|\s\-:]/g, '')) continue
       if (/\|\s*ASSIGNMENT\s*\|/i.test(line)) continue
 
       const parts = line.split('|').map(s => s.trim()).filter(Boolean)
@@ -241,7 +241,7 @@ export function parseTableFallback(content = '') {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
       if (!line.startsWith('|')) continue
-      if (/^[|\s\-:]+$/.test(line)) continue
+      if (!line.replace(/[|\s\-:]/g, '')) continue
       if (/\|\s*REMINDER\s*\|/i.test(line)) continue
 
       const parts = line.split('|').map(s => s.trim()).filter(Boolean)
@@ -259,6 +259,68 @@ export function parseTableFallback(content = '') {
               repeat_type: /daily/i.test(repeat) ? 'daily' : /weekday/i.test(repeat) ? 'weekdays' : /week/i.test(repeat) ? 'weekly' : 'once'
             }
           })
+        }
+      }
+    }
+  }
+
+  // 6. Diet / Food table fallback: | MEAL TYPE | FOOD ITEM | PORTION | CALORIES | PROTEIN | CARBS | FATS |
+  if (/\|\s*(MEAL\s*TYPE|FOOD\s*ITEM)\s*\|/i.test(content) && /\|\s*(CALORIES|PROTEIN)\s*\|/i.test(content)) {
+    const lines = content.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line.startsWith('|')) continue
+      if (!line.replace(/[|\s\-:]/g, '')) continue
+      if (/\|\s*(MEAL\s*TYPE|FOOD\s*ITEM)\s*\|/i.test(line)) continue
+
+      const parts = line.split('|').map(s => s.trim()).filter(Boolean)
+      if (parts.length >= 4) {
+        let mealType = 'Snack'
+        let name = ''
+        let portion = ''
+        let calories = 0
+        let protein = 0
+        let carbs = 0
+        let fats = 0
+
+        if (parts.length >= 7) {
+          mealType = parts[0]
+          name = parts[1]
+          portion = parts[2]
+          calories = parseFloat(parts[3].replace(/[^\d.]/g, '')) || 0
+          protein = parseFloat(parts[4].replace(/[^\d.]/g, '')) || 0
+          carbs = parseFloat(parts[5].replace(/[^\d.]/g, '')) || 0
+          fats = parseFloat(parts[6].replace(/[^\d.]/g, '')) || 0
+        } else if (parts.length >= 5) {
+          name = parts[0]
+          portion = parts[1]
+          calories = parseFloat(parts[2].replace(/[^\d.]/g, '')) || 0
+          protein = parseFloat(parts[3].replace(/[^\d.]/g, '')) || 0
+          carbs = parseFloat(parts[4].replace(/[^\d.]/g, '')) || 0
+          fats = parts[5] ? (parseFloat(parts[5].replace(/[^\d.]/g, '')) || 0) : 0
+        } else {
+          name = parts[0]
+          calories = parseFloat(parts[1].replace(/[^\d.]/g, '')) || 0
+          protein = parseFloat(parts[2].replace(/[^\d.]/g, '')) || 0
+          carbs = parseFloat(parts[3].replace(/[^\d.]/g, '')) || 0
+        }
+
+        if (name && calories > 0) {
+          actions.push({
+            type: 'log_diet',
+            data: {
+              name,
+              calories,
+              protein,
+              carbs,
+              fats,
+              meal_type: mealType || 'Snack',
+              notes: portion || '',
+              date: getTodayDateStr(),
+              meal_time: getCurrentTimeStr()
+            }
+          })
+          break
         }
       }
     }
