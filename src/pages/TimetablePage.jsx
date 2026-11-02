@@ -114,6 +114,7 @@ export default function TimetablePage() {
   const [semesterStartDate, setSemesterStartDate] = useState(() => localStorage.getItem('axon_semester_start_date') || '')
   const [semesterEndDate, setSemesterEndDate] = useState(() => localStorage.getItem('axon_semester_end_date') || '')
   const [showSemesterModal, setShowSemesterModal] = useState(false)
+  const [editingProfileId, setEditingProfileId] = useState(LIVE_PROFILE_ID)
   const [semesterForm, setSemesterForm] = useState({ name: '', start_date: '', end_date: '' })
   const [showNewSemesterModal, setShowNewSemesterModal] = useState(false)
   const [showRolloverWizard, setShowRolloverWizard] = useState(false)
@@ -167,10 +168,11 @@ export default function TimetablePage() {
     : linkedProfiles.find(profile => profile.id === activeProfileId)
   const today = new Date()
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const activeStartDate = isLiveProfile ? semesterStartDate : (activeProfile?.startDate || activeProfile?.start_date || '')
+  const activeEndDate = isLiveProfile ? semesterEndDate : (activeProfile?.endDate || activeProfile?.end_date || '')
   const progressInfo = useMemo(() => {
-    if (!isLiveProfile) return null
-    return getSemesterProgress(semesterStartDate, semesterEndDate)
-  }, [isLiveProfile, semesterStartDate, semesterEndDate])
+    return getSemesterProgress(activeStartDate, activeEndDate)
+  }, [activeStartDate, activeEndDate])
   const previewProgress = useMemo(() => {
     if (!semesterForm.start_date && !semesterForm.end_date) return null
     return getSemesterProgress(semesterForm.start_date, semesterForm.end_date)
@@ -257,8 +259,17 @@ export default function TimetablePage() {
       remoteProfiles.forEach(p => {
         if (p && p.id) {
           const existing = profileMap.get(p.id)
-          if (!existing || (p.classes?.length || 0) >= (existing.classes?.length || 0)) {
+          if (!existing) {
             profileMap.set(p.id, p)
+          } else {
+            const preferRemote = (p.classes?.length || 0) >= (existing.classes?.length || 0)
+            profileMap.set(p.id, {
+              ...(preferRemote ? existing : p),
+              ...(preferRemote ? p : existing),
+              classes: (p.classes?.length || 0) >= (existing.classes?.length || 0) ? (p.classes || []) : (existing.classes || []),
+              startDate: p.startDate || p.start_date || existing.startDate || existing.start_date || '',
+              endDate: p.endDate || p.end_date || existing.endDate || existing.end_date || ''
+            })
           }
         }
       })
@@ -441,12 +452,24 @@ export default function TimetablePage() {
     showToast(t('timetable.profileDeleted'), 'success')
   }
 
-  function openSemesterModal() {
-    setSemesterForm({
-      name: semesterName,
-      start_date: semesterStartDate,
-      end_date: semesterEndDate
-    })
+  function openSemesterModal(targetProfileId = activeProfileId) {
+    const isLive = targetProfileId === LIVE_PROFILE_ID
+    setEditingProfileId(targetProfileId)
+    if (isLive) {
+      setSemesterForm({
+        name: semesterName,
+        start_date: semesterStartDate,
+        end_date: semesterEndDate
+      })
+    } else {
+      const freshProfiles = readLinkedProfiles(user?.id)
+      const target = freshProfiles.find(p => p.id === targetProfileId) || linkedProfiles.find(p => p.id === targetProfileId)
+      setSemesterForm({
+        name: target?.name || '',
+        start_date: target?.startDate || target?.start_date || '',
+        end_date: target?.endDate || target?.end_date || ''
+      })
+    }
     setShowSemesterModal(true)
   }
 
@@ -482,27 +505,70 @@ export default function TimetablePage() {
   async function handleSaveSemesterSettings(e) {
     e?.preventDefault()
     if (!user) return
-    setIsSubmitting(true)
+
     const nextName = semesterForm.name.trim()
     const nextStartDate = semesterForm.start_date.trim()
     const nextEndDate = semesterForm.end_date.trim()
 
-    setSemesterName(nextName)
-    setSemesterStartDate(nextStartDate)
-    setSemesterEndDate(nextEndDate)
-    localStorage.setItem('axon_semester_name', nextName)
-    localStorage.setItem('axon_semester_start_date', nextStartDate)
-    localStorage.setItem('axon_semester_end_date', nextEndDate)
+    if (nextStartDate && nextEndDate && nextStartDate > nextEndDate) {
+      return showToast(t('timetable.invalidDateRange') || 'Start date cannot be after end date', 'error')
+    }
 
-    const currentLinked = readLinkedProfiles(user.id)
-    const updatedUser = await saveSemesterPreferences(user, {
-      name: nextName,
-      startDate: nextStartDate,
-      endDate: nextEndDate,
-      linkedProfiles: currentLinked
-    })
-    if (updatedUser) {
-      setUser(updatedUser)
+    setIsSubmitting(true)
+
+    if (editingProfileId === LIVE_PROFILE_ID) {
+      const finalName = nextName || 'My Timetable'
+      setSemesterName(finalName)
+      setSemesterStartDate(nextStartDate)
+      setSemesterEndDate(nextEndDate)
+      localStorage.setItem('axon_semester_name', finalName)
+      localStorage.setItem('axon_semester_start_date', nextStartDate)
+      localStorage.setItem('axon_semester_end_date', nextEndDate)
+
+      const currentLinked = readLinkedProfiles(user.id)
+      const updatedUser = await saveSemesterPreferences(user, {
+        name: finalName,
+        startDate: nextStartDate,
+        endDate: nextEndDate,
+        linkedProfiles: currentLinked
+      })
+      if (updatedUser) {
+        setUser(updatedUser)
+      }
+    } else {
+      if (!nextName) {
+        setIsSubmitting(false)
+        return showToast(t('timetable.profileRequired'), 'error')
+      }
+      const freshProfiles = readLinkedProfiles(user.id)
+      const isDuplicate = freshProfiles.some(p => p.id !== editingProfileId && p.name.trim().toLowerCase() === nextName.toLowerCase())
+      if (isDuplicate) {
+        setIsSubmitting(false)
+        return showToast(t('timetable.profileExists'), 'error')
+      }
+
+      let updatedTarget = null
+      const nextProfiles = freshProfiles.map(p => {
+        if (p.id === editingProfileId) {
+          updatedTarget = {
+            ...p,
+            name: nextName,
+            startDate: nextStartDate,
+            start_date: nextStartDate,
+            endDate: nextEndDate,
+            end_date: nextEndDate
+          }
+          return updatedTarget
+        }
+        return p
+      })
+
+      persistLinkedProfiles(nextProfiles)
+      if (updatedTarget) {
+        try {
+          localStorage.setItem(`axon_archived_backup_${user.id}_${editingProfileId}`, JSON.stringify(updatedTarget))
+        } catch (_) {}
+      }
     }
 
     setShowSemesterModal(false)
@@ -669,8 +735,8 @@ export default function TimetablePage() {
     }
 
     clearCache(classesCacheKey(user.id))
-    const targetStartDate = targetProfile.startDate || ''
-    const targetEndDate = targetProfile.endDate || ''
+    const targetStartDate = targetProfile.startDate || targetProfile.start_date || ''
+    const targetEndDate = targetProfile.endDate || targetProfile.end_date || ''
     setSemesterName(targetProfile.name)
     setSemesterStartDate(targetStartDate)
     setSemesterEndDate(targetEndDate)
@@ -883,7 +949,7 @@ export default function TimetablePage() {
         progressInfo?.isOngoing ? (
           <button
             type="button"
-            onClick={openSemesterModal}
+            onClick={() => openSemesterModal(LIVE_PROFILE_ID)}
             className="group inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer text-left py-0"
             title={t('timetable.semesterSettings')}
           >
@@ -918,7 +984,7 @@ export default function TimetablePage() {
         ) : progressInfo?.isUpcoming ? (
           <button
             type="button"
-            onClick={openSemesterModal}
+            onClick={() => openSemesterModal(LIVE_PROFILE_ID)}
             className="group inline-flex items-center gap-1.5 text-xs text-blue-300 hover:text-white transition-colors cursor-pointer text-left py-0"
             title={t('timetable.semesterSettings')}
           >
@@ -933,7 +999,7 @@ export default function TimetablePage() {
         ) : (
           <button
             type="button"
-            onClick={openSemesterModal}
+            onClick={() => openSemesterModal(LIVE_PROFILE_ID)}
             className="group inline-flex items-center gap-1 text-xs text-slate-400 hover:text-theme-300 transition-colors cursor-pointer text-left py-0"
             title={t('timetable.quickWeekTip')}
           >
@@ -942,15 +1008,80 @@ export default function TimetablePage() {
           </button>
         )
       ) : (
-        <button
-          type="button"
-          onClick={() => promoteToMain(activeProfileId)}
-          className="group inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer text-left py-0"
-          title={t('timetable.promoteTitle')}
-        >
-          <span>{t('timetable.promoteConfirm')}</span>
-          <ArrowRight className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-transform group-hover:translate-x-0.5" />
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {progressInfo?.isOngoing ? (
+            <button
+              type="button"
+              onClick={() => openSemesterModal(activeProfileId)}
+              className="group inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer text-left py-0"
+              title={t('timetable.semesterSettings')}
+            >
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+              </span>
+              <span className="font-semibold text-emerald-400 group-hover:text-emerald-300 transition-colors">
+                {t('timetable.week', { week: progressInfo.currentWeek })}
+                <span className="text-slate-400 font-normal"> / {progressInfo.totalWeeks}</span>
+              </span>
+              {progressInfo.remainingWeeks > 0 && (
+                <span className="text-slate-400 font-normal">
+                  · {t('timetable.weeksLeft', { count: progressInfo.remainingWeeks })}
+                </span>
+              )}
+              <ChevronDown className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
+            </button>
+          ) : progressInfo?.isUpcoming ? (
+            <button
+              type="button"
+              onClick={() => openSemesterModal(activeProfileId)}
+              className="group inline-flex items-center gap-1.5 text-xs text-blue-300 hover:text-white transition-colors cursor-pointer text-left py-0"
+              title={t('timetable.semesterSettings')}
+            >
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
+              </span>
+              <span className="font-medium">
+                {t('timetable.semesterUpcoming', { days: progressInfo.daysUntil })}
+              </span>
+              <ChevronDown className="h-3 w-3 text-blue-400/80 group-hover:text-white transition-colors" />
+            </button>
+          ) : progressInfo?.isEnded ? (
+            <button
+              type="button"
+              onClick={() => openSemesterModal(activeProfileId)}
+              className="group inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors cursor-pointer text-left py-0"
+              title={t('timetable.semesterSettings')}
+            >
+              <span className="font-medium text-slate-400 group-hover:text-slate-200 transition-colors">
+                {t('timetable.semesterEnded')}
+              </span>
+              <ChevronDown className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openSemesterModal(activeProfileId)}
+              className="group inline-flex items-center gap-1 text-xs text-slate-400 hover:text-theme-300 transition-colors cursor-pointer text-left py-0"
+              title={t('timetable.quickWeekTip')}
+            >
+              <Sparkles className="h-3 w-3 text-theme-400 group-hover:rotate-12 transition-transform" />
+              <span>{t('timetable.setAcademicWeek')} →</span>
+            </button>
+          )}
+
+          <span className="text-slate-600 text-xs select-none">·</span>
+
+          <button
+            type="button"
+            onClick={() => promoteToMain(activeProfileId)}
+            className="group inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer text-left py-0"
+            title={t('timetable.promoteTitle')}
+          >
+            <span>{t('timetable.promoteConfirm')}</span>
+            <ArrowRight className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
       )
 
       return (
@@ -1004,33 +1135,29 @@ export default function TimetablePage() {
                         
                         <div className="h-px w-full bg-white/5 my-1" />
 
+                        <button 
+                          onClick={() => { openSemesterModal(activeProfileId); setIsDropdownOpen(false); }}
+                          className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
+                        >
+                          <Calendar className="h-4 w-4 text-slate-400" /> {t('timetable.semesterSettings')}
+                        </button>
+
                         {isLiveProfile ? (
-                          <>
-                            <button 
-                              onClick={() => { openSemesterModal(); setIsDropdownOpen(false); }}
-                              className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
-                            >
-                              <Calendar className="h-4 w-4 text-slate-400" /> {t('timetable.semesterSettings')}
-                            </button>
-                            <button 
-                              onClick={() => { openNewSemesterModal(); setIsDropdownOpen(false); }}
-                              className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-theme-400 hover:bg-theme-500/10 transition-colors gap-2"
-                            >
-                              <Sparkles className="h-4 w-4" /> {t('timetable.startNewSemester')}
-                            </button>
-                            <div className="h-px w-full bg-white/5 my-1" />
-                          </>
+                          <button 
+                            onClick={() => { openNewSemesterModal(); setIsDropdownOpen(false); }}
+                            className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-theme-400 hover:bg-theme-500/10 transition-colors gap-2"
+                          >
+                            <Sparkles className="h-4 w-4" /> {t('timetable.startNewSemester')}
+                          </button>
                         ) : (
-                          <>
-                            <button 
-                              onClick={() => { promoteToMain(activeProfileId); setIsDropdownOpen(false); }}
-                              className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
-                            >
-                              <ArrowRight className="h-4 w-4 text-slate-400" /> {t('timetable.promoteConfirm')}
-                            </button>
-                            <div className="h-px w-full bg-white/5 my-1" />
-                          </>
+                          <button 
+                            onClick={() => { promoteToMain(activeProfileId); setIsDropdownOpen(false); }}
+                            className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
+                          >
+                            <ArrowRight className="h-4 w-4 text-slate-400" /> {t('timetable.promoteConfirm')}
+                          </button>
                         )}
+                        <div className="h-px w-full bg-white/5 my-1" />
                         
                         <button 
                           onClick={() => { setShowAddProfileModal(true); setIsDropdownOpen(false); }}

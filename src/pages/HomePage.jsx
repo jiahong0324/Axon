@@ -200,8 +200,23 @@ export default function HomePage() {
 
   const todayStr = format(currentTime, 'yyyy-MM-dd')
   const todayClasses = useMemo(() => {
-    const semesterEndDate = (localStorage.getItem('axon_semester_end_date') || '').trim()
-    const semesterStartDate = (localStorage.getItem('axon_semester_start_date') || '').trim()
+    let semesterEndDate = (localStorage.getItem('axon_semester_end_date') || '').trim()
+    let semesterStartDate = (localStorage.getItem('axon_semester_start_date') || '').trim()
+
+    if (user) {
+      const savedActive = localStorage.getItem(`axon_active_timetable_${user.id}`) || 'account'
+      if (savedActive !== 'account' && savedActive !== 'live') {
+        try {
+          const profiles = JSON.parse(localStorage.getItem(`axon_linked_timetables_${user.id}`) || '[]')
+          const activeProfile = profiles.find(p => p.id === savedActive)
+          if (activeProfile) {
+            semesterStartDate = (activeProfile.startDate || activeProfile.start_date || '').trim()
+            semesterEndDate = (activeProfile.endDate || activeProfile.end_date || '').trim()
+          }
+        } catch (e) {}
+      }
+    }
+
     const isSemesterEnded = Boolean(semesterEndDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterEndDate) && todayStr > semesterEndDate)
     const isSemesterUpcoming = Boolean(semesterStartDate && /^\d{4}-\d{2}-\d{2}$/.test(semesterStartDate) && todayStr < semesterStartDate)
     if (isSemesterEnded || isSemesterUpcoming) return []
@@ -211,7 +226,7 @@ export default function HomePage() {
       }
       return c.day === todayName
     }).sort((a, b) => a.start_time.localeCompare(b.start_time))
-  }, [classes, todayName, todayStr])
+  }, [classes, todayName, todayStr, user])
   const dueSoon = assignments.filter(a => a.status !== 'Done').slice(0, 3)
   const nextExamDays = exams[0] ? daysFromToday(exams[0].exam_date) : null
   const nextExamValue = nextExamDays === null ? '-' : nextExamDays === 0 ? 'Today!' : nextExamDays
