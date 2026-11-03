@@ -1307,7 +1307,7 @@ export default function TimetablePage() {
                               >
                                 <div className="flex items-center gap-2 min-w-0 flex-1">
                                   <div 
-                                    className="text-slate-500 group-hover:text-slate-300 transition-colors shrink-0 cursor-grab active:cursor-grabbing p-0.5 -ml-1 touch-none"
+                                    className="text-white/20 group-hover:text-white/45 hover:!text-white/75 transition-colors shrink-0 cursor-grab active:cursor-grabbing p-0.5 -ml-1 touch-none"
                                     title={t('timetable.dragToReorder') || 'Drag to reorder'}
                                   >
                                     <GripVertical className="h-3.5 w-3.5" />
