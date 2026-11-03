@@ -172,7 +172,7 @@ export async function updatePreference(user, key, value) {
   }
 }
 
-export async function saveSemesterPreferences(user, { name, startDate, endDate, linkedProfiles }) {
+export async function saveSemesterPreferences(user, { name, startDate, endDate, linkedProfiles, timetableOrder }) {
   const nextName = String(name || '').trim()
   const nextStartDate = String(startDate || '').trim()
   const nextEndDate = String(endDate || '').trim()
@@ -195,6 +195,10 @@ export async function saveSemesterPreferences(user, { name, startDate, endDate, 
 
   if (!currentUser) return null
 
+  if (timetableOrder !== undefined && currentUser?.id) {
+    safeSetItem(`axon_timetable_order_${currentUser.id}`, JSON.stringify(timetableOrder))
+  }
+
   // 3. Atomically update both top-level metadata AND preferences
   const existingPrefs = currentUser.user_metadata?.preferences || {}
   const updatedPrefs = {
@@ -212,6 +216,9 @@ export async function saveSemesterPreferences(user, { name, startDate, endDate, 
   }
   if (linkedProfiles !== undefined) {
     updateData.linked_timetables = linkedProfiles
+  }
+  if (timetableOrder !== undefined) {
+    updateData.timetable_order = timetableOrder
   }
 
   const { data, error } = await supabase.auth.updateUser({

@@ -1,5 +1,6 @@
-import { ArrowRight, Calendar, ChevronDown, GraduationCap, MapPin, Plus, ShieldCheck, Sparkles, Trash2, User } from 'lucide-react'
+import { ArrowRight, Calendar, ChevronDown, GraduationCap, GripVertical, MapPin, Plus, ShieldCheck, Sparkles, Trash2, User } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Reorder } from 'framer-motion'
 import ClassTypeBadge from '../components/ClassTypeBadge'
 import { useConfirmDialog } from '../components/ConfirmModal'
 import EmptyState from '../components/EmptyState'
@@ -22,6 +23,7 @@ const LIVE_PROFILE_ID = 'account'
 const linkedKey = userId => `axon_linked_timetables_${userId}`
 const activeKey = userId => `axon_active_timetable_${userId}`
 const classesCacheKey = userId => `axon_classes_${userId}`
+const orderKey = userId => `axon_timetable_order_${userId}`
 
 function readLinkedProfiles(userId) {
   try {
@@ -33,6 +35,21 @@ function readLinkedProfiles(userId) {
 
 function saveLinkedProfiles(userId, profiles) {
   localStorage.setItem(linkedKey(userId), JSON.stringify(profiles))
+}
+
+function readTimetableOrder(userId) {
+  try {
+    const raw = localStorage.getItem(orderKey(userId))
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function saveTimetableOrder(userId, order) {
+  try {
+    localStorage.setItem(orderKey(userId), JSON.stringify(order))
+  } catch {}
 }
 
 export function getSemesterProgress(startDateStr, endDateStr) {
@@ -106,6 +123,9 @@ export default function TimetablePage() {
   const [analyzerOpen, setAnalyzerOpen] = useState(false)
   const [analyzerStep, setAnalyzerStep] = useState('upload')
   const [linkedProfiles, setLinkedProfiles] = useState([])
+  const [timetableOrder, setTimetableOrder] = useState([])
+  const timetableOrderRef = useRef([])
+  const isDraggingRef = useRef(false)
   const [activeProfileId, setActiveProfileId] = useState(LIVE_PROFILE_ID)
   const [newProfileName, setNewProfileName] = useState('')
   const [showAddProfileModal, setShowAddProfileModal] = useState(false)
@@ -291,8 +311,39 @@ export default function TimetablePage() {
     } catch (_) {}
     const profiles = Array.from(profileMap.values())
     
+    const remoteOrder = currentUser.user_metadata?.timetable_order
+    const localOrder = readTimetableOrder(currentUser.id)
+    const initialOrder = Array.isArray(remoteOrder) && remoteOrder.length > 0 
+      ? remoteOrder 
+      : (Array.isArray(localOrder) && localOrder.length > 0 ? localOrder : null)
+
+    const validProfileIds = new Set([LIVE_PROFILE_ID, ...profiles.map(p => p.id)])
+    let combinedOrder = []
+    if (initialOrder) {
+      combinedOrder = initialOrder.filter(id => validProfileIds.has(id))
+      if (!combinedOrder.includes(LIVE_PROFILE_ID)) {
+        combinedOrder.unshift(LIVE_PROFILE_ID)
+      }
+      profiles.forEach(p => {
+        if (!combinedOrder.includes(p.id)) combinedOrder.push(p.id)
+      })
+    } else {
+      combinedOrder = [LIVE_PROFILE_ID, ...profiles.map(p => p.id)]
+    }
+
+    const orderMap = new Map()
+    combinedOrder.forEach((id, index) => orderMap.set(id, index))
+    profiles.sort((a, b) => {
+      const idxA = orderMap.has(a.id) ? orderMap.get(a.id) : 9999
+      const idxB = orderMap.has(b.id) ? orderMap.get(b.id) : 9999
+      return idxA - idxB
+    })
+
     saveLinkedProfiles(currentUser.id, profiles)
     setLinkedProfiles(profiles)
+    setTimetableOrder(combinedOrder)
+    timetableOrderRef.current = combinedOrder
+    saveTimetableOrder(currentUser.id, combinedOrder)
     const savedActive = localStorage.getItem(activeKey(currentUser.id)) || LIVE_PROFILE_ID
     setActiveProfileId(savedActive === LIVE_PROFILE_ID || profiles.some(profile => profile.id === savedActive) ? savedActive : LIVE_PROFILE_ID)
 
@@ -400,20 +451,96 @@ export default function TimetablePage() {
     setActiveProfileId(profileId)
   }
 
-  function persistLinkedProfiles(nextProfiles) {
+  function persistLinkedProfiles(nextProfiles, nextOrder = timetableOrderRef.current) {
     if (!user) return
     setLinkedProfiles(nextProfiles)
     saveLinkedProfiles(user.id, nextProfiles)
+    if (nextOrder && nextOrder.length > 0) {
+      setTimetableOrder(nextOrder)
+      timetableOrderRef.current = nextOrder
+      saveTimetableOrder(user.id, nextOrder)
+    }
+    const updateData = { linked_timetables: nextProfiles }
+    if (nextOrder && nextOrder.length > 0) {
+      updateData.timetable_order = nextOrder
+    }
     setUser(prev => prev ? {
       ...prev,
       user_metadata: {
         ...prev.user_metadata,
-        linked_timetables: nextProfiles
+        ...updateData
       }
     } : prev)
-    supabase.auth.updateUser({ data: { linked_timetables: nextProfiles } }).then(({ data: authData }) => {
+    supabase.auth.updateUser({ data: updateData }).then(({ data: authData }) => {
       if (authData?.user) setUser(authData.user)
     }).catch(err => console.error('Error persisting linked timetables:', err))
+  }
+
+  const orderedTimetables = useMemo(() => {
+    const liveItem = {
+      id: LIVE_PROFILE_ID,
+      name: semesterName || t('timetable.liveProfile'),
+      isLive: true
+    }
+    const all = [liveItem, ...linkedProfiles.map(p => ({ ...p, isLive: false }))]
+
+    if (!timetableOrder || timetableOrder.length === 0) {
+      return all
+    }
+
+    const orderMap = new Map()
+    timetableOrder.forEach((id, index) => {
+      orderMap.set(id, index)
+    })
+
+    return [...all].sort((a, b) => {
+      const idxA = orderMap.has(a.id) ? orderMap.get(a.id) : 9999
+      const idxB = orderMap.has(b.id) ? orderMap.get(b.id) : 9999
+      return idxA - idxB
+    })
+  }, [semesterName, linkedProfiles, timetableOrder, t])
+
+  function handleReorderTimetables(newOrderedList) {
+    const newOrder = newOrderedList.map(item => item.id)
+    setTimetableOrder(newOrder)
+    timetableOrderRef.current = newOrder
+  }
+
+  function handlePersistReorder() {
+    if (!user) return
+    const currentOrder = timetableOrderRef.current
+    if (!currentOrder || currentOrder.length === 0) return
+
+    const orderMap = new Map()
+    currentOrder.forEach((id, index) => orderMap.set(id, index))
+
+    const reorderedLinked = [...linkedProfiles].sort((a, b) => {
+      const idxA = orderMap.has(a.id) ? orderMap.get(a.id) : 9999
+      const idxB = orderMap.has(b.id) ? orderMap.get(b.id) : 9999
+      return idxA - idxB
+    })
+
+    saveTimetableOrder(user.id, currentOrder)
+    saveLinkedProfiles(user.id, reorderedLinked)
+    setLinkedProfiles(reorderedLinked)
+
+    setUser(prev => prev ? {
+      ...prev,
+      user_metadata: {
+        ...prev.user_metadata,
+        timetable_order: currentOrder,
+        linked_timetables: reorderedLinked
+      }
+    } : prev)
+
+    supabase.auth.updateUser({
+      data: {
+        timetable_order: currentOrder,
+        linked_timetables: reorderedLinked
+      }
+    }).then(({ data: authData }) => {
+      if (authData?.user) setUser(authData.user)
+    }).catch(err => console.error('Error persisting timetable order:', err))
   }
 
   function updateActiveLinkedClasses(nextClasses) {
@@ -433,7 +560,9 @@ export default function TimetablePage() {
       return showToast(t('timetable.profileExists'), 'error')
     }
     const nextProfile = { id: `profile-${Date.now()}`, name, classes: [] }
-    persistLinkedProfiles([...linkedProfiles, nextProfile])
+    const nextProfiles = [...linkedProfiles, nextProfile]
+    const nextOrder = [...timetableOrderRef.current, nextProfile.id]
+    persistLinkedProfiles(nextProfiles, nextOrder)
     setNewProfileName('')
     setShowAddProfileModal(false)
     switchProfile(nextProfile.id)
@@ -443,7 +572,8 @@ export default function TimetablePage() {
   async function deleteLinkedProfile(profileId) {
     if (!await confirm({ title: t('timetable.deleteProfileTitle'), message: t('timetable.deleteProfileMessage'), confirmText: t('common.delete') })) return
     const nextProfiles = linkedProfiles.filter(profile => profile.id !== profileId)
-    persistLinkedProfiles(nextProfiles)
+    const nextOrder = timetableOrderRef.current.filter(id => id !== profileId)
+    persistLinkedProfiles(nextProfiles, nextOrder)
     if (activeProfileId === profileId) {
       setLoading(true)
       setClasses([])
@@ -526,11 +656,13 @@ export default function TimetablePage() {
       localStorage.setItem('axon_semester_end_date', nextEndDate)
 
       const currentLinked = readLinkedProfiles(user.id)
+      const currentOrder = timetableOrderRef.current
       const updatedUser = await saveSemesterPreferences(user, {
         name: finalName,
         startDate: nextStartDate,
         endDate: nextEndDate,
-        linkedProfiles: currentLinked
+        linkedProfiles: currentLinked,
+        timetableOrder: currentOrder
       })
       if (updatedUser) {
         setUser(updatedUser)
@@ -563,7 +695,7 @@ export default function TimetablePage() {
         return p
       })
 
-      persistLinkedProfiles(nextProfiles)
+      persistLinkedProfiles(nextProfiles, timetableOrderRef.current)
       if (updatedTarget) {
         try {
           localStorage.setItem(`axon_archived_backup_${user.id}_${editingProfileId}`, JSON.stringify(updatedTarget))
@@ -608,6 +740,10 @@ export default function TimetablePage() {
       try {
         localStorage.setItem(`axon_archived_backup_${user.id}_${profileId}`, JSON.stringify(archivedProfile))
       } catch (_) {}
+      const nextOrder = [...timetableOrderRef.current, profileId]
+      setTimetableOrder(nextOrder)
+      timetableOrderRef.current = nextOrder
+      saveTimetableOrder(user.id, nextOrder)
     }
 
     // 2. Persist to local storage and UI state
@@ -620,7 +756,8 @@ export default function TimetablePage() {
     const { data: authUpdateResult, error: authErr } = await supabase.auth.updateUser({
       data: {
         replacement_classes: remainingReplacements,
-        linked_timetables: updatedProfiles
+        linked_timetables: updatedProfiles,
+        timetable_order: timetableOrderRef.current
       }
     })
     if (authErr) {
@@ -662,11 +799,13 @@ export default function TimetablePage() {
     setSemesterStartDate(nextStartDate)
     setSemesterEndDate(nextEndDate)
     const currentLinked = readLinkedProfiles(user.id)
+    const currentOrder = timetableOrderRef.current
     const updatedUser = await saveSemesterPreferences(user, {
       name: nextName,
       startDate: nextStartDate,
       endDate: nextEndDate,
-      linkedProfiles: currentLinked
+      linkedProfiles: currentLinked,
+      timetableOrder: currentOrder
     })
     if (updatedUser) {
       setUser(updatedUser)
@@ -705,6 +844,7 @@ export default function TimetablePage() {
 
     // If current live has classes, archive them as a profile
     let nextProfiles = freshProfiles.filter(p => p.id !== profileId)
+    let nextOrder = timetableOrderRef.current.filter(id => id !== profileId)
     if (currentLiveClasses && currentLiveClasses.length > 0) {
       const liveArchiveName = semesterName || t('timetable.previousSemester')
       const newArchivedId = `profile-${Date.now()}`
@@ -716,10 +856,17 @@ export default function TimetablePage() {
         endDate: semesterEndDate || ''
       }
       nextProfiles.push(archivedProfile)
+      nextOrder.push(newArchivedId)
       try {
         localStorage.setItem(`axon_archived_backup_${user.id}_${newArchivedId}`, JSON.stringify(archivedProfile))
       } catch (_) {}
     }
+    if (!nextOrder.includes(LIVE_PROFILE_ID)) {
+      nextOrder.unshift(LIVE_PROFILE_ID)
+    }
+    setTimetableOrder(nextOrder)
+    timetableOrderRef.current = nextOrder
+    saveTimetableOrder(user.id, nextOrder)
 
     // Clear live classes and insert targetProfile classes
     await supabase.from('classes').delete().eq('user_id', user.id)
@@ -745,7 +892,8 @@ export default function TimetablePage() {
       name: targetProfile.name,
       startDate: targetStartDate,
       endDate: targetEndDate,
-      linkedProfiles: nextProfiles
+      linkedProfiles: nextProfiles,
+      timetableOrder: nextOrder
     })
     if (updatedUser) setUser(updatedUser)
 
@@ -1110,28 +1258,71 @@ export default function TimetablePage() {
 
                 {isDropdownOpen && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-                    <div className="absolute top-full left-0 mt-2 w-60 bg-slate-900 border border-white/10 shadow-xl shadow-black/50 rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="fixed inset-0 z-40" onClick={() => { if (!isDraggingRef.current) setIsDropdownOpen(false) }} />
+                    <div 
+                      className="absolute top-full left-0 mt-2 w-64 bg-slate-900 border border-white/10 shadow-xl shadow-black/50 rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+                      onTouchStart={e => e.stopPropagation()}
+                      onTouchMove={e => e.stopPropagation()}
+                      onTouchEnd={e => e.stopPropagation()}
+                    >
                       <div className="p-1.5 flex flex-col gap-1">
-                        <div className="px-2.5 py-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-                          {t('timetable.timetables')}
+                        <div className="px-2.5 py-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase flex items-center justify-between">
+                          <span>{t('timetable.timetables')}</span>
                         </div>
-                        <button 
-                          onClick={() => { switchProfile(LIVE_PROFILE_ID); setIsDropdownOpen(false); }}
-                          className={`flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${isLiveProfile ? 'bg-theme-500/20 text-theme-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                        <Reorder.Group
+                          axis="y"
+                          values={orderedTimetables}
+                          onReorder={handleReorderTimetables}
+                          className="flex flex-col gap-1 max-h-60 overflow-y-auto overflow-x-hidden p-0.5"
                         >
-                          <span className="truncate">{semesterName || t('timetable.liveProfile')}</span>
-                          {isLiveProfile && <span className="text-[10px] bg-theme-500/30 text-theme-200 px-1.5 py-0.5 rounded font-mono ml-2">Active</span>}
-                        </button>
-                        {linkedProfiles.map(p => (
-                          <button 
-                            key={p.id}
-                            onClick={() => { switchProfile(p.id); setIsDropdownOpen(false); }}
-                            className={`flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeProfileId === p.id ? 'bg-theme-500/20 text-theme-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
-                          >
-                            <span className="truncate">{p.name}</span>
-                          </button>
-                        ))}
+                          {orderedTimetables.map(item => {
+                            const isActive = activeProfileId === item.id
+                            return (
+                              <Reorder.Item
+                                key={item.id}
+                                value={item}
+                                as="div"
+                                dragMomentum={false}
+                                className={`group relative flex items-center justify-between w-full px-2.5 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer select-none ${isActive ? 'bg-theme-500/20 text-theme-300' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                                whileDrag={{
+                                  scale: 1.02,
+                                  backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
+                                  zIndex: 50
+                                }}
+                                onDragStart={() => {
+                                  isDraggingRef.current = true
+                                }}
+                                onDragEnd={() => {
+                                  setTimeout(() => {
+                                    isDraggingRef.current = false
+                                  }, 150)
+                                  handlePersistReorder()
+                                }}
+                                onClick={() => {
+                                  if (isDraggingRef.current) return
+                                  switchProfile(item.id)
+                                  setIsDropdownOpen(false)
+                                }}
+                              >
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <div 
+                                    className="text-slate-500 group-hover:text-slate-300 transition-colors shrink-0 cursor-grab active:cursor-grabbing p-0.5 -ml-1 touch-none"
+                                    title={t('timetable.dragToReorder') || 'Drag to reorder'}
+                                  >
+                                    <GripVertical className="h-3.5 w-3.5" />
+                                  </div>
+                                  <span className="truncate">{item.name}</span>
+                                </div>
+                                {isActive && (
+                                  <span className="text-[10px] bg-theme-500/30 text-theme-200 px-1.5 py-0.5 rounded font-mono ml-2 shrink-0">
+                                    Active
+                                  </span>
+                                )}
+                              </Reorder.Item>
+                            )
+                          })}
+                        </Reorder.Group>
                         
                         <div className="h-px w-full bg-white/5 my-1" />
 
