@@ -808,14 +808,14 @@ export default function AnnouncementComposerModal({
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                     Message Body
                   </label>
-                  <span className={`text-[11px] font-mono ${message.length > 450 ? 'text-amber-400' : 'text-slate-500'}`}>
-                    {message.length}/500
+                  <span className={`text-[11px] font-mono ${message.length > 2300 ? 'text-amber-400' : 'text-slate-500'}`}>
+                    {message.length}/2500
                   </span>
                 </div>
                 <textarea
-                  maxLength={500}
-                  className="w-full rounded-xl px-3.5 py-3 text-sm bg-slate-900/60 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all min-h-[120px] leading-relaxed resize-y"
-                  placeholder=""
+                  maxLength={2500}
+                  className="w-full rounded-xl px-3.5 py-3 text-sm bg-slate-900/60 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all min-h-[140px] leading-relaxed resize-y"
+                  placeholder="Write your announcement or email broadcast content..."
                   value={message}
                   onChange={e => setMessage(e.target.value)}
                 />

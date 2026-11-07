@@ -144,11 +144,14 @@ export default async function handler(req, res) {
           pushStats.totalSubscriptions = uniqueSubs.length
 
           const annId = insertedAnnouncement?.id || ''
+          const pushBody = message.trim().length > 200
+            ? `${message.trim().slice(0, 197)}...`
+            : message.trim()
           const pushPayload = JSON.stringify({
             id: `announcement_${annId || Date.now()}`,
             announcement_id: annId,
             title: title.trim(),
-            body: message.trim(),
+            body: pushBody,
             url: annId ? `/?open_announcement=${annId}` : '/'
           })
 
