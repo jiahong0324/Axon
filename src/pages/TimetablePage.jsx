@@ -1262,7 +1262,7 @@ export default function TimetablePage() {
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => { if (!isDraggingRef.current) setIsDropdownOpen(false) }} />
                     <div 
-                      className="absolute top-full left-0 mt-2 w-[270px] max-w-[calc(100vw-2rem)] bg-slate-900 border border-white/10 shadow-xl shadow-black/50 rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+                      className="absolute top-full left-0 mt-2 w-[238px] max-w-[calc(100vw-2rem)] bg-slate-900 border border-white/10 shadow-xl shadow-black/50 rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200"
                       onTouchStart={e => e.stopPropagation()}
                       onTouchMove={e => e.stopPropagation()}
                       onTouchEnd={e => e.stopPropagation()}
@@ -1275,7 +1275,7 @@ export default function TimetablePage() {
                           axis="y"
                           values={orderedTimetables}
                           onReorder={handleReorderTimetables}
-                          className="flex flex-col gap-1 max-h-64 overflow-y-auto overflow-x-hidden p-0.5"
+                          className="flex flex-col gap-1.5 max-h-72 overflow-y-auto overflow-x-hidden p-0.5"
                         >
                           {orderedTimetables.map(item => {
                             const isActive = activeProfileId === item.id
@@ -1285,7 +1285,7 @@ export default function TimetablePage() {
                                 value={item}
                                 as="div"
                                 dragMomentum={false}
-                                className={`group relative flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer select-none ${isActive ? 'bg-theme-500/20 text-theme-300 font-semibold shadow-sm' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                                className={`group relative flex items-center justify-between w-full min-h-[42px] px-2.5 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer select-none ${isActive ? 'bg-theme-500/20 text-theme-300 font-semibold shadow-sm' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
                                 whileDrag={{
                                   scale: 1.02,
                                   backgroundColor: 'rgba(30, 41, 59, 0.95)',
@@ -1332,29 +1332,29 @@ export default function TimetablePage() {
                         <button 
                           type="button"
                           onClick={() => { openSemesterModal(activeProfileId); setIsDropdownOpen(false); }}
-                          className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
+                          className="flex items-center w-full min-h-[38px] px-2.5 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
                         >
                           <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
-                          <span>{t('timetable.semesterSettings')}</span>
+                          <span className="truncate">{t('timetable.semesterSettings')}</span>
                         </button>
 
                         {isLiveProfile ? (
                           <button 
                             type="button"
                             onClick={() => { openNewSemesterModal(); setIsDropdownOpen(false); }}
-                            className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-theme-400 hover:bg-theme-500/10 hover:text-theme-300 transition-colors gap-2"
+                            className="flex items-center w-full min-h-[38px] px-2.5 py-2 text-sm font-medium rounded-lg text-theme-400 hover:bg-theme-500/10 hover:text-theme-300 transition-colors gap-2"
                           >
                             <Sparkles className="h-4 w-4 shrink-0" />
-                            <span>{t('timetable.startNewSemester')}</span>
+                            <span className="truncate">{t('timetable.startNewSemester')}</span>
                           </button>
                         ) : (
                           <button 
                             type="button"
                             onClick={() => { promoteToMain(activeProfileId); setIsDropdownOpen(false); }}
-                            className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
+                            className="flex items-center w-full min-h-[38px] px-2.5 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
                           >
                             <ArrowRight className="h-4 w-4 text-slate-400 shrink-0" />
-                            <span>{t('timetable.promoteConfirm')}</span>
+                            <span className="truncate">{t('timetable.promoteConfirm')}</span>
                           </button>
                         )}
                         <div className="h-px w-full bg-white/5 my-1" />
@@ -1362,10 +1362,10 @@ export default function TimetablePage() {
                         <button 
                           type="button"
                           onClick={() => { setShowAddProfileModal(true); setIsDropdownOpen(false); }}
-                          className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-400 hover:bg-white/5 hover:text-white transition-colors gap-2"
+                          className="flex items-center w-full min-h-[38px] px-2.5 py-2 text-sm font-medium rounded-lg text-slate-400 hover:bg-white/5 hover:text-white transition-colors gap-2"
                         >
                           <Plus className="h-4 w-4 shrink-0" />
-                          <span>{t('timetable.addProfile')}</span>
+                          <span className="truncate">{t('timetable.addProfile')}</span>
                         </button>
                       </div>
                     </div>
