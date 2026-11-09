@@ -1249,33 +1249,33 @@ export default function TimetablePage() {
                 <button 
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="!min-h-0 !min-w-0 inline-flex items-center gap-2 focus:outline-none group text-left max-w-full py-0.5 px-1.5 -ml-1.5 rounded-xl hover:bg-white/5 active:bg-white/10 transition-colors"
+                  className="!min-h-0 !min-w-0 inline-flex items-center gap-1.5 focus:outline-none group text-left max-w-full py-0.5 px-1.5 -ml-1.5 rounded-lg hover:bg-white/5 active:bg-white/10 transition-colors"
                   aria-expanded={isDropdownOpen}
                 >
                   <h1 className="text-xl sm:text-2xl font-bold font-heading text-white group-hover:text-slate-200 transition-colors truncate leading-tight">
                     {isLiveProfile ? (semesterName || t('timetable.title')) : activeProfile?.name}
                   </h1>
-                  <ChevronDown className={`h-4.5 w-4.5 sm:h-5 sm:w-5 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2.2} />
+                  <ChevronDown className={`h-4 w-4 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
                 </button>
 
                 {isDropdownOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => { if (!isDraggingRef.current) setIsDropdownOpen(false) }} />
                     <div 
-                      className="absolute top-full left-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-slate-900 border border-white/10 shadow-2xl shadow-black/60 rounded-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+                      className="absolute top-full left-0 mt-2 w-[270px] max-w-[calc(100vw-2rem)] bg-slate-900 border border-white/10 shadow-xl shadow-black/50 rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200"
                       onTouchStart={e => e.stopPropagation()}
                       onTouchMove={e => e.stopPropagation()}
                       onTouchEnd={e => e.stopPropagation()}
                     >
-                      <div className="p-2 sm:p-2.5 flex flex-col gap-1.5">
-                        <div className="px-3 py-1.5 text-xs font-semibold tracking-wider text-slate-400 uppercase flex items-center justify-between">
+                      <div className="p-1.5 flex flex-col gap-1">
+                        <div className="px-2.5 py-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase flex items-center justify-between">
                           <span>{t('timetable.timetables')}</span>
                         </div>
                         <Reorder.Group
                           axis="y"
                           values={orderedTimetables}
                           onReorder={handleReorderTimetables}
-                          className="flex flex-col gap-1 max-h-72 sm:max-h-80 overflow-y-auto overflow-x-hidden p-0.5"
+                          className="flex flex-col gap-1 max-h-64 overflow-y-auto overflow-x-hidden p-0.5"
                         >
                           {orderedTimetables.map(item => {
                             const isActive = activeProfileId === item.id
@@ -1285,7 +1285,7 @@ export default function TimetablePage() {
                                 value={item}
                                 as="div"
                                 dragMomentum={false}
-                                className={`group relative flex items-center justify-between w-full min-h-[46px] px-3.5 py-2.5 text-[15px] sm:text-base font-medium rounded-xl transition-colors cursor-pointer select-none ${isActive ? 'bg-theme-500/20 text-theme-300 font-semibold shadow-sm' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                                className={`group relative flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer select-none ${isActive ? 'bg-theme-500/20 text-theme-300 font-semibold shadow-sm' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
                                 whileDrag={{
                                   scale: 1.02,
                                   backgroundColor: 'rgba(30, 41, 59, 0.95)',
@@ -1307,18 +1307,18 @@ export default function TimetablePage() {
                                   setIsDropdownOpen(false)
                                 }}
                               >
-                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
                                   <div 
-                                    className="text-white/30 group-hover:text-white/60 hover:!text-white/90 transition-colors shrink-0 cursor-grab active:cursor-grabbing p-1.5 -ml-1 touch-none rounded-lg hover:bg-white/10 flex items-center justify-center"
+                                    className="text-white/25 group-hover:text-white/50 hover:!text-white/80 transition-colors shrink-0 cursor-grab active:cursor-grabbing p-1 -ml-1 touch-none rounded flex items-center justify-center"
                                     title={t('timetable.dragToReorder') || 'Drag to reorder'}
                                     aria-label={t('timetable.dragToReorder') || 'Drag to reorder'}
                                   >
-                                    <GripVertical className="h-4.5 w-4.5" />
+                                    <GripVertical className="h-4 w-4" />
                                   </div>
                                   <span className="truncate">{item.name}</span>
                                 </div>
                                 {isActive && (
-                                  <span className="text-xs bg-theme-500/30 text-theme-200 px-2 py-0.5 rounded-md font-mono ml-2 shrink-0 font-medium">
+                                  <span className="text-[11px] bg-theme-500/30 text-theme-200 px-1.5 py-0.5 rounded font-mono ml-2 shrink-0 font-medium">
                                     Active
                                   </span>
                                 )}
@@ -1327,14 +1327,14 @@ export default function TimetablePage() {
                           })}
                         </Reorder.Group>
                         
-                        <div className="h-px w-full bg-white/10 my-1.5" />
+                        <div className="h-px w-full bg-white/5 my-1" />
 
                         <button 
                           type="button"
                           onClick={() => { openSemesterModal(activeProfileId); setIsDropdownOpen(false); }}
-                          className="flex items-center w-full min-h-[44px] px-3.5 py-2.5 text-[15px] sm:text-sm font-medium rounded-xl text-slate-300 hover:bg-white/5 active:bg-white/10 hover:text-white transition-colors gap-2.5"
+                          className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
                         >
-                          <Calendar className="h-4.5 w-4.5 text-slate-400 shrink-0" />
+                          <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
                           <span>{t('timetable.semesterSettings')}</span>
                         </button>
 
@@ -1342,29 +1342,29 @@ export default function TimetablePage() {
                           <button 
                             type="button"
                             onClick={() => { openNewSemesterModal(); setIsDropdownOpen(false); }}
-                            className="flex items-center w-full min-h-[44px] px-3.5 py-2.5 text-[15px] sm:text-sm font-medium rounded-xl text-theme-400 hover:bg-theme-500/10 active:bg-theme-500/20 hover:text-theme-300 transition-colors gap-2.5"
+                            className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-theme-400 hover:bg-theme-500/10 hover:text-theme-300 transition-colors gap-2"
                           >
-                            <Sparkles className="h-4.5 w-4.5 shrink-0" />
+                            <Sparkles className="h-4 w-4 shrink-0" />
                             <span>{t('timetable.startNewSemester')}</span>
                           </button>
                         ) : (
                           <button 
                             type="button"
                             onClick={() => { promoteToMain(activeProfileId); setIsDropdownOpen(false); }}
-                            className="flex items-center w-full min-h-[44px] px-3.5 py-2.5 text-[15px] sm:text-sm font-medium rounded-xl text-slate-300 hover:bg-white/5 active:bg-white/10 hover:text-white transition-colors gap-2.5"
+                            className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-300 hover:bg-white/5 hover:text-white transition-colors gap-2"
                           >
-                            <ArrowRight className="h-4.5 w-4.5 text-slate-400 shrink-0" />
+                            <ArrowRight className="h-4 w-4 text-slate-400 shrink-0" />
                             <span>{t('timetable.promoteConfirm')}</span>
                           </button>
                         )}
-                        <div className="h-px w-full bg-white/10 my-1.5" />
+                        <div className="h-px w-full bg-white/5 my-1" />
                         
                         <button 
                           type="button"
                           onClick={() => { setShowAddProfileModal(true); setIsDropdownOpen(false); }}
-                          className="flex items-center w-full min-h-[44px] px-3.5 py-2.5 text-[15px] sm:text-sm font-medium rounded-xl text-slate-400 hover:bg-white/5 active:bg-white/10 hover:text-white transition-colors gap-2.5"
+                          className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-400 hover:bg-white/5 hover:text-white transition-colors gap-2"
                         >
-                          <Plus className="h-4.5 w-4.5 shrink-0" />
+                          <Plus className="h-4 w-4 shrink-0" />
                           <span>{t('timetable.addProfile')}</span>
                         </button>
                       </div>
