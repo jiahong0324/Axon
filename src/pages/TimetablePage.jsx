@@ -1144,46 +1144,92 @@ export default function TimetablePage() {
             </span>
             <ChevronDown className="h-3 w-3 text-blue-400/80 group-hover:text-white transition-colors" />
           </button>
-        ) : null
+        ) : (
+          <button
+            type="button"
+            onClick={() => openSemesterModal(LIVE_PROFILE_ID)}
+            className="!min-h-0 !min-w-0 group inline-flex items-center gap-1.5 py-0.5 px-1.5 -ml-1 rounded-lg text-xs text-slate-400 hover:text-theme-300 hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer text-left"
+            title={t('timetable.quickWeekTip')}
+          >
+            <Sparkles className="h-3 w-3 text-theme-400 group-hover:rotate-12 transition-transform shrink-0" />
+            <span>{t('timetable.setAcademicWeek')}</span>
+            <ArrowRight className="h-3 w-3 text-slate-500 group-hover:text-theme-300 group-hover:translate-x-0.5 transition-all shrink-0" />
+          </button>
+        )
       ) : (
-        progressInfo?.isOngoing ? (
-          <button
-            type="button"
-            onClick={() => openSemesterModal(activeProfileId)}
-            className="!min-h-0 !min-w-0 group inline-flex items-center gap-1.5 py-0.5 px-1.5 -ml-1 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer text-left"
-            title={t('timetable.semesterSettings')}
-          >
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-            </span>
-            <span className="font-semibold text-emerald-400 group-hover:text-emerald-300 transition-colors">
-              {t('timetable.week', { week: progressInfo.currentWeek })}
-              <span className="text-slate-400 font-normal"> / {progressInfo.totalWeeks}</span>
-            </span>
-            {progressInfo.remainingWeeks > 0 && (
-              <span className="text-slate-400 font-normal">
-                · {t('timetable.weeksLeft', { count: progressInfo.remainingWeeks })}
+        <div className="flex items-center gap-2 flex-wrap">
+          {progressInfo?.isOngoing ? (
+            <button
+              type="button"
+              onClick={() => openSemesterModal(activeProfileId)}
+              className="!min-h-0 !min-w-0 group inline-flex items-center gap-1.5 py-0.5 px-1.5 -ml-1 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer text-left"
+              title={t('timetable.semesterSettings')}
+            >
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
               </span>
-            )}
-            <ChevronDown className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
-          </button>
-        ) : progressInfo?.isUpcoming ? (
+              <span className="font-semibold text-emerald-400 group-hover:text-emerald-300 transition-colors">
+                {t('timetable.week', { week: progressInfo.currentWeek })}
+                <span className="text-slate-400 font-normal"> / {progressInfo.totalWeeks}</span>
+              </span>
+              {progressInfo.remainingWeeks > 0 && (
+                <span className="text-slate-400 font-normal">
+                  · {t('timetable.weeksLeft', { count: progressInfo.remainingWeeks })}
+                </span>
+              )}
+              <ChevronDown className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
+            </button>
+          ) : progressInfo?.isUpcoming ? (
+            <button
+              type="button"
+              onClick={() => openSemesterModal(activeProfileId)}
+              className="!min-h-0 !min-w-0 group inline-flex items-center gap-1.5 py-0.5 px-1.5 -ml-1 rounded-lg text-xs text-blue-300 hover:text-white hover:bg-blue-500/10 active:bg-blue-500/20 transition-colors cursor-pointer text-left"
+              title={t('timetable.semesterSettings')}
+            >
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
+              </span>
+              <span className="font-medium">
+                {t('timetable.semesterUpcoming', { days: progressInfo.daysUntil })}
+              </span>
+              <ChevronDown className="h-3 w-3 text-blue-400/80 group-hover:text-white transition-colors" />
+            </button>
+          ) : progressInfo?.isEnded ? (
+            <button
+              type="button"
+              onClick={() => openSemesterModal(activeProfileId)}
+              className="!min-h-0 !min-w-0 group inline-flex items-center gap-1.5 py-0.5 px-1.5 -ml-1 rounded-lg text-xs text-slate-400 hover:text-slate-200 hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer text-left"
+              title={t('timetable.semesterSettings')}
+            >
+              <span className="font-medium text-slate-400 group-hover:text-slate-200 transition-colors">
+                {t('timetable.semesterEnded')}
+              </span>
+              <ChevronDown className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openSemesterModal(activeProfileId)}
+              className="!min-h-0 !min-w-0 group inline-flex items-center gap-1.5 py-0.5 px-1.5 -ml-1 rounded-lg text-xs text-slate-400 hover:text-theme-300 hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer text-left"
+              title={t('timetable.quickWeekTip')}
+            >
+              <Sparkles className="h-3 w-3 text-theme-400 group-hover:rotate-12 transition-transform shrink-0" />
+              <span>{t('timetable.setAcademicWeek')}</span>
+              <ArrowRight className="h-3 w-3 text-slate-500 group-hover:text-theme-300 group-hover:translate-x-0.5 transition-all shrink-0" />
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={() => openSemesterModal(activeProfileId)}
-            className="!min-h-0 !min-w-0 group inline-flex items-center gap-1.5 py-0.5 px-1.5 -ml-1 rounded-lg text-xs text-blue-300 hover:text-white hover:bg-blue-500/10 active:bg-blue-500/20 transition-colors cursor-pointer text-left"
-            title={t('timetable.semesterSettings')}
+            onClick={() => promoteToMain(activeProfileId)}
+            className="!min-h-0 !min-w-0 group inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-theme-500/10 hover:bg-theme-500/20 active:bg-theme-500/30 text-theme-300 hover:text-white border border-theme-500/25 transition-all shadow-sm"
+            title={t('timetable.promoteTitle')}
           >
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
-            </span>
-            <span className="font-medium">
-              {t('timetable.semesterUpcoming', { days: progressInfo.daysUntil })}
-            </span>
-            <ChevronDown className="h-3 w-3 text-blue-400/80 group-hover:text-white transition-colors" />
+            <span>{t('timetable.promoteConfirm')}</span>
+            <ArrowRight className="h-3 w-3 text-theme-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
           </button>
-        ) : null
+        </div>
       )
 
       return (
@@ -1196,22 +1242,21 @@ export default function TimetablePage() {
         onTouchEnd={onTouchEndHandler}
       >
       <div className="mb-3 sm:mb-4 md:mb-6">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           {!loading ? (
             <div className="flex flex-col min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <div className="relative inline-flex items-center group max-w-full">
-                  <button 
-                    type="button"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="!min-h-0 !min-w-0 inline-flex items-center gap-1.5 focus:outline-none group text-left max-w-full py-0.5 px-1.5 -ml-1.5 rounded-lg hover:bg-white/5 active:bg-white/10 transition-colors"
-                    aria-expanded={isDropdownOpen}
-                  >
-                    <h1 className="text-xl sm:text-2xl font-bold font-heading text-white group-hover:text-slate-200 transition-colors truncate leading-tight">
-                      {isLiveProfile ? (semesterName || t('timetable.title')) : activeProfile?.name}
-                    </h1>
-                    <ChevronDown className={`h-4 w-4 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
-                  </button>
+              <div className="relative inline-flex items-center group max-w-full">
+                <button 
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="!min-h-0 !min-w-0 inline-flex items-center gap-1.5 focus:outline-none group text-left max-w-full py-0.5 px-1.5 -ml-1.5 rounded-lg hover:bg-white/5 active:bg-white/10 transition-colors"
+                  aria-expanded={isDropdownOpen}
+                >
+                  <h1 className="text-xl sm:text-2xl font-bold font-heading text-white group-hover:text-slate-200 transition-colors truncate leading-tight">
+                    {isLiveProfile ? (semesterName || t('timetable.title')) : activeProfile?.name}
+                  </h1>
+                  <ChevronDown className={`h-4 w-4 text-slate-400 group-hover:text-white transition-all duration-200 shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={2} />
+                </button>
 
                 {isDropdownOpen && (
                   <>
@@ -1322,111 +1367,76 @@ export default function TimetablePage() {
                           <Plus className="h-4 w-4 shrink-0" />
                           <span className="truncate">{t('timetable.addProfile')}</span>
                         </button>
-
-                        {!isLiveProfile && (
-                          <button 
-                            type="button"
-                            onClick={() => { deleteLinkedProfile(activeProfileId); setIsDropdownOpen(false); }}
-                            className="flex items-center w-full min-h-[38px] px-2.5 py-2 text-sm font-medium rounded-lg text-red-400 hover:bg-red-500/10 active:bg-red-500/20 hover:text-red-300 transition-colors gap-2"
-                          >
-                            <Trash2 className="h-4 w-4 shrink-0" />
-                            <span className="truncate">{t('timetable.deleteProfileTitle') || t('common.delete')}</span>
-                          </button>
-                        )}
-                        {isLiveProfile && classes.length > 0 && (
-                          <button 
-                            type="button"
-                            onClick={() => { clearTimetable(); setIsDropdownOpen(false); }}
-                            className="flex items-center w-full min-h-[38px] px-2.5 py-2 text-sm font-medium rounded-lg text-red-400 hover:bg-red-500/10 active:bg-red-500/20 hover:text-red-300 transition-colors gap-2"
-                          >
-                            <Trash2 className="h-4 w-4 shrink-0" />
-                            <span className="truncate">{t('timetable.clearAllTitle') || t('timetable.clear')}</span>
-                          </button>
-                        )}
                       </div>
                     </div>
                   </>
                 )}
               </div>
 
-              {!isLiveProfile && (
-                <button
-                  type="button"
-                  onClick={() => promoteToMain(activeProfileId)}
-                  className="!min-h-0 !min-w-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-theme-500/15 hover:bg-theme-500/25 active:bg-theme-500/35 text-theme-300 hover:text-white border border-theme-500/30 transition-all shrink-0"
-                  title={t('timetable.promoteTitle')}
-                >
-                  <span>{t('timetable.promoteConfirm')}</span>
-                  <ArrowRight className="h-3 w-3 shrink-0" />
-                </button>
-              )}
-            </div>
-
-            {semesterProgressSubtitle && (
-              <div className="mt-1 flex items-center">
+              {/* Apple Calendar-style Elegant Subtitle */}
+              <div className="mt-1 sm:mt-1.5 flex items-center">
                 {semesterProgressSubtitle}
               </div>
-            )}
-          </div>
-        ) : (
-          <h1 className="text-xl sm:text-2xl font-bold font-heading text-white">{t('timetable.title')}</h1>
-        )}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {!loading && (
-            <>
-              <button 
-                type="button"
-                className="!min-h-0 !min-w-0 md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 active:bg-theme-500/20 h-9 w-9 rounded-xl transition-colors flex items-center justify-center shrink-0" 
-                onClick={() => setAnalyzerOpen(true)} 
-                title={t('timetable.extract')}
-              >
-                <Sparkles className="h-5 w-5" />
-              </button>
-              <button 
-                type="button"
-                className="!min-h-0 !min-w-0 md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 active:bg-theme-500/20 h-9 w-9 rounded-xl transition-colors flex items-center justify-center shrink-0" 
-                onClick={() => setShowForm(true)} 
-                title={t('timetable.addClass')}
-              >
-                <Plus className="h-5 w-5" />
-              </button>
-              <div className="hidden md:flex flex-row gap-2">
-                <button className="btn-import justify-center px-3 text-sm" onClick={() => setAnalyzerOpen(true)}>
-                  <Sparkles className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.extract')}</span>
+            </div>
+          ) : (
+            <h1 className="text-xl sm:text-2xl font-bold font-heading text-white">{t('timetable.title')}</h1>
+          )}
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0 pt-0.5">
+            {!loading && (
+              <>
+                <button 
+                  type="button"
+                  className="!min-h-0 !min-w-0 md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 active:bg-theme-500/20 h-9 w-9 rounded-xl transition-colors flex items-center justify-center shrink-0" 
+                  onClick={() => setAnalyzerOpen(true)} 
+                  title={t('timetable.extract')}
+                >
+                  <Sparkles className="h-5 w-5" />
                 </button>
-                <button className="btn-add justify-center px-3 text-sm" onClick={() => setShowForm(true)}>
-                  <Plus className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.addClass')}</span>
-                  {isLiveProfile && (
-                    <>
-                      <span className="h-5 w-px bg-white/25 mx-1" />
-                      <ChevronDown className="h-4 w-4 shrink-0" />
-                    </>
-                  )}
+                <button 
+                  type="button"
+                  className="!min-h-0 !min-w-0 md:hidden text-theme-400 hover:text-theme-300 hover:bg-theme-500/10 active:bg-theme-500/20 h-9 w-9 rounded-xl transition-colors flex items-center justify-center shrink-0" 
+                  onClick={() => setShowForm(true)} 
+                  title={t('timetable.addClass')}
+                >
+                  <Plus className="h-5 w-5" />
                 </button>
+                <div className="hidden md:flex flex-row gap-2">
+                  <button className="btn-import justify-center px-3 text-sm" onClick={() => setAnalyzerOpen(true)}>
+                    <Sparkles className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.extract')}</span>
+                  </button>
+                  <button className="btn-add justify-center px-3 text-sm" onClick={() => setShowForm(true)}>
+                    <Plus className="h-4 w-4 shrink-0" /> <span className="truncate">{t('timetable.addClass')}</span>
+                    {isLiveProfile && (
+                      <>
+                        <span className="h-5 w-px bg-white/25 mx-1" />
+                        <ChevronDown className="h-4 w-4 shrink-0" />
+                      </>
+                    )}
+                  </button>
+                </div>
                 {classes.length > 0 && isLiveProfile && (
                   <button 
                     type="button"
-                    className="!min-h-0 !min-w-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 active:bg-red-500/20 px-3 min-h-[44px] rounded-xl transition-colors flex items-center justify-center gap-1.5 shrink-0" 
+                    className="!min-h-0 !min-w-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 active:bg-red-500/20 h-9 w-9 sm:h-10 sm:w-auto sm:px-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-0.5 sm:ml-1" 
                     onClick={clearTimetable} 
                     title={t('timetable.clearAllTitle')}
                   >
-                    <Trash2 className="h-4 w-4" /> <span className="text-sm font-medium">{t('timetable.clear')}</span>
+                    <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('timetable.clear')}</span>
                   </button>
                 )}
                 {!isLiveProfile && (
                   <button 
                     type="button"
-                    className="!min-h-0 !min-w-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 active:bg-red-500/20 px-3 min-h-[44px] rounded-xl transition-colors flex items-center justify-center gap-1.5 shrink-0" 
+                    className="!min-h-0 !min-w-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 active:bg-red-500/20 h-9 w-9 sm:h-10 sm:w-auto sm:px-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5 shrink-0 ml-0.5 sm:ml-1" 
                     onClick={() => deleteLinkedProfile(activeProfileId)} 
                     title={t('timetable.deleteProfileTitle')}
                   >
-                    <Trash2 className="h-4 w-4" /> <span className="text-sm font-medium">{t('common.delete')}</span>
+                    <Trash2 className="h-5 w-5" /> <span className="text-sm font-medium hidden sm:block">{t('common.delete')}</span>
                   </button>
                 )}
-              </div>
-            </>
-          )}
-        </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1729,14 +1739,14 @@ export default function TimetablePage() {
                 .filter(c => c.day?.toLowerCase() === day.toLowerCase())
                 .sort((a, b) => a.start_time.localeCompare(b.start_time))
               return (
-                <div key={day} className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div key={day} className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="flex items-center justify-between px-1">
-                    <h2 className="font-bold text-xl text-white">
+                    <h2 className="font-black tracking-wide text-[28px] text-white">
                       {t(`timetable.days.${day}`)}
                     </h2>
                   </div>
                   {dayClasses.length === 0 ? <EmptyState emoji="." message={t('timetable.freeDay')} /> : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {dayClasses.map(c => <MobileClassTile key={c.id} item={c} onDelete={() => deleteClass(c.id)} />)}
                     </div>
                   )}
