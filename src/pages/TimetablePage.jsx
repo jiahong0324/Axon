@@ -1488,25 +1488,6 @@ export default function TimetablePage() {
               {isSubmitting ? t('common.saving') : t('timetable.saveSemester')}
             </button>
           </div>
-
-          {editingProfileId !== LIVE_PROFILE_ID && (
-            <div className="pt-3 border-t border-white/10 flex flex-col gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowSemesterModal(false)
-                  promoteToMain(editingProfileId)
-                }}
-                className="w-full min-h-[44px] px-4 rounded-xl bg-theme-500/15 hover:bg-theme-500/25 active:bg-theme-500/35 border border-theme-500/30 text-theme-300 hover:text-white font-medium text-sm transition-all flex items-center justify-center gap-2"
-              >
-                <span>{t('timetable.setAsMain')}</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
-              <p className="text-[11px] text-slate-400 text-center">
-                {t('timetable.promoteMessage', { name: semesterForm.name || t('timetable.timetables') })}
-              </p>
-            </div>
-          )}
         </form>
       </Modal>
 
