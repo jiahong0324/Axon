@@ -37,6 +37,181 @@ export default async function handler(req, res) {
     }
 
     const { studentId, mode } = req.query || {}
+    const body = req.body || {}
+    const targetStudentId = (body.studentId || studentId || '').trim()
+    const action = body.action || req.query?.action
+    const postData = body.data || {}
+
+    // Handle Admin Action POST requests
+    if (req.method === 'POST' && action) {
+      if (!targetStudentId) {
+        return res.status(400).json({ error: 'studentId is required for this action' })
+      }
+
+      if (action === 'change_password') {
+        const newPassword = postData.password || body.password
+        if (!newPassword || newPassword.length < 8) {
+          return res.status(400).json({ error: 'Password must be at least 8 characters' })
+        }
+        const { error } = await adminSupabase.auth.admin.updateUserById(targetStudentId, { password: newPassword })
+        if (error) return res.status(400).json({ error: error.message })
+        return res.status(200).json({ success: true, message: 'Password updated successfully' })
+      }
+
+      if (action === 'change_email') {
+        const newEmail = (postData.email || body.email || '').trim()
+        if (!newEmail) return res.status(400).json({ error: 'Email is required' })
+        const { error: authErr } = await adminSupabase.auth.admin.updateUserById(targetStudentId, { email: newEmail, email_confirm: true })
+        if (authErr) return res.status(400).json({ error: authErr.message })
+        await adminSupabase.from('profiles').update({ email: newEmail }).eq('id', targetStudentId)
+        return res.status(200).json({ success: true, message: 'Email updated successfully' })
+      }
+
+      if (action === 'send_reset_email') {
+        const { data: studentProfile } = await adminSupabase.from('profiles').select('email').eq('id', targetStudentId).maybeSingle()
+        const targetEmail = studentProfile?.email
+        if (!targetEmail) return res.status(404).json({ error: 'Student email not found' })
+        const { error } = await adminSupabase.auth.resetPasswordForEmail(targetEmail)
+        if (error) return res.status(400).json({ error: error.message })
+        return res.status(200).json({ success: true, message: 'Reset email sent successfully' })
+      }
+
+      if (action === 'deactivate') {
+        const { error } = await adminSupabase.from('profiles').update({ is_active: false }).eq('id', targetStudentId)
+        if (error) return res.status(400).json({ error: error.message })
+        return res.status(200).json({ success: true, message: 'Account deactivated' })
+      }
+
+      if (action === 'reactivate') {
+        const { error } = await adminSupabase.from('profiles').update({ is_active: true }).eq('id', targetStudentId)
+        if (error) return res.status(400).json({ error: error.message })
+        return res.status(200).json({ success: true, message: 'Account reactivated' })
+      }
+
+      if (action === 'delete_account') {
+        await Promise.allSettled([
+          adminSupabase.from('classes').delete().eq('user_id', targetStudentId),
+          adminSupabase.from('assignments').delete().eq('user_id', targetStudentId),
+          adminSupabase.from('exams').delete().eq('user_id', targetStudentId),
+          adminSupabase.from('reminders').delete().eq('user_id', targetStudentId),
+          adminSupabase.from('activity_log').delete().eq('user_id', targetStudentId),
+          adminSupabase.from('exam_results').delete().eq('student_id', targetStudentId),
+          adminSupabase.from('profiles').delete().eq('id', targetStudentId)
+        ])
+        const { error } = await adminSupabase.auth.admin.deleteUser(targetStudentId)
+        if (error) return res.status(400).json({ error: error.message })
+        return res.status(200).json({ success: true, message: 'Account deleted successfully' })
+      }
+
+      if (action === 'transfer_data') {
+        const toStudentId = (postData.toStudentId || body.toStudentId || '').trim()
+        if (!toStudentId) return res.status(400).json({ error: 'toStudentId is required' })
+
+        // 1. Fetch source student metadata and classes
+        const [sourceUserRes, sourceClassesRes, sourceAssignmentsRes, sourceExamsRes, sourceRemindersRes] = await Promise.all([
+          adminSupabase.auth.admin.getUserById(targetStudentId),
+          adminSupabase.from('classes').select('*').eq('user_id', targetStudentId),
+          adminSupabase.from('assignments').select('*').eq('user_id', targetStudentId),
+          adminSupabase.from('exams').select('*').eq('user_id', targetStudentId),
+          adminSupabase.from('reminders').select('*').eq('user_id', targetStudentId)
+        ])
+
+        const sourceMeta = sourceUserRes?.data?.user?.user_metadata || {}
+
+        // 2. Transfer classes
+        if (sourceClassesRes.data && sourceClassesRes.data.length > 0) {
+          const newClasses = sourceClassesRes.data.map(c => {
+            const { id, created_at, ...rest } = c
+            return { ...rest, user_id: toStudentId }
+          })
+          await adminSupabase.from('classes').insert(newClasses)
+        }
+
+        // 3. Transfer assignments
+        if (sourceAssignmentsRes.data && sourceAssignmentsRes.data.length > 0) {
+          const newAssignments = sourceAssignmentsRes.data.map(a => {
+            const { id, created_at, ...rest } = a
+            return { ...rest, user_id: toStudentId }
+          })
+          await adminSupabase.from('assignments').insert(newAssignments)
+        }
+
+        // 4. Transfer exams
+        if (sourceExamsRes.data && sourceExamsRes.data.length > 0) {
+          const newExams = sourceExamsRes.data.map(e => {
+            const { id, created_at, ...rest } = e
+            return { ...rest, user_id: toStudentId }
+          })
+          await adminSupabase.from('exams').insert(newExams)
+        }
+
+        // 5. Transfer reminders
+        if (sourceRemindersRes.data && sourceRemindersRes.data.length > 0) {
+          const newReminders = sourceRemindersRes.data.map(r => {
+            const { id, created_at, ...rest } = r
+            return { ...rest, user_id: toStudentId }
+          })
+          await adminSupabase.from('reminders').insert(newReminders)
+        }
+
+        // 5b. Transfer exam results semesters & courses
+        try {
+          const { data: sSemesters } = await adminSupabase.from('student_semesters').select('*').eq('user_id', targetStudentId)
+          if (sSemesters && sSemesters.length > 0) {
+            for (const s of sSemesters) {
+              const { data: createdSem } = await adminSupabase.from('student_semesters').insert({
+                user_id: toStudentId,
+                name: s.name
+              }).select().single()
+
+              if (createdSem) {
+                const { data: sCourses } = await adminSupabase.from('student_semester_courses').select('*').eq('semester_id', s.id)
+                if (sCourses && sCourses.length > 0) {
+                  const newCourses = sCourses.map(c => {
+                    const { id, created_at, ...rest } = c
+                    return { ...rest, user_id: toStudentId, semester_id: createdSem.id }
+                  })
+                  await adminSupabase.from('student_semester_courses').insert(newCourses)
+                }
+              }
+            }
+          }
+        } catch (_) {}
+
+        // 6. Transfer metadata (linked_timetables, timetable_order, semester settings, etc.)
+        const { data: targetUserRes } = await adminSupabase.auth.admin.getUserById(toStudentId)
+        const targetMeta = targetUserRes?.user?.user_metadata || {}
+        await adminSupabase.auth.admin.updateUserById(toStudentId, {
+          user_metadata: {
+            ...targetMeta,
+            linked_timetables: sourceMeta.linked_timetables || targetMeta.linked_timetables || [],
+            timetable_order: sourceMeta.timetable_order || targetMeta.timetable_order || [],
+            axon_exam_results_semesters: sourceMeta.axon_exam_results_semesters || targetMeta.axon_exam_results_semesters || [],
+            semester_name: sourceMeta.semester_name || targetMeta.semester_name || '',
+            semester_start_date: sourceMeta.semester_start_date || targetMeta.semester_start_date || '',
+            semester_end_date: sourceMeta.semester_end_date || targetMeta.semester_end_date || '',
+            preferences: {
+              ...(targetMeta.preferences || {}),
+              ...(sourceMeta.preferences || {})
+            }
+          }
+        })
+
+        // 7. Update profile university & student_id on target
+        const { data: sourceProfile } = await adminSupabase.from('profiles').select('*').eq('id', targetStudentId).maybeSingle()
+        if (sourceProfile) {
+          await adminSupabase.from('profiles').update({
+            university: sourceProfile.university,
+            course: sourceProfile.course,
+            student_id: sourceProfile.student_id,
+            xp_total: sourceProfile.xp_total || 0,
+            weekly_exercise_goal: sourceProfile.weekly_exercise_goal || 4
+          }).eq('id', toStudentId)
+        }
+
+        return res.status(200).json({ success: true, message: 'All student records transferred successfully' })
+      }
+    }
 
     // MODE: Fetch all chats across all students
     if (mode === 'all_chats') {

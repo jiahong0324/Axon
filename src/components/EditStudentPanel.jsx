@@ -1,5 +1,5 @@
-import { Eye, EyeOff, Lock, Mail, ShieldAlert, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { ArrowRightLeft, Eye, EyeOff, Lock, Mail, ShieldAlert, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import ToggleSwitch from './ToggleSwitch'
 import { useConfirmDialog } from './ConfirmModal'
 import { useToast } from './Toast'
@@ -7,7 +7,7 @@ import { studentManager } from '../lib/manageStudent'
 import { supabase } from '../lib/supabase'
 import { initials } from '../lib/utils'
 
-const tabs = ['Profile', 'Security', 'Danger Zone']
+const tabs = ['Profile', 'Security', 'Transfer Data', 'Danger Zone']
 
 export default function EditStudentPanel({ student, onClose, onSaved }) {
   const [activeTab, setActiveTab] = useState('Profile')
@@ -15,9 +15,39 @@ export default function EditStudentPanel({ student, onClose, onSaved }) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [targetStudentId, setTargetStudentId] = useState('')
+  const [allStudents, setAllStudents] = useState([])
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { showToast } = useToast()
   const strength = useMemo(() => passwordStrength(password), [password])
+
+  useEffect(() => {
+    supabase.from('profiles').select('id, full_name, email, student_id').eq('role', 'student').neq('id', student.id)
+      .then(({ data }) => setAllStudents(data || []))
+      .catch(() => {})
+  }, [student.id])
+
+  async function handleTransfer() {
+    if (!targetStudentId) return showToast('Please select a destination student account.', 'error')
+    const target = allStudents.find(s => s.id === targetStudentId)
+    const targetName = target ? (target.full_name || target.email) : targetStudentId
+    if (!await confirm({
+      title: 'Copy & Transfer All Data?',
+      message: `Copy all classes, timetables, assignments, and exams from ${student.full_name || student.email} to ${targetName}?`,
+      confirmText: 'Transfer Data'
+    })) return
+
+    setBusy(true)
+    try {
+      await studentManager.transferData(student.id, targetStudentId)
+      showToast('All academic data successfully copied to destination account!', 'success')
+      onSaved?.()
+    } catch (err) {
+      showToast(err.message || 'Data transfer failed.', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function saveProfile() {
     setBusy(true)
@@ -123,9 +153,9 @@ export default function EditStudentPanel({ student, onClose, onSaved }) {
             {form.course && <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-300">{form.course}</span>}
           </div>
         </header>
-        <nav className="grid grid-cols-3 gap-2 border-b border-white/10 p-3">
+        <nav className="grid grid-cols-4 gap-1.5 border-b border-white/10 p-3">
           {tabs.map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`min-h-[44px] rounded-xl text-sm font-medium ${activeTab === tab ? 'bg-amber-500 text-white' : 'text-slate-400 hover:bg-white/5'}`}>
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`min-h-[44px] rounded-xl text-xs sm:text-sm font-medium px-1 ${activeTab === tab ? 'bg-amber-500 text-white' : 'text-slate-400 hover:bg-white/5'}`}>
               {tab}
             </button>
           ))}
@@ -135,7 +165,7 @@ export default function EditStudentPanel({ student, onClose, onSaved }) {
             <div className="space-y-4">
               <Field label="Full Name"><input className="input" value={form.full_name || ''} onChange={e => setForm({ ...form, full_name: e.target.value })} /></Field>
               <Field label="Email"><input className="input" type="email" value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} /></Field>
-              <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-200">Changing email updates the student's login credentials through the secure Edge Function.</p>
+              <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-200">Changing email updates the student's login credentials securely via the admin API.</p>
               <Field label="University"><input className="input" value={form.university || ''} onChange={e => setForm({ ...form, university: e.target.value })} /></Field>
               <Field label="Course / Programme"><input className="input" value={form.course || ''} onChange={e => setForm({ ...form, course: e.target.value })} /></Field>
               <Field label="Student ID"><input className="input" value={form.student_id || ''} onChange={e => setForm({ ...form, student_id: e.target.value })} /></Field>
@@ -171,6 +201,35 @@ export default function EditStudentPanel({ student, onClose, onSaved }) {
                 </div>
                 {form.is_active === false && <p className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">This student cannot log in.</p>}
               </section>
+            </div>
+          )}
+          {activeTab === 'Transfer Data' && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-200">
+                <ArrowRightLeft className="mb-2 h-5 w-5 text-blue-400" />
+                Copy all classes, linked timetables, semester settings, assignments, and exams from this account to another student account (e.g. an active Google account).
+              </div>
+              <Field label="Destination Student Account">
+                <select
+                  className="input"
+                  value={targetStudentId}
+                  onChange={e => setTargetStudentId(e.target.value)}
+                >
+                  <option value="">-- Select Destination Student --</option>
+                  {allStudents.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.full_name || 'Unnamed'} ({s.email}) {s.student_id ? `[ID: ${s.student_id}]` : ''}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <button
+                className="manager-primary-btn w-full"
+                disabled={busy || !targetStudentId}
+                onClick={handleTransfer}
+              >
+                Copy & Sync All Data to Selected Account
+              </button>
             </div>
           )}
           {activeTab === 'Danger Zone' && (

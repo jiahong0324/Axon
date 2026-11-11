@@ -6,6 +6,26 @@ async function call(action, studentId, data = {}) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Not authenticated')
 
+  // 1. First try the robust Vercel Serverless Function (/api/admin-student)
+  try {
+    const res = await fetch('/api/admin-student', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ action, studentId, data })
+    })
+    if (res.ok) {
+      const result = await res.json()
+      if (result.success) return result
+      if (result.error) throw new Error(result.error)
+    }
+  } catch (apiErr) {
+    console.warn('/api/admin-student attempt failed, trying edge function fallback:', apiErr.message)
+  }
+
+  // 2. Fallback to Supabase Edge function
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
   const res = await fetch(EDGE_URL, {
     method: 'POST',
@@ -32,6 +52,7 @@ export const studentManager = {
   sendLoginEmail: id => call('send_login_email', id),
   sendAcademicDigest: (id, options) => call('send_academic_digest', id, options),
   deleteAccount: id => call('delete_account', id),
+  transferData: (fromId, toId) => call('transfer_data', fromId, { toStudentId: toId }),
   deactivate: id => call('deactivate', id),
   reactivate: id => call('reactivate', id),
   cleanupActivityLogs: async () => {
