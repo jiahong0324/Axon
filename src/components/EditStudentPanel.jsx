@@ -17,20 +17,44 @@ export default function EditStudentPanel({ student, onClose, onSaved }) {
   const [busy, setBusy] = useState(false)
   const [targetStudentId, setTargetStudentId] = useState('')
   const [allStudents, setAllStudents] = useState([])
+  const [currentAuthAccount, setCurrentAuthAccount] = useState(null)
+  const [accountsLoading, setAccountsLoading] = useState(false)
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { showToast } = useToast()
   const strength = useMemo(() => passwordStrength(password), [password])
 
   useEffect(() => {
-    supabase.from('profiles').select('id, full_name, email, student_id').eq('role', 'student').neq('id', student.id)
-      .then(({ data }) => setAllStudents(data || []))
-      .catch(() => {})
+    let active = true
+    async function loadAccounts() {
+      setAccountsLoading(true)
+      try {
+        const adminAccounts = await studentManager.listAllAccounts()
+        if (active && Array.isArray(adminAccounts) && adminAccounts.length > 0) {
+          const selfAcc = adminAccounts.find(a => a.id === student.id) || null
+          setCurrentAuthAccount(selfAcc)
+          setAllStudents(adminAccounts.filter(a => a.id !== student.id))
+          setAccountsLoading(false)
+          return
+        }
+      } catch (_) {}
+
+      supabase.from('profiles').select('id, full_name, email, student_id, role').neq('id', student.id)
+        .then(({ data }) => {
+          if (active) setAllStudents(data || [])
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (active) setAccountsLoading(false)
+        })
+    }
+    loadAccounts()
+    return () => { active = false }
   }, [student.id])
 
   async function handleTransfer() {
     if (!targetStudentId) return showToast('Please select a destination student account.', 'error')
     const target = allStudents.find(s => s.id === targetStudentId)
-    const targetName = target ? (target.full_name || target.email) : targetStudentId
+    const targetName = target ? (target.auth_full_name || target.full_name || target.email) : targetStudentId
     if (!await confirm({
       title: 'Copy & Transfer All Data?',
       message: `Copy all classes, timetables, assignments, and exams from ${student.full_name || student.email} to ${targetName}?`,
@@ -207,25 +231,49 @@ export default function EditStudentPanel({ student, onClose, onSaved }) {
             <div className="space-y-4">
               <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-200">
                 <ArrowRightLeft className="mb-2 h-5 w-5 text-blue-400" />
-                Copy all classes, linked timetables, semester settings, assignments, and exams from this account to another student account (e.g. an active Google account).
+                Copy all classes, linked timetables, semester settings, assignments, and exams from this account to another student account (e.g. an active Google or university account).
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5 text-xs space-y-1.5">
+                <p className="font-semibold text-slate-200">Current Source Account</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-400">
+                  <span>Profile Name: <strong className="text-slate-200">{student.full_name || 'Unnamed'}</strong></span>
+                  {currentAuthAccount?.auth_full_name && (
+                    <span>Auth / Google Name: <strong className="text-amber-300">{currentAuthAccount.auth_full_name}</strong></span>
+                  )}
+                  <span>Email: <strong className="text-slate-200">{student.email || currentAuthAccount?.email || 'N/A'}</strong></span>
+                </div>
+                {currentAuthAccount?.providers?.length > 0 && (
+                  <p className="text-slate-500">Login providers: {currentAuthAccount.providers.join(', ')}</p>
+                )}
+                {!accountsLoading && currentAuthAccount?.auth_full_name && currentAuthAccount.auth_full_name !== student.full_name && (
+                  <p className="pt-1 text-amber-300/90">
+                    Note: <strong>{currentAuthAccount.auth_full_name}</strong> and <strong>{student.full_name}</strong> are the same account ({student.email || currentAuthAccount.email}).
+                  </p>
+                )}
               </div>
               <Field label="Destination Student Account">
                 <select
                   className="input"
                   value={targetStudentId}
                   onChange={e => setTargetStudentId(e.target.value)}
+                  disabled={accountsLoading}
                 >
-                  <option value="">-- Select Destination Student --</option>
-                  {allStudents.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.full_name || 'Unnamed'} ({s.email}) {s.student_id ? `[ID: ${s.student_id}]` : ''}
-                    </option>
-                  ))}
+                  <option value="">{accountsLoading ? 'Loading all accounts...' : '-- Select Destination Account --'}</option>
+                  {allStudents.map(s => {
+                    const primaryName = s.auth_full_name || s.full_name || 'Unnamed'
+                    const altName = s.auth_full_name && s.full_name && s.auth_full_name !== s.full_name ? ` / ${s.full_name}` : ''
+                    const roleTag = s.role === 'no_profile' ? ' [No Profile]' : (s.role && s.role !== 'student' ? ` [${s.role}]` : '')
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {primaryName}{altName} ({s.email || 'no email'}){s.student_id ? ` [ID: ${s.student_id}]` : ''}{roleTag}
+                      </option>
+                    )
+                  })}
                 </select>
               </Field>
               <button
                 className="manager-primary-btn w-full"
-                disabled={busy || !targetStudentId}
+                disabled={busy || accountsLoading || !targetStudentId}
                 onClick={handleTransfer}
               >
                 Copy & Sync All Data to Selected Account

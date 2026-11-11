@@ -141,6 +141,7 @@ export default function TimetablePage() {
   const [rolloverStep, setRolloverStep] = useState(1)
   const [savedArchiveName, setSavedArchiveName] = useState('')
   const hasCheckedRollover = useRef(false)
+  const hasRecoveredLinkedRef = useRef(false)
   const [newSemesterForm, setNewSemesterForm] = useState({ archiveName: '', newName: '', newStartDate: '', newEndDate: '' })
   const [selectedDay, setSelectedDay] = useState(() => {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -341,6 +342,36 @@ export default function TimetablePage() {
 
     saveLinkedProfiles(currentUser.id, profiles)
     setLinkedProfiles(profiles)
+
+    if (profiles.length === 0 && !hasRecoveredLinkedRef.current) {
+      hasRecoveredLinkedRef.current = true
+      supabase
+        .from('activity_log')
+        .select('entity_name')
+        .eq('user_id', currentUser.id)
+        .eq('entity_type', 'axon_linked_timetables')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .then(({ data: actLinked }) => {
+          if (!actLinked || !actLinked[0]?.entity_name) return
+          const parsed = JSON.parse(actLinked[0].entity_name)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            saveLinkedProfiles(currentUser.id, parsed)
+            setLinkedProfiles(parsed)
+            const orderWithRecovered = [LIVE_PROFILE_ID, ...parsed.map(p => p.id)]
+            setTimetableOrder(orderWithRecovered)
+            timetableOrderRef.current = orderWithRecovered
+            saveTimetableOrder(currentUser.id, orderWithRecovered)
+            supabase.auth.updateUser({
+              data: {
+                linked_timetables: parsed,
+                timetable_order: orderWithRecovered
+              }
+            }).catch(() => {})
+          }
+        })
+        .catch(() => {})
+    }
     setTimetableOrder(combinedOrder)
     timetableOrderRef.current = combinedOrder
     saveTimetableOrder(currentUser.id, combinedOrder)
@@ -410,7 +441,7 @@ export default function TimetablePage() {
       setLoading(true)
     }
 
-    const [{ data: authData }, { data }] = await Promise.all([
+    const [{ data: authData }, { data, error: classesError }] = await Promise.all([
       supabase.auth.getUser(),
       supabase.from('classes').select('*').eq('user_id', activeUser.id)
     ])
@@ -419,6 +450,14 @@ export default function TimetablePage() {
     if (authData?.user) {
       activeUser = authData.user
       setUser(authData.user)
+    }
+
+    if (classesError) {
+      console.error('Error loading classes:', classesError)
+      showToast(`Failed to load classes: ${classesError.message}`, 'error')
+      setLoading(false)
+      window.hidePrerenderSplash?.()
+      return
     }
 
     let allReplacements = activeUser.user_metadata?.replacement_classes || []

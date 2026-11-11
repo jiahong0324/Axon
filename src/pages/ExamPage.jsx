@@ -6,6 +6,7 @@ import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
 import Modal from '../components/Modal'
 import { useToast } from '../components/Toast'
 import { logActivity } from '../lib/logActivity'
+import { clearCache, readCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
 import { dateLabel, daysFromToday, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
@@ -67,13 +68,50 @@ export default function ExamPage() {
     }
   }, [])
 
+  const examsCacheKey = uid => `axon_exams_${uid}`
+
   async function fetchExams() {
-    setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data } = await supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date')
-    const { data: resultRows } = await supabase.from('exam_results').select('*').eq('student_id', user.id)
-    setExams(data || [])
-    setResults(resultRows || [])
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user || (await supabase.auth.getUser()).data.user
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    const cacheKey = examsCacheKey(user.id)
+    const cached = readCache(cacheKey, 10 * 60 * 1000)
+    const fallback = cached || readCache(cacheKey, 7 * 24 * 60 * 60 * 1000)
+    if (cached) {
+      const cachedExams = Array.isArray(cached) ? cached : (cached.exams || [])
+      const cachedResults = Array.isArray(cached) ? [] : (cached.results || [])
+      setExams(cachedExams)
+      setResults(cachedResults)
+      setLoading(false)
+    } else {
+      setLoading(true)
+    }
+
+    const [{ data, error }, { data: resultRows, error: resultsError }] = await Promise.all([
+      supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
+      supabase.from('exam_results').select('*').eq('student_id', user.id)
+    ])
+
+    const fallbackExams = Array.isArray(fallback) ? fallback : (fallback?.exams || [])
+    const fallbackResults = Array.isArray(fallback) ? [] : (fallback?.results || [])
+
+    if (error) {
+      console.error('Error loading exams:', error)
+      if (fallback && !cached) setExams(fallbackExams)
+      showToast(`Failed to load exams: ${error.message}`, 'error')
+    } else {
+      setExams(data || [])
+    }
+
+    const nextResults = resultsError ? fallbackResults : (resultRows || [])
+    setResults(nextResults)
+
+    if (!error && !resultsError) {
+      writeCache(cacheKey, { exams: data || [], results: nextResults })
+    }
 
     const { data: classesData } = await supabase.from('classes').select('subject').eq('user_id', user.id)
     if (classesData) {
@@ -117,6 +155,8 @@ export default function ExamPage() {
       showToast('Exam added.', 'success')
     }
 
+    clearCache(examsCacheKey(user.id))
+    clearCache(`axon_home_dashboard_${user.id}`)
     setModal(false)
     setForm(initialForm)
     setEditingId(null)
@@ -143,6 +183,8 @@ export default function ExamPage() {
       venue: item.venue,
       exam_type: item.exam_type
     })))
+    clearCache(examsCacheKey(user.id))
+    clearCache(`axon_home_dashboard_${user.id}`)
     showToast(`${validItems.length} exam(s) saved successfully.`, 'success')
     setAnalyzerOpen(false)
     fetchExams()
@@ -151,15 +193,22 @@ export default function ExamPage() {
   async function deleteExam(id) {
     if (!await confirm({ title: 'Delete exam?', message: 'This exam will be removed from your planner.', confirmText: 'Delete' })) return
     const deleted = exams.find(e => e.id === id)
-    await supabase.from('exams').delete().eq('id', id)
+    const { error } = await supabase.from('exams').delete().eq('id', id)
+    if (error) return showToast('Exam could not be deleted.', 'error')
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user || (await supabase.auth.getUser()).data.user
     if (deleted) {
-      const { data: { user } } = await supabase.auth.getUser()
       await logActivity('Deleted exam', 'exam', deleted.subject, user?.id, {
         exam_date: deleted.exam_date,
         venue: deleted.venue
       })
     }
-    setExams(prev => prev.filter(e => e.id !== id))
+    setExams(prev => {
+      const next = prev.filter(e => e.id !== id)
+      if (user?.id) writeCache(examsCacheKey(user.id), { exams: next, results })
+      return next
+    })
+    if (user?.id) clearCache(`axon_home_dashboard_${user.id}`)
   }
 
   async function clearExams() {
@@ -167,6 +216,8 @@ export default function ExamPage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('exams').delete().eq('user_id', user.id)
     if (error) return showToast('Could not clear exams.', 'error')
+    clearCache(examsCacheKey(user.id))
+    clearCache(`axon_home_dashboard_${user.id}`)
     setExams([])
     showToast('Exams cleared.', 'success')
   }

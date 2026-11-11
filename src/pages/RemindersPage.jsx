@@ -7,6 +7,7 @@ import { useToast } from '../components/Toast'
 import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq } from '../lib/groq'
 import { logActivity } from '../lib/logActivity'
+import { clearCache, readCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
@@ -64,10 +65,31 @@ export default function RemindersPage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
+  const remindersCacheKey = uid => `axon_reminders_${uid}`
+
   async function fetchItems() {
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data } = await supabase.from('reminders').select('*').eq('user_id', user.id).order('reminder_time')
-    setItems(data || [])
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user || (await supabase.auth.getUser()).data.user
+    if (!user) return
+
+    const cacheKey = remindersCacheKey(user.id)
+    const cached = readCache(cacheKey, 10 * 60 * 1000)
+    const fallback = cached || readCache(cacheKey, 7 * 24 * 60 * 60 * 1000)
+    if (cached) {
+      setItems(cached)
+    }
+
+    const { data, error } = await supabase.from('reminders').select('*').eq('user_id', user.id).order('reminder_time')
+    if (error) {
+      console.error('Error loading reminders:', error)
+      if (fallback && !cached) setItems(fallback)
+      showToast(`Failed to load reminders: ${error.message}`, 'error')
+      return
+    }
+
+    const nextItems = data || []
+    setItems(nextItems)
+    writeCache(cacheKey, nextItems)
   }
 
   async function addItem(e) {
@@ -78,32 +100,45 @@ export default function RemindersPage() {
     await logActivity('Added reminder', 'reminder', form.title, user.id, {
       reminder_time: form.reminder_time
     })
+    clearCache(remindersCacheKey(user.id))
     setForm(initialForm)
     setShowForm(false)
     fetchItems()
   }
 
   async function updateItem(id, updates) {
-    await supabase.from('reminders').update(updates).eq('id', id)
+    const { error } = await supabase.from('reminders').update(updates).eq('id', id)
+    if (error) return showToast('Reminder could not be updated.', 'error')
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user || (await supabase.auth.getUser()).data.user
     const item = items.find(i => i.id === id)
     if (updates.completed !== undefined) {
-      const { data: { user } } = await supabase.auth.getUser()
       await logActivity(updates.completed ? 'Completed reminder' : 'Updated reminder', 'reminder', item?.title || 'Reminder', user?.id, {
         reminder_time: item?.reminder_time
       })
     }
-    setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item))
+    setItems(prev => {
+      const next = prev.map(item => item.id === id ? { ...item, ...updates } : item)
+      if (user?.id) writeCache(remindersCacheKey(user.id), next)
+      return next
+    })
   }
 
   async function deleteItem(id) {
     if (!await confirm({ title: 'Delete reminder?', message: 'This reminder will be removed.', confirmText: 'Delete' })) return
     const item = items.find(i => i.id === id)
-    await supabase.from('reminders').delete().eq('id', id)
+    const { error } = await supabase.from('reminders').delete().eq('id', id)
+    if (error) return showToast('Reminder could not be deleted.', 'error')
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user || (await supabase.auth.getUser()).data.user
     if (item) {
-      const { data: { user } } = await supabase.auth.getUser()
       await logActivity('Deleted reminder', 'reminder', item.title, user?.id)
     }
-    setItems(prev => prev.filter(item => item.id !== id))
+    setItems(prev => {
+      const next = prev.filter(item => item.id !== id)
+      if (user?.id) writeCache(remindersCacheKey(user.id), next)
+      return next
+    })
   }
 
   async function clearReminders() {
@@ -111,6 +146,7 @@ export default function RemindersPage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('reminders').delete().eq('user_id', user.id)
     if (error) return showToast('Could not clear reminders.', 'error')
+    clearCache(remindersCacheKey(user.id))
     setItems([])
     showToast('Reminders cleared.', 'success')
   }

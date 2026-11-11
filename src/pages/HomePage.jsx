@@ -84,7 +84,9 @@ export default function HomePage() {
       }
       setUser(activeUser)
 
-      const cachedDashboard = readCache(`axon_home_dashboard_${activeUser.id}`, 10 * 60 * 1000)
+      const cacheKey = `axon_home_dashboard_${activeUser.id}`
+      const cachedDashboard = readCache(cacheKey, 10 * 60 * 1000)
+      const fallbackDashboard = cachedDashboard || readCache(cacheKey, 7 * 24 * 60 * 60 * 1000)
       if (cachedDashboard) {
         setClasses(cachedDashboard.classes || [])
         setAssignments(cachedDashboard.assignments || [])
@@ -101,11 +103,24 @@ export default function HomePage() {
         supabase.from('announcements').select('*').or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).order('created_at', { ascending: false })
       ])
 
-      let activeClasses = classesRes.data || []
+      const coreErrors = [classesRes.error, assignmentsRes.error, examsRes.error].filter(Boolean)
+      if (coreErrors.length > 0) {
+        console.error('Error loading home dashboard data:', {
+          classesError: classesRes.error,
+          assignmentsError: assignmentsRes.error,
+          examsError: examsRes.error
+        })
+        showToast('Some dashboard data could not be loaded from the server.', 'error')
+      }
+
+      let activeClasses = classesRes.error ? (fallbackDashboard?.classes || []) : (classesRes.data || [])
       const savedActive = localStorage.getItem(`axon_active_timetable_${activeUser.id}`) || 'account'
       if (savedActive !== 'account') {
         try {
-          const profiles = JSON.parse(localStorage.getItem(`axon_linked_timetables_${activeUser.id}`) || '[]')
+          const rawProfiles = localStorage.getItem(`axon_linked_timetables_${activeUser.id}`)
+          const profiles = rawProfiles
+            ? JSON.parse(rawProfiles)
+            : (Array.isArray(activeUser.user_metadata?.linked_timetables) ? activeUser.user_metadata.linked_timetables : [])
           const activeProfile = profiles.find(p => p.id === savedActive)
           if (activeProfile && activeProfile.classes) {
             activeClasses = activeProfile.classes.filter(c => !c.profile_id || c.profile_id === savedActive)
@@ -113,33 +128,38 @@ export default function HomePage() {
         } catch (e) {
           console.error('Failed to load linked timetable', e)
         }
-      } else {
+      } else if (!classesRes.error) {
         const replacements = activeUser.user_metadata?.replacement_classes || []
         const validReplacements = replacements.filter(r => (!r.date || r.date >= today) && (!r.profile_id || r.profile_id === 'account' || r.profile_id === 'live'))
         activeClasses = [...activeClasses, ...validReplacements]
       }
 
       const { data: userProfile } = await supabase.from('profiles').select('course, university').eq('id', activeUser.id).maybeSingle()
-      const validAnnouncements = (announcementRowsRes.data || [])
-        .map(parseAnnouncement)
-        .filter(a => {
-          if (a.channels && a.channels.in_app === false) return false
-          if (sessionStorage.getItem(`axon_ann_dismissed_${a.id}`)) return false
-          if (localStorage.getItem(`axon_ann_read_${a.id}`)) return false
+      const validAnnouncements = announcementRowsRes.error
+        ? (fallbackDashboard?.announcements || [])
+        : (announcementRowsRes.data || [])
+            .map(parseAnnouncement)
+            .filter(a => {
+              if (a.channels && a.channels.in_app === false) return false
+              if (sessionStorage.getItem(`axon_ann_dismissed_${a.id}`)) return false
+              if (localStorage.getItem(`axon_ann_read_${a.id}`)) return false
 
-        const targetType = a.target_type || 'all'
-        if (targetType === 'all') return true
-        if (targetType === 'individual') return (a.target_ids || []).includes(activeUser.id)
-        if (targetType === 'group' && a.target_group) {
-          const grp = a.target_group.trim().toLowerCase()
-          return grp === (userProfile?.course || '').trim().toLowerCase() || grp === (userProfile?.university || '').trim().toLowerCase()
-        }
-        return true
-      })
+              const targetType = a.target_type || 'all'
+              if (targetType === 'all') return true
+              if (targetType === 'individual') return (a.target_ids || []).includes(activeUser.id)
+              if (targetType === 'group' && a.target_group) {
+                const grp = a.target_group.trim().toLowerCase()
+                return grp === (userProfile?.course || '').trim().toLowerCase() || grp === (userProfile?.university || '').trim().toLowerCase()
+              }
+              return true
+            })
+
+      const nextAssignments = assignmentsRes.error ? (fallbackDashboard?.assignments || []) : (assignmentsRes.data || [])
+      const nextExams = examsRes.error ? (fallbackDashboard?.exams || []) : (examsRes.data || [])
 
       setClasses(activeClasses)
-      setAssignments(assignmentsRes.data || [])
-      setExams(examsRes.data || [])
+      setAssignments(nextAssignments)
+      setExams(nextExams)
       setAnnouncements(validAnnouncements)
 
       const exData = await fetchExerciseData(activeUser.id)
@@ -147,12 +167,14 @@ export default function HomePage() {
       setExerciseFreezes(exData.freezesAvailable || 0)
       setExerciseFrozenDates(exData.frozenDates || [])
 
-      writeCache(`axon_home_dashboard_${activeUser.id}`, {
-        classes: activeClasses,
-        assignments: assignmentsRes.data || [],
-        exams: examsRes.data || [],
-        announcements: validAnnouncements
-      })
+      if (coreErrors.length === 0 && !announcementRowsRes.error) {
+        writeCache(cacheKey, {
+          classes: activeClasses,
+          assignments: nextAssignments,
+          exams: nextExams,
+          announcements: validAnnouncements
+        })
+      }
     } catch {
       showToast('Failed to load dashboard.', 'error')
     } finally {

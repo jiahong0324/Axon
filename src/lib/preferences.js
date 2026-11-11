@@ -50,6 +50,18 @@ export const DEFAULT_PREFERENCES = {
 export async function syncPreferences(user) {
   if (!user) return
 
+  // Isolate global browser cache keys when switching between different accounts
+  try {
+    const lastUid = localStorage.getItem('axon_last_user_id')
+    if (lastUid && lastUid !== user.id) {
+      localStorage.removeItem('axon_semester_name')
+      localStorage.removeItem('axon_semester_start_date')
+      localStorage.removeItem('axon_semester_end_date')
+      localStorage.removeItem('axon_onboarding_skipped')
+    }
+    localStorage.setItem('axon_last_user_id', user.id)
+  } catch (_) {}
+
   const remotePrefs = user.user_metadata?.preferences || {}
   const mergedPrefs = { ...DEFAULT_PREFERENCES, ...remotePrefs }
   let needsUpload = false

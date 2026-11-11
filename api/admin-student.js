@@ -117,6 +117,22 @@ export default async function handler(req, res) {
         ])
 
         const sourceMeta = sourceUserRes?.data?.user?.user_metadata || {}
+        let resolvedLinkedTimetables = Array.isArray(sourceMeta.linked_timetables) ? sourceMeta.linked_timetables : []
+        if (resolvedLinkedTimetables.length === 0) {
+          const { data: actLinked } = await adminSupabase
+            .from('activity_log')
+            .select('entity_name')
+            .eq('user_id', targetStudentId)
+            .eq('entity_type', 'axon_linked_timetables')
+            .order('created_at', { ascending: false })
+            .limit(1)
+          if (actLinked?.[0]?.entity_name) {
+            try {
+              const parsed = JSON.parse(actLinked[0].entity_name)
+              if (Array.isArray(parsed)) resolvedLinkedTimetables = parsed
+            } catch (_) {}
+          }
+        }
 
         // 2. Transfer classes
         if (sourceClassesRes.data && sourceClassesRes.data.length > 0) {
@@ -124,7 +140,8 @@ export default async function handler(req, res) {
             const { id, created_at, ...rest } = c
             return { ...rest, user_id: toStudentId }
           })
-          await adminSupabase.from('classes').insert(newClasses)
+          const { error: clsErr } = await adminSupabase.from('classes').insert(newClasses)
+          if (clsErr) return res.status(400).json({ error: `Failed to copy classes: ${clsErr.message}` })
         }
 
         // 3. Transfer assignments
@@ -133,7 +150,8 @@ export default async function handler(req, res) {
             const { id, created_at, ...rest } = a
             return { ...rest, user_id: toStudentId }
           })
-          await adminSupabase.from('assignments').insert(newAssignments)
+          const { error: asnErr } = await adminSupabase.from('assignments').insert(newAssignments)
+          if (asnErr) return res.status(400).json({ error: `Failed to copy assignments: ${asnErr.message}` })
         }
 
         // 4. Transfer exams
@@ -142,7 +160,8 @@ export default async function handler(req, res) {
             const { id, created_at, ...rest } = e
             return { ...rest, user_id: toStudentId }
           })
-          await adminSupabase.from('exams').insert(newExams)
+          const { error: exmErr } = await adminSupabase.from('exams').insert(newExams)
+          if (exmErr) return res.status(400).json({ error: `Failed to copy exams: ${exmErr.message}` })
         }
 
         // 5. Transfer reminders
@@ -151,7 +170,8 @@ export default async function handler(req, res) {
             const { id, created_at, ...rest } = r
             return { ...rest, user_id: toStudentId }
           })
-          await adminSupabase.from('reminders').insert(newReminders)
+          const { error: remErr } = await adminSupabase.from('reminders').insert(newReminders)
+          if (remErr) return res.status(400).json({ error: `Failed to copy reminders: ${remErr.message}` })
         }
 
         // 5b. Transfer exam results semesters & courses
@@ -181,10 +201,14 @@ export default async function handler(req, res) {
         // 6. Transfer metadata (linked_timetables, timetable_order, semester settings, etc.)
         const { data: targetUserRes } = await adminSupabase.auth.admin.getUserById(toStudentId)
         const targetMeta = targetUserRes?.user?.user_metadata || {}
+        const mergedLinkedTimetables = resolvedLinkedTimetables.length > 0
+          ? resolvedLinkedTimetables
+          : (targetMeta.linked_timetables || [])
+
         await adminSupabase.auth.admin.updateUserById(toStudentId, {
           user_metadata: {
             ...targetMeta,
-            linked_timetables: sourceMeta.linked_timetables || targetMeta.linked_timetables || [],
+            linked_timetables: mergedLinkedTimetables,
             timetable_order: sourceMeta.timetable_order || targetMeta.timetable_order || [],
             axon_exam_results_semesters: sourceMeta.axon_exam_results_semesters || targetMeta.axon_exam_results_semesters || [],
             semester_name: sourceMeta.semester_name || targetMeta.semester_name || '',
@@ -197,20 +221,116 @@ export default async function handler(req, res) {
           }
         })
 
-        // 7. Update profile university & student_id on target
-        const { data: sourceProfile } = await adminSupabase.from('profiles').select('*').eq('id', targetStudentId).maybeSingle()
+        // Also mirror linked_timetables to activity_log on target as backup
+        if (mergedLinkedTimetables.length > 0) {
+          try {
+            await adminSupabase.from('activity_log').insert({
+              user_id: toStudentId,
+              action: 'SYNC_LINKED_TIMETABLES',
+              entity_type: 'axon_linked_timetables',
+              entity_name: JSON.stringify(mergedLinkedTimetables)
+            })
+          } catch (_) {}
+        }
+
+        // 7. Upsert profile fields on target (works even if target had no profiles row yet)
+        const [{ data: sourceProfile }, { data: existingTargetProfile }] = await Promise.all([
+          adminSupabase.from('profiles').select('*').eq('id', targetStudentId).maybeSingle(),
+          adminSupabase.from('profiles').select('*').eq('id', toStudentId).maybeSingle()
+        ])
         if (sourceProfile) {
-          await adminSupabase.from('profiles').update({
-            university: sourceProfile.university,
-            course: sourceProfile.course,
-            student_id: sourceProfile.student_id,
-            xp_total: sourceProfile.xp_total || 0,
-            weekly_exercise_goal: sourceProfile.weekly_exercise_goal || 4
-          }).eq('id', toStudentId)
+          await adminSupabase.from('profiles').upsert({
+            id: toStudentId,
+            email: targetUserRes?.user?.email || existingTargetProfile?.email || '',
+            full_name: existingTargetProfile?.full_name || targetUserRes?.user?.user_metadata?.full_name || sourceProfile.full_name || '',
+            role: existingTargetProfile?.role || 'student',
+            is_active: existingTargetProfile?.is_active !== false,
+            university: sourceProfile.university || existingTargetProfile?.university || '',
+            course: sourceProfile.course || existingTargetProfile?.course || '',
+            student_id: sourceProfile.student_id || existingTargetProfile?.student_id || '',
+            xp_total: Math.max(sourceProfile.xp_total || 0, existingTargetProfile?.xp_total || 0),
+            weekly_exercise_goal: sourceProfile.weekly_exercise_goal || existingTargetProfile?.weekly_exercise_goal || 4
+          }, { onConflict: 'id' })
         }
 
         return res.status(200).json({ success: true, message: 'All student records transferred successfully' })
       }
+    }
+
+    // MODE: List ALL Auth users + Profiles (including non-student or orphan auth accounts)
+    if (mode === 'list_accounts') {
+      const authUsers = []
+      let page = 1
+      const perPage = 1000
+      while (page <= 5) {
+        const { data: usersData, error: listErr } = await adminSupabase.auth.admin.listUsers({ page, perPage })
+        if (listErr) {
+          return res.status(500).json({ error: listErr.message })
+        }
+        const batch = usersData?.users || []
+        authUsers.push(...batch)
+        if (batch.length < perPage) break
+        page += 1
+      }
+
+      const { data: profiles } = await adminSupabase
+        .from('profiles')
+        .select('id, full_name, email, student_id, university, course, role, is_active, created_at')
+
+      const profileMap = new Map()
+      for (const p of profiles || []) {
+        profileMap.set(p.id, p)
+      }
+
+      const mergedMap = new Map()
+      for (const u of authUsers) {
+        const p = profileMap.get(u.id)
+        mergedMap.set(u.id, {
+          id: u.id,
+          email: u.email || p?.email || '',
+          profile_email: p?.email || '',
+          auth_full_name: u.user_metadata?.full_name || u.user_metadata?.name || '',
+          full_name: p?.full_name || '',
+          role: p?.role || 'no_profile',
+          has_profile: Boolean(p),
+          student_id: p?.student_id || '',
+          university: p?.university || '',
+          course: p?.course || '',
+          is_active: p ? p.is_active !== false : true,
+          providers: u.app_metadata?.providers || [],
+          created_at: u.created_at || p?.created_at || null,
+          last_sign_in_at: u.last_sign_in_at || null
+        })
+      }
+
+      for (const p of profiles || []) {
+        if (!mergedMap.has(p.id)) {
+          mergedMap.set(p.id, {
+            id: p.id,
+            email: p.email || '',
+            profile_email: p.email || '',
+            auth_full_name: '',
+            full_name: p.full_name || '',
+            role: p.role || 'student',
+            has_profile: true,
+            student_id: p.student_id || '',
+            university: p.university || '',
+            course: p.course || '',
+            is_active: p.is_active !== false,
+            providers: [],
+            created_at: p.created_at || null,
+            last_sign_in_at: null
+          })
+        }
+      }
+
+      const accounts = Array.from(mergedMap.values()).sort((a, b) => {
+        const tA = new Date(a.last_sign_in_at || a.created_at || 0).getTime()
+        const tB = new Date(b.last_sign_in_at || b.created_at || 0).getTime()
+        return tB - tA
+      })
+
+      return res.status(200).json({ success: true, accounts })
     }
 
     // MODE: Fetch all chats across all students
@@ -232,23 +352,44 @@ export default async function handler(req, res) {
       })
     }
 
-    // MODE: Clean up raw internal sync logs from activity_log
+    // MODE: Clean up duplicate/noisy internal sync logs while keeping latest cloud backup per student
     if (mode === 'cleanup_activity') {
       try {
-        await adminSupabase
+        const snapshotTypes = ['axon_linked_timetables', 'axon_exam_results_semesters']
+        const { data: snapshotRows } = await adminSupabase
           .from('activity_log')
-          .delete()
-          .in('entity_type', ['axon_linked_timetables', 'axon_exam_results_semesters'])
+          .select('id, user_id, entity_type, created_at')
+          .in('entity_type', snapshotTypes)
+          .order('created_at', { ascending: false })
+
+        const seenSnapshot = new Set()
+        const duplicateSnapshotIds = []
+        for (const row of snapshotRows || []) {
+          const key = `${row.user_id}:${row.entity_type}`
+          if (seenSnapshot.has(key)) {
+            duplicateSnapshotIds.push(row.id)
+          } else {
+            seenSnapshot.add(key)
+          }
+        }
+        if (duplicateSnapshotIds.length > 0) {
+          await adminSupabase
+            .from('activity_log')
+            .delete()
+            .in('id', duplicateSnapshotIds)
+        }
 
         await adminSupabase
           .from('activity_log')
           .delete()
           .like('action', 'SYNC_%')
+          .not('entity_type', 'in', '(axon_linked_timetables,axon_exam_results_semesters)')
 
         await adminSupabase
           .from('activity_log')
           .delete()
           .like('entity_name', '[{%')
+          .not('entity_type', 'in', '(axon_linked_timetables,axon_exam_results_semesters)')
 
         await adminSupabase
           .from('activity_log')
@@ -260,7 +401,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        message: 'Purged raw internal sync logs'
+        message: 'Purged redundant sync noise while preserving latest backup snapshots'
       })
     }
 
@@ -382,6 +523,7 @@ export default async function handler(req, res) {
     const accountInfo = {
       id: targetUser?.id || studentId,
       email: targetUser?.email || '',
+      auth_full_name: meta.full_name || meta.name || '',
       email_confirmed_at: targetUser?.email_confirmed_at || targetUser?.confirmed_at || null,
       last_sign_in_at: targetUser?.last_sign_in_at || null,
       created_at: targetUser?.created_at || null,

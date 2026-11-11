@@ -1,5 +1,5 @@
-import { Download, LogOut, Mail, Save, ShieldAlert } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Download, FileJson, LogOut, Mail, Save, ShieldAlert, Upload } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import SEO from '../components/SEO'
 import { jsPDF } from 'jspdf'
@@ -12,6 +12,7 @@ import { supabase } from '../lib/supabase'
 import { initials, formatTime } from '../lib/utils'
 import { registerPushSubscription } from '../lib/pushNotifications'
 import { updatePreference } from '../lib/preferences'
+import { clearCache, readCache } from '../lib/cache'
 import { studentManager } from '../lib/manageStudent'
 import { useLanguage } from '../components/LanguageProvider'
 import { markExplicitLogout } from '../lib/authEvents'
@@ -45,6 +46,9 @@ export default function SettingsPage() {
   const [inviting, setInviting] = useState(false)
   const [digestOptions, setDigestOptions] = useState({ classes: true, assignments: true, exams: true, results: true, exercise: true, nutrition: true })
   const [sendingDigest, setSendingDigest] = useState(false)
+  const [exportingBackup, setExportingBackup] = useState(false)
+  const [restoringBackup, setRestoringBackup] = useState(false)
+  const backupInputRef = useRef(null)
 
   async function sendAcademicEmail() {
     if (!digestOptions.classes && !digestOptions.assignments && !digestOptions.exams && !digestOptions.results && !digestOptions.exercise && !digestOptions.nutrition) {
@@ -402,6 +406,488 @@ export default function SettingsPage() {
     }
   }
 
+  async function exportJsonBackup() {
+    setExportingBackup(true)
+    showToast('Preparing JSON backup...', 'info')
+    try {
+      const { data: { user: activeUser } } = await supabase.auth.getUser()
+      if (!activeUser) return showToast('User session not found.', 'error')
+
+      const [
+        classesRes,
+        assignmentsRes,
+        examsRes,
+        remindersRes,
+        semestersRes,
+        semCoursesRes,
+        profileRes,
+        backupLogsRes
+      ] = await Promise.all([
+        supabase.from('classes').select('*').eq('user_id', activeUser.id),
+        supabase.from('assignments').select('*').eq('user_id', activeUser.id),
+        supabase.from('exams').select('*').eq('user_id', activeUser.id),
+        supabase.from('reminders').select('*').eq('user_id', activeUser.id),
+        supabase.from('student_semesters').select('*').eq('user_id', activeUser.id).order('created_at'),
+        supabase.from('student_semester_courses').select('*').eq('user_id', activeUser.id).order('created_at'),
+        supabase.from('profiles').select('full_name, university, course, student_id, avatar_color').eq('id', activeUser.id).maybeSingle(),
+        supabase.from('activity_log')
+          .select('entity_type, details, created_at')
+          .eq('user_id', activeUser.id)
+          .in('entity_type', ['axon_linked_timetables', 'axon_exam_results_semesters'])
+          .order('created_at', { ascending: false })
+          .limit(20)
+      ])
+
+      const readFallback = (key, selector = d => d) => {
+        const cached = readCache(key, 365 * 24 * 60 * 60 * 1000)
+        const selected = cached ? selector(cached) : []
+        return Array.isArray(selected) ? selected : []
+      }
+
+      const dbErrors = [classesRes.error, assignmentsRes.error, examsRes.error, remindersRes.error].filter(Boolean)
+      if (dbErrors.length > 0) {
+        console.error('JSON backup DB warnings:', {
+          classes: classesRes.error,
+          assignments: assignmentsRes.error,
+          exams: examsRes.error,
+          reminders: remindersRes.error
+        })
+        showToast('Some cloud tables could not be queried; using available local backup cache where possible.', 'warning')
+      }
+
+      const rawClasses = classesRes.error
+        ? readFallback(`axon_classes_${activeUser.id}`)
+        : (classesRes.data || [])
+      const rawAssignments = assignmentsRes.error
+        ? readFallback(`axon_assignments_${activeUser.id}`)
+        : (assignmentsRes.data || [])
+      const rawExams = examsRes.error
+        ? readFallback(`axon_exams_${activeUser.id}`, d => (Array.isArray(d) ? d : d?.exams || []))
+        : (examsRes.data || [])
+      const rawReminders = remindersRes.error
+        ? readFallback(`axon_reminders_${activeUser.id}`)
+        : (remindersRes.data || [])
+
+      const logs = backupLogsRes.data || []
+      const logLinked = logs.find(l => l.entity_type === 'axon_linked_timetables')?.details?.profiles
+      const localLinked = safeParseArray(localStorage.getItem(`axon_linked_timetables_${activeUser.id}`))
+      const metaLinked = Array.isArray(activeUser.user_metadata?.linked_timetables) ? activeUser.user_metadata.linked_timetables : []
+      const linkedTimetables = dedupeByKey(
+        [...localLinked, ...metaLinked, ...(Array.isArray(logLinked) ? logLinked : [])],
+        backupRowKeys.linked
+      )
+
+      const coursesBySemId = new Map()
+      ;(semCoursesRes.data || []).forEach(c => {
+        const list = coursesBySemId.get(c.semester_id) || []
+        list.push({
+          course_code: c.course_code || '',
+          course_name: c.course_name,
+          credit_hours: Number(c.credit_hours) || 3,
+          grade: c.grade
+        })
+        coursesBySemId.set(c.semester_id, list)
+      })
+
+      const sqlSemesters = (semestersRes.data || []).map(s => ({
+        name: s.name,
+        courses: coursesBySemId.get(s.id) || []
+      }))
+      const logSems = logs.find(l => l.entity_type === 'axon_exam_results_semesters')?.details?.semesters
+      const localSems = [
+        ...safeParseArray(localStorage.getItem(`axon_exam_results_semesters_${activeUser.id}`)),
+        ...safeParseArray(localStorage.getItem('axon_exam_results_semesters'))
+      ]
+      const metaSems = Array.isArray(activeUser.user_metadata?.axon_exam_results_semesters)
+        ? activeUser.user_metadata.axon_exam_results_semesters
+        : []
+      const studentSemesters = dedupeByKey(
+        [...sqlSemesters, ...localSems, ...metaSems, ...(Array.isArray(logSems) ? logSems : [])].filter(s => s?.name),
+        backupRowKeys.semester
+      )
+
+      const prefs = activeUser.user_metadata?.preferences || {}
+      const payload = {
+        version: 1,
+        app: 'Axon',
+        exportedAt: new Date().toISOString(),
+        userId: activeUser.id,
+        email: activeUser.email,
+        profile: {
+          full_name: profileRes.data?.full_name || profile.full_name || activeUser.user_metadata?.full_name || '',
+          university: profileRes.data?.university || profile.university || activeUser.user_metadata?.university || '',
+          course: profileRes.data?.course || profile.course || activeUser.user_metadata?.course || '',
+          student_id: profileRes.data?.student_id || profile.student_id || activeUser.user_metadata?.student_id || '',
+          avatar_color: profileRes.data?.avatar_color || accentHex(profile.avatar_color)
+        },
+        semesterSettings: {
+          name: prefs.axon_semester_name ?? localStorage.getItem('axon_semester_name') ?? '',
+          startDate: prefs.axon_semester_start_date ?? localStorage.getItem('axon_semester_start_date') ?? '',
+          endDate: prefs.axon_semester_end_date ?? localStorage.getItem('axon_semester_end_date') ?? ''
+        },
+        linked_timetables: linkedTimetables,
+        classes: dedupeByKey(rawClasses, backupRowKeys.class).map(c => ({
+          subject: c.subject,
+          day: c.day,
+          start_time: c.start_time,
+          end_time: c.end_time,
+          lecturer: c.lecturer || '',
+          classroom: c.classroom || '',
+          class_type: c.class_type || 'Lecture',
+          color: c.color || '#3B82F6',
+          is_replacement: Boolean(c.is_replacement),
+          date: c.date || null
+        })),
+        assignments: dedupeByKey(rawAssignments, backupRowKeys.assignment).map(a => ({
+          title: a.title,
+          subject: a.subject || '',
+          deadline: a.deadline || '',
+          priority: a.priority || 'Medium',
+          notes: a.notes || '',
+          status: a.status || 'Pending'
+        })),
+        exams: dedupeByKey(rawExams, backupRowKeys.exam).map(ex => ({
+          subject: ex.subject,
+          exam_date: ex.exam_date || '',
+          start_time: ex.start_time || '',
+          end_time: ex.end_time || '',
+          exam_type: ex.exam_type || 'Final',
+          venue: ex.venue || '',
+          notes: ex.notes || ''
+        })),
+        reminders: dedupeByKey(rawReminders, backupRowKeys.reminder).map(r => ({
+          title: r.title,
+          reminder_time: r.reminder_time || '09:00',
+          repeat_type: r.repeat_type || 'once',
+          is_active: r.is_active !== false,
+          completed: Boolean(r.completed)
+        })),
+        student_semesters: studentSemesters
+      }
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `axon-backup-${new Date().toISOString().slice(0, 10)}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      showToast('JSON backup exported!', 'success')
+      logActivity('Exported JSON backup', 'settings', 'JSON Backup', activeUser.id).catch(() => {})
+    } catch (error) {
+      console.error('Export JSON backup error:', error)
+      showToast('Failed to export JSON backup.', 'error')
+    } finally {
+      setExportingBackup(false)
+    }
+  }
+
+  async function importJsonBackup(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    let backup
+    try {
+      const text = await file.text()
+      backup = JSON.parse(text)
+    } catch {
+      return showToast('Invalid JSON backup file.', 'error')
+    }
+
+    const hasRecognizedSection = backup && typeof backup === 'object' && (
+      Array.isArray(backup.classes) ||
+      Array.isArray(backup.assignments) ||
+      Array.isArray(backup.exams) ||
+      Array.isArray(backup.reminders) ||
+      Array.isArray(backup.linked_timetables) ||
+      Array.isArray(backup.student_semesters) ||
+      (backup.profile && typeof backup.profile === 'object') ||
+      (backup.semesterSettings && typeof backup.semesterSettings === 'object')
+    )
+    if (!hasRecognizedSection) {
+      return showToast('Backup file does not contain recognized Axon data.', 'error')
+    }
+
+    const confirmed = await confirm({
+      title: 'Restore from JSON backup?',
+      message: 'Your existing records will be kept intact, and only missing items from this backup will be merged into your account.',
+      confirmText: 'Restore Backup'
+    })
+    if (!confirmed) return
+
+    setRestoringBackup(true)
+    showToast('Restoring backup data...', 'info')
+    try {
+      const { data: { user: activeUser } } = await supabase.auth.getUser()
+      if (!activeUser) return showToast('User session not found.', 'error')
+
+      const counts = { classes: 0, assignments: 0, exams: 0, reminders: 0, linked: 0, semesters: 0 }
+      const restoreErrors = []
+
+      const mergeTable = async (table, rows, keyFn, mapRow) => {
+        if (!Array.isArray(rows) || rows.length === 0) return 0
+        const { data: existing, error: fetchErr } = await supabase.from(table).select('*').eq('user_id', activeUser.id)
+        if (fetchErr) {
+          restoreErrors.push(`${table}: ${fetchErr.message}`)
+          return 0
+        }
+        const seen = new Set((existing || []).map(keyFn))
+        const toInsert = []
+        dedupeByKey(rows, keyFn).forEach(row => {
+          const mapped = mapRow(row, activeUser.id)
+          if (!mapped) return
+          const k = keyFn(mapped)
+          if (!seen.has(k)) {
+            seen.add(k)
+            toInsert.push(mapped)
+          }
+        })
+        if (toInsert.length === 0) return 0
+        const { error: insertErr } = await supabase.from(table).insert(toInsert)
+        if (insertErr) {
+          restoreErrors.push(`${table}: ${insertErr.message}`)
+          return 0
+        }
+        return toInsert.length
+      }
+
+      counts.classes = await mergeTable('classes', backup.classes, backupRowKeys.class, (c, uid) =>
+        c?.subject ? {
+          user_id: uid,
+          subject: String(c.subject),
+          day: c.day || 'Monday',
+          start_time: c.start_time || '09:00',
+          end_time: c.end_time || '10:00',
+          lecturer: c.lecturer || '',
+          classroom: c.classroom || '',
+          class_type: c.class_type || 'Lecture',
+          color: c.color || '#3B82F6',
+          is_replacement: Boolean(c.is_replacement),
+          date: c.date || null
+        } : null
+      )
+
+      counts.assignments = await mergeTable('assignments', backup.assignments, backupRowKeys.assignment, (a, uid) =>
+        a?.title ? {
+          user_id: uid,
+          title: String(a.title),
+          subject: a.subject || '',
+          deadline: a.deadline || null,
+          priority: a.priority || 'Medium',
+          notes: a.notes || '',
+          status: a.status || 'Pending'
+        } : null
+      )
+
+      counts.exams = await mergeTable('exams', backup.exams, backupRowKeys.exam, (ex, uid) =>
+        ex?.subject ? {
+          user_id: uid,
+          subject: String(ex.subject),
+          exam_date: ex.exam_date || null,
+          start_time: ex.start_time || '',
+          end_time: ex.end_time || '',
+          exam_type: ex.exam_type || 'Final',
+          venue: ex.venue || '',
+          notes: ex.notes || ''
+        } : null
+      )
+
+      counts.reminders = await mergeTable('reminders', backup.reminders, backupRowKeys.reminder, (r, uid) =>
+        r?.title ? {
+          user_id: uid,
+          title: String(r.title),
+          reminder_time: r.reminder_time || '09:00',
+          repeat_type: r.repeat_type || 'once',
+          is_active: r.is_active !== false,
+          completed: Boolean(r.completed)
+        } : null
+      )
+
+      if (Array.isArray(backup.linked_timetables) && backup.linked_timetables.length > 0) {
+        const existingLinked = safeParseArray(localStorage.getItem(`axon_linked_timetables_${activeUser.id}`))
+        const metaLinked = Array.isArray(activeUser.user_metadata?.linked_timetables) ? activeUser.user_metadata.linked_timetables : []
+        const baseLinked = dedupeByKey([...existingLinked, ...metaLinked], backupRowKeys.linked)
+        const baseKeys = new Set(baseLinked.map(backupRowKeys.linked))
+        const mergedLinked = dedupeByKey([...baseLinked, ...backup.linked_timetables], backupRowKeys.linked)
+        counts.linked = mergedLinked.filter(item => !baseKeys.has(backupRowKeys.linked(item))).length
+        localStorage.setItem(`axon_linked_timetables_${activeUser.id}`, JSON.stringify(mergedLinked))
+        await supabase.auth.updateUser({ data: { linked_timetables: mergedLinked } }).catch(() => {})
+        logActivity('Synced linked timetables', 'axon_linked_timetables', `${mergedLinked.length} profile(s)`, activeUser.id, {
+          profiles: mergedLinked
+        }).catch(() => {})
+      }
+
+      if (backup.semesterSettings && typeof backup.semesterSettings === 'object') {
+        const nextSemSettings = {
+          axon_semester_name: backup.semesterSettings.name || localStorage.getItem('axon_semester_name') || '',
+          axon_semester_start_date: backup.semesterSettings.startDate || localStorage.getItem('axon_semester_start_date') || '',
+          axon_semester_end_date: backup.semesterSettings.endDate || localStorage.getItem('axon_semester_end_date') || ''
+        }
+        Object.entries(nextSemSettings).forEach(([k, v]) => localStorage.setItem(k, v))
+        const existingPrefs = activeUser.user_metadata?.preferences || {}
+        await supabase.auth.updateUser({
+          data: {
+            preferences: { ...existingPrefs, ...nextSemSettings },
+            semester_name: nextSemSettings.axon_semester_name,
+            semester_start_date: nextSemSettings.axon_semester_start_date,
+            semester_end_date: nextSemSettings.axon_semester_end_date
+          }
+        }).catch(() => {})
+      }
+
+      if (Array.isArray(backup.student_semesters) && backup.student_semesters.length > 0) {
+        const { data: existingSems, error: semFetchErr } = await supabase.from('student_semesters').select('*').eq('user_id', activeUser.id)
+        const { data: existingCourses } = await supabase.from('student_semester_courses').select('*').eq('user_id', activeUser.id)
+        if (semFetchErr) {
+          restoreErrors.push(`student_semesters: ${semFetchErr.message}`)
+        } else {
+          const semByName = new Map((existingSems || []).map(s => [String(s.name || '').trim().toLowerCase(), s]))
+          const courseKeys = new Set((existingCourses || []).map(c =>
+            `${c.semester_id}|${String(c.course_code || '').trim().toLowerCase()}|${String(c.course_name || '').trim().toLowerCase()}`
+          ))
+          for (const sem of backup.student_semesters) {
+            const semName = String(sem?.name || '').trim()
+            if (!semName) continue
+            let targetSem = semByName.get(semName.toLowerCase())
+            if (!targetSem) {
+              const { data: insertedSem, error: semInsErr } = await supabase
+                .from('student_semesters')
+                .insert({ user_id: activeUser.id, name: semName })
+                .select()
+                .maybeSingle()
+              if (semInsErr) {
+                restoreErrors.push(`student_semesters: ${semInsErr.message}`)
+                continue
+              }
+              targetSem = insertedSem
+              semByName.set(semName.toLowerCase(), targetSem)
+              counts.semesters += 1
+            }
+            if (targetSem?.id && Array.isArray(sem.courses) && sem.courses.length > 0) {
+              const missingCourses = []
+              for (const c of sem.courses) {
+                if (!c?.course_name) continue
+                const cKey = `${targetSem.id}|${String(c.course_code || '').trim().toLowerCase()}|${String(c.course_name || '').trim().toLowerCase()}`
+                if (!courseKeys.has(cKey)) {
+                  courseKeys.add(cKey)
+                  missingCourses.push({
+                    semester_id: targetSem.id,
+                    user_id: activeUser.id,
+                    course_code: c.course_code || '',
+                    course_name: c.course_name,
+                    credit_hours: Number(c.credit_hours) || 3,
+                    grade: c.grade || 'A'
+                  })
+                }
+              }
+              if (missingCourses.length > 0) {
+                const { error: courseErr } = await supabase.from('student_semester_courses').insert(missingCourses)
+                if (courseErr) restoreErrors.push(`student_semester_courses: ${courseErr.message}`)
+              }
+            }
+          }
+        }
+
+        const existingLocalSems = [
+          ...safeParseArray(localStorage.getItem(`axon_exam_results_semesters_${activeUser.id}`)),
+          ...safeParseArray(localStorage.getItem('axon_exam_results_semesters'))
+        ]
+        const mergedSems = dedupeByKey(
+          [...existingLocalSems, ...backup.student_semesters].filter(s => s?.name),
+          backupRowKeys.semester
+        )
+        localStorage.setItem(`axon_exam_results_semesters_${activeUser.id}`, JSON.stringify(mergedSems))
+        localStorage.setItem('axon_exam_results_semesters', JSON.stringify(mergedSems))
+        await supabase.auth.updateUser({ data: { axon_exam_results_semesters: mergedSems } }).catch(() => {})
+      }
+
+      if (backup.profile && typeof backup.profile === 'object') {
+        const bp = backup.profile
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id, role, full_name, university, course, student_id, avatar_color')
+          .eq('id', activeUser.id)
+          .maybeSingle()
+
+        const nextProfileFields = {
+          full_name: bp.full_name || existingProfile?.full_name || profile.full_name || '',
+          university: bp.university || existingProfile?.university || profile.university || '',
+          course: bp.course || existingProfile?.course || profile.course || '',
+          student_id: bp.student_id || existingProfile?.student_id || profile.student_id || '',
+          avatar_color: bp.avatar_color || existingProfile?.avatar_color || accentHex(profile.avatar_color)
+        }
+
+        const profileWriteRes = existingProfile
+          ? await supabase.from('profiles').update({ ...nextProfileFields, onboarded: true }).eq('id', activeUser.id)
+          : await supabase.from('profiles').upsert({
+              id: activeUser.id,
+              email: activeUser.email,
+              role: 'student',
+              onboarded: true,
+              ...nextProfileFields
+            }, { onConflict: 'id' })
+
+        if (profileWriteRes.error) {
+          restoreErrors.push(`profiles: ${profileWriteRes.error.message}`)
+        }
+        await supabase.auth.updateUser({ data: nextProfileFields }).catch(() => {})
+        updateAuthCache({ ...nextProfileFields, onboarded: true })
+      }
+
+      [
+        `axon_home_dashboard_${activeUser.id}`,
+        `axon_classes_${activeUser.id}`,
+        `axon_assignments_${activeUser.id}`,
+        `axon_exams_${activeUser.id}`,
+        `axon_reminders_${activeUser.id}`,
+        `axon_profile_cache_${activeUser.id}`
+      ].forEach(clearCache)
+
+      ;[
+        'axon_classes_updated',
+        'axon_assignments_updated',
+        'axon_exams_updated',
+        'axon_reminder_updated',
+        'axon_exam_results_updated',
+        'axon_profile_updated',
+        'preferences-synced'
+      ].forEach(ev => window.dispatchEvent(new CustomEvent(ev)))
+
+      await loadUser()
+
+      const restoredParts = [
+        counts.classes && `${counts.classes} classes`,
+        counts.assignments && `${counts.assignments} assignments`,
+        counts.exams && `${counts.exams} exams`,
+        counts.reminders && `${counts.reminders} reminders`,
+        counts.linked && `${counts.linked} linked timetables`,
+        counts.semesters && `${counts.semesters} semesters`
+      ].filter(Boolean)
+
+      if (restoreErrors.length > 0) {
+        console.error('JSON restore partial errors:', restoreErrors)
+        showToast(`Backup partially restored (${restoreErrors.join('; ')})`, 'warning')
+      } else {
+        showToast(
+          restoredParts.length > 0
+            ? `Restored: ${restoredParts.join(', ')}.`
+            : 'Backup checked. All items were already present in your account.',
+          'success'
+        )
+      }
+      logActivity('Restored JSON backup', 'settings', file.name, activeUser.id).catch(() => {})
+    } catch (error) {
+      console.error('Restore JSON backup error:', error)
+      showToast('Failed to restore JSON backup.', 'error')
+    } finally {
+      setRestoringBackup(false)
+    }
+  }
+
 
   async function deleteAccount() {
     if (!await confirm({ title: 'Delete account?', message: 'This permanently deletes your Axon account. Please confirm before continuing.', confirmText: 'Delete account' })) return
@@ -701,8 +1187,26 @@ export default function SettingsPage() {
           <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
             <button className="btn-primary" onClick={exportData}><Download className="h-4 w-4" /> {t('action.export')}</button>
 
+            <button className="btn-ghost border border-white/15" onClick={exportJsonBackup} disabled={exportingBackup}>
+              <FileJson className="h-4 w-4" /> {exportingBackup ? 'Exporting Backup...' : 'Export JSON Backup'}
+            </button>
+
+            <button className="btn-ghost border border-white/15" onClick={() => backupInputRef.current?.click()} disabled={restoringBackup}>
+              <Upload className="h-4 w-4" /> {restoringBackup ? 'Restoring...' : 'Restore from JSON Backup'}
+            </button>
+            <input
+              ref={backupInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={importJsonBackup}
+            />
+
             <button className="btn-ghost" onClick={globalSignOut}><LogOut className="h-4 w-4" /> {t('action.logoutAll')}</button>
           </div>
+          <p className="text-xs text-slate-400">
+            Save a full JSON backup of your classes, linked timetables, assignments, exams, reminders, semester settings, and exam results so you can safely restore any missing items later without duplicates.
+          </p>
           <div className="pt-3 border-t border-white/10 flex items-center gap-4 text-xs text-slate-500">
             <Link to="/privacy" className="hover:text-theme-400 hover:underline">Privacy Policy</Link>
             <span>&bull;</span>
@@ -781,4 +1285,36 @@ function colorName(value) {
   const normalized = value.toUpperCase()
   const match = Object.entries({ blue: '#3B82F6', purple: '#8B5CF6', green: '#10B981', cyan: '#06B6D4', orange: '#F97316', red: '#EF4444', pink: '#EC4899' }).find(([, hex]) => hex === normalized)
   return match?.[0] || 'blue'
+}
+
+const backupRowKeys = {
+  class: c => [c?.subject, c?.day, c?.start_time, c?.end_time, c?.class_type || '', c?.classroom || '', c?.date || ''].map(v => String(v || '').trim().toLowerCase()).join('|'),
+  assignment: a => [a?.title, a?.subject || '', a?.deadline || ''].map(v => String(v || '').trim().toLowerCase()).join('|'),
+  exam: e => [e?.subject, e?.exam_date || '', e?.start_time || '', e?.exam_type || 'Final'].map(v => String(v || '').trim().toLowerCase()).join('|'),
+  reminder: r => [r?.title, r?.reminder_time || '', r?.repeat_type || 'once'].map(v => String(v || '').trim().toLowerCase()).join('|'),
+  linked: p => String(p?.id || p?.name || '').trim().toLowerCase(),
+  semester: s => String(s?.name || s?.id || '').trim().toLowerCase()
+}
+
+function dedupeByKey(rows, keyFn) {
+  const seen = new Set()
+  const out = []
+  ;(rows || []).forEach(row => {
+    if (!row) return
+    const key = keyFn(row)
+    if (!key || seen.has(key)) return
+    seen.add(key)
+    out.push(row)
+  })
+  return out
+}
+
+function safeParseArray(raw) {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
 }

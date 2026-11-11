@@ -7,6 +7,7 @@ async function call(action, studentId, data = {}) {
   if (!session) throw new Error('Not authenticated')
 
   // 1. First try the robust Vercel Serverless Function (/api/admin-student)
+  let explicitApiError = null
   try {
     const res = await fetch('/api/admin-student', {
       method: 'POST',
@@ -16,14 +17,19 @@ async function call(action, studentId, data = {}) {
       },
       body: JSON.stringify({ action, studentId, data })
     })
-    if (res.ok) {
+    const contentType = res.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
       const result = await res.json()
-      if (result.success) return result
-      if (result.error) throw new Error(result.error)
+      if (res.ok && result.success) return result
+      if (result.error && res.status < 500) {
+        explicitApiError = new Error(result.error)
+      }
     }
   } catch (apiErr) {
     console.warn('/api/admin-student attempt failed, trying edge function fallback:', apiErr.message)
   }
+
+  if (explicitApiError) throw explicitApiError
 
   // 2. Fallback to Supabase Edge function
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -53,6 +59,20 @@ export const studentManager = {
   sendAcademicDigest: (id, options) => call('send_academic_digest', id, options),
   deleteAccount: id => call('delete_account', id),
   transferData: (fromId, toId) => call('transfer_data', fromId, { toStudentId: toId }),
+  listAllAccounts: async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return null
+    try {
+      const res = await fetch('/api/admin-student?mode=list_accounts', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      })
+      if (res.ok) {
+        const json = await res.json()
+        if (json?.success && Array.isArray(json.accounts)) return json.accounts
+      }
+    } catch (_) {}
+    return null
+  },
   deactivate: id => call('deactivate', id),
   reactivate: id => call('reactivate', id),
   cleanupActivityLogs: async () => {

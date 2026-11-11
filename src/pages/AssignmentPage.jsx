@@ -10,6 +10,7 @@ import { useToast } from '../components/Toast'
 import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq } from '../lib/groq'
 import { logActivity } from '../lib/logActivity'
+import { clearCache, readCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml } from '../lib/utils'
 import { SkeletonList } from '../components/SkeletonLoader'
@@ -47,11 +48,35 @@ export default function AssignmentPage() {
     }
   }, [])
 
+  const assignmentsCacheKey = uid => `axon_assignments_${uid}`
+
   async function fetchItems() {
-    setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data } = await supabase.from('assignments').select('*').eq('user_id', user.id).order('deadline')
-    setItems(data || [])
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user || (await supabase.auth.getUser()).data.user
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    const cacheKey = assignmentsCacheKey(user.id)
+    const cached = readCache(cacheKey, 10 * 60 * 1000)
+    const fallback = cached || readCache(cacheKey, 7 * 24 * 60 * 60 * 1000)
+    if (cached) {
+      setItems(cached)
+      setLoading(false)
+    } else {
+      setLoading(true)
+    }
+
+    const { data, error } = await supabase.from('assignments').select('*').eq('user_id', user.id).order('deadline')
+    if (error) {
+      console.error('Error loading assignments:', error)
+      if (fallback && !cached) setItems(fallback)
+      showToast(`Failed to load assignments: ${error.message}`, 'error')
+    } else {
+      const nextItems = data || []
+      setItems(nextItems)
+      writeCache(cacheKey, nextItems)
+    }
     
     const { data: classesData } = await supabase.from('classes').select('subject').eq('user_id', user.id)
     if (classesData) {
@@ -92,6 +117,8 @@ export default function AssignmentPage() {
       showToast('Assignment added.', 'success')
     }
 
+    clearCache(assignmentsCacheKey(user.id))
+    clearCache(`axon_home_dashboard_${user.id}`)
     setModal(false)
     setForm(initialForm)
     setEditingId(null)
@@ -117,35 +144,51 @@ export default function AssignmentPage() {
       deadline: item.deadline,
       priority: item.priority
     })))
+    clearCache(assignmentsCacheKey(user.id))
+    clearCache(`axon_home_dashboard_${user.id}`)
     showToast(`${rows.length} assignment(s) saved successfully.`, 'success')
     setAnalyzerOpen(false)
     fetchItems()
   }
 
   async function updateItem(id, updates) {
-    await supabase.from('assignments').update(updates).eq('id', id)
+    const { error } = await supabase.from('assignments').update(updates).eq('id', id)
+    if (error) return showToast('Assignment could not be updated.', 'error')
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user || (await supabase.auth.getUser()).data.user
     const item = items.find(item => item.id === id)
     if (updates.status === 'Done' && item?.status !== 'Done') {
-      const { data: { user } } = await supabase.auth.getUser()
       await logActivity('Completed assignment', 'assignment', item.title, user?.id, {
         subject: item.subject,
         deadline: item.deadline
       })
     }
-    setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item))
+    setItems(prev => {
+      const next = prev.map(item => item.id === id ? { ...item, ...updates } : item)
+      if (user?.id) writeCache(assignmentsCacheKey(user.id), next)
+      return next
+    })
+    if (user?.id) clearCache(`axon_home_dashboard_${user.id}`)
   }
 
   async function deleteItem(id) {
     if (!await confirm({ title: 'Delete assignment?', message: 'This assignment card will be removed.', confirmText: 'Delete' })) return
     const item = items.find(i => i.id === id)
-    await supabase.from('assignments').delete().eq('id', id)
+    const { error } = await supabase.from('assignments').delete().eq('id', id)
+    if (error) return showToast('Assignment could not be deleted.', 'error')
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user || (await supabase.auth.getUser()).data.user
     if (item) {
-      const { data: { user } } = await supabase.auth.getUser()
       await logActivity('Deleted assignment', 'assignment', item.title, user?.id, {
         subject: item.subject
       })
     }
-    setItems(prev => prev.filter(item => item.id !== id))
+    setItems(prev => {
+      const next = prev.filter(item => item.id !== id)
+      if (user?.id) writeCache(assignmentsCacheKey(user.id), next)
+      return next
+    })
+    if (user?.id) clearCache(`axon_home_dashboard_${user.id}`)
   }
 
   async function clearAssignments() {
@@ -153,6 +196,8 @@ export default function AssignmentPage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('assignments').delete().eq('user_id', user.id)
     if (error) return showToast('Could not clear assignments.', 'error')
+    clearCache(assignmentsCacheKey(user.id))
+    clearCache(`axon_home_dashboard_${user.id}`)
     setItems([])
     showToast('Assignments cleared.', 'success')
   }

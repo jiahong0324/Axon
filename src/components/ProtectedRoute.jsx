@@ -25,6 +25,12 @@ export function updateAuthCache(updatedFields) {
   } else {
     cachedProfile = updatedFields
   }
+  const uid = cachedProfile?.id || cachedSession?.user?.id
+  if (uid) {
+    try {
+      localStorage.setItem(`axon_profile_cache_${uid}`, JSON.stringify(cachedProfile))
+    } catch (_) {}
+  }
 }
 
 export default function ProtectedRoute({ children, requireRole = 'student' }) {
@@ -55,22 +61,47 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession()
         if (currentSession?.user) {
-          let { data } = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
-          
-          if (!data) {
-            await supabase.from('profiles').upsert({
+          let { data, error: profileErr } = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
+          const profileCacheKey = `axon_profile_cache_${currentSession.user.id}`
+          let dbErrorMessage = profileErr?.message || ''
+
+          if (profileErr) {
+            console.error('Failed to fetch profile in ProtectedRoute:', profileErr)
+            try {
+              const cachedRaw = localStorage.getItem(profileCacheKey)
+              if (cachedRaw) data = JSON.parse(cachedRaw)
+            } catch (_) {}
+          } else if (!data) {
+            const { error: upsertErr } = await supabase.from('profiles').upsert({
               id: currentSession.user.id,
               email: currentSession.user.email,
               full_name: currentSession.user.user_metadata?.full_name || '',
               role: 'student',
               is_active: true
             }, { onConflict: 'id' })
-            
-            const { data: newData } = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
-            data = newData
+
+            if (upsertErr) {
+              console.error('Failed to initialize profile in ProtectedRoute (check RLS policies):', upsertErr)
+              dbErrorMessage = upsertErr.message || 'Profile access blocked'
+              try {
+                const cachedRaw = localStorage.getItem(profileCacheKey)
+                if (cachedRaw) data = JSON.parse(cachedRaw)
+              } catch (_) {}
+            } else {
+              const { data: newData } = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
+              data = newData
+            }
           }
 
-          const resolvedProfile = data || { role: 'student', email: currentSession.user.email, full_name: currentSession.user.user_metadata?.full_name || '' }
+          if (data && data.id) {
+            try {
+              localStorage.setItem(profileCacheKey, JSON.stringify(data))
+            } catch (_) {}
+          }
+
+          const resolvedProfile = data
+            ? (dbErrorMessage ? { ...data, _profileDbError: dbErrorMessage } : data)
+            : { role: 'student', email: currentSession.user.email, full_name: currentSession.user.user_metadata?.full_name || '', _profileDbError: dbErrorMessage || undefined }
           cachedSession = currentSession
           cachedProfile = resolvedProfile
           initialAuthChecked = true
@@ -130,7 +161,7 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
     localStorage.getItem('axon_onboarding_skipped') === 'true'
   )
 
-  if (role === 'student' && !isSkipped && (!profile?.university || !profile?.student_id)) {
+  if (role === 'student' && !isSkipped && !profile?._profileDbError && (!profile?.university || !profile?.student_id)) {
     return <Navigate to="/onboarding" replace />
   }
 
@@ -141,6 +172,12 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
       {role === 'manager' ? <ManagerSidebar user={session.user} profile={profile} /> : <Sidebar user={session.user} />}
       <NotificationManager />
       {role === 'student' && <NotificationCenter user={session.user} profile={profile} />}
+      {profile?._profileDbError && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded-xl border border-amber-500/40 bg-amber-950/90 px-4 py-3 text-xs text-amber-100 shadow-lg backdrop-blur">
+          <p className="font-semibold text-amber-300">Database Permission Warning</p>
+          <p className="mt-1 opacity-90">{profile._profileDbError}</p>
+        </div>
+      )}
       {children}
     </div>
   )
