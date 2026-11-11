@@ -19,6 +19,14 @@ export function clearAuthCache() {
   initialAuthChecked = false
 }
 
+export function updateAuthCache(updatedFields) {
+  if (cachedProfile) {
+    cachedProfile = { ...cachedProfile, ...updatedFields }
+  } else {
+    cachedProfile = updatedFields
+  }
+}
+
 export default function ProtectedRoute({ children, requireRole = 'student' }) {
   const [session, setSession] = useState(() => cachedSession)
   const [profile, setProfile] = useState(() => cachedProfile)
@@ -117,7 +125,12 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
   
   const role = profile?.role || 'student'
   
-  if (role === 'student' && (!profile?.university || !profile?.student_id)) {
+  const isSkipped = session?.user?.id && (
+    localStorage.getItem(`axon_onboarding_skipped_${session.user.id}`) === 'true' ||
+    localStorage.getItem('axon_onboarding_skipped') === 'true'
+  )
+
+  if (role === 'student' && !isSkipped && (!profile?.university || !profile?.student_id)) {
     return <Navigate to="/onboarding" replace />
   }
 

@@ -18,6 +18,7 @@ import { markExplicitLogout } from '../lib/authEvents'
 import { fetchExerciseData } from '../lib/exerciseUtils'
 import { fetchNutritionData, formatMealTime } from '../lib/nutritionUtils'
 import { logActivity } from '../lib/logActivity'
+import { updateAuthCache } from '../components/ProtectedRoute'
 const tabs = [
   ['profile', 'Profile'],
   ['account', 'Account'],
@@ -93,6 +94,14 @@ export default function SettingsPage() {
         student_id: profile.student_id,
         avatar_color: accentHex(profile.avatar_color)
       }).eq('id', user.id)
+
+      updateAuthCache({
+        full_name: profile.full_name,
+        university: profile.university,
+        course: profile.course,
+        student_id: profile.student_id,
+        avatar_color: accentHex(profile.avatar_color)
+      })
 
       logActivity('Updated profile', 'settings', profile.full_name || 'Profile details', user.id, {
         full_name: profile.full_name,

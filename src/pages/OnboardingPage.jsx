@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Loader2, ArrowRight, Sparkles, GraduationCap, IdCard } from 'lucide-react'
+import { updateAuthCache } from '../components/ProtectedRoute'
+import { useToast } from '../components/Toast'
 
 export default function OnboardingPage() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -22,11 +25,17 @@ export default function OnboardingPage() {
         navigate('/login', { replace: true })
       } else {
         setSession(currentSession)
-        // Check if already onboarded
-        supabase.from('profiles').select('*').eq('id', currentSession.user.id).single()
+        // Check if already onboarded or user previously skipped
+        supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
           .then(({ data }) => {
-            // If they have a university and student_id, they are already onboarded, skip to home.
+            const isSkipped = localStorage.getItem(`axon_onboarding_skipped_${currentSession.user.id}`) === 'true' ||
+                              localStorage.getItem('axon_onboarding_skipped') === 'true'
+
             if (data && data.university && data.student_id) {
+              updateAuthCache(data)
+              navigate('/home', { replace: true })
+            } else if (isSkipped) {
+              if (data) updateAuthCache(data)
               navigate('/home', { replace: true })
             } else if (data) {
               setForm({
@@ -39,26 +48,92 @@ export default function OnboardingPage() {
               setLoading(false)
             }
           })
+          .catch((err) => {
+            console.error('Failed to load profile in onboarding:', err)
+            setLoading(false)
+          })
       }
     })
   }, [navigate])
 
+  function handleSkip() {
+    if (session?.user?.id) {
+      localStorage.setItem(`axon_onboarding_skipped_${session.user.id}`, 'true')
+    }
+    localStorage.setItem('axon_onboarding_skipped', 'true')
+    showToast('You can complete your student profile later in Settings.', 'info')
+    navigate('/home', { replace: true })
+  }
+
   async function handleComplete() {
+    if (!session?.user?.id) {
+      navigate('/login', { replace: true })
+      return
+    }
+
+    const university = form.university.trim()
+    const student_id = form.student_id.trim()
+    const course = form.course.trim()
+
+    if (!university) {
+      showToast('Please enter your University / College', 'error')
+      setStep(2)
+      return
+    }
+    if (!student_id) {
+      showToast('Please enter your Student ID', 'error')
+      return
+    }
+
     setSaving(true)
-    const { error } = await supabase.from('profiles').upsert({
-      id: session.user.id,
-      email: session.user.email,
-      full_name: session.user.user_metadata?.full_name || '',
-      role: 'student',
-      is_active: true,
-      university: form.university,
-      course: form.course,
-      student_id: form.student_id
-    }, { onConflict: 'id' })
-    
-    setSaving(false)
-    if (!error) {
+    try {
+      const payload = {
+        university,
+        course,
+        student_id
+      }
+
+      // First try update since profile record was created upon login
+      let { error, data } = await supabase
+        .from('profiles')
+        .update(payload)
+        .eq('id', session.user.id)
+        .select()
+
+      // Fallback to upsert if profile record did not exist
+      if (error || !data || data.length === 0) {
+        const upsertRes = await supabase.from('profiles').upsert({
+          id: session.user.id,
+          email: session.user.email,
+          full_name: session.user.user_metadata?.full_name || '',
+          role: 'student',
+          is_active: true,
+          ...payload
+        }, { onConflict: 'id' }).select()
+
+        if (upsertRes.error) {
+          throw upsertRes.error
+        }
+        if (upsertRes.data && upsertRes.data[0]) {
+          data = upsertRes.data
+        }
+      }
+
+      // Clear any skip flags
+      localStorage.removeItem(`axon_onboarding_skipped_${session.user.id}`)
+      localStorage.removeItem('axon_onboarding_skipped')
+
+      // Update in-memory auth cache so ProtectedRoute allows entry without bouncing
+      const updatedProfile = data && data[0] ? data[0] : payload
+      updateAuthCache(updatedProfile)
+
+      showToast('Profile setup complete!', 'success')
       navigate('/home', { replace: true })
+    } catch (err) {
+      console.error('Failed to complete onboarding:', err)
+      showToast(err.message || 'Failed to save student profile. Please try again.', 'error')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -85,6 +160,15 @@ export default function OnboardingPage() {
             <button onClick={() => setStep(2)} className="btn-primary w-full text-lg">
               Let's Go <ArrowRight className="ml-2 h-5 w-5" />
             </button>
+            <div className="mt-4 text-center">
+              <button 
+                type="button"
+                onClick={handleSkip} 
+                className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors py-1"
+              >
+                Skip for now →
+              </button>
+            </div>
           </div>
         )}
 
@@ -128,6 +212,15 @@ export default function OnboardingPage() {
                 Next <ArrowRight className="ml-2 h-5 w-5" />
               </button>
             </div>
+            <div className="mt-3 text-center">
+              <button 
+                type="button"
+                onClick={handleSkip} 
+                className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors py-1"
+              >
+                Skip for now
+              </button>
+            </div>
           </div>
         )}
 
@@ -158,6 +251,16 @@ export default function OnboardingPage() {
                 className="btn-primary flex-1"
               >
                 {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Finish Setup'}
+              </button>
+            </div>
+            <div className="mt-3 text-center">
+              <button 
+                type="button"
+                onClick={handleSkip} 
+                disabled={saving} 
+                className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors py-1"
+              >
+                Skip for now
               </button>
             </div>
           </div>
