@@ -11,6 +11,7 @@ import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq } from '../lib/groq'
 import { logActivity } from '../lib/logActivity'
 import { clearCache, readCache, writeCache } from '../lib/cache'
+import { compactSessionIfNeeded, isBadRequestError } from '../lib/sessionRepair'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml } from '../lib/utils'
 import { SkeletonList } from '../components/SkeletonLoader'
@@ -50,7 +51,8 @@ export default function AssignmentPage() {
 
   const assignmentsCacheKey = uid => `axon_assignments_${uid}`
 
-  async function fetchItems() {
+  async function fetchItems(opts = {}) {
+    const retried = opts?.retried === true
     const { data: { session } } = await supabase.auth.getSession()
     const user = session?.user || (await supabase.auth.getUser()).data.user
     if (!user) {
@@ -69,6 +71,12 @@ export default function AssignmentPage() {
 
     const { data, error } = await supabase.from('assignments').select('*').eq('user_id', user.id).order('deadline')
     if (error) {
+      if (!retried && isBadRequestError(error)) {
+        const compacted = await compactSessionIfNeeded(session, { force: true })
+        if (compacted?.repaired) {
+          return fetchItems({ retried: true })
+        }
+      }
       console.error('Error loading assignments:', error)
       if (fallback && !cached) setItems(fallback)
       showToast(`Failed to load assignments: ${error.message}`, 'error')

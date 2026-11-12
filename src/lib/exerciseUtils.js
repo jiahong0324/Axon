@@ -693,8 +693,7 @@ export async function fetchExerciseData(userId) {
       try {
         await supabase.auth.updateUser({
           data: {
-            axon_freezes: freezesAvailable,
-            axon_frozen_dates: frozenDates
+            axon_freezes: freezesAvailable
           }
         })
       } catch {}
@@ -817,18 +816,13 @@ export async function logExerciseCheckIn({
     localStorage.setItem('axon_exercise_data_global', JSON.stringify(resultData))
   } catch {}
 
-  // 2. Persist to Supabase user_metadata + SQL tables
+  // 2. Persist compact scalar stats to user_metadata (full history lives in exercise_logs SQL table)
   try {
     await supabase.auth.updateUser({
       data: {
-        axon_exercise_logs: updatedLogs.map(l => ({
-          log_date: l.log_date,
-          activity_type: l.activity_type || 'Gym',
-          xp_earned: l.xp_earned || 20
-        })),
+        axon_exercise_logs: null,
         axon_xp_total: newXpTotal,
-        axon_freezes: newFreezes,
-        axon_frozen_dates: newFrozenDates
+        axon_freezes: newFreezes
       }
     })
   } catch {}

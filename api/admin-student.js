@@ -203,14 +203,24 @@ export default async function handler(req, res) {
         const targetMeta = targetUserRes?.user?.user_metadata || {}
         const mergedLinkedTimetables = resolvedLinkedTimetables.length > 0
           ? resolvedLinkedTimetables
-          : (targetMeta.linked_timetables || [])
+          : (Array.isArray(targetMeta.linked_timetables) ? targetMeta.linked_timetables : [])
+        const mergedExamSemesters = Array.isArray(sourceMeta.axon_exam_results_semesters) && sourceMeta.axon_exam_results_semesters.length > 0
+          ? sourceMeta.axon_exam_results_semesters
+          : (Array.isArray(targetMeta.axon_exam_results_semesters) ? targetMeta.axon_exam_results_semesters : [])
+
+        const linkedJson = JSON.stringify(mergedLinkedTimetables)
+        const examSemestersJson = JSON.stringify(mergedExamSemesters)
+        const INLINE_META_CAP = 2500
 
         await adminSupabase.auth.admin.updateUserById(toStudentId, {
           user_metadata: {
             ...targetMeta,
-            linked_timetables: mergedLinkedTimetables,
+            linked_timetables: Buffer.byteLength(linkedJson, 'utf8') <= INLINE_META_CAP ? mergedLinkedTimetables : null,
             timetable_order: sourceMeta.timetable_order || targetMeta.timetable_order || [],
-            axon_exam_results_semesters: sourceMeta.axon_exam_results_semesters || targetMeta.axon_exam_results_semesters || [],
+            axon_exam_results_semesters: Buffer.byteLength(examSemestersJson, 'utf8') <= INLINE_META_CAP ? mergedExamSemesters : null,
+            axon_ai_chats: null,
+            axon_nutrition_logs: null,
+            axon_exercise_logs: null,
             semester_name: sourceMeta.semester_name || targetMeta.semester_name || '',
             semester_start_date: sourceMeta.semester_start_date || targetMeta.semester_start_date || '',
             semester_end_date: sourceMeta.semester_end_date || targetMeta.semester_end_date || '',
@@ -221,14 +231,24 @@ export default async function handler(req, res) {
           }
         })
 
-        // Also mirror linked_timetables to activity_log on target as backup
+        // Also mirror linked_timetables and exam semesters to activity_log on target as backup
         if (mergedLinkedTimetables.length > 0) {
           try {
             await adminSupabase.from('activity_log').insert({
               user_id: toStudentId,
               action: 'SYNC_LINKED_TIMETABLES',
               entity_type: 'axon_linked_timetables',
-              entity_name: JSON.stringify(mergedLinkedTimetables)
+              entity_name: linkedJson
+            })
+          } catch (_) {}
+        }
+        if (mergedExamSemesters.length > 0) {
+          try {
+            await adminSupabase.from('activity_log').insert({
+              user_id: toStudentId,
+              action: 'SYNC_EXAM_RESULTS_SEMESTERS',
+              entity_type: 'axon_exam_results_semesters',
+              entity_name: examSemestersJson
             })
           } catch (_) {}
         }
@@ -532,13 +552,59 @@ export default async function handler(req, res) {
       app_metadata: targetUser?.app_metadata || {}
     }
 
+    // Resolve linkedTimetables & examResultsSemesters with activity_log / SQL fallback when metadata is kept slim
+    let resolvedLinkedTimetables = Array.isArray(meta.linked_timetables) ? meta.linked_timetables : []
+    let resolvedExamSemesters = Array.isArray(meta.axon_exam_results_semesters) ? meta.axon_exam_results_semesters : []
+
+    if (resolvedLinkedTimetables.length === 0 || resolvedExamSemesters.length === 0) {
+      try {
+        const { data: snapLogs } = await adminSupabase
+          .from('activity_log')
+          .select('entity_type, entity_name, created_at')
+          .eq('user_id', studentId)
+          .in('entity_type', ['axon_linked_timetables', 'axon_exam_results_semesters'])
+          .order('created_at', { ascending: false })
+          .limit(20)
+
+        if (resolvedLinkedTimetables.length === 0) {
+          const linkedRow = (snapLogs || []).find(l => l.entity_type === 'axon_linked_timetables')
+          if (linkedRow?.entity_name) {
+            const parsed = JSON.parse(linkedRow.entity_name)
+            if (Array.isArray(parsed)) resolvedLinkedTimetables = parsed
+          }
+        }
+        if (resolvedExamSemesters.length === 0) {
+          const semRow = (snapLogs || []).find(l => l.entity_type === 'axon_exam_results_semesters')
+          if (semRow?.entity_name) {
+            const parsed = JSON.parse(semRow.entity_name)
+            if (Array.isArray(parsed)) resolvedExamSemesters = parsed
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (resolvedExamSemesters.length === 0) {
+      try {
+        const [{ data: sqlSems }, { data: sqlCourses }] = await Promise.all([
+          adminSupabase.from('student_semesters').select('*').eq('user_id', studentId).order('created_at'),
+          adminSupabase.from('student_semester_courses').select('*').eq('user_id', studentId).order('created_at')
+        ])
+        if (sqlSems && sqlSems.length > 0) {
+          resolvedExamSemesters = sqlSems.map(s => ({
+            ...s,
+            courses: (sqlCourses || []).filter(c => c.semester_id === s.id)
+          }))
+        }
+      } catch (_) {}
+    }
+
     return res.status(200).json({
       success: true,
       metadata: meta,
       accountInfo,
       preferences: rawPrefs,
-      linkedTimetables: meta.linked_timetables || [],
-      examResultsSemesters: meta.axon_exam_results_semesters || [],
+      linkedTimetables: resolvedLinkedTimetables,
+      examResultsSemesters: resolvedExamSemesters,
       semesterSettings: {
         name: meta.semester_name || rawPrefs.axon_semester_name || '',
         startDate: meta.semester_start_date || rawPrefs.axon_semester_start_date || '',

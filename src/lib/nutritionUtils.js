@@ -295,28 +295,6 @@ export async function syncNutritionLogsToCloud(userId, logs) {
   }
 
   if (!userId) return
-
-  // Sync latest 50 items to auth user_metadata (Pure text/numbers, zero image bloat)
-  try {
-    const compactLogs = logs.slice(0, 50).map(l => ({
-      id: l.id,
-      date: l.date,
-      meal_type: l.meal_type,
-      meal_time: l.meal_time || '',
-      name: l.name,
-      calories: l.calories,
-      protein: l.protein,
-      carbs: l.carbs,
-      fats: l.fats,
-      notes: l.notes || '',
-      created_at: l.created_at
-    }))
-    await supabase.auth.updateUser({
-      data: { axon_nutrition_logs: compactLogs }
-    })
-  } catch (err) {
-    console.warn('Failed to sync logs to user_metadata:', err)
-  }
 }
 
 export async function saveFoodLogItem(userId, foodItem, currentLogs) {

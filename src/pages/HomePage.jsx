@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabase'
 import { daysFromToday, dateLabel, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
 import { readCache, writeCache } from '../lib/cache'
+import { compactSessionIfNeeded, isBadRequestError } from '../lib/sessionRepair'
 import SEO from '../components/SEO'
 import { NotificationBellButton } from '../components/NotificationCenter'
 import { parseAnnouncement } from '../lib/announcements'
@@ -74,7 +75,8 @@ export default function HomePage() {
     return () => clearInterval(timer)
   }, [])
 
-  async function fetchDashboard() {
+  async function fetchDashboard(opts = {}) {
+    const retried = opts?.retried === true
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const activeUser = session?.user || (await supabase.auth.getUser()).data.user
@@ -104,6 +106,13 @@ export default function HomePage() {
       ])
 
       const coreErrors = [classesRes.error, assignmentsRes.error, examsRes.error].filter(Boolean)
+      if (!retried && coreErrors.some(isBadRequestError)) {
+        const compacted = await compactSessionIfNeeded(session, { force: true })
+        if (compacted?.repaired) {
+          return fetchDashboard({ retried: true })
+        }
+      }
+
       if (coreErrors.length > 0) {
         console.error('Error loading home dashboard data:', {
           classesError: classesRes.error,
@@ -118,9 +127,25 @@ export default function HomePage() {
       if (savedActive !== 'account') {
         try {
           const rawProfiles = localStorage.getItem(`axon_linked_timetables_${activeUser.id}`)
-          const profiles = rawProfiles
+          let profiles = rawProfiles
             ? JSON.parse(rawProfiles)
             : (Array.isArray(activeUser.user_metadata?.linked_timetables) ? activeUser.user_metadata.linked_timetables : [])
+          if ((!Array.isArray(profiles) || profiles.length === 0) && coreErrors.length === 0) {
+            const { data: actLinked } = await supabase
+              .from('activity_log')
+              .select('entity_name')
+              .eq('user_id', activeUser.id)
+              .eq('entity_type', 'axon_linked_timetables')
+              .order('created_at', { ascending: false })
+              .limit(1)
+            if (actLinked?.[0]?.entity_name) {
+              const parsed = JSON.parse(actLinked[0].entity_name)
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                profiles = parsed
+                localStorage.setItem(`axon_linked_timetables_${activeUser.id}`, JSON.stringify(parsed))
+              }
+            }
+          }
           const activeProfile = profiles.find(p => p.id === savedActive)
           if (activeProfile && activeProfile.classes) {
             activeClasses = activeProfile.classes.filter(c => !c.profile_id || c.profile_id === savedActive)

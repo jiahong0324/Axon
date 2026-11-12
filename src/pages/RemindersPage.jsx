@@ -8,6 +8,7 @@ import { buildUserContext } from '../lib/buildUserContext'
 import { askGroq } from '../lib/groq'
 import { logActivity } from '../lib/logActivity'
 import { clearCache, readCache, writeCache } from '../lib/cache'
+import { compactSessionIfNeeded, isBadRequestError } from '../lib/sessionRepair'
 import { supabase } from '../lib/supabase'
 import { markdownToHtml, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
@@ -67,7 +68,8 @@ export default function RemindersPage() {
 
   const remindersCacheKey = uid => `axon_reminders_${uid}`
 
-  async function fetchItems() {
+  async function fetchItems(opts = {}) {
+    const retried = opts?.retried === true
     const { data: { session } } = await supabase.auth.getSession()
     const user = session?.user || (await supabase.auth.getUser()).data.user
     if (!user) return
@@ -81,6 +83,12 @@ export default function RemindersPage() {
 
     const { data, error } = await supabase.from('reminders').select('*').eq('user_id', user.id).order('reminder_time')
     if (error) {
+      if (!retried && isBadRequestError(error)) {
+        const compacted = await compactSessionIfNeeded(session, { force: true })
+        if (compacted?.repaired) {
+          return fetchItems({ retried: true })
+        }
+      }
       console.error('Error loading reminders:', error)
       if (fallback && !cached) setItems(fallback)
       showToast(`Failed to load reminders: ${error.message}`, 'error')

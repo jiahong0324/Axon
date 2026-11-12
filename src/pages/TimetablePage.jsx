@@ -14,6 +14,7 @@ import { SkeletonTimetable } from '../components/SkeletonLoader'
 import { useLanguage } from '../components/LanguageProvider'
 import { clearCache, readCache, writeCache } from '../lib/cache'
 import { saveSemesterPreferences } from '../lib/preferences'
+import { METADATA_INLINE_LIMIT_BYTES, compactSessionIfNeeded, estimateMetadataBytes, isBadRequestError } from '../lib/sessionRepair'
 import SEO from '../components/SEO'
 import DateInput from '../components/DateInput'
 import TimePicker from '../components/TimePicker'
@@ -180,6 +181,7 @@ export default function TimetablePage() {
   const [touchEnd, setTouchEnd] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fetchGenRef = useRef(0)
+  const lastLinkedSnapshotRef = useRef('')
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { t } = useLanguage()
@@ -347,24 +349,34 @@ export default function TimetablePage() {
       hasRecoveredLinkedRef.current = true
       supabase
         .from('activity_log')
-        .select('entity_name')
+        .select('entity_name, metadata')
         .eq('user_id', currentUser.id)
         .eq('entity_type', 'axon_linked_timetables')
         .order('created_at', { ascending: false })
         .limit(1)
         .then(({ data: actLinked }) => {
-          if (!actLinked || !actLinked[0]?.entity_name) return
-          const parsed = JSON.parse(actLinked[0].entity_name)
+          const row = actLinked?.[0]
+          let parsed = null
+          if (row?.entity_name) {
+            try {
+              parsed = JSON.parse(row.entity_name)
+            } catch (_) {}
+          }
+          if (!Array.isArray(parsed) && Array.isArray(row?.metadata?.profiles)) {
+            parsed = row.metadata.profiles
+          }
           if (Array.isArray(parsed) && parsed.length > 0) {
+            lastLinkedSnapshotRef.current = JSON.stringify(parsed)
             saveLinkedProfiles(currentUser.id, parsed)
             setLinkedProfiles(parsed)
             const orderWithRecovered = [LIVE_PROFILE_ID, ...parsed.map(p => p.id)]
             setTimetableOrder(orderWithRecovered)
             timetableOrderRef.current = orderWithRecovered
             saveTimetableOrder(currentUser.id, orderWithRecovered)
+            const inlineLinked = estimateMetadataBytes(parsed) <= METADATA_INLINE_LIMIT_BYTES ? parsed : null
             supabase.auth.updateUser({
               data: {
-                linked_timetables: parsed,
+                linked_timetables: inlineLinked,
                 timetable_order: orderWithRecovered
               }
             }).catch(() => {})
@@ -400,8 +412,30 @@ export default function TimetablePage() {
     localStorage.setItem('axon_semester_end_date', initialEndDate)
   }
 
-  async function fetchClasses() {
+  async function syncLinkedProfilesCloud(userId, profiles) {
+    if (!userId || !Array.isArray(profiles)) return true
+    const serialized = JSON.stringify(profiles)
+    if (lastLinkedSnapshotRef.current === serialized) return true
+    try {
+      const { error } = await supabase.from('activity_log').insert({
+        user_id: userId,
+        action: 'SYNC_LINKED_TIMETABLES',
+        entity_type: 'axon_linked_timetables',
+        entity_name: serialized
+      })
+      if (!error) {
+        lastLinkedSnapshotRef.current = serialized
+        return true
+      }
+      return false
+    } catch {
+      return false
+    }
+  }
+
+  async function fetchClasses(opts = {}) {
     if (!user) return
+    const retried = opts?.retried === true
     const gen = ++fetchGenRef.current
     
     const today = new Date()
@@ -453,6 +487,15 @@ export default function TimetablePage() {
     }
 
     if (classesError) {
+      if (!retried && isBadRequestError(classesError)) {
+        const compacted = await compactSessionIfNeeded(null, { force: true })
+        if (compacted?.session?.user) {
+          setUser(compacted.session.user)
+        }
+        if (compacted?.repaired) {
+          return fetchClasses({ retried: true })
+        }
+      }
       console.error('Error loading classes:', classesError)
       showToast(`Failed to load classes: ${classesError.message}`, 'error')
       setLoading(false)
@@ -499,7 +542,8 @@ export default function TimetablePage() {
       timetableOrderRef.current = nextOrder
       saveTimetableOrder(user.id, nextOrder)
     }
-    const updateData = { linked_timetables: nextProfiles }
+    const inlineLinked = estimateMetadataBytes(nextProfiles) <= METADATA_INLINE_LIMIT_BYTES ? nextProfiles : null
+    const updateData = { linked_timetables: inlineLinked }
     if (nextOrder && nextOrder.length > 0) {
       updateData.timetable_order = nextOrder
     }
@@ -510,6 +554,7 @@ export default function TimetablePage() {
         ...updateData
       }
     } : prev)
+    syncLinkedProfilesCloud(user.id, nextProfiles)
     supabase.auth.updateUser({ data: updateData }).then(({ data: authData }) => {
       if (authData?.user) setUser(authData.user)
     }).catch(err => console.error('Error persisting linked timetables:', err))
@@ -563,19 +608,21 @@ export default function TimetablePage() {
     saveLinkedProfiles(user.id, reorderedLinked)
     setLinkedProfiles(reorderedLinked)
 
+    const inlineLinked = estimateMetadataBytes(reorderedLinked) <= METADATA_INLINE_LIMIT_BYTES ? reorderedLinked : null
     setUser(prev => prev ? {
       ...prev,
       user_metadata: {
         ...prev.user_metadata,
         timetable_order: currentOrder,
-        linked_timetables: reorderedLinked
+        linked_timetables: inlineLinked
       }
     } : prev)
 
+    syncLinkedProfilesCloud(user.id, reorderedLinked)
     supabase.auth.updateUser({
       data: {
         timetable_order: currentOrder,
-        linked_timetables: reorderedLinked
+        linked_timetables: inlineLinked
       }
     }).then(({ data: authData }) => {
       if (authData?.user) setUser(authData.user)
@@ -789,18 +836,20 @@ export default function TimetablePage() {
     saveLinkedProfiles(user.id, updatedProfiles)
     setLinkedProfiles(updatedProfiles)
 
-    // 3. Persist to Supabase Auth FIRST before clearing live classes
+    // 3. Persist archive to cloud activity_log & lightweight auth metadata BEFORE clearing live classes
+    const cloudArchived = await syncLinkedProfilesCloud(user.id, updatedProfiles)
     const replacements = user.user_metadata?.replacement_classes || []
     const remainingReplacements = replacements.filter(r => r.profile_id && r.profile_id !== 'account' && r.profile_id !== LIVE_PROFILE_ID)
+    const inlineLinked = estimateMetadataBytes(updatedProfiles) <= METADATA_INLINE_LIMIT_BYTES ? updatedProfiles : null
     const { data: authUpdateResult, error: authErr } = await supabase.auth.updateUser({
       data: {
         replacement_classes: remainingReplacements,
-        linked_timetables: updatedProfiles,
+        linked_timetables: inlineLinked,
         timetable_order: timetableOrderRef.current
       }
     })
-    if (authErr) {
-      console.error('Error saving archived timetable to cloud auth:', authErr)
+    if (authErr && !cloudArchived) {
+      console.error('Error saving archived timetable to cloud:', authErr)
       setIsSubmitting(false)
       return showToast(t('timetable.startNewSemesterFailed'), 'error')
     }

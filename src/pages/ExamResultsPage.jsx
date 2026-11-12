@@ -9,6 +9,7 @@ import Modal from '../components/Modal'
 import ImageUploadAnalyzer from '../components/ImageUploadAnalyzer'
 import { TARUMT_GRADES, getGradeFromMark, calculateSemesterGPA, calculateOverallCGPA, getAcademicStanding, getGradeBadgeStyle } from '../lib/tarumtGrading'
 import { logActivity } from '../lib/logActivity'
+import { METADATA_INLINE_LIMIT_BYTES, estimateMetadataBytes } from '../lib/sessionRepair'
 
 function createDefaultThreeCourses(semId) {
   return [
@@ -89,6 +90,7 @@ export default function ExamResultsPage() {
   const calcSyncTimerRef = useRef(null)
   const courseCalcSyncTimerRef = useRef(null)
   const isSyncingRef = useRef(false)
+  const lastSemSnapshotRef = useRef('')
   const { showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirmDialog()
 
@@ -102,7 +104,7 @@ export default function ExamResultsPage() {
     calcSyncTimerRef.current = setTimeout(async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
+        if (user && estimateMetadataBytes(calcRows) <= 2048) {
           await supabase.auth.updateUser({
             data: { axon_quick_calculator_rows: calcRows }
           })
@@ -127,7 +129,7 @@ export default function ExamResultsPage() {
     courseCalcSyncTimerRef.current = setTimeout(async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
+        if (user && estimateMetadataBytes(courseCalcRows) <= 2048) {
           await supabase.auth.updateUser({
             data: { axon_course_calculator_rows: courseCalcRows }
           })
@@ -187,10 +189,22 @@ export default function ExamResultsPage() {
 
     isSyncingRef.current = true
     try {
-      // 1. Guaranteed dual-storage sync to user_metadata so any device immediately sees all semesters
+      // 1. Keep user_metadata slim so JWT headers never exceed gateway limits
+      const inlineSemesters = estimateMetadataBytes(localList) <= METADATA_INLINE_LIMIT_BYTES ? localList : null
       await supabase.auth.updateUser({
-        data: { axon_exam_results_semesters: localList }
-      })
+        data: { axon_exam_results_semesters: inlineSemesters }
+      }).catch(() => {})
+
+      const serializedSnap = JSON.stringify(localList)
+      if (serializedSnap !== lastSemSnapshotRef.current) {
+        const { error: logErr } = await supabase.from('activity_log').insert({
+          user_id: user.id,
+          action: 'SYNC_EXAM_RESULTS_SEMESTERS',
+          entity_type: 'axon_exam_results_semesters',
+          entity_name: serializedSnap
+        })
+        if (!logErr) lastSemSnapshotRef.current = serializedSnap
+      }
 
       // 2. Also sync to SQL tables if they exist
       let hasIdChanges = false
@@ -258,6 +272,19 @@ export default function ExamResultsPage() {
       }
 
       localStorage.setItem('axon_exam_results_semesters', JSON.stringify(updatedList))
+      localStorage.setItem(`axon_exam_results_semesters_${user.id}`, JSON.stringify(updatedList))
+      const updatedSnap = JSON.stringify(updatedList)
+      if (updatedSnap !== lastSemSnapshotRef.current) {
+        try {
+          const { error: logErr } = await supabase.from('activity_log').insert({
+            user_id: user.id,
+            action: 'SYNC_EXAM_RESULTS_SEMESTERS',
+            entity_type: 'axon_exam_results_semesters',
+            entity_name: updatedSnap
+          })
+          if (!logErr) lastSemSnapshotRef.current = updatedSnap
+        } catch (_) {}
+      }
       if (hasIdChanges) {
         setSemesters(updatedList)
       }
@@ -364,7 +391,21 @@ export default function ExamResultsPage() {
     } else if (tableList.length > 0) {
       merged = tableList
     } else {
-      merged = localList
+      let actList = []
+      try {
+        const { data: actRows } = await supabase
+          .from('activity_log')
+          .select('entity_name')
+          .eq('user_id', user.id)
+          .eq('entity_type', 'axon_exam_results_semesters')
+          .order('created_at', { ascending: false })
+          .limit(1)
+        if (actRows?.[0]?.entity_name) {
+          const parsed = JSON.parse(actRows[0].entity_name)
+          if (Array.isArray(parsed)) actList = parsed
+        }
+      } catch (_) {}
+      merged = actList.length > 0 ? actList : localList
     }
 
     const hasRealSemester = merged.some(s => s.name !== 'Year 1 Semester 1' || (s.courses || []).some(c => c.grade && c.grade !== ''))

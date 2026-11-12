@@ -13,6 +13,7 @@ import { initials, formatTime } from '../lib/utils'
 import { registerPushSubscription } from '../lib/pushNotifications'
 import { updatePreference } from '../lib/preferences'
 import { clearCache, readCache } from '../lib/cache'
+import { METADATA_INLINE_LIMIT_BYTES, estimateMetadataBytes } from '../lib/sessionRepair'
 import { studentManager } from '../lib/manageStudent'
 import { useLanguage } from '../components/LanguageProvider'
 import { markExplicitLogout } from '../lib/authEvents'
@@ -431,7 +432,7 @@ export default function SettingsPage() {
         supabase.from('student_semester_courses').select('*').eq('user_id', activeUser.id).order('created_at'),
         supabase.from('profiles').select('full_name, university, course, student_id, avatar_color').eq('id', activeUser.id).maybeSingle(),
         supabase.from('activity_log')
-          .select('entity_type, details, created_at')
+          .select('entity_type, entity_name, metadata, created_at')
           .eq('user_id', activeUser.id)
           .in('entity_type', ['axon_linked_timetables', 'axon_exam_results_semesters'])
           .order('created_at', { ascending: false })
@@ -469,11 +470,14 @@ export default function SettingsPage() {
         : (remindersRes.data || [])
 
       const logs = backupLogsRes.data || []
-      const logLinked = logs.find(l => l.entity_type === 'axon_linked_timetables')?.details?.profiles
+      const linkedLogRow = logs.find(l => l.entity_type === 'axon_linked_timetables')
+      const logLinked = safeParseArray(linkedLogRow?.entity_name).length > 0
+        ? safeParseArray(linkedLogRow?.entity_name)
+        : (Array.isArray(linkedLogRow?.metadata?.profiles) ? linkedLogRow.metadata.profiles : [])
       const localLinked = safeParseArray(localStorage.getItem(`axon_linked_timetables_${activeUser.id}`))
       const metaLinked = Array.isArray(activeUser.user_metadata?.linked_timetables) ? activeUser.user_metadata.linked_timetables : []
       const linkedTimetables = dedupeByKey(
-        [...localLinked, ...metaLinked, ...(Array.isArray(logLinked) ? logLinked : [])],
+        [...localLinked, ...metaLinked, ...logLinked],
         backupRowKeys.linked
       )
 
@@ -493,7 +497,10 @@ export default function SettingsPage() {
         name: s.name,
         courses: coursesBySemId.get(s.id) || []
       }))
-      const logSems = logs.find(l => l.entity_type === 'axon_exam_results_semesters')?.details?.semesters
+      const semLogRow = logs.find(l => l.entity_type === 'axon_exam_results_semesters')
+      const logSems = safeParseArray(semLogRow?.entity_name).length > 0
+        ? safeParseArray(semLogRow?.entity_name)
+        : (Array.isArray(semLogRow?.metadata?.semesters) ? semLogRow.metadata.semesters : [])
       const localSems = [
         ...safeParseArray(localStorage.getItem(`axon_exam_results_semesters_${activeUser.id}`)),
         ...safeParseArray(localStorage.getItem('axon_exam_results_semesters'))
@@ -502,7 +509,7 @@ export default function SettingsPage() {
         ? activeUser.user_metadata.axon_exam_results_semesters
         : []
       const studentSemesters = dedupeByKey(
-        [...sqlSemesters, ...localSems, ...metaSems, ...(Array.isArray(logSems) ? logSems : [])].filter(s => s?.name),
+        [...sqlSemesters, ...localSems, ...metaSems, ...logSems].filter(s => s?.name),
         backupRowKeys.semester
       )
 
@@ -715,10 +722,9 @@ export default function SettingsPage() {
         const mergedLinked = dedupeByKey([...baseLinked, ...backup.linked_timetables], backupRowKeys.linked)
         counts.linked = mergedLinked.filter(item => !baseKeys.has(backupRowKeys.linked(item))).length
         localStorage.setItem(`axon_linked_timetables_${activeUser.id}`, JSON.stringify(mergedLinked))
-        await supabase.auth.updateUser({ data: { linked_timetables: mergedLinked } }).catch(() => {})
-        logActivity('Synced linked timetables', 'axon_linked_timetables', `${mergedLinked.length} profile(s)`, activeUser.id, {
-          profiles: mergedLinked
-        }).catch(() => {})
+        const inlineLinked = estimateMetadataBytes(mergedLinked) <= METADATA_INLINE_LIMIT_BYTES ? mergedLinked : null
+        await supabase.auth.updateUser({ data: { linked_timetables: inlineLinked } }).catch(() => {})
+        logActivity('SYNC_LINKED_TIMETABLES', 'axon_linked_timetables', JSON.stringify(mergedLinked), activeUser.id).catch(() => {})
       }
 
       if (backup.semesterSettings && typeof backup.semesterSettings === 'object') {
@@ -802,7 +808,9 @@ export default function SettingsPage() {
         )
         localStorage.setItem(`axon_exam_results_semesters_${activeUser.id}`, JSON.stringify(mergedSems))
         localStorage.setItem('axon_exam_results_semesters', JSON.stringify(mergedSems))
-        await supabase.auth.updateUser({ data: { axon_exam_results_semesters: mergedSems } }).catch(() => {})
+        const inlineSems = estimateMetadataBytes(mergedSems) <= METADATA_INLINE_LIMIT_BYTES ? mergedSems : null
+        await supabase.auth.updateUser({ data: { axon_exam_results_semesters: inlineSems } }).catch(() => {})
+        logActivity('SYNC_EXAM_RESULTS_SEMESTERS', 'axon_exam_results_semesters', JSON.stringify(mergedSems), activeUser.id).catch(() => {})
       }
 
       if (backup.profile && typeof backup.profile === 'object') {

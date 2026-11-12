@@ -7,6 +7,7 @@ import Modal from '../components/Modal'
 import { useToast } from '../components/Toast'
 import { logActivity } from '../lib/logActivity'
 import { clearCache, readCache, writeCache } from '../lib/cache'
+import { compactSessionIfNeeded, isBadRequestError } from '../lib/sessionRepair'
 import { supabase } from '../lib/supabase'
 import { dateLabel, daysFromToday, formatTime } from '../lib/utils'
 import { useLanguage } from '../components/LanguageProvider'
@@ -70,7 +71,8 @@ export default function ExamPage() {
 
   const examsCacheKey = uid => `axon_exams_${uid}`
 
-  async function fetchExams() {
+  async function fetchExams(opts = {}) {
+    const retried = opts?.retried === true
     const { data: { session } } = await supabase.auth.getSession()
     const user = session?.user || (await supabase.auth.getUser()).data.user
     if (!user) {
@@ -94,6 +96,13 @@ export default function ExamPage() {
       supabase.from('exams').select('*').eq('user_id', user.id).order('exam_date'),
       supabase.from('exam_results').select('*').eq('student_id', user.id)
     ])
+
+    if (!retried && (isBadRequestError(error) || isBadRequestError(resultsError))) {
+      const compacted = await compactSessionIfNeeded(session, { force: true })
+      if (compacted?.repaired) {
+        return fetchExams({ retried: true })
+      }
+    }
 
     const fallbackExams = Array.isArray(fallback) ? fallback : (fallback?.exams || [])
     const fallbackResults = Array.isArray(fallback) ? [] : (fallback?.results || [])

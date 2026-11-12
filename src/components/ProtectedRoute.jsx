@@ -6,6 +6,7 @@ import NotificationCenter from './NotificationCenter'
 import Sidebar from './Sidebar'
 import ManagerSidebar from './ManagerSidebar'
 import { syncPreferences } from '../lib/preferences'
+import { compactSessionIfNeeded, isBadRequestError, isMetadataBloated } from '../lib/sessionRepair'
 import SplashLoading from './SplashLoading'
 
 // In-memory cache across route changes so navigation between pages never re-flashes SplashLoading
@@ -59,9 +60,23 @@ export default function ProtectedRoute({ children, requireRole = 'student' }) {
 
     async function checkAuth() {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession()
+        const { data: { session: initialSession } } = await supabase.auth.getSession()
+        let currentSession = initialSession
         if (currentSession?.user) {
+          if (isMetadataBloated(currentSession.user)) {
+            const compacted = await compactSessionIfNeeded(currentSession)
+            if (compacted?.session) currentSession = compacted.session
+          }
+
           let { data, error: profileErr } = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
+          if (isBadRequestError(profileErr)) {
+            const compacted = await compactSessionIfNeeded(currentSession, { force: true })
+            if (compacted?.session) currentSession = compacted.session
+            const retryRes = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle()
+            data = retryRes.data
+            profileErr = retryRes.error
+          }
+
           const profileCacheKey = `axon_profile_cache_${currentSession.user.id}`
           let dbErrorMessage = profileErr?.message || ''
 

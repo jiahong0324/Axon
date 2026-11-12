@@ -252,9 +252,11 @@ export default function AIHelperPage({ role = 'student' }) {
         setMessages(formatted)
         safelyPersistChat(isManager ? 'aiManagerChat' : 'aiChat', formatted)
       } else {
-        // If cloud is empty or missing records, sync localStorage chat history to cloud
+        // If cloud is empty or missing records, sync localStorage + legacy metadata chat history to cloud
         const localSaved = JSON.parse(localStorage.getItem(isManager ? 'aiManagerChat' : 'aiChat') || '[]')
-        const toUpload = localSaved.filter(m => m.content && !isWelcomeMessage(m.content)).map(m => ({
+        const legacyMeta = !isManager && Array.isArray(user.user_metadata?.axon_ai_chats) ? user.user_metadata.axon_ai_chats : []
+        const combinedSource = localSaved.filter(m => m.content && !isWelcomeMessage(m.content)).length > 0 ? localSaved : legacyMeta
+        const toUpload = combinedSource.filter(m => m?.content && !isWelcomeMessage(m.content)).map(m => ({
           user_id: user.id,
           role: m.role,
           content: (m.content && m.content.trim()) || (m.image ? '[Attached Study Image / Diagram]' : '[Message]'),
@@ -267,17 +269,6 @@ export default function AIHelperPage({ role = 'student' }) {
             if (insErr && item.image) {
               await supabase.from('student_ai_chats').insert({ ...item, image: null })
             }
-          }
-          if (!isManager) {
-            const metaChat = toUpload.slice(-30).map(m => ({
-              role: m.role,
-              content: m.content,
-              has_image: Boolean(m.image),
-              created_at: new Date().toISOString()
-            }))
-            await supabase.auth.updateUser({
-              data: { axon_ai_chats: metaChat }
-            }).catch(() => {})
           }
         }
       }
@@ -307,24 +298,6 @@ export default function AIHelperPage({ role = 'student' }) {
         console.warn('Insert with image failed, falling back to text query record:', error.message)
         await supabase.from('student_ai_chats').insert({ ...payload, image: null })
       }
-
-      // Also backup to user_metadata for universal sync
-      if (!isManager) {
-        const localSaved = JSON.parse(localStorage.getItem('aiChat') || '[]')
-        const metaChat = localSaved
-          .filter(m => m.content && !isWelcomeMessage(m.content))
-          .slice(-30)
-          .map(m => ({
-            role: m.role,
-            content: m.content,
-            has_image: Boolean(m.image),
-            created_at: m.timestamp || new Date().toISOString()
-          }))
-
-        await supabase.auth.updateUser({
-          data: { axon_ai_chats: metaChat }
-        }).catch(() => {})
-      }
     } catch (e) {
       console.warn('saveMessageToCloud caught exception:', e)
     }
@@ -342,8 +315,8 @@ export default function AIHelperPage({ role = 'student' }) {
         .eq('user_id', user.id)
         .eq('is_manager', isManager)
 
-      if (!isManager) {
-        await supabase.auth.updateUser({ data: { axon_ai_chats: [] } }).catch(() => {})
+      if (!isManager && user.user_metadata?.axon_ai_chats !== undefined) {
+        await supabase.auth.updateUser({ data: { axon_ai_chats: null } }).catch(() => {})
       }
     } catch (e) {}
   }

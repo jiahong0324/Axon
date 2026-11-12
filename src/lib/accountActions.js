@@ -2,6 +2,7 @@ import { supabase } from './supabase.js'
 import { logActivity } from './logActivity.js'
 import { clearCache } from './cache.js'
 import { updatePreference } from './preferences.js'
+import { METADATA_INLINE_LIMIT_BYTES, estimateMetadataBytes } from './sessionRepair.js'
 import { fetchExerciseData, logExerciseCheckIn, getTodayStr } from './exerciseUtils.js'
 import {
   fetchNutritionData,
@@ -962,7 +963,16 @@ export async function executeAccountAction(action, user, contextMeta = {}) {
               }
               activeProfile.classes = [...(activeProfile.classes || []), newClass]
               localStorage.setItem(`axon_linked_timetables_${currentUser.id}`, JSON.stringify(profiles))
-              await supabase.auth.updateUser({ data: { linked_timetables: profiles } }).catch(() => {})
+              try {
+                await supabase.from('activity_log').insert({
+                  user_id: currentUser.id,
+                  action: 'SYNC_LINKED_TIMETABLES',
+                  entity_type: 'axon_linked_timetables',
+                  entity_name: JSON.stringify(profiles)
+                })
+              } catch (_) {}
+              const inlineLinked = estimateMetadataBytes(profiles) <= METADATA_INLINE_LIMIT_BYTES ? profiles : null
+              await supabase.auth.updateUser({ data: { linked_timetables: inlineLinked } }).catch(() => {})
             }
           } catch (e) {
             console.error('Error adding to linked timetable profile:', e)
@@ -1427,12 +1437,22 @@ export async function executeAccountAction(action, user, contextMeta = {}) {
 
         sem.is_submitted = true
 
-        // 4. Save to localStorage and user_metadata
+        // 4. Save to localStorage and cloud backup (keeping user_metadata slim)
         if (typeof window !== 'undefined') {
           localStorage.setItem('axon_exam_results_semesters', JSON.stringify(semesters))
+          localStorage.setItem(`axon_exam_results_semesters_${currentUser.id}`, JSON.stringify(semesters))
         }
+        try {
+          await supabase.from('activity_log').insert({
+            user_id: currentUser.id,
+            action: 'SYNC_EXAM_RESULTS_SEMESTERS',
+            entity_type: 'axon_exam_results_semesters',
+            entity_name: JSON.stringify(semesters)
+          })
+        } catch (_) {}
+        const inlineSems = estimateMetadataBytes(semesters) <= METADATA_INLINE_LIMIT_BYTES ? semesters : null
         await supabase.auth.updateUser({
-          data: { axon_exam_results_semesters: semesters }
+          data: { axon_exam_results_semesters: inlineSems }
         }).catch(() => {})
 
         // 5. Also upsert to SQL tables student_semesters and student_semester_courses
@@ -1517,8 +1537,18 @@ export async function executeAccountAction(action, user, contextMeta = {}) {
           })
           if (typeof window !== 'undefined') {
             localStorage.setItem('axon_exam_results_semesters', JSON.stringify(semesters))
+            localStorage.setItem(`axon_exam_results_semesters_${currentUser.id}`, JSON.stringify(semesters))
           }
-          await supabase.auth.updateUser({ data: { axon_exam_results_semesters: semesters } }).catch(() => {})
+          try {
+            await supabase.from('activity_log').insert({
+              user_id: currentUser.id,
+              action: 'SYNC_EXAM_RESULTS_SEMESTERS',
+              entity_type: 'axon_exam_results_semesters',
+              entity_name: JSON.stringify(semesters)
+            })
+          } catch (_) {}
+          const inlineSems = estimateMetadataBytes(semesters) <= METADATA_INLINE_LIMIT_BYTES ? semesters : null
+          await supabase.auth.updateUser({ data: { axon_exam_results_semesters: inlineSems } }).catch(() => {})
         }
 
         try {
